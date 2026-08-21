@@ -3,15 +3,59 @@ import socket
 import json
 import sys
 import whois
+import requests
+import dns.resolver
 from datetime import datetime
 
+# PROBLEM 1: IP Geolocation Tracking
+def get_geolocation(hostname):
+    data = {"ip": "Unknown", "country": "Unknown", "isp": "Unknown"}
+    try:
+        ip = socket.gethostbyname(hostname)
+        data["ip"] = ip
+        response = requests.get(f"http://ip-api.com/json/{ip}", timeout=3).json()
+        if response.get("status") == "success":
+            data["country"] = f"{response.get('city', '')}, {response.get('country', '')}"
+            data["isp"] = response.get("isp", "Unknown")
+    except Exception:
+        pass
+    return data
+
+# PROBLEM 2: DNS Record Enumeration
+def enumerate_dns(hostname):
+    records = {"A": [], "MX": [], "TXT": []}
+    try:
+        for rdata in dns.resolver.resolve(hostname, 'A'):
+            records["A"].append(rdata.to_text())
+    except Exception: pass
+    
+    try:
+        for rdata in dns.resolver.resolve(hostname, 'MX'):
+            records["MX"].append(rdata.to_text())
+    except Exception: pass
+    
+    try:
+        for rdata in dns.resolver.resolve(hostname, 'TXT'):
+            records["TXT"].append(rdata.to_text())
+    except Exception: pass
+    
+    return records
+
+# PROBLEM 3: HTTP Security Header Inspection
+def analyze_headers(hostname):
+    headers = {"hsts": False, "x_frame_options": False, "content_security_policy": False}
+    try:
+        response = requests.head(f"https://{hostname}", timeout=3)
+        h = response.headers
+        headers["hsts"] = "strict-transport-security" in h.lower()
+        headers["x_frame_options"] = "x-frame-options" in h.lower()
+        headers["content_security_policy"] = "content-security-policy" in h.lower()
+    except Exception:
+        pass
+    return headers
+
+# PROBLEM 4: Combine Solutions
 def analyze_domain(hostname, port=443):
-    """
-    Methodology:
-    1. First, we use python-whois to scrape the public registration data for the domain.
-    2. Then, we connect via SSL to analyze the cryptographic handshake.
-    3. We combine both the OSINT and Crypto data into a single unified JSON response.
-    """
     
     # 1. OSINT / WHOIS Scanning
     osint_data = {
@@ -24,7 +68,6 @@ def analyze_domain(hostname, port=443):
     try:
         domain_info = whois.whois(hostname)
         
-        # Handle cases where dates might be lists
         def parse_date(date_val):
             if isinstance(date_val, list):
                 return date_val[0].isoformat() if hasattr(date_val[0], 'isoformat') else str(date_val[0])
@@ -41,6 +84,10 @@ def analyze_domain(hostname, port=443):
     except Exception as e:
         osint_data["error"] = f"WHOIS lookup failed: {str(e)}"
 
+    # Add Advanced OSINT Features
+    geo_data = get_geolocation(hostname)
+    dns_data = enumerate_dns(hostname)
+    header_data = analyze_headers(hostname)
 
     # 2. Cryptographic Scanning
     context = ssl.create_default_context()
@@ -51,6 +98,11 @@ def analyze_domain(hostname, port=443):
         "target_url": hostname,
         "scan_timestamp": datetime.utcnow().isoformat() + "Z",
         "osint": osint_data,
+        "infrastructure": {
+            "geo": geo_data,
+            "dns": dns_data,
+            "security_headers": header_data
+        },
         "crypto": {
             "encryption_detected": "Unknown",
             "is_quantum_safe": False,

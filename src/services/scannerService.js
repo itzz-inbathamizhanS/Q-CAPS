@@ -1,41 +1,38 @@
 // src/services/scannerService.js
 
-// Mock function to simulate the OSINT & Cryptographic scan
+// Function to call the Python OSINT & Cryptographic scanner API
 export const scanEndpoint = async (url) => {
-    return new Promise((resolve) => {
-        // Simulate a delay for the deep scan
-        setTimeout(() => {
-            const results = {
-                target_url: url,
-                scan_timestamp: new Date().toISOString(),
-                osint: {
-                    registrar: "MarkMonitor Inc.",
-                    creation_date: "1997-09-15T04:00:00Z",
-                    expiration_date: "2028-09-14T04:00:00Z",
-                    owner_organization: "Google LLC"
-                },
-                crypto: {
-                    encryption_detected: "Elliptic Curve (ECC)",
-                    is_quantum_safe: False,
-                    vulnerabilities_found: [
-                        "Vulnerable to Shor's Algorithm (Classical ECC detected)"
-                    ],
-                    mission_xp_awarded: 25
-                }
-            };
-            
-            // Add arbitrary XP to user score for the demo
+    try {
+        const response = await fetch('http://127.0.0.1:5000/api/scan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ url: url })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.statusText}`);
+        }
+        
+        const results = await response.json();
+        
+        // Add XP to user score if the scan was successful
+        if (results && results.crypto && results.crypto.mission_xp_awarded) {
             const storedScores = JSON.parse(localStorage.getItem("qcapsScores")) || {};
-            storedScores['practical_security'] = (storedScores['practical_security'] || 0) + 25;
+            storedScores['practical_security'] = (storedScores['practical_security'] || 0) + results.crypto.mission_xp_awarded;
             
             const totalTopics = Object.keys(storedScores).length || 1;
             const overall = Math.round(Object.values(storedScores).reduce((a, b) => a + b, 0) / totalTopics);
             
             localStorage.setItem("qcapsScores", JSON.stringify(storedScores));
             localStorage.setItem("qcapsOverallScore", overall);
+        }
 
-            resolve(results);
-        }, 2000);
-    });
+        return results;
+    } catch (error) {
+        console.error("Failed to connect to Python Scanner API:", error);
+        throw error;
+    }
 };
 
