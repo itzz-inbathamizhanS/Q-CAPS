@@ -4,6 +4,8 @@ To ensure that Niranjan's Frontend, Vishnu Priya's Backend, Inba's Scanner, and 
 
 Whenever your code sends or receives data about a user, it must look exactly like the JSON examples below.
 
+
+
 ---
 
 ## 1. The Common "User Profile" Object
