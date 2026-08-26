@@ -6,17 +6,9 @@ import ScannerTool from '../components/ScannerTool';
 
 const ScannerPage = () => {
     return (
-        <div className="min-h-screen bg-cyber-black text-white flex flex-col font-sans">
+        <div className="min-h-screen bg-background text-on-surface flex flex-col font-body-md antialiased">
             <Header />
-            <main className="container mx-auto p-8 flex-grow">
-                <div className="text-center mb-12 animate-pulse-fast">
-                    <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-neon-green to-neon-blue">
-                        Quantum OSINT Recon
-                    </h1>
-                    <p className="text-gray-400 mt-2 text-lg">
-                        Execute deep cryptographic analysis and WHOIS reconnaissance on authorized targets.
-                    </p>
-                </div>
+            <main className="flex-1 p-sm md:p-md flex flex-col items-center">
                 <ScannerTool />
             </main>
             <Footer />

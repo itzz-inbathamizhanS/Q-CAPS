@@ -21,6 +21,41 @@ def get_geolocation(hostname):
         pass
     return data
 
+def enumerate_subdomains(hostname):
+    subdomains = set()
+    try:
+        response = requests.get(f"https://crt.sh/?q=%25.{hostname}&output=json", timeout=10)
+        if response.status_code == 200:
+            data = response.json()
+            for entry in data:
+                name_value = entry.get('name_value', '')
+                for name in name_value.split('\n'):
+                    name = name.strip().lower()
+                    if name.endswith(hostname) and name != hostname and '*' not in name:
+                        subdomains.add(name)
+    except Exception:
+        pass
+    return list(subdomains)[:20]
+
+def scan_ports(hostname):
+    ports_to_scan = [21, 22, 25, 53, 80, 443, 3306, 8080]
+    results = {}
+    try:
+        ip = socket.gethostbyname(hostname)
+        for port in ports_to_scan:
+            try:
+                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
+                    s.settimeout(0.5)
+                    if s.connect_ex((ip, port)) == 0:
+                        results[str(port)] = "OPEN"
+                    else:
+                        results[str(port)] = "CLOSED"
+            except Exception:
+                 results[str(port)] = "CLOSED"
+    except Exception:
+        pass
+    return results
+
 # PROBLEM 2: DNS Record Enumeration
 def enumerate_dns(hostname):
     records = {"A": [], "MX": [], "TXT": []}
@@ -88,6 +123,8 @@ def analyze_domain(hostname, port=443):
     geo_data = get_geolocation(hostname)
     dns_data = enumerate_dns(hostname)
     header_data = analyze_headers(hostname)
+    subdomains = enumerate_subdomains(hostname)
+    ports = scan_ports(hostname)
 
     # 2. Cryptographic Scanning
     context = ssl.create_default_context()
@@ -101,7 +138,9 @@ def analyze_domain(hostname, port=443):
         "infrastructure": {
             "geo": geo_data,
             "dns": dns_data,
-            "security_headers": header_data
+            "security_headers": header_data,
+            "ports": ports,
+            "subdomains": subdomains
         },
         "crypto": {
             "encryption_detected": "Unknown",

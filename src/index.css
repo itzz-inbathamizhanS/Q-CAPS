@@ -8,3 +8,88 @@
     @apply bg-cyber-black text-white font-sans;
   }
 }
+
+@layer components {
+  /* Scanner tactical styles */
+  .tactical-border {
+    border: 1px solid #333;
+  }
+  .inset-bg {
+    background-color: #0a0a0f;
+  }
+  .surface-bg {
+    background-color: #1c1c24;
+  }
+
+  /* Card accent left borders */
+  .card-accent-cyan { border-left: 4px solid #00f0ff; }
+  .card-accent-amber { border-left: 4px solid #ffb000; }
+  .card-accent-orange { border-left: 4px solid #ff8800; }
+  .card-accent-green { border-left: 4px solid #00ff88; }
+  .card-accent-pink { border-left: 4px solid #ff00b0; }
+  .card-accent-purple { border-left: 4px solid #b000ff; }
+  .card-accent-coral { border-left: 4px solid #ff7b72; }
+
+  /* Threat ring */
+  .threat-ring {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    position: relative;
+  }
+  .threat-ring::before {
+    content: '';
+    position: absolute;
+    width: 40px;
+    height: 40px;
+    background-color: #1c1c24;
+    border-radius: 50%;
+  }
+  .threat-ring-value {
+    position: relative;
+    z-index: 1;
+  }
+
+  /* Terminal cursor blink */
+  .cursor-blink {
+    display: inline-block;
+    width: 8px;
+    height: 16px;
+    background-color: #00e479;
+    vertical-align: middle;
+    margin-left: 4px;
+    animation: blink-cursor 1s step-end infinite;
+  }
+
+  @keyframes blink-cursor {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0; }
+  }
+
+  /* Custom scrollbar for terminal */
+  .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+  .custom-scrollbar::-webkit-scrollbar-track { background: #1c1c24; }
+  .custom-scrollbar::-webkit-scrollbar-thumb { background: #333; border-radius: 4px; }
+
+  /* Scanner button */
+  .btn-scan {
+    background-color: #00ff88;
+    color: #0a0a0f;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    transition: filter 0.2s;
+  }
+  .btn-scan:hover {
+    filter: brightness(1.1);
+  }
+  .btn-scan:disabled {
+    background-color: #4f4255;
+    color: #0a0a0f;
+    cursor: not-allowed;
+    filter: none;
+  }
+}
