@@ -1,12 +1,31 @@
-// tailwind.config.js
+// tailwind.config.cjs
 module.exports = {
-  purge: ['./src/**/*.{js,jsx,ts,tsx}', './public/index.html'],
-  darkMode: false, // or 'media' or 'class'
+  content: ['./src/**/*.{js,jsx,ts,tsx}', './public/index.html'],
+  darkMode: 'class', // Force dark mode by default for cyber theme
   theme: {
-    extend: {},
-  },
-  variants: {
-    extend: {},
+    extend: {
+      colors: {
+        'cyber-black': '#0a0a0f',
+        'cyber-gray': '#1c1c24',
+        'neon-green': '#00ff88',
+        'neon-blue': '#00f0ff',
+        'neon-purple': '#b000ff'
+      },
+      boxShadow: {
+        'neon-green': '0 0 10px #00ff88, 0 0 20px #00ff88',
+        'neon-blue': '0 0 10px #00f0ff, 0 0 20px #00f0ff'
+      },
+      keyframes: {
+        'fade-in-up': {
+          '0%': { opacity: '0', transform: 'translateY(10px)' },
+          '100%': { opacity: '1', transform: 'translateY(0)' },
+        }
+      },
+      animation: {
+        'pulse-fast': 'pulse 1.5s cubic-bezier(0.4, 0, 0.6, 1) infinite',
+        'fade-in-up': 'fade-in-up 0.4s ease-out forwards'
+      }
+    },
   },
   plugins: [],
 }

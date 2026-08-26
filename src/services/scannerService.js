@@ -1,53 +1,38 @@
 // src/services/scannerService.js
 
-// Mock function to simulate a cryptographic scan on a given URL/endpoint
+// Function to call the Python OSINT & Cryptographic scanner API
 export const scanEndpoint = async (url) => {
-    return new Promise((resolve) => {
-        // Simulate a delay for the scan (e.g., 2.5 seconds)
-        setTimeout(() => {
-            // Mock scan results
-            const results = {
-                endpoint: url,
-                timestamp: new Date().toISOString(),
-                vulnerabilitiesFound: 2,
-                status: "Vulnerable to Quantum Threats",
-                details: [
-                    {
-                        id: 1,
-                        type: "Key Exchange",
-                        algorithmDetected: "ECDHE (secp256r1)",
-                        threatLevel: "High (Shor's Algorithm)",
-                        recommendation: "Migrate to ML-KEM (Kyber) for quantum-safe key encapsulation."
-                    },
-                    {
-                        id: 2,
-                        type: "Digital Signature",
-                        algorithmDetected: "RSA-2048",
-                        threatLevel: "Critical (Shor's Algorithm)",
-                        recommendation: "Migrate to ML-DSA (Dilithium) or SLH-DSA (SPHINCS+) for quantum-safe signatures."
-                    },
-                    {
-                        id: 3,
-                        type: "Symmetric Encryption",
-                        algorithmDetected: "AES-256-GCM",
-                        threatLevel: "Low (Grover's Algorithm)",
-                        recommendation: "AES-256 is considered quantum-resistant. No immediate action required."
-                    }
-                ]
-            };
-            
-            // Optionally, save a score to local storage based on the scan
-            // Just for demonstration in the readiness report
+    try {
+        const response = await fetch('http://127.0.0.1:5000/api/scan', {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ url: url })
+        });
+        
+        if (!response.ok) {
+            throw new Error(`API Error: ${response.statusText}`);
+        }
+        
+        const results = await response.json();
+        
+        // Add XP to user score if the scan was successful
+        if (results && results.crypto && results.crypto.mission_xp_awarded) {
             const storedScores = JSON.parse(localStorage.getItem("qcapsScores")) || {};
-            storedScores['practical_security'] = 85; // Arbitrary score to show progress
+            storedScores['practical_security'] = (storedScores['practical_security'] || 0) + results.crypto.mission_xp_awarded;
             
-            const totalTopics = Object.keys(storedScores).length;
+            const totalTopics = Object.keys(storedScores).length || 1;
             const overall = Math.round(Object.values(storedScores).reduce((a, b) => a + b, 0) / totalTopics);
             
             localStorage.setItem("qcapsScores", JSON.stringify(storedScores));
             localStorage.setItem("qcapsOverallScore", overall);
+        }
 
-            resolve(results);
-        }, 2500);
-    });
+        return results;
+    } catch (error) {
+        console.error("Failed to connect to Python Scanner API:", error);
+        throw error;
+    }
 };
+

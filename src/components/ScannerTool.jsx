@@ -25,19 +25,20 @@ const ScannerTool = () => {
     };
 
     return (
-        <div className="bg-white p-6 rounded-lg shadow-md">
-            <h2 className="text-xl font-bold mb-4">Cryptographic Scan Configuration</h2>
+        <div className="bg-cyber-gray border border-neon-blue/30 p-8 rounded-xl shadow-neon-blue max-w-6xl mx-auto">
+            <h2 className="text-2xl font-bold mb-6 text-neon-blue border-b border-neon-blue/30 pb-2">Target Acquisition</h2>
+            
             <form onSubmit={handleScan} className="mb-8">
-                <div className="flex gap-4 items-end">
-                    <div className="flex-grow">
-                        <label htmlFor="url" className="block text-gray-700 font-semibold mb-2">Target Endpoint / URL</label>
+                <div className="flex flex-col md:flex-row gap-4 items-end">
+                    <div className="flex-grow w-full">
+                        <label htmlFor="url" className="block text-gray-400 font-mono mb-2 text-sm">INITIALIZE_TARGET_URL:</label>
                         <input 
                             type="text" 
                             id="url" 
                             value={url}
                             onChange={(e) => setUrl(e.target.value)}
-                            placeholder="https://example.com"
-                            className="form-input block w-full border border-gray-300 rounded p-2 focus:ring-blue-500 focus:border-blue-500"
+                            placeholder="example.com"
+                            className="w-full bg-black border border-gray-700 text-neon-green rounded px-4 py-3 font-mono focus:outline-none focus:border-neon-green focus:shadow-neon-green transition-all"
                             required
                             disabled={isScanning}
                         />
@@ -45,49 +46,119 @@ const ScannerTool = () => {
                     <button 
                         type="submit" 
                         disabled={isScanning || !url}
-                        className={`py-2 px-6 rounded font-semibold text-white ${
-                            isScanning ? 'bg-gray-400 cursor-not-allowed' : 'bg-red-600 hover:bg-red-700'
+                        className={`w-full md:w-auto py-3 px-8 rounded font-black tracking-widest text-cyber-black transition-all ${
+                            isScanning ? 'bg-gray-600 cursor-not-allowed' : 'bg-neon-green hover:bg-white shadow-neon-green'
                         }`}
                     >
-                        {isScanning ? 'Scanning...' : 'Launch Scan'}
+                        {isScanning ? 'INITIALIZING...' : 'EXECUTE SCAN'}
                     </button>
                 </div>
             </form>
 
             {isScanning && (
-                <div className="mb-6 p-4 border border-blue-200 rounded bg-blue-50">
-                    <p className="text-blue-800 font-semibold flex items-center">
-                        <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-blue-800" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <div className="mb-8 p-6 border border-neon-purple/50 rounded bg-neon-purple/10 font-mono animate-pulse">
+                    <p className="text-neon-purple font-bold flex items-center text-lg">
+                        <svg className="animate-spin -ml-1 mr-4 h-6 w-6 text-neon-purple" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                             <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
                             <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                         </svg>
-                        Analyzing cryptographic handshake and identifying algorithms...
+                        [EXECUTING] OSINT & INFRASTRUCTURE ENUMERATION...
                     </p>
                 </div>
             )}
 
             {scanResult && (
-                <div className="border border-gray-200 rounded p-4">
-                    <h3 className="text-lg font-bold mb-2 text-gray-800">Scan Results for: <span className="text-blue-600 font-normal">{scanResult.endpoint}</span></h3>
-                    <p className={`font-semibold mb-4 ${scanResult.vulnerabilitiesFound > 0 ? 'text-red-600' : 'text-green-600'}`}>
-                        Status: {scanResult.status}
-                    </p>
+                <div className="animate-fade-in-up">
+                    <h3 className="text-2xl font-bold mb-6 text-white border-b border-gray-700 pb-2 flex justify-between items-end">
+                        <span>OSINT Report: <span className="text-neon-green font-mono">{scanResult.target_url}</span></span>
+                        <span className="text-neon-green font-black text-xl">+{scanResult.crypto.mission_xp_awarded} XP EARNED</span>
+                    </h3>
                     
-                    <div className="space-y-4">
-                        {scanResult.details.map((detail) => (
-                            <div key={detail.id} className="p-3 rounded bg-gray-50 border border-gray-100">
-                                <div className="flex justify-between items-start mb-2">
-                                    <h4 className="font-semibold text-gray-800">{detail.type}</h4>
-                                    <span className={`px-2 py-1 text-xs font-bold rounded text-white ${
-                                        detail.threatLevel.includes('High') || detail.threatLevel.includes('Critical') ? 'bg-red-500' : 'bg-green-500'
-                                    }`}>
-                                        {detail.threatLevel}
-                                    </span>
-                                </div>
-                                <p className="text-sm mb-1"><span className="font-semibold text-gray-700">Algorithm Detected:</span> {detail.algorithmDetected}</p>
-                                <p className="text-sm text-gray-600"><span className="font-semibold text-gray-700">Recommendation:</span> {detail.recommendation}</p>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                        
+                        {/* Column 1: OSINT Data */}
+                        <div className="bg-black/40 border border-gray-700 rounded-lg p-5">
+                            <h4 className="text-neon-blue font-bold mb-4 font-mono">&gt;&gt; DOMAIN_RECON</h4>
+                            <div className="space-y-3 font-mono text-sm text-gray-300">
+                                <p><span className="text-gray-500">OWNER_ORG:</span> {scanResult.osint.owner_organization}</p>
+                                <p><span className="text-gray-500">REGISTRAR:</span> {scanResult.osint.registrar}</p>
+                                <p><span className="text-gray-500">CREATED:</span> {scanResult.osint.creation_date.split('T')[0]}</p>
+                                <p><span className="text-gray-500">EXPIRES:</span> {scanResult.osint.expiration_date.split('T')[0]}</p>
                             </div>
-                        ))}
+                        </div>
+
+                        {/* Column 2: Geolocation & IP */}
+                        <div className="bg-black/40 border border-gray-700 rounded-lg p-5">
+                            <h4 className="text-yellow-400 font-bold mb-4 font-mono">&gt;&gt; IP_TRACKER</h4>
+                            <div className="space-y-3 font-mono text-sm text-gray-300">
+                                <p><span className="text-gray-500">TARGET_IP:</span> <span className="text-yellow-400">{scanResult.infrastructure.geo.ip}</span></p>
+                                <p><span className="text-gray-500">LOCATION:</span> {scanResult.infrastructure.geo.country}</p>
+                                <p><span className="text-gray-500">PROVIDER:</span> {scanResult.infrastructure.geo.isp}</p>
+                            </div>
+                        </div>
+
+                        {/* Column 3: DNS Enumeration */}
+                        <div className="bg-black/40 border border-gray-700 rounded-lg p-5">
+                            <h4 className="text-orange-500 font-bold mb-4 font-mono">&gt;&gt; DNS_ENUMERATION</h4>
+                            <div className="space-y-3 font-mono text-xs text-gray-300 max-h-32 overflow-y-auto">
+                                <div>
+                                    <span className="text-gray-500 block mb-1">A_RECORDS:</span>
+                                    {scanResult.infrastructure.dns.A.map((r, i) => <div key={i} className="pl-2">{r}</div>)}
+                                </div>
+                                <div>
+                                    <span className="text-gray-500 block mb-1">MX_RECORDS:</span>
+                                    {scanResult.infrastructure.dns.MX.map((r, i) => <div key={i} className="pl-2">{r}</div>)}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Column 4: Security Headers */}
+                        <div className="bg-black/40 border border-gray-700 rounded-lg p-5">
+                            <h4 className="text-pink-500 font-bold mb-4 font-mono">&gt;&gt; HTTP_HEADERS</h4>
+                            <div className="space-y-3 font-mono text-sm text-gray-300">
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">STRICT_TRANSPORT:</span> 
+                                    {scanResult.infrastructure.security_headers.hsts ? <span className="text-neon-green">ACTIVE</span> : <span className="text-red-500">MISSING</span>}
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">CONTENT_SECURITY:</span> 
+                                    {scanResult.infrastructure.security_headers.content_security_policy ? <span className="text-neon-green">ACTIVE</span> : <span className="text-red-500">MISSING</span>}
+                                </div>
+                                <div className="flex justify-between">
+                                    <span className="text-gray-500">X_FRAME_OPTIONS:</span> 
+                                    {scanResult.infrastructure.security_headers.x_frame_options ? <span className="text-neon-green">ACTIVE</span> : <span className="text-red-500">MISSING</span>}
+                                </div>
+                            </div>
+                        </div>
+
+                        {/* Column 5: Crypto Analysis (Spans 2 columns) */}
+                        <div className="bg-black/40 border border-gray-700 rounded-lg p-5 lg:col-span-2">
+                            <h4 className="text-neon-purple font-bold mb-4 font-mono">&gt;&gt; CRYPTO_ANALYSIS</h4>
+                            
+                            <div className="flex gap-8 mb-4">
+                                <div>
+                                    <span className="text-gray-500 font-mono text-sm block">ENCRYPTION: </span>
+                                    <span className="font-bold text-white text-lg">{scanResult.crypto.encryption_detected}</span>
+                                </div>
+                                <div>
+                                    <span className="text-gray-500 font-mono text-sm block">VULNERABILITY_STATUS: </span>
+                                    {scanResult.crypto.is_quantum_safe ? (
+                                        <span className="px-3 py-1 bg-neon-green/20 text-neon-green border border-neon-green rounded font-bold text-sm">QUANTUM SECURE</span>
+                                    ) : (
+                                        <span className="px-3 py-1 bg-red-600/20 text-red-500 border border-red-500 rounded font-bold text-sm animate-pulse">VULNERABLE TO QUANTUM THREAT</span>
+                                    )}
+                                </div>
+                            </div>
+
+                            {!scanResult.crypto.is_quantum_safe && (
+                                <div className="p-3 bg-red-900/20 border border-red-900/50 rounded">
+                                    <p className="text-red-400 font-mono text-xs font-bold mb-1">WARNING_LOG:</p>
+                                    <ul className="list-disc list-inside text-red-300 text-sm">
+                                        {scanResult.crypto.vulnerabilities_found.map((v, i) => <li key={i}>{v}</li>)}
+                                    </ul>
+                                </div>
+                            )}
+                        </div>
                     </div>
                 </div>
             )}
@@ -96,3 +167,4 @@ const ScannerTool = () => {
 };
 
 export default ScannerTool;
+

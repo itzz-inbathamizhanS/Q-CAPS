@@ -6,14 +6,17 @@ import ScannerTool from '../components/ScannerTool';
 
 const ScannerPage = () => {
     return (
-        <div>
+        <div className="min-h-screen bg-cyber-black text-white flex flex-col font-sans">
             <Header />
-            <main className="container mx-auto p-4">
-                <h1 className="text-2xl font-bold mb-4">Cryptographic Scanning Engine</h1>
-                <p className="text-gray-700 mb-6">
-                    Simulate scanning authorized endpoints to discover classical cryptographic algorithms 
-                    that are vulnerable to quantum computing threats and identify a migration path to NIST-approved PQC.
-                </p>
+            <main className="container mx-auto p-8 flex-grow">
+                <div className="text-center mb-12 animate-pulse-fast">
+                    <h1 className="text-5xl font-extrabold text-transparent bg-clip-text bg-gradient-to-r from-neon-green to-neon-blue">
+                        Quantum OSINT Recon
+                    </h1>
+                    <p className="text-gray-400 mt-2 text-lg">
+                        Execute deep cryptographic analysis and WHOIS reconnaissance on authorized targets.
+                    </p>
+                </div>
                 <ScannerTool />
             </main>
             <Footer />
