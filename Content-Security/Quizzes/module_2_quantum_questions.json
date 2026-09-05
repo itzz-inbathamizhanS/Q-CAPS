@@ -1,0 +1,14 @@
+{
+  "module_id": "module_2_quantum",
+  "title": "Module 2 Quiz: The Full Quantum Concept",
+  "difficulty": "professional",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "m2-q1", "prompt": "What does it mean for a qubit to be in superposition?", "options": ["It is always 0", "It is always 1", "It exists as a combination of 0 and 1 until measured", "It has been deleted"], "correct_index": 2, "explanation": "Superposition means the qubit holds a combination of both basis states until measured, at which point it collapses to one." },
+    { "id": "m2-q2", "prompt": "How many simultaneous states can a system of n qubits represent (ideally, before measurement)?", "options": ["n", "2n", "n^2", "2^n"], "correct_index": 3, "explanation": "n qubits can represent 2^n states simultaneously in superposition, the source of quantum parallelism." },
+    { "id": "m2-q3", "prompt": "What happens when two qubits become entangled?", "options": ["They can no longer be measured", "Measuring one instantly determines information about the other, regardless of distance", "They merge into a single classical bit", "They become immune to noise"], "correct_index": 1, "explanation": "Entanglement links qubits so measuring one gives instant information about the correlated state of the other." },
+    { "id": "m2-q4", "prompt": "Which statement correctly distinguishes QKD from PQC?", "options": ["They are the same thing", "QKD uses quantum physics/hardware to distribute keys; PQC uses classical math on ordinary computers", "PQC requires quantum hardware; QKD does not", "Neither is relevant to cybersecurity"], "correct_index": 1, "explanation": "QKD distributes keys using quantum phenomena over specialized hardware. PQC is classical math designed to resist quantum attacks and runs on today's computers — Q-CAPS focuses on PQC." },
+    { "id": "m2-q5", "prompt": "What best describes today's 'NISQ era' quantum computers?", "options": ["Fully error-corrected machines that can already break RSA-2048", "Noisy, intermediate-scale machines not yet capable of breaking modern RSA/ECC at scale", "Machines that only run classical algorithms", "Machines banned from commercial use"], "correct_index": 1, "explanation": "NISQ machines are still limited by noise and scale, and cannot yet break RSA-2048 in practice — but proactive migration is still needed." },
+    { "id": "m2-q6", "prompt": "In the qubit notation α|0⟩ + β|1⟩, what do α and β represent conceptually?", "options": ["The physical temperature of the qubit", "Probability amplitudes for measuring 0 or 1", "The encryption key length", "The number of logic gates used"], "correct_index": 1, "explanation": "α and β are probability amplitudes; their squared magnitudes give the probability of measuring 0 or 1 respectively." }
+  ]
+}

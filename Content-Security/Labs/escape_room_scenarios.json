@@ -1,0 +1,51 @@
+{
+  "labSet": "PQC Escape Room Scenarios",
+  "description": "Branching scenario labs. Wrong choices show consequences and a hint before allowing retry, rather than a plain 'incorrect' mark. On correct completion, the badge name below must be added to the user's unlocked_badges array exactly as written (matches shared_data_schema.md convention, e.g. 'Quantum Novice', 'RSA Hacker').",
+  "scenarios": [
+    {
+      "id": "escape-1-hndl",
+      "title": "The Patient Records Leak",
+      "module_id": "module_3_pqc_mitigation",
+      "difficulty": "novice",
+      "setup": "You're the security lead at a hospital. Your patient records are encrypted with RSA-2048 and must remain confidential for 25 years per regulation. An intelligence report indicates a foreign actor has been silently intercepting and storing your encrypted traffic for the past year.",
+      "prompt": "A threat actor has stolen your encrypted data today and will decrypt it in 5-10 years using a quantum computer. Which mitigation strategy do you apply?",
+      "choices": [
+        { "id": "a", "text": "Do nothing — RSA-2048 hasn't been broken yet, so there's no current risk.", "correct": false, "feedback": "Incorrect. This ignores 'Harvest Now, Decrypt Later.' Data with a 25-year confidentiality requirement is at risk today because it's already being captured." },
+        { "id": "b", "text": "Begin migrating long-lifetime data flows to hybrid classical+PQC encryption (e.g., ECDHE + ML-KEM) immediately, prioritized by data sensitivity and lifetime.", "correct": true, "feedback": "Correct. This directly addresses HNDL risk and hedges against any early flaws in newer PQC algorithms." },
+        { "id": "c", "text": "Switch immediately to pure ML-KEM with no classical fallback, since PQC is 'quantum-safe.'", "correct": false, "feedback": "Risky. Dropping classical crypto entirely removes the safety net if a bug is later found in a newly standardized algorithm — hybrid is the recommended transition strategy." }
+      ],
+      "badge_awarded": "HNDL Responder",
+      "mission_xp_awarded": 50
+    },
+    {
+      "id": "escape-2-cert-chain",
+      "title": "The Cracked Chain of Trust",
+      "module_id": "module_3_pqc_mitigation",
+      "difficulty": "professional",
+      "setup": "Your organization's root CA still signs certificates using RSA-2048. A Q-CAPS scan flags this as a long-term migration risk across 40 downstream systems.",
+      "prompt": "You have limited migration budget this quarter. What's the most crypto-agile first move?",
+      "choices": [
+        { "id": "a", "text": "Re-issue all 40 downstream certificates individually with ML-DSA signatures, leaving the root CA unchanged.", "correct": false, "feedback": "Inefficient and inconsistent. If the root CA stays RSA-based, the whole chain still depends on it — you'd need to redo this work later." },
+        { "id": "b", "text": "Pilot a hybrid root CA (RSA + ML-DSA signatures) first, then cascade migration down the chain in priority order of asset criticality.", "correct": true, "feedback": "Correct. Migrating the root first, in hybrid mode, protects the entire chain and follows crypto-agility best practice." },
+        { "id": "c", "text": "Ignore the root CA and only patch the 5 lowest-criticality systems first, since they're 'easiest.'", "correct": false, "feedback": "This misprioritizes effort — migration should follow risk and criticality, not ease of implementation." }
+      ],
+      "badge_awarded": "Crypto-Agility Architect",
+      "mission_xp_awarded": 75
+    },
+    {
+      "id": "escape-3-symmetric",
+      "title": "The Overlooked AES Key",
+      "module_id": "module_3_pqc_mitigation",
+      "difficulty": "novice",
+      "setup": "A Q-CAPS scan of your file storage system shows AES-128 encryption protecting archived financial records with a 10-year retention requirement.",
+      "prompt": "Grover's algorithm roughly halves effective symmetric key strength against a quantum attacker. What should you do?",
+      "choices": [
+        { "id": "a", "text": "Leave it as-is — AES-128 is still considered 'strong' classically.", "correct": false, "feedback": "Incomplete. Its effective strength against a future quantum attacker (~64-bit equivalent) is inadequate for a 10-year retention requirement." },
+        { "id": "b", "text": "Upgrade to AES-256 for all newly stored data with long retention, and prioritize re-encrypting the most sensitive existing archives.", "correct": true, "feedback": "Correct. Doubling key length is a well-understood mitigation for Grover's algorithm's quadratic speedup." },
+        { "id": "c", "text": "Switch to ML-KEM for the archived files instead of AES.", "correct": false, "feedback": "Mismatched tool. ML-KEM is a key-exchange mechanism, not a symmetric encryption algorithm." }
+      ],
+      "badge_awarded": "Symmetric Defender",
+      "mission_xp_awarded": 40
+    }
+  ]
+}
