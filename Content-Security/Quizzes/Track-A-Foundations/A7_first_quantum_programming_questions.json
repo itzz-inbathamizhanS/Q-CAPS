@@ -1,0 +1,68 @@
+{
+  "module_id": "track_a_a7_first_quantum_programming",
+  "title": "A7 Quiz: First Quantum Programming",
+  "difficulty": "novice",
+  "passing_score_percent": 70,
+  "questions": [
+    {
+      "id": "a7-q1",
+      "prompt": "What Python framework is used throughout this program for quantum programming?",
+      "options": [
+        "TensorFlow",
+        "Qiskit",
+        "Django",
+        "NumPy alone"
+      ],
+      "correct_index": 1,
+      "explanation": "Qiskit is IBM's open-source Python framework used throughout the program for building and running quantum circuits."
+    },
+    {
+      "id": "a7-q2",
+      "prompt": "Why are simulators used before running circuits on real quantum hardware?",
+      "options": [
+        "Simulators are required by law",
+        "They let learners test and debug circuits without noise or hardware access limits",
+        "Real hardware doesn't exist",
+        "Simulators are always more accurate than real hardware"
+      ],
+      "correct_index": 1,
+      "explanation": "Simulators provide a controlled, accessible environment to test and debug circuits before using limited real hardware."
+    },
+    {
+      "id": "a7-q3",
+      "prompt": "In Qiskit, what does a 'shot' refer to?",
+      "options": [
+        "A single gate operation",
+        "One full run of the circuit, producing one measurement outcome",
+        "An error in the code",
+        "A type of qubit"
+      ],
+      "correct_index": 1,
+      "explanation": "A 'shot' is one execution of the circuit; running many shots reveals the underlying probability distribution."
+    },
+    {
+      "id": "a7-q4",
+      "prompt": "What does noise simulation help demonstrate?",
+      "options": [
+        "That quantum computers never make errors",
+        "How real hardware's error rates degrade expected circuit results",
+        "How to skip using a simulator entirely",
+        "That noise only affects classical computers"
+      ],
+      "correct_index": 1,
+      "explanation": "Noise simulation shows how real-world hardware imperfections affect circuit results compared to the ideal simulator."
+    },
+    {
+      "id": "a7-q5",
+      "prompt": "What does the Beginner Capstone combine?",
+      "options": [
+        "Only quantum circuits",
+        "A secured network, a cryptographic application, and a quantum circuit",
+        "Only Python scripting",
+        "Only certificate analysis"
+      ],
+      "correct_index": 1,
+      "explanation": "The Beginner Capstone combines networking, cryptography, and quantum programming into one project."
+    }
+  ]
+}

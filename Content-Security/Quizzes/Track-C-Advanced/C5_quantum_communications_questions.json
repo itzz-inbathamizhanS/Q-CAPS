@@ -1,0 +1,13 @@
+{
+  "module_id": "track_c_c5_quantum_communications",
+  "title": "C5 Quiz: Quantum Communications",
+  "difficulty": "quantum_expert",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "c5-q1", "prompt": "How much classical information can superdense coding transmit using one qubit and one pre-shared entangled pair?", "options": ["0.5 classical bits", "1 classical bit", "2 classical bits", "4 classical bits"], "correct_index": 2, "explanation": "Superdense coding transmits 2 classical bits using one qubit transmission plus pre-shared entanglement — twice the capacity of an unentangled qubit." },
+    { "id": "c5-q2", "prompt": "What resource cost does quantum teleportation require to transmit one qubit's worth of information?", "options": ["No resources at all", "One shared entangled pair and 2 classical bits of communication", "Only a classical bit, no entanglement needed", "10 entangled pairs"], "correct_index": 1, "explanation": "Teleportation consumes one shared entangled pair and requires transmitting 2 classical bits to convey one qubit's quantum information." },
+    { "id": "c5-q3", "prompt": "Why does no-cloning force quantum communication protocols to be designed around 'consuming' entanglement resources?", "options": ["Entanglement can be freely duplicated", "Because quantum information cannot be copied, so it must be consumed/used directly rather than amplified or duplicated", "No-cloning doesn't affect communication protocols", "Classical communication has the same restriction"], "correct_index": 1, "explanation": "Since quantum information can't be copied, protocols must consume entanglement resources directly rather than duplicating signals as classical systems do." },
+    { "id": "c5-q4", "prompt": "What is a key advantage of satellite-based quantum communication over pure fiber-based approaches?", "options": ["Satellites have no distance limitations at all", "Free-space links avoid the cumulative photon loss of long fiber runs, enabling longer-range entanglement distribution", "Satellites are cheaper than fiber", "Satellites don't use photons"], "correct_index": 1, "explanation": "Satellite links avoid cumulative fiber photon loss, enabling demonstrated longer-range entanglement distribution than fiber alone currently achieves." },
+    { "id": "c5-q5", "prompt": "What two metrics determine a real quantum communication system's performance?", "options": ["Screen brightness and battery life", "Entanglement distribution rate and fidelity", "CPU clock speed and RAM", "Only cost"], "correct_index": 1, "explanation": "Entanglement distribution rate (pairs generated per second) and fidelity (closeness to perfect entanglement) are the key performance metrics." }
+  ]
+}

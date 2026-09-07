@@ -1,0 +1,13 @@
+{
+  "module_id": "track_a_a6_quantum_foundations",
+  "title": "A6 Quiz: Quantum Foundations",
+  "difficulty": "novice",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "a6-q1", "prompt": "What do the north and south poles of the Bloch sphere represent?", "options": ["Two different qubits", "The definite |0⟩ and |1⟩ states", "Measurement error", "Entanglement strength"], "correct_index": 1, "explanation": "The Bloch sphere's poles represent the two definite basis states, |0⟩ and |1⟩." },
+    { "id": "a6-q2", "prompt": "What happens to a qubit's superposition upon measurement?", "options": ["Nothing changes", "It collapses to a definite classical outcome", "It doubles in strength", "It becomes entangled automatically"], "correct_index": 1, "explanation": "Measurement is destructive to superposition — it collapses the qubit to one definite classical result." },
+    { "id": "a6-q3", "prompt": "What is quantum interference used for in algorithm design?", "options": ["Increasing noise deliberately", "Amplifying the probability of correct answers while canceling out wrong ones", "Slowing down computation", "Creating entanglement only"], "correct_index": 1, "explanation": "Interference lets algorithm designers boost the probability of measuring correct answers while suppressing wrong ones." },
+    { "id": "a6-q4", "prompt": "What mathematical operation combines individual qubit states into a multi-qubit system?", "options": ["Simple addition", "Tensor product", "Subtraction", "Division"], "correct_index": 1, "explanation": "The tensor product combines individual qubit state vectors, explaining the 2^n scaling of multi-qubit systems." },
+    { "id": "a6-q5", "prompt": "Which gate is commonly used to create an equal superposition from a definite |0⟩ state?", "options": ["CNOT gate", "Hadamard gate", "X gate only", "Measurement gate"], "correct_index": 1, "explanation": "The Hadamard gate rotates a definite state to the equator of the Bloch sphere, creating an equal superposition." }
+  ]
+}

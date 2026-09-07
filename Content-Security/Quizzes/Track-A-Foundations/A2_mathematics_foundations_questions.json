@@ -1,0 +1,13 @@
+{
+  "module_id": "track_a_a2_mathematics_foundations",
+  "title": "A2 Quiz: Mathematics Foundations",
+  "difficulty": "novice",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "a2-q1", "prompt": "A 2048-bit RSA key means the key has how many possible values, in exponent form?", "options": ["2 x 2048", "2^2048", "2048^2", "2048/2"], "correct_index": 1, "explanation": "Bit-length describes key strength as an exponent: an n-bit key has 2^n possible values." },
+    { "id": "a2-q2", "prompt": "What does a complex number consist of?", "options": ["Two real parts", "A real part and an imaginary part", "Only imaginary numbers", "A vector and a matrix"], "correct_index": 1, "explanation": "A complex number has a real part and an imaginary part, e.g. 3 + 4i." },
+    { "id": "a2-q3", "prompt": "What is an eigenvector of a transformation?", "options": ["A vector that gets rotated but not scaled", "A vector that only gets scaled, not rotated, by the transformation", "Any random vector", "A vector with zero length"], "correct_index": 1, "explanation": "An eigenvector is only scaled (by its eigenvalue), not rotated, when the transformation is applied." },
+    { "id": "a2-q4", "prompt": "In Boolean math, what does XOR output when both inputs are the same?", "options": ["1 (true)", "0 (false)", "Undefined", "Both 0 and 1"], "correct_index": 1, "explanation": "XOR outputs false (0) when both inputs match, and true (1) only when they differ." },
+    { "id": "a2-q5", "prompt": "Why is probability and statistics foundational for quantum computing?", "options": ["Quantum computers use random passwords", "Quantum measurement outcomes are inherently probabilistic", "It's only used for classical error checking", "It's not actually relevant"], "correct_index": 1, "explanation": "Quantum measurement doesn't give a deterministic outcome — it gives a probabilistic one, making probability theory essential groundwork." }
+  ]
+}

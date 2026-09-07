@@ -1,0 +1,13 @@
+{
+  "module_id": "track_c_c1_advanced_quantum_information",
+  "title": "C1 Quiz: Advanced Quantum Information",
+  "difficulty": "quantum_expert",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "c1-q1", "prompt": "What formal mathematical setting is quantum mechanics defined in?", "options": ["Euclidean geometry", "Hilbert space", "Boolean algebra alone", "Cartesian coordinates only"], "correct_index": 1, "explanation": "A Hilbert space is the complete, formal complex vector space setting quantum mechanics is defined in." },
+    { "id": "c1-q2", "prompt": "What two defining properties must a valid density operator have?", "options": ["Negative entries and trace of 0", "Positive semi-definite and trace equal to 1", "Only real number entries", "Infinite dimensionality"], "correct_index": 1, "explanation": "A density operator must be positive semi-definite with trace equal to 1 to be a valid quantum state description." },
+    { "id": "c1-q3", "prompt": "Why must a quantum channel be 'completely positive,' not just 'positive'?", "options": ["It's not actually required", "To correctly describe how the channel acts on part of a larger entangled system", "Complete positivity only matters for classical channels", "It ensures the channel runs faster"], "correct_index": 1, "explanation": "Complete positivity ensures the channel produces valid states even when acting on part of a larger entangled system, a stronger requirement than simple positivity." },
+    { "id": "c1-q4", "prompt": "What does Von Neumann entropy quantify?", "options": ["The temperature of a qubit", "The uncertainty or 'mixedness' of a density operator", "The speed of a quantum gate", "The number of physical qubits available"], "correct_index": 1, "explanation": "Von Neumann entropy extends Shannon entropy to quantum states, quantifying uncertainty/mixedness — also used to measure entanglement." },
+    { "id": "c1-q5", "prompt": "What does a POVM generalize beyond simple projective measurement?", "options": ["Nothing new", "The most general possible description of a quantum measurement, including imperfect real devices", "Only classical measurement", "Entanglement generation"], "correct_index": 1, "explanation": "A POVM generalizes projective measurement to accurately model the most general, including imperfect, quantum measurement devices." }
+  ]
+}

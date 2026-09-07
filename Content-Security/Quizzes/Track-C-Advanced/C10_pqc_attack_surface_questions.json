@@ -1,0 +1,13 @@
+{
+  "module_id": "track_c_c10_pqc_attack_surface",
+  "title": "C10 Quiz: PQC Attack Surface",
+  "difficulty": "quantum_expert",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "c10-q1", "prompt": "What can a side-channel attack extract without breaking the underlying cryptographic math?", "options": ["Nothing useful", "Secret information, by observing unintended physical signals like timing, power, or cache behavior", "Only publicly available data", "The algorithm's name"], "correct_index": 1, "explanation": "Side-channel attacks extract secrets by observing unintended leaked signals (timing, power, cache), not by breaking the underlying math." },
+    { "id": "c10-q2", "prompt": "What implementation practice directly defends against timing attacks?", "options": ["Faster hardware alone", "Constant-time design, ensuring execution time doesn't depend on secret data", "Using longer keys only", "Ignoring the issue since it's rare"], "correct_index": 1, "explanation": "Constant-time design ensures execution time is independent of secret data, directly countering timing-based information leakage." },
+    { "id": "c10-q3", "prompt": "What is a protocol downgrade attack?", "options": ["A software update process", "An attacker manipulating negotiation to force use of a weaker algorithm than both parties would otherwise agree to", "A method for upgrading to PQC safely", "A type of side-channel attack"], "correct_index": 1, "explanation": "A downgrade attack forces both parties into a weaker algorithm than they'd otherwise negotiate, relevant to PQC migration scenarios." },
+    { "id": "c10-q4", "prompt": "Why is randomness quality often a root cause across multiple attack categories?", "options": ["Randomness quality doesn't matter for security", "Weak or predictable randomness can undermine an otherwise mathematically sound scheme entirely, both classical and PQC", "Only PQC schemes are affected by randomness weaknesses", "Randomness only affects performance, not security"], "correct_index": 1, "explanation": "Weak or predictable randomness is one of the most common real-world causes of cryptographic failure across both classical and PQC systems." },
+    { "id": "c10-q5", "prompt": "What is a supply-chain risk in the context of PQC deployment?", "options": ["A shipping delay for hardware", "The cryptographic libraries and hardware components an organization depends on could themselves be compromised upstream", "A pricing negotiation issue", "A type of side-channel attack specifically"], "correct_index": 1, "explanation": "Supply-chain risk refers to potential compromise of the upstream libraries or hardware an organization relies on for its PQC implementation." }
+  ]
+}

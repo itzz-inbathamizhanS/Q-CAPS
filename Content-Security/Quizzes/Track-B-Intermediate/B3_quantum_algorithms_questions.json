@@ -1,0 +1,13 @@
+{
+  "module_id": "track_b_b3_quantum_algorithms",
+  "title": "B3 Quiz: Quantum Algorithms",
+  "difficulty": "professional",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "b3-q1", "prompt": "Which algorithm's period-finding technique directly inspired Shor's algorithm?", "options": ["Deutsch-Jozsa", "Simon's algorithm", "Grover's algorithm", "QAOA"], "correct_index": 1, "explanation": "Simon's algorithm solves a hidden-period problem and directly inspired the period-finding technique at the heart of Shor's algorithm." },
+    { "id": "b3-q2", "prompt": "What two operators does Grover's algorithm repeatedly apply?", "options": ["Encryption and decryption", "An oracle (marking the answer) and a diffusion operator (amplifying its amplitude)", "Hashing and signing", "Compression and decompression"], "correct_index": 1, "explanation": "Grover's algorithm repeatedly applies an oracle to mark the correct answer and a diffusion operator to amplify its amplitude." },
+    { "id": "b3-q3", "prompt": "What is the Quantum Fourier Transform (QFT) primarily used for?", "options": ["Standalone data compression", "A critical subroutine inside phase estimation and Shor's algorithm", "Classical file encryption", "Password hashing"], "correct_index": 1, "explanation": "The QFT isn't typically useful standalone but is the critical subroutine inside phase estimation, which powers Shor's algorithm." },
+    { "id": "b3-q4", "prompt": "How does Grover's quadratic speedup compare to Shor's speedup against the problems they target?", "options": ["Both are exponential", "Grover's is quadratic; Shor's is exponential — a much more severe threat to RSA/ECC", "Grover's is exponential; Shor's is quadratic", "Neither offers any speedup"], "correct_index": 1, "explanation": "Grover's algorithm offers a quadratic speedup for search; Shor's offers an exponential speedup for factoring — making Shor's the far more serious cryptographic threat." },
+    { "id": "b3-q5", "prompt": "What distinguishes variational algorithms like VQE from Shor's algorithm in terms of hardware requirements?", "options": ["They require identical hardware", "Variational algorithms are designed to run on today's noisy NISQ-era hardware, unlike Shor's which needs full error correction", "VQE requires MORE error correction than Shor's", "Neither requires any quantum hardware"], "correct_index": 1, "explanation": "Variational algorithms (VQE, QAOA) are designed to be useful even on noisy near-term hardware, unlike Shor's algorithm which requires large-scale fault tolerance." }
+  ]
+}

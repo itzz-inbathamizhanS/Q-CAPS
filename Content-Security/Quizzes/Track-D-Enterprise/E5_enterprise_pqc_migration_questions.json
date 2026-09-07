@@ -1,0 +1,13 @@
+{
+  "module_id": "track_d_e5_enterprise_pqc_migration",
+  "title": "E5 Quiz: Enterprise PQC Migration",
+  "difficulty": "professional",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "e5-q1", "prompt": "What is the correct order of the 12-phase enterprise migration process?", "options": ["Migrate first, then discover assets afterward", "Discover, Inventory, Classify, Risk-Rank, Select PQC, Prototype, Benchmark, Pilot, Hybrid Migration, Production Rollout, Monitor, Retire", "Retire, then discover", "Random order, sequence doesn't matter"], "correct_index": 1, "explanation": "The migration process follows a specific sequence: Discover through Retire, ensuring each phase's output grounds the next." },
+    { "id": "e5-q2", "prompt": "Why do most organizations migrate through hybrid cryptography rather than a direct cutover?", "options": ["Hybrid is always slower with no benefit", "It maintains security even if unexpected issues emerge with the newer PQC components", "Direct cutover is always safer", "Hybrid cryptography is required by law"], "correct_index": 1, "explanation": "Hybrid migration maintains security through the transition, hedging against unexpected issues with newly deployed PQC components." },
+    { "id": "e5-q3", "prompt": "What is the purpose of the 'Pilot' phase before full production rollout?", "options": ["To skip testing entirely", "Validating real-world behavior and interoperability on a limited, monitored subset before full deployment", "To announce the migration publicly", "To reduce the migration budget"], "correct_index": 1, "explanation": "Piloting validates real-world behavior on a limited scope, catching issues with limited blast radius before full rollout." },
+    { "id": "e5-q4", "prompt": "What is the final phase, often delayed too long in practice?", "options": ["Discover", "Retire vulnerable cryptography", "Prototype", "Classify"], "correct_index": 1, "explanation": "Retiring the classical-only fallback is the final phase, often delayed in practice even after hybrid deployment has proven stable." },
+    { "id": "e5-q5", "prompt": "What ongoing activity does the 'Monitor' phase feed back into?", "options": ["Nothing further", "The readiness assessment process, as an ongoing cycle rather than a one-time project", "Only the marketing team", "Employee performance reviews"], "correct_index": 1, "explanation": "Monitoring feeds back into the readiness assessment process, reflecting that migration is an ongoing cycle, not a single event." }
+  ]
+}

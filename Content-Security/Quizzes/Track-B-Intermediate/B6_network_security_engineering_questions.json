@@ -1,0 +1,13 @@
+{
+  "module_id": "track_b_b6_network_security_engineering",
+  "title": "B6 Quiz: Network & Security Engineering",
+  "difficulty": "professional",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "b6-q1", "prompt": "What is the core principle of Zero Trust architecture?", "options": ["Trust all devices inside the network perimeter automatically", "Never automatically trust any device or user, inside or outside the perimeter — verify every request", "Trust is granted permanently after first login", "Only external users need verification"], "correct_index": 1, "explanation": "Zero Trust never automatically trusts any device or user; every request is independently authenticated and authorized." },
+    { "id": "b6-q2", "prompt": "What does network segmentation aim to prevent?", "options": ["Devices from connecting to the internet", "A compromise in one zone from automatically granting access to others", "DNS resolution failures", "TLS handshakes"], "correct_index": 1, "explanation": "Segmentation isolates network zones so that a compromise in one doesn't automatically compromise the rest." },
+    { "id": "b6-q3", "prompt": "What does IAM primarily manage?", "options": ["Internet bandwidth allocation", "Identity and access — including SSO and MFA — across systems", "Physical server temperature", "DNS record types"], "correct_index": 1, "explanation": "IAM (Identity and Access Management) covers centralized identity, single sign-on, and multi-factor authentication across systems." },
+    { "id": "b6-q4", "prompt": "Why is VPN cryptography directly relevant to this program's PQC migration concerns?", "options": ["VPNs don't use cryptography", "VPN tunnels often rely on TLS or IPsec, subject to the same PQC migration considerations as any TLS deployment", "VPNs are being phased out entirely", "VPN cryptography is unrelated to certificates"], "correct_index": 1, "explanation": "VPN cryptography (often TLS-based or IPsec) is subject to the same quantum vulnerability and PQC migration considerations as other TLS deployments." },
+    { "id": "b6-q5", "prompt": "What operational challenge does certificate rotation at organizational scale primarily address?", "options": ["Reducing electricity costs", "Keeping certificates from expiring or using outdated cryptography across many systems", "Speeding up DNS lookups", "Reducing the number of employees needed"], "correct_index": 1, "explanation": "Certificate lifecycle automation at scale prevents expired certificates and ensures certificates use current, approved cryptography." }
+  ]
+}

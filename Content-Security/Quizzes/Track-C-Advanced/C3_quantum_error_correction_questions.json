@@ -1,0 +1,13 @@
+{
+  "module_id": "track_c_c3_quantum_error_correction",
+  "title": "C3 Quiz: Quantum Error Correction",
+  "difficulty": "quantum_expert",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "c3-q1", "prompt": "How many physical qubits does Shor's original quantum error-correcting code use to protect one logical qubit?", "options": ["3", "7", "9", "27"], "correct_index": 2, "explanation": "Shor's 9-qubit code was the first quantum error-correcting code, using 9 physical qubits to correct an arbitrary single-qubit error." },
+    { "id": "c3-q2", "prompt": "What family of codes does Steane's 7-qubit code belong to?", "options": ["Surface codes", "CSS (Calderbank-Shor-Steane) codes", "Classical Hamming codes only", "Repetition codes"], "correct_index": 1, "explanation": "Steane's code belongs to the CSS code family, constructing quantum codes directly from pairs of classical error-correcting codes." },
+    { "id": "c3-q3", "prompt": "What does the stabilizer formalism allow, without directly measuring (and destroying) protected quantum information?", "options": ["Faster classical computation", "Revealing error information via measurement operators called stabilizers", "Deleting qubits safely", "Bypassing the no-cloning theorem"], "correct_index": 1, "explanation": "Stabilizer formalism uses measurement operators (stabilizers) whose outcomes reveal error information without destroying the protected quantum data." },
+    { "id": "c3-q4", "prompt": "What does the quantum threshold theorem prove?", "options": ["Quantum error correction is theoretically impossible", "If physical error rate is below a threshold, arbitrarily reliable long computation becomes possible with enough error-correction overhead", "All quantum computers already exceed the threshold", "Error correction requires no additional qubits"], "correct_index": 1, "explanation": "The threshold theorem proves that below a certain physical error rate, adding sufficient error-correction overhead makes arbitrarily long reliable computation possible." },
+    { "id": "c3-q5", "prompt": "Why do surface codes require only nearest-neighbor qubit interactions?", "options": ["This is a disadvantage with no benefit", "It's a major practical advantage given real hardware connectivity constraints", "Surface codes don't actually require this", "It makes the code less scalable"], "correct_index": 1, "explanation": "Surface codes' 2D nearest-neighbor structure is a major practical advantage, matching realistic hardware connectivity limitations." }
+  ]
+}

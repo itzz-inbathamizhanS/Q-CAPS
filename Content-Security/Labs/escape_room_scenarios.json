@@ -46,6 +46,66 @@
       ],
       "badge_awarded": "Symmetric Defender",
       "mission_xp_awarded": 40
+    },
+    {
+      "id": "escape-4-superposition-panic",
+      "title": "The Spinning Coin Interview",
+      "module_id": "track_a_a6_quantum_foundations",
+      "difficulty": "novice",
+      "setup": "During a mock technical interview, the interviewer asks you to explain, in one sentence a non-technical manager would understand, why a qubit isn't 'just a faster classical bit.'",
+      "prompt": "Which explanation correctly captures superposition without overclaiming what it means?",
+      "choices": [
+        { "id": "a", "text": "\"A qubit can be 0 and 1 at the same time, so quantum computers can try every answer simultaneously for free.\"", "correct": false, "feedback": "Overclaims. Measurement collapses superposition to one classical outcome — you don't get 'every answer for free'; algorithms must be engineered so the correct answer becomes more likely to be observed." },
+        { "id": "b", "text": "\"A qubit holds a combination of 0 and 1 until measured, like a spinning coin — that's what lets certain carefully designed algorithms explore possibilities far more efficiently than a classical computer.\"", "correct": true, "feedback": "Correct. This captures superposition accurately without the common 'free parallel computation' overclaim." },
+        { "id": "c", "text": "\"A qubit is just a bit that runs at a higher clock speed.\"", "correct": false, "feedback": "Incorrect. This describes classical hardware speed, not the fundamentally different quantum mechanical behavior of superposition." }
+      ],
+      "badge_awarded": "Quantum Beginner",
+      "mission_xp_awarded": 30
+    },
+    {
+      "id": "escape-5-grover-vs-shor-budget",
+      "title": "The Migration Budget Meeting",
+      "module_id": "track_b_b8_quantum_threats",
+      "difficulty": "professional",
+      "setup": "Your organization has limited budget this year for quantum-readiness work. Leadership asks you to justify why RSA/ECC migration gets more urgency and funding than simply doubling AES key lengths everywhere.",
+      "prompt": "What's the technically accurate justification?",
+      "choices": [
+        { "id": "a", "text": "\"They're equally urgent — Shor's and Grover's algorithms pose the same level of threat to both.\"", "correct": false, "feedback": "Incorrect. Shor's algorithm gives an exponential speedup against RSA/ECC (full break), while Grover's gives only a quadratic speedup against AES (halved effective strength) — these are very different severity levels." },
+        { "id": "b", "text": "\"RSA/ECC face a full break via Shor's algorithm (exponential speedup), while AES only faces a weakening via Grover's algorithm (quadratic speedup, fixed by simply doubling key length) — so RSA/ECC migration to entirely new algorithms is the harder, more urgent problem.\"", "correct": true, "feedback": "Correct. This distinguishes the severity and remediation complexity correctly, which is exactly the reasoning that should drive budget prioritization." },
+        { "id": "c", "text": "\"Neither is a real concern until a quantum computer capable of breaking RSA-2048 actually exists.\"", "correct": false, "feedback": "Incorrect. This ignores Harvest-Now-Decrypt-Later risk — migration must start well before the threat fully materializes, given how long enterprise migration takes." }
+      ],
+      "badge_awarded": "Threat Modeler",
+      "mission_xp_awarded": 70
+    },
+    {
+      "id": "escape-6-hybrid-mode-flaw",
+      "title": "The Combiner Bug Report",
+      "module_id": "track_c_c10_pqc_attack_surface",
+      "difficulty": "quantum_expert",
+      "setup": "A security researcher reports that your organization's hybrid TLS handshake (ECDHE + ML-KEM) might have a subtle weakness — not in either individual algorithm, but in how the two shared secrets are combined into the final session key.",
+      "prompt": "What is the technically correct response?",
+      "choices": [
+        { "id": "a", "text": "\"That's impossible — if both ECDHE and ML-KEM are individually secure, the combination must automatically be secure too.\"", "correct": false, "feedback": "Incorrect. This is exactly the hybrid-mode weakness category covered in PQC Attack Surface training — an insecure combiner construction can undermine security even when both individual algorithms remain secure." },
+        { "id": "b", "text": "\"Treat this seriously — hybrid combiner constructions require their own dedicated security analysis, separate from validating each individual algorithm.\"", "correct": true, "feedback": "Correct. Hybrid-mode weaknesses are a real, distinct attack surface category — combining two secure algorithms incorrectly can still introduce a new vulnerability." },
+        { "id": "c", "text": "\"Immediately drop ML-KEM and revert to classical-only ECDHE to eliminate the risk.\"", "correct": false, "feedback": "Overcorrection. This abandons crypto-agility and PQC readiness rather than fixing the actual combiner issue — the correct move is analyzing and fixing the combiner, not abandoning the migration." }
+      ],
+      "badge_awarded": "Defense Engineer",
+      "mission_xp_awarded": 90
+    },
+    {
+      "id": "escape-7-executive-buyin",
+      "title": "The Boardroom Pitch",
+      "module_id": "track_d_e1_quantum_risk_management",
+      "difficulty": "professional",
+      "setup": "You have five minutes with the executive board to secure budget for a multi-year PQC migration. One board member says: \"Quantum computers that can break encryption don't exist yet — why should we spend money on this now?\"",
+      "prompt": "What is the single most effective response, per this program's risk framework?",
+      "choices": [
+        { "id": "a", "text": "\"You're right, let's revisit this in a few years once quantum computers are more advanced.\"", "correct": false, "feedback": "Incorrect. This ignores Harvest-Now-Decrypt-Later risk and the multi-year timeline real migrations require — waiting until the threat is imminent is too late." },
+        { "id": "b", "text": "\"The attack window opened the day our sensitive data was recorded, not the day the quantum computer arrives — and given how long enterprise migration takes, waiting means we're already behind.\"", "correct": true, "feedback": "Correct. This is the exact framing from the program's risk management training — translating the technical HNDL concept into a business-urgency argument." },
+        { "id": "c", "text": "\"Every one of our systems is critically at risk right now and could be breached today.\"", "correct": false, "feedback": "Overstates the case in a way that undermines credibility — the accurate claim is about future decryption risk on already-harvested data, not an active breach today." }
+      ],
+      "badge_awarded": "Risk Strategist",
+      "mission_xp_awarded": 70
     }
   ]
 }

@@ -1,30 +1,42 @@
-# Aasif's Q-CAPS Deliverables — Schema-Aligned Rebuild
-Rebuilt: 2026-08-29 — replaces the earlier version entirely.
+# Aasif's Q-CAPS Deliverables — 4-Track Final Version
+Last rebuilt: 2026-09-06 — single linear path, Track A → B → C → D, 36 modules total.
 
-## What changed from the first draft
-Every file now conforms to `shared_data_schema.md` instead of using my own naming conventions:
-- `module_id` values follow the schema's confirmed pattern (`module_1_basics`, plus `module_2_quantum` / `module_3_pqc_mitigation`).
-- The auth backend's `User` model and every API response use the **exact** Common User Profile field names (`user_id`, `readiness_score`, `total_xp`, `global_rank`, `unlocked_badges`, `recommended_next_module`) — snake_case throughout, no mapping layer, one function (`toPublicProfile()`) is the single source of truth for that shape.
-- Badge strings match the schema's own examples exactly (`"Quantum Novice"`, `"RSA Hacker"` are used verbatim) so `unlocked_badges` never mismatches.
-- Added `quizzes/quiz_submission_schema.md`, documenting precisely how my question banks map into the schema's Quiz Submission object — this was a gap before.
+## Scope note (read this first)
+Final decision: **4 tracks only, no separate "Module 1/2/3" entry path.** Track A is the sole entry point. Track A now has 8 modules (A1–A7 + A8, where A8 is the former standalone PQC-mitigation module, folded in to close a content gap). See `MASTER_CURRICULUM_INDEX.md` for the complete structure and decision history.
 
-## Phase 1: Interactive Course Design — ✅
-- `course/module_1_basics.md`, `course/module_2_quantum.md`, `course/module_3_pqc_mitigation.md` — each with 5 sub-sections, a specified visual/interactive component per section, and the exact Quiz Submission JSON shown at the end so it's unambiguous for whoever wires the frontend.
-- `quizzes/module_1_basics_questions.json` (7 Qs, novice), `module_2_quantum_questions.json` (6 Qs, professional), `module_3_pqc_mitigation_questions.json` (8 Qs, quantum_expert) — difficulty tiers match the exact names used in `master_implementation_plan.md` Segment 3 ("Novice, Professional, Quantum Expert").
-- `quizzes/quiz_submission_schema.md` — the missing link between my content and the shared API contract.
+## What's built
 
-## Phase 2: Security Hardening — ✅
-- `backend/User.model.js`, `backend/auth.routes.js`, `backend/authMiddleware.js`, `backend/README.md` — rebuilt so every response Niranjan's frontend receives is schema-exact, and Vishnu Priya's scoring/leaderboard logic has the right fields already on the same document to write into.
+### 1. Course content — 36 modules, full lesson text
+- **Track A — Foundations (8):** `course/track-a-foundations/`
+- **Track B — Intermediate (11):** `course/track-b-intermediate/`
+- **Track C — Advanced (11):** `course/track-c-advanced/`
+- **Track D — Enterprise (6):** `course/track-d-enterprise/`
 
-## Phase 3: Advanced Scenario Labs — ✅
-- `labs/escape_room_scenarios.json` — 3 scenarios, now tagged with `module_id` and a `mission_xp_awarded` field (matching the Scanner Mission object's XP convention from the shared schema) plus exact `badge_awarded` strings.
-- `badges/badges_list.md` — full list, schema-exact strings, cross-referenced to the labs file so nothing drifts.
+Every module has learning objectives, full explanatory sections (not bullet outlines), interactive/visual component specs for whoever builds the frontend UI, and knowledge checks.
+
+### 2. Quizzes — 36 question banks, all validated JSON
+Mirrors the course structure exactly under `quizzes/`, plus `quizzes/quiz_submission_schema.md` documenting how a completed quiz maps into `shared_data_schema.md`'s Quiz Submission object.
+
+### 3. Auth backend — schema-aligned
+`backend/` — Node/Express + bcrypt + JWT. Every API response matches `shared_data_schema.md`'s Common User Profile object exactly (snake_case, one `toPublicProfile()` function as the single source of truth). See `backend/README.md` for setup and the Vishnu Priya handoff notes.
+
+### 4. Escape room labs — 7 scenarios
+`labs/escape_room_scenarios.json` — 3 original scenarios (HNDL, cert-chain migration, symmetric key sizing) plus 4 track-capstone scenarios, one per track (A–D).
+
+### 5. Badges & certificates — full coverage
+`badges/master_badges_and_certificates.md` — a badge per module across all 4 tracks (including A8), 4 capstone-completion badges, all 5 certificate tiers (CQF, CQSE, QCE/PQC-E/QNE, QSA), plus the final PQCTP certification. This is now the **only** badges file — the old `badges_list.md` is obsolete and safe to delete (see below).
+
+### 6. Master Curriculum Index
+`MASTER_CURRICULUM_INDEX.md` — single source of truth for all 36 `module_id`s, file paths, and unlock chains. Frontend navigation/progress logic should be built against this file.
 
 ## Still open (flagging honestly)
-- [ ] Backend stack confirmation — built in Node/Express/MongoDB; port to FastAPI if the team consolidates there (see `backend/README.md` §8).
-- [ ] Actual React components for the interactive elements described in the course markdown — currently specifications, not built UI code.
-- [ ] Verify NIST FIPS 203/204/205 status against nist.gov before publishing Module 3 content.
-- [ ] Vishnu Priya and Niranjan still need to agree and implement the actual `POST /api/submit-quiz` logic described in `quiz_submission_schema.md` — I've defined the contract, not built that endpoint (it's her module per the master plan).
+- [ ] **`badges/badges_list.md` should be deleted** — it only covered the now-removed 3-module set (badge names like "Crypto Explorer" tied to `module_1_basics`). Fully superseded by `master_badges_and_certificates.md`.
+- [ ] **Backend stack confirmation** — built in Node/Express/MongoDB; port to FastAPI if the team consolidates there (see `backend/README.md` §8).
+- [ ] **React components** for the interactive elements described throughout the course markdown — currently specifications, not built UI code.
+- [ ] **NIST FIPS 203/204/205 verification** against nist.gov before publishing any PQC standards content — flagged repeatedly throughout the course files themselves.
+- [ ] **`POST /api/submit-quiz` endpoint** — the contract is documented in `quizzes/quiz_submission_schema.md`, but building it is Vishnu Priya's module per the master plan, not built here.
+- [ ] **Bridge Modules (8)** and **Diagnostic/Placement system** — described in the Master Course Architecture but not yet built; likely belongs partly to content (bridge modules) and partly to Vishnu Priya's Skill-Gap Engine (placement logic). See `MASTER_CURRICULUM_INDEX.md`'s closing sections for detail.
+- [ ] Escape room scenarios exist for 7 key modules, not all 36 individually, by design (see rationale in that file's description).
 
 ## Next step
-Say if you want me to build the React quiz component next (wired to these exact JSON files and the schema), or help you prep what to say to the team about the schema alignment before you push.
+This is the final, settled scope: 4 tracks, 36 modules, single linear path. Ready to commit and move toward frontend integration whenever the team is ready.

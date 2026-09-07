@@ -11,7 +11,7 @@ After a user finishes a quiz, Niranjan's frontend must package the result into *
 ```json
 {
   "user_id": "U-992400",
-  "module_id": "module_1_basics",
+  "module_id": "track_a_a1_computing_foundations",
   "questions_answered": 7,
   "correct_answers": 6,
   "time_taken_seconds": 210,
@@ -20,7 +20,7 @@ After a user finishes a quiz, Niranjan's frontend must package the result into *
 ```
 
 **How the frontend builds this from my question banks:**
-- `module_id` → copy directly from the top of the question bank file (e.g. `"module_1_basics"`).
+- `module_id` → copy directly from the top of the question bank file (e.g. `"track_a_a1_computing_foundations"`).
 - `questions_answered` → `questions.length` (how many were in the quiz).
 - `correct_answers` → count of user answers where their selected index matched `correct_index`.
 - `time_taken_seconds` → frontend's own timer, started on quiz load, stopped on submit.

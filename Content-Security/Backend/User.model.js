@@ -43,11 +43,16 @@ const UserSchema = new mongoose.Schema(
     readiness_score: { type: Number, default: 0, min: 0, max: 100 },
     total_xp: { type: Number, default: 0, min: 0 },
     global_rank: { type: Number, default: null }, // computed by Vishnu Priya's leaderboard logic, not set here
-    unlocked_badges: [{ type: String }],           // exact display-name strings, e.g. "Quantum Novice" — see badges/badges_list.md
-    recommended_next_module: { type: String, default: "Module 1: Cybersecurity Basics" },
+    unlocked_badges: [{ type: String }],           // exact display-name strings, e.g. "Quantum Novice" — see badges/master_badges_and_certificates.md
+    // Default points new users to Track A's entry module (A1 — the sole entry point
+    // now that the standalone module_1/2/3 set has been removed/folded into Track A).
+    // Once the diagnostic/placement system (not yet built — see MASTER_CURRICULUM_INDEX.md)
+    // exists, it should override this default and place advanced learners directly into
+    // Track B/C as appropriate, rather than always starting everyone at A1.
+    recommended_next_module: { type: String, default: "A1: Computing Foundations" },
 
     // --- Supporting fields, used internally but not part of the shared schema's public shape ---
-    completed_modules: [{ type: String }], // module_id values, e.g. ["module_1_basics"]
+    completed_modules: [{ type: String }], // module_id values from MASTER_CURRICULUM_INDEX.md, e.g. ["module_1_basics", "track_a_a1_computing_foundations"]
     is_email_verified: { type: Boolean, default: false },
     last_login_at: { type: Date },
   },

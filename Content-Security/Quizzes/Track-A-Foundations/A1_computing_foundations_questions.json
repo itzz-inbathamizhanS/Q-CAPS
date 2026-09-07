@@ -1,0 +1,13 @@
+{
+  "module_id": "track_a_a1_computing_foundations",
+  "title": "A1 Quiz: Computing Foundations",
+  "difficulty": "novice",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "a1-q1", "prompt": "What isolates one running program from another on a system?", "options": ["The CPU clock speed", "Process isolation managed by the OS", "The hard drive", "The internet connection"], "correct_index": 1, "explanation": "The operating system runs each program as a process with its own isolated memory space." },
+    { "id": "a1-q2", "prompt": "Which storage type is fast but loses its data when powered off?", "options": ["Storage (disk/SSD)", "Memory (RAM)", "Cloud backup", "USB drive"], "correct_index": 1, "explanation": "RAM is fast, temporary storage that is cleared when power is lost, unlike disk/SSD." },
+    { "id": "a1-q3", "prompt": "In Python, which keyword starts a loop that repeats while a condition is true?", "options": ["for", "while", "def", "import"], "correct_index": 1, "explanation": "'while' loops repeat as long as a specified condition remains true." },
+    { "id": "a1-q4", "prompt": "What is the correct Git workflow order for contributing a change?", "options": ["Push, commit, branch, clone", "Clone, branch, commit, push", "Commit, clone, push, branch", "Branch, push, clone, commit"], "correct_index": 1, "explanation": "The standard flow is: clone the repo, create a branch, commit changes, then push to the remote." },
+    { "id": "a1-q5", "prompt": "Which Linux command lists files in the current directory?", "options": ["cd", "ls", "rm", "chmod"], "correct_index": 1, "explanation": "'ls' lists directory contents; 'cd' changes directory, 'rm' removes files, 'chmod' changes permissions." }
+  ]
+}

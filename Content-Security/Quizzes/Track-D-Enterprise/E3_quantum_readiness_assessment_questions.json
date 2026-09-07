@@ -1,0 +1,13 @@
+{
+  "module_id": "track_d_e3_quantum_readiness_assessment",
+  "title": "E3 Quiz: Quantum Readiness Assessment",
+  "difficulty": "professional",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "e3-q1", "prompt": "Why should assessment inventory be organized by business function and criticality, not just technical category?", "options": ["Technical categorization is always sufficient", "So the assessment output is meaningful to both technical and executive audiences", "Business function is irrelevant to security", "This makes the assessment less accurate"], "correct_index": 1, "explanation": "Organizing by business function and criticality makes the assessment meaningful to both technical teams and executive stakeholders." },
+    { "id": "e3-q2", "prompt": "What does readiness maturity assessment evaluate, beyond individual asset risk scores?", "options": ["Only the CEO's opinion", "Whether the organization has crypto-agility, discovery processes, and governance already in place", "Employee vacation days", "Office building security only"], "correct_index": 1, "explanation": "Readiness maturity assessment evaluates organizational capability — crypto-agility, discovery processes, governance — not just individual asset scores." },
+    { "id": "e3-q3", "prompt": "What Q-CAPS platform field does this module's risk-scoring methodology directly mirror?", "options": ["The user's email address", "The readiness_score field in the shared data schema", "The badge icon color", "The login timestamp"], "correct_index": 1, "explanation": "This module's risk scoring directly mirrors the readiness_score concept from Q-CAPS's own shared data schema." },
+    { "id": "e3-q4", "prompt": "What determines which assets rank highest for migration priority?", "options": ["Random selection", "High criticality, long-lived sensitive data, and weak existing cryptography", "Alphabetical order of asset names", "Whichever system was purchased most recently"], "correct_index": 1, "explanation": "Assets combining high criticality, long-lived sensitive data, and weak cryptography rank highest for migration priority." },
+    { "id": "e3-q5", "prompt": "What does the readiness assessment module's output directly feed into?", "options": ["Nothing further in the program", "The draft migration plan developed fully in the Enterprise PQC Migration module", "Only the quiz scoring system", "Employee performance reviews"], "correct_index": 1, "explanation": "The readiness assessment's outputs feed directly into the draft migration plan, bridging assessment and execution." }
+  ]
+}

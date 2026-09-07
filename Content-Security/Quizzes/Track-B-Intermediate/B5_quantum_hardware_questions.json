@@ -1,0 +1,13 @@
+{
+  "module_id": "track_b_b5_quantum_hardware",
+  "title": "B5 Quiz: Quantum Hardware",
+  "difficulty": "professional",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "b5-q1", "prompt": "What is the most widely deployed physical qubit approach in today's commercial quantum computers?", "options": ["Trapped ions", "Superconducting qubits", "Photonic qubits", "Spin qubits"], "correct_index": 1, "explanation": "Superconducting qubits, cooled to near-absolute-zero, are the most widely deployed approach used by companies like IBM and Google." },
+    { "id": "b5-q2", "prompt": "What tradeoff do trapped-ion qubits typically offer compared to superconducting qubits?", "options": ["Faster gates but shorter coherence", "Longer coherence and higher fidelity, but slower gate operations", "No tradeoff exists", "They are identical in every respect"], "correct_index": 1, "explanation": "Trapped ions typically offer longer coherence times and higher gate fidelity at the cost of slower gate speeds." },
+    { "id": "b5-q3", "prompt": "What does gate fidelity measure?", "options": ["The color of the qubit", "How closely a real gate operation matches its ideal mathematical description", "The price of the hardware", "The number of qubits available"], "correct_index": 1, "explanation": "Gate fidelity measures how closely a physical gate matches its ideal behavior, determining how many gates can be chained reliably." },
+    { "id": "b5-q4", "prompt": "What does 'connectivity' refer to in quantum hardware?", "options": ["Internet access speed", "Which qubit pairs can directly interact with each other", "The number of classical bits available", "The cooling system's efficiency"], "correct_index": 1, "explanation": "Connectivity describes which physical qubit pairs can directly interact, affecting how transpilation must route operations." },
+    { "id": "b5-q5", "prompt": "What is widely regarded as the central engineering challenge on the path to large, fault-tolerant quantum computers?", "options": ["Writing more software", "Scaling qubit count while maintaining coherence and fidelity", "Finding more electricity", "Reducing internet latency"], "correct_index": 1, "explanation": "Scaling to more qubits while maintaining coherence and fidelity is widely considered the central hardware engineering challenge." }
+  ]
+}
