@@ -1,0 +1,61 @@
+{
+  "course_title": "Q-CAPS Quantum Cybersecurity Certification",
+  "modules": [
+    {
+      "module_id": "m1",
+      "title": "Module 1: Cybersecurity Basics",
+      "description": "Understand classical encryption and the threats we face today.",
+      "questions": [
+        {
+          "id": "q1_1",
+          "question": "Which of the following is a classical public-key encryption algorithm?",
+          "options": ["AES", "RSA", "SHA-256", "MD5"],
+          "correct_answer": "RSA",
+          "xp_reward": 50
+        },
+        {
+          "id": "q1_2",
+          "question": "What is the primary purpose of a digital certificate?",
+          "options": ["To speed up the internet", "To prove the identity of a public key owner", "To hide IP addresses", "To block viruses"],
+          "correct_answer": "To prove the identity of a public key owner",
+          "xp_reward": 50
+        }
+      ]
+    },
+    {
+      "module_id": "m2",
+      "title": "Module 2: The Quantum Concept",
+      "description": "Dive into quantum mechanics, qubits, and Shor's Algorithm.",
+      "questions": [
+        {
+          "id": "q2_1",
+          "question": "What algorithm allows a quantum computer to break RSA encryption?",
+          "options": ["Grover's Algorithm", "Shor's Algorithm", "Diffie-Hellman", "Euclidean Algorithm"],
+          "correct_answer": "Shor's Algorithm",
+          "xp_reward": 100
+        },
+        {
+          "id": "q2_2",
+          "question": "Unlike a classical bit (0 or 1), a quantum bit (qubit) can exist in multiple states at once. This is called:",
+          "options": ["Entanglement", "Superposition", "Interference", "Decoherence"],
+          "correct_answer": "Superposition",
+          "xp_reward": 100
+        }
+      ]
+    },
+    {
+      "module_id": "m3",
+      "title": "Module 3: Threat & Mitigation",
+      "description": "Learn how to defend against quantum threats using PQC.",
+      "questions": [
+        {
+          "id": "q3_1",
+          "question": "What does PQC stand for?",
+          "options": ["Pre-Quantum Cryptography", "Post-Quantum Cryptography", "Private Quantum Computation", "Public Qubit Cryptography"],
+          "correct_answer": "Post-Quantum Cryptography",
+          "xp_reward": 150
+        }
+      ]
+    }
+  ]
+}

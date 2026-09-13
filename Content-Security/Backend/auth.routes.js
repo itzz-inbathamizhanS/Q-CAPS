@@ -9,8 +9,30 @@ const express = require("express");
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
 const rateLimit = require("express-rate-limit");
-const User = require("../models/User.model");
-const { verify_token } = require("../middleware/authMiddleware");
+// Support both flat directory placement and nested subdirectories
+const User = (() => {
+  try {
+    return require("./User.model");
+  } catch (err) {
+    try {
+      return require("../models/User.model");
+    } catch (err2) {
+      return require("./models/User.model");
+    }
+  }
+})();
+
+const { verify_token } = (() => {
+  try {
+    return require("./authMiddleware");
+  } catch (err) {
+    try {
+      return require("../middleware/authMiddleware");
+    } catch (err2) {
+      return require("./middleware/authMiddleware");
+    }
+  }
+})();
 
 const router = express.Router();
 

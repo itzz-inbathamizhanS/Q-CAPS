@@ -1,0 +1,9 @@
+node_modules/
+.continue/
+dist/
+.env
+
+# Python backend
+backend/venv/
+__pycache__/
+*.db
