@@ -1,0 +1,13 @@
+{
+  "module_id": "track_c_c2_advanced_quantum_algorithms",
+  "title": "C2 Quiz: Advanced Quantum Algorithms",
+  "difficulty": "quantum_expert",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "c2-q1", "prompt": "What proven result distinguishes Grover's quadratic speedup from Shor's exponential speedup?", "options": ["Both have proven classical-impossibility results", "Grover's speedup is proven optimal for unstructured search; Shor's has no such proven classical-impossibility counterpart", "Neither speedup has been proven", "Shor's speedup is proven optimal, Grover's is not"], "correct_index": 1, "explanation": "Grover's quadratic speedup is proven to be the best possible for unstructured search, unlike Shor's exponential speedup which lacks a proven classical-impossibility counterpart." },
+    { "id": "c2-q2", "prompt": "What does amplitude estimation combine to estimate an unknown probability efficiently?", "options": ["Only classical Monte Carlo sampling", "Amplitude amplification with phase estimation", "Only Grover's algorithm alone", "Classical hashing"], "correct_index": 1, "explanation": "Amplitude estimation combines amplitude amplification and phase estimation to estimate probabilities with quadratically fewer samples than classical Monte Carlo." },
+    { "id": "c2-q3", "prompt": "What structure do VQE and QAOA share as algorithms?", "options": ["Both are purely classical", "Both are hybrid algorithms using a quantum circuit plus classical optimization in an iterative loop", "Both require full fault-tolerant error correction", "Neither uses any quantum hardware"], "correct_index": 1, "explanation": "VQE and QAOA both use a hybrid quantum-classical loop: a quantum circuit for state preparation, and classical optimization to iteratively improve parameters." },
+    { "id": "c2-q4", "prompt": "What was Hamiltonian simulation originally proposed as a motivating application for?", "options": ["Password cracking", "Simulating quantum physical systems, as originally proposed by Feynman", "Classical web browsing", "DNS resolution"], "correct_index": 1, "explanation": "Hamiltonian simulation, originally proposed by Feynman, remains a strong candidate application area for genuine quantum advantage, particularly in chemistry and materials science." },
+    { "id": "c2-q5", "prompt": "What complexity class formally describes problems quantum computers can efficiently solve?", "options": ["NP-complete only", "BQP", "P vs NP is irrelevant here", "O(1)"], "correct_index": 1, "explanation": "BQP (Bounded-error Quantum Polynomial time) is the complexity class describing problems efficiently solvable by quantum computers." }
+  ]
+}

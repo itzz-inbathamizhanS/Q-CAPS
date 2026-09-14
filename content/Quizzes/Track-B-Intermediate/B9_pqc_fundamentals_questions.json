@@ -1,0 +1,13 @@
+{
+  "module_id": "track_b_b9_pqc_fundamentals",
+  "title": "B9 Quiz: PQC Fundamentals",
+  "difficulty": "professional",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "b9-q1", "prompt": "What fundamentally distinguishes PQC from quantum cryptography like QKD?", "options": ["PQC requires quantum hardware; QKD doesn't", "PQC is classical math run on ordinary computers; QKD uses actual quantum physical phenomena as part of its security mechanism", "They are the exact same thing", "QKD is a subset of PQC"], "correct_index": 1, "explanation": "PQC uses classical math believed to resist quantum attacks and runs on ordinary computers; QKD uses actual quantum phenomena as part of the security mechanism." },
+    { "id": "b9-q2", "prompt": "Which PQC family currently has the strongest balance of performance, key size, and security confidence, making it the most widely adopted?", "options": ["Multivariate approaches", "Lattice-based cryptography", "Code-based cryptography only", "None are adopted"], "correct_index": 1, "explanation": "Lattice-based cryptography currently offers the strongest balance of performance and key size, making it the most widely adopted PQC approach." },
+    { "id": "b9-q3", "prompt": "What is the primary tradeoff of hash-based cryptography (like SLH-DSA)?", "options": ["It's completely insecure", "Larger signatures and slower performance, in exchange for relying only on well-studied hash security", "It requires quantum hardware", "It cannot be standardized"], "correct_index": 1, "explanation": "Hash-based schemes trade larger signatures and slower performance for security resting on well-studied, conservative hash function assumptions." },
+    { "id": "b9-q4", "prompt": "What does a PQC KEM (Key Encapsulation Mechanism) allow?", "options": ["Only signing documents", "A recipient's public key is used to generate and encapsulate a random shared secret, decapsulated using their private key", "Storing passwords in plaintext", "Broadcasting a private key openly"], "correct_index": 1, "explanation": "A KEM lets a sender use the recipient's public key to encapsulate a random secret, which the recipient decapsulates with their private key." },
+    { "id": "b9-q5", "prompt": "Why is code-based cryptography (e.g., McEliece) attractive for long-term security despite large key sizes?", "options": ["It has no known weaknesses ever discovered", "It benefits from decades of cryptanalytic scrutiny since the 1970s", "It's the newest PQC approach", "It requires no keys at all"], "correct_index": 1, "explanation": "Code-based cryptography has been studied since the 1970s, giving it a long track record of cryptanalytic scrutiny despite its large key sizes." }
+  ]
+}

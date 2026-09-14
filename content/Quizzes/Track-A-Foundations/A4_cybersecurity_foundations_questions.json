@@ -1,0 +1,13 @@
+{
+  "module_id": "track_a_a4_cybersecurity_foundations",
+  "title": "A4 Quiz: Cybersecurity Foundations",
+  "difficulty": "novice",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "a4-q1", "prompt": "What does the 'A' in the CIA triad stand for?", "options": ["Authentication", "Authorization", "Availability", "Anonymity"], "correct_index": 2, "explanation": "The CIA triad is Confidentiality, Integrity, and Availability — systems being accessible when needed." },
+    { "id": "a4-q2", "prompt": "What's the difference between authentication and authorization?", "options": ["They are the same thing", "Authentication asks 'who are you', authorization asks 'what can you do'", "Authorization happens before authentication always", "Authentication only applies to admins"], "correct_index": 1, "explanation": "Authentication verifies identity; authorization determines what that identity is permitted to do." },
+    { "id": "a4-q3", "prompt": "What is a vulnerability, as distinct from a threat?", "options": ["A vulnerability is a weakness in a system; a threat is a potential cause of harm exploiting it", "They are interchangeable terms", "A vulnerability only applies to hardware", "A threat is always internal"], "correct_index": 0, "explanation": "A vulnerability is a weakness; a threat is what could exploit that weakness to cause harm." },
+    { "id": "a4-q4", "prompt": "What does RBAC stand for?", "options": ["Random-Based Access Control", "Role-Based Access Control", "Rule-Based Authentication Code", "Remote-Based Access Center"], "correct_index": 1, "explanation": "RBAC (Role-Based Access Control) assigns permissions based on a user's role rather than individually." },
+    { "id": "a4-q5", "prompt": "In the basic risk formula, Risk equals:", "options": ["Likelihood + Impact", "Likelihood x Impact", "Likelihood - Impact", "Impact only"], "correct_index": 1, "explanation": "Risk is generally modeled as likelihood multiplied by impact." }
+  ]
+}

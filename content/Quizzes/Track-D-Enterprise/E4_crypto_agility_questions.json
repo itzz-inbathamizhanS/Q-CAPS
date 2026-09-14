@@ -1,0 +1,13 @@
+{
+  "module_id": "track_d_e4_crypto_agility",
+  "title": "E4 Quiz: Crypto-Agility",
+  "difficulty": "professional",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "e4-q1", "prompt": "What is the single most important design decision determining how painful a future algorithm swap will be?", "options": ["The office layout", "Algorithm abstraction — never hardcoding a specific algorithm into business logic", "The marketing budget", "The number of employees"], "correct_index": 1, "explanation": "Algorithm abstraction is the foundational architectural pattern determining how easily an organization can swap algorithms in the future." },
+    { "id": "e4-q2", "prompt": "What does configuration-driven algorithm selection enable?", "options": ["Nothing useful", "An algorithm swap via configuration change and redeployment, rather than a full code rewrite", "Faster internet speeds", "Automatic password resets"], "correct_index": 1, "explanation": "Configuration-driven algorithm selection allows swapping algorithms through configuration changes rather than rewriting code." },
+    { "id": "e4-q3", "prompt": "What does certificate agility directly enable, connecting to earlier PQC migration content?", "options": ["Faster certificate expiration", "Issuing and rotating certificates using multiple algorithm types concurrently, enabling hybrid approaches", "Removing the need for certificates entirely", "Slower certificate deployment"], "correct_index": 1, "explanation": "Certificate agility enables hybrid certificate deployment by supporting multiple algorithm types concurrently." },
+    { "id": "e4-q4", "prompt": "What genuine architectural constraint can pure software agility NOT fully solve?", "options": ["There are no such constraints", "Hardware limitations, like HSMs or embedded devices with fixed cryptographic capabilities", "Software bugs", "Employee training gaps"], "correct_index": 1, "explanation": "Fixed hardware capabilities (HSMs, embedded devices) represent a real constraint that software-level agility alone cannot fully resolve." },
+    { "id": "e4-q5", "prompt": "What common real-world scenario does this module's guidance on retrofitting agility address?", "options": ["Building brand-new systems only", "Existing systems that weren't originally designed with crypto-agility in mind", "Systems that don't use any cryptography", "Marketing website design"], "correct_index": 1, "explanation": "Most organizations face the challenge of retrofitting crypto-agility into existing systems not originally designed with it in mind." }
+  ]
+}

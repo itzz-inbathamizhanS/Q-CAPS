@@ -1,0 +1,13 @@
+{
+  "module_id": "track_c_c4_quantum_networking",
+  "title": "C4 Quiz: Quantum Networking",
+  "difficulty": "quantum_expert",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "c4-q1", "prompt": "Does quantum teleportation violate relativity by transmitting information faster than light?", "options": ["Yes, it transmits information instantly with no limits", "No — it requires a classical communication channel, limiting it to no faster than light speed", "Teleportation transmits physical matter, not information", "Teleportation has never been demonstrated"], "correct_index": 1, "explanation": "Quantum teleportation requires classical communication alongside pre-shared entanglement, so it cannot exceed light speed and doesn't violate relativity." },
+    { "id": "c4-q2", "prompt": "Why can't quantum repeaters simply amplify a quantum signal like classical repeaters?", "options": ["Amplification is easy and commonly used", "The no-cloning theorem prevents simply copying/amplifying an unknown quantum state", "Quantum signals don't degrade over distance", "Repeaters aren't needed for quantum networks"], "correct_index": 1, "explanation": "The no-cloning theorem prevents simple amplification, so quantum repeaters use entanglement swapping instead." },
+    { "id": "c4-q3", "prompt": "What technique allows entanglement to be extended between two parties who never directly interacted?", "options": ["Direct photon transmission only", "Entanglement swapping via an intermediate node with a joint measurement", "Classical signal boosting", "Quantum teleportation of matter"], "correct_index": 1, "explanation": "Entanglement swapping uses an intermediate node and joint measurement to extend entanglement between parties who never directly interacted." },
+    { "id": "c4-q4", "prompt": "What is the practical role of a quantum memory in a repeater network?", "options": ["Permanently storing classical passwords", "Temporarily storing a quantum state long enough to synchronize repeater operations", "Replacing the need for entanglement entirely", "Speeding up classical internet traffic"], "correct_index": 1, "explanation": "Quantum memories temporarily store quantum states to synchronize timing across a quantum repeater network." },
+    { "id": "c4-q5", "prompt": "Roughly what distance does direct fiber-based entanglement distribution become impractical past, without repeaters?", "options": ["1 meter", "Roughly 100km due to photon loss", "10,000km", "There is no distance limit"], "correct_index": 1, "explanation": "Photon loss in fiber makes direct entanglement distribution impractical past roughly 100km without quantum repeaters." }
+  ]
+}
