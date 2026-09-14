@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+
+<html class="light" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Q-CAPS Appearance Settings</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#e5e0ef",
+                        "core-bg": "#F5F5FA",
+                        "surface-container": "#f1ebfa",
+                        "surface-container-low": "#f7f1ff",
+                        "inverse-on-surface": "#f4eefd",
+                        "secondary-fixed-dim": "#c5c6ce",
+                        "on-primary-container": "#f4eeff",
+                        "on-secondary-container": "#63646b",
+                        "core-text-secondary": "#666978",
+                        "inverse-surface": "#312f3a",
+                        "surface-tint": "#5d36ef",
+                        "error-container": "#ffdad6",
+                        "tertiary-container": "#b44f00",
+                        "outline-variant": "#c9c4d9",
+                        "secondary-container": "#e2e2ea",
+                        "on-secondary": "#ffffff",
+                        "surface-bright": "#fdf8ff",
+                        "core-text-primary": "#171821",
+                        "surface-variant": "#e5e0ef",
+                        "tertiary-fixed-dim": "#ffb68f",
+                        "cyber-secondary-bg": "#0D1220",
+                        "tertiary-fixed": "#ffdbca",
+                        "cyber-text-primary": "#F7F8FC",
+                        "cyber-surface": "#121827",
+                        "cyber-bg": "#080B14",
+                        "surface": "#fdf8ff",
+                        "on-secondary-fixed": "#191b21",
+                        "surface-dim": "#ddd8e6",
+                        "secondary": "#5d5e65",
+                        "on-background": "#1c1a24",
+                        "core-surface": "#FFFFFF",
+                        "background": "#fdf8ff",
+                        "on-surface": "#1c1a24",
+                        "primary-container": "#6d4aff",
+                        "cyber-text-secondary": "#A8AFBF",
+                        "on-tertiary": "#ffffff",
+                        "cyber-primary-violet": "#7C5CFF",
+                        "inverse-primary": "#c9bfff",
+                        "primary-fixed": "#e5deff",
+                        "on-tertiary-fixed": "#331100",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#45474d",
+                        "on-surface-variant": "#484556",
+                        "secondary-fixed": "#e2e2ea",
+                        "on-error-container": "#93000a",
+                        "cyber-border": "#252E42",
+                        "surface-container-high": "#ebe6f5",
+                        "on-tertiary-container": "#ffede5",
+                        "tertiary": "#8e3d00",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed-variant": "#4500d8",
+                        "primary": "#5427e6",
+                        "primary-fixed-dim": "#c9bfff",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "outline": "#797588",
+                        "on-tertiary-fixed-variant": "#773200",
+                        "core-border": "#E5E5EE",
+                        "cyber-elevated": "#182033",
+                        "on-primary-fixed": "#1b0063"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "base": "4px",
+                        "stack_gap_lg": "32px",
+                        "sidebar_width": "250px",
+                        "container_padding": "32px",
+                        "stack_gap_md": "16px",
+                        "card_padding": "24px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Inter"],
+                        "headline-lg-mobile": ["Inter"],
+                        "mono-code": ["JetBrains Mono"],
+                        "mono-label": ["JetBrains Mono"],
+                        "headline-md": ["Inter"],
+                        "headline-lg": ["Inter"],
+                        "body-sm": ["Inter"],
+                        "body-lg": ["Inter"],
+                        "body-md": ["Inter"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "mono-code": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+                        "mono-label": ["13px", { "lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                },
+            },
+        }
+    </script>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<style>
+        body { font-family: 'Inter', sans-serif; }
+    </style>
+</head>
+<body class="bg-core-bg text-core-text-primary min-h-screen font-body-md">
+<!-- TopNavBar -->
+<nav class="fixed top-0 right-0 w-[calc(100%-250px)] h-16 bg-core-surface/80 backdrop-blur-md border-b border-core-border flex justify-between items-center px-container_padding z-50">
+<div class="flex items-center gap-4">
+<span class="font-display-lg text-headline-md font-bold text-core-text-primary hidden">Q-CAPS</span>
+<div class="relative">
+<span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-core-text-secondary">search</span>
+<input class="pl-10 pr-4 py-2 bg-surface-container rounded-full border-none focus:ring-2 focus:ring-primary font-body-sm text-core-text-primary w-64 placeholder-core-text-secondary" placeholder="Search..." type="text"/>
+</div>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-core-text-secondary hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined">notifications</span>
+</button>
+<button class="text-core-text-secondary hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined">help</span>
+</button>
+<button class="text-core-text-secondary hover:text-primary transition-colors duration-200">
+<span class="material-symbols-outlined">account_circle</span>
+</button>
+</div>
+</nav>
+<!-- SideNavBar -->
+<aside class="w-[250px] h-screen fixed left-0 top-0 bg-core-surface border-r border-core-border flex flex-col py-gutter z-50">
+<div class="px-gutter mb-stack_gap_lg flex items-center gap-3">
+<div class="w-8 h-8 bg-primary rounded flex items-center justify-center text-on-primary font-bold">Q</div>
+<div>
+<h1 class="font-display-lg text-headline-md font-bold text-core-text-primary leading-none">Q-CAPS</h1>
+<span class="font-body-sm text-core-text-secondary">Quantum Assessment</span>
+</div>
+</div>
+<nav class="flex-1 px-4 flex flex-col gap-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-core-text-secondary hover:bg-surface-container-low hover:text-primary transition-colors duration-200 font-body-md" href="#">
+<span class="material-symbols-outlined">dashboard</span>
+                Overview
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-core-text-secondary hover:bg-surface-container-low hover:text-primary transition-colors duration-200 font-body-md" href="#">
+<span class="material-symbols-outlined">rocket_launch</span>
+                Mission Control
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-core-text-secondary hover:bg-surface-container-low hover:text-primary transition-colors duration-200 font-body-md" href="#">
+<span class="material-symbols-outlined">monitoring</span>
+                Progress
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-bold border-r-4 border-primary bg-surface-container font-body-md scale-95 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined">account_circle</span>
+                Account
+            </a>
+</nav>
+<div class="px-4 mt-auto flex flex-col gap-2">
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-core-text-secondary hover:bg-surface-container-low hover:text-primary transition-colors duration-200 font-body-md" href="#">
+<span class="material-symbols-outlined">settings</span>
+                Settings
+            </a>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-core-text-secondary hover:bg-surface-container-low hover:text-primary transition-colors duration-200 font-body-md" href="#">
+<span class="material-symbols-outlined">help</span>
+                Support
+            </a>
+<button class="mt-4 bg-primary text-on-primary py-2 px-4 rounded-lg font-body-md hover:opacity-90 transition-opacity">
+                Upgrade Security
+            </button>
+</div>
+</aside>
+<!-- Main Content Canvas -->
+<main class="ml-sidebar_width mt-16 p-container_padding min-h-[calc(100vh-4rem)]">
+<header class="mb-stack_gap_lg">
+<h2 class="font-headline-lg text-headline-lg text-core-text-primary">Appearance Settings</h2>
+<p class="font-body-lg text-core-text-secondary mt-2">Customize your Q-CAPS environment interface.</p>
+</header>
+<section class="bg-core-surface rounded-xl border border-core-border p-card_padding max-w-4xl">
+<div class="flex items-center justify-between mb-stack_gap_md pb-4 border-b border-core-border">
+<div>
+<h3 class="font-headline-md text-headline-md text-core-text-primary">Interface Theme</h3>
+<p class="font-body-sm text-core-text-secondary">Select your preferred visual mode.</p>
+</div>
+</div>
+<!-- Segmented Control -->
+<div class="flex bg-surface-container p-1 rounded-lg w-fit mb-stack_gap_lg">
+<button class="px-6 py-2 rounded bg-core-surface shadow-sm text-primary font-bold font-body-md transition-all">
+                    Core Mode
+                </button>
+<button class="px-6 py-2 rounded text-core-text-secondary hover:text-core-text-primary font-body-md transition-all">
+                    Cyber Mode
+                </button>
+</div>
+<!-- Visual Previews Grid -->
+<div class="grid grid-cols-1 md:grid-cols-2 gap-gutter">
+<!-- Core Mode Preview (Selected) -->
+<div class="rounded-lg border-2 border-primary bg-core-bg p-4 relative overflow-hidden cursor-pointer group">
+<div class="absolute top-2 right-2 bg-primary text-on-primary rounded-full p-1 shadow-md">
+<span class="material-symbols-outlined text-[16px]">check</span>
+</div>
+<div class="w-full h-40 bg-core-surface rounded border border-core-border shadow-sm flex flex-col overflow-hidden mb-3">
+<div class="h-8 border-b border-core-border flex items-center px-3 gap-2 bg-surface-container-lowest">
+<div class="w-2 h-2 rounded-full bg-core-text-secondary opacity-50"></div>
+<div class="w-2 h-2 rounded-full bg-core-text-secondary opacity-50"></div>
+<div class="w-2 h-2 rounded-full bg-core-text-secondary opacity-50"></div>
+</div>
+<div class="flex flex-1 p-3 gap-3">
+<div class="w-1/4 h-full bg-surface-container rounded-sm"></div>
+<div class="flex-1 flex flex-col gap-2">
+<div class="h-4 bg-surface-container rounded-sm w-1/3"></div>
+<div class="flex-1 bg-core-bg border border-core-border rounded-sm flex items-center justify-center">
+<div class="text-primary font-mono-code text-mono-code opacity-70">data_view</div>
+</div>
+</div>
+</div>
+</div>
+<h4 class="font-headline-md text-body-lg font-semibold text-core-text-primary text-center">Core Mode</h4>
+<p class="font-body-sm text-core-text-secondary text-center mt-1">Light, clear, and focused on administrative tasks.</p>
+</div>
+<!-- Cyber Mode Preview -->
+<div class="rounded-lg border border-core-border hover:border-core-text-secondary bg-surface-container p-4 relative overflow-hidden cursor-pointer group transition-colors">
+<div class="w-full h-40 bg-[#080B14] rounded border border-[#252E42] shadow-sm flex flex-col overflow-hidden mb-3 opacity-90 group-hover:opacity-100 transition-opacity">
+<div class="h-8 border-b border-[#252E42] flex items-center px-3 gap-2 bg-[#121827]">
+<div class="w-2 h-2 rounded-full bg-[#A8AFBF] opacity-50"></div>
+<div class="w-2 h-2 rounded-full bg-[#A8AFBF] opacity-50"></div>
+<div class="w-2 h-2 rounded-full bg-[#A8AFBF] opacity-50"></div>
+</div>
+<div class="flex flex-1 p-3 gap-3">
+<div class="w-1/4 h-full bg-[#182033] rounded-sm"></div>
+<div class="flex-1 flex flex-col gap-2">
+<div class="h-4 bg-[#182033] rounded-sm w-1/3"></div>
+<div class="flex-1 bg-[#0D1220] border border-[#252E42] rounded-sm flex items-center justify-center">
+<div class="text-[#7C5CFF] font-mono-code text-mono-code opacity-70">sys_log</div>
+</div>
+</div>
+</div>
+</div>
+<h4 class="font-headline-md text-body-lg font-semibold text-core-text-primary text-center">Cyber Mode</h4>
+<p class="font-body-sm text-core-text-secondary text-center mt-1">Dark, immersive, tailored for high-stakes analysis.</p>
+</div>
+</div>
+<div class="mt-stack_gap_lg pt-4 border-t border-core-border flex justify-end">
+<button class="bg-primary text-on-primary py-2 px-6 rounded-lg font-body-md hover:bg-primary-container hover:text-on-primary-container transition-colors shadow-sm">
+                    Apply Changes
+                </button>
+</div>
+</section>
+</main>
+</body></html>
