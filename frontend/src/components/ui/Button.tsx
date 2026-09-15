@@ -32,6 +32,10 @@ export const Button: React.FC<ButtonProps> = ({
     border: '1px solid transparent',
     outline: 'none',
     width: fullWidth ? '100%' : 'max-content',
+<<<<<<< HEAD
+=======
+    ...style,
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
   };
 
   const sizeStyles: Record<string, React.CSSProperties> = {
@@ -75,7 +79,10 @@ export const Button: React.FC<ButtonProps> = ({
         ...baseStyles,
         ...sizeStyles[size],
         ...variantStyles[variant],
+<<<<<<< HEAD
         ...style,
+=======
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
       }}
       className={`qcaps-button ${className}`}
       {...props}

@@ -6,11 +6,15 @@ import {
   AlertTriangle,
   CheckCircle2,
   XCircle,
+<<<<<<< HEAD
   Award,
   ShieldCheck,
   ArrowRight,
   RotateCcw,
   Check
+=======
+  Award
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
 } from 'lucide-react';
 import { missionsData, MissionData } from '@/data/missionsData';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
@@ -35,7 +39,11 @@ export const MissionPlay: React.FC = () => {
       style={{
         position: 'fixed',
         inset: 0,
+<<<<<<< HEAD
         backgroundColor: 'var(--cyber-bg, #080B14)',
+=======
+        backgroundColor: 'var(--color-bg)',
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
         color: '#f8fafc',
         zIndex: 1000,
         overflowY: 'auto',
@@ -46,7 +54,11 @@ export const MissionPlay: React.FC = () => {
       <div
         style={{
           borderBottom: '1px solid #1e293b',
+<<<<<<< HEAD
           backgroundColor: 'var(--cyber-surface, #121827)',
+=======
+          backgroundColor: 'var(--color-surface)',
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
           padding: '14px 28px',
           display: 'flex',
           justifyContent: 'space-between',
@@ -76,7 +88,11 @@ export const MissionPlay: React.FC = () => {
             <span>Abort Mission</span>
           </button>
           <div>
+<<<<<<< HEAD
             <span style={{ fontSize: '11px', color: 'var(--cyber-primary-violet, #7C5CFF)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
+=======
+            <span style={{ fontSize: '11px', color: 'var(--color-primary)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
               Q-CAPS Operational Simulation
             </span>
             <div style={{ fontSize: '15px', fontWeight: 600, color: '#f8fafc' }}>
@@ -96,7 +112,11 @@ export const MissionPlay: React.FC = () => {
           style={{
             position: 'fixed',
             inset: 0,
+<<<<<<< HEAD
             backgroundColor: 'rgba(0,0,0,0.75)',
+=======
+            backgroundColor: 'rgba(0,0,0,0.7)',
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -105,7 +125,11 @@ export const MissionPlay: React.FC = () => {
         >
           <div
             style={{
+<<<<<<< HEAD
               backgroundColor: 'var(--cyber-card, #1A1C1F)',
+=======
+              backgroundColor: 'var(--color-surface-low)',
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
               border: '1px solid #334155',
               borderRadius: '12px',
               padding: '24px',
@@ -126,7 +150,11 @@ export const MissionPlay: React.FC = () => {
                 style={{
                   padding: '8px 16px',
                   borderRadius: '6px',
+<<<<<<< HEAD
                   backgroundColor: '#334155',
+=======
+                  backgroundColor: 'var(--color-border)',
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
                   color: '#f8fafc',
                   border: 'none',
                   cursor: 'pointer'
@@ -184,10 +212,14 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
   const [sampleSize, setSampleSize] = useState<number>(8);
   const [errorRate, setErrorRate] = useState<number>(0);
   const [decision, setDecision] = useState<'accept' | 'abort' | null>(null);
+<<<<<<< HEAD
   const [evePresent, setEvePresent] = useState<boolean>(() => Math.random() < 0.5);
 
   const badgeName = (mission.rewards?.badge_awarded as string) || 'QKD Defender';
   const missionXp = (mission.rewards?.mission_xp_awarded as number) || 85;
+=======
+  const [evePresent] = useState<boolean>(true); // Eavesdropper injected per spec Stage 4
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
 
   // Stage 1: Run transmission
   const startTransmission = () => {
@@ -245,6 +277,7 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
   const handleDecision = (choice: 'accept' | 'abort') => {
     setDecision(choice);
     setStage(5);
+<<<<<<< HEAD
     const isCorrect = (choice === 'abort' && errorRate > 10) || (choice === 'accept' && errorRate <= 10);
     if (isCorrect) {
       onFinished(mission.mission_id, badgeName, missionXp);
@@ -253,6 +286,14 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
 
   const isDecisionCorrect = decision !== null && ((decision === 'abort' && errorRate > 10) || (decision === 'accept' && errorRate <= 10));
 
+=======
+    if (choice === 'abort') {
+      // Correct choice because error rate is ~25% (Eve intercepted!)
+      onFinished(mission.mission_id, 'QKD Channel Verifier', 150);
+    }
+  };
+
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
   return (
     <div>
       {/* Live HUD */}
@@ -261,7 +302,11 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '12px',
+<<<<<<< HEAD
           backgroundColor: 'var(--cyber-surface, #121827)',
+=======
+          backgroundColor: 'var(--color-surface-low)',
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
           borderRadius: '12px',
           padding: '16px',
           marginBottom: '28px',
@@ -270,7 +315,11 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
       >
         <div>
           <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Quantum Channel</div>
+<<<<<<< HEAD
           <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--cyber-primary-violet, #7C5CFF)' }}>
+=======
+          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-primary)' }}>
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
             {stage === 1 ? 'Idle' : 'Active (Single Photon)'}
           </div>
         </div>
@@ -296,7 +345,11 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
 
       {/* STAGE 1: Briefing & Transmission Setup */}
       {stage === 1 && (
+<<<<<<< HEAD
         <div style={{ backgroundColor: 'var(--cyber-surface, #121827)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' }}>
+=======
+        <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' }}>
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
           <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '4px', backgroundColor: '#0284c7', color: '#ffffff', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '14px' }}>
             Stage 1: Transmission Setup
           </div>
@@ -330,7 +383,11 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
 
       {/* STAGE 2: Measure & Notice */}
       {stage === 2 && (
+<<<<<<< HEAD
         <div style={{ backgroundColor: 'var(--cyber-surface, #121827)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' }}>
+=======
+        <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' }}>
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
           <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '4px', backgroundColor: '#0284c7', color: '#ffffff', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '14px' }}>
             Stage 2: Measurement Telemetry
           </div>
@@ -345,7 +402,11 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
           <div style={{ maxHeight: '260px', overflowY: 'auto', border: '1px solid #334155', borderRadius: '8px', marginBottom: '24px' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'center' }}>
               <thead>
+<<<<<<< HEAD
                 <tr style={{ backgroundColor: 'var(--cyber-card, #1A1C1F)', color: '#94a3b8' }}>
+=======
+                <tr style={{ backgroundColor: 'var(--color-surface-low)', color: '#94a3b8' }}>
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
                   <th style={{ padding: '8px' }}>#</th>
                   <th style={{ padding: '8px' }}>Alice Bit</th>
                   <th style={{ padding: '8px' }}>Alice Basis</th>
@@ -382,7 +443,11 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
 
       {/* STAGE 3: Sift the Key */}
       {stage === 3 && (
+<<<<<<< HEAD
         <div style={{ backgroundColor: 'var(--cyber-surface, #121827)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' }}>
+=======
+        <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' }}>
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
           <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '4px', backgroundColor: '#0284c7', color: '#ffffff', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '14px' }}>
             Stage 3: Public Basis Reconciliation
           </div>
@@ -393,7 +458,11 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
             Alice and Bob announced their basis choices over the public classical channel (never revealing the bit values). All mismatched rows were discarded, leaving {siftedIndices.length} candidate key bits.
           </p>
 
+<<<<<<< HEAD
           <div style={{ padding: '16px', backgroundColor: 'var(--cyber-bg, #080B14)', borderRadius: '8px', border: '1px solid #334155', fontFamily: 'var(--font-mono)', fontSize: '16px', letterSpacing: '4px', color: 'var(--cyber-primary-violet, #7C5CFF)', marginBottom: '24px', overflowX: 'auto' }}>
+=======
+          <div style={{ padding: '16px', backgroundColor: 'var(--color-bg)', borderRadius: '8px', border: '1px solid #334155', fontFamily: 'var(--font-mono)', fontSize: '16px', letterSpacing: '4px', color: 'var(--color-primary)', marginBottom: '24px', overflowX: 'auto' }}>
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
             {siftedIndices.map((idx) => aliceBits[idx]).join('')}
           </div>
 
@@ -411,7 +480,11 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
 
       {/* STAGE 4: Security Alert & Error Rate Estimation */}
       {stage === 4 && (
+<<<<<<< HEAD
         <div style={{ backgroundColor: 'var(--cyber-surface, #121827)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' }}>
+=======
+        <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' }}>
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
           <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '4px', backgroundColor: 'var(--color-error)', color: '#ffffff', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '14px' }}>
             Stage 4: Security Verification
           </div>
@@ -444,7 +517,11 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
             <div style={{ fontSize: '13px', color: '#cbd5e1' }}>
               {errorRate > 10
                 ? 'CRITICAL ALERT: QBER exceeds theoretical threshold (~11%). An active eavesdropper is measuring photons and causing quantum state disturbance!'
+<<<<<<< HEAD
                 : 'QBER within safe threshold (≤11%). Natural channel noise baseline.'}
+=======
+                : 'QBER within safe threshold (<11%). Natural noise detected.'}
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
             </div>
           </div>
 
@@ -485,8 +562,13 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
 
       {/* STAGE 5: Outcome & Concept Reveal */}
       {stage === 5 && (
+<<<<<<< HEAD
         <div style={{ backgroundColor: 'var(--cyber-surface, #121827)', border: '1px solid #25334d', borderRadius: '14px', padding: '32px', textAlign: 'center' }}>
           {isDecisionCorrect ? (
+=======
+        <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid #25334d', borderRadius: '14px', padding: '32px', textAlign: 'center' }}>
+          {decision === 'abort' ? (
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
             <>
               <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
                 <CheckCircle2 size={36} color="#10b981" />
@@ -495,9 +577,13 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
                 Mission Success! Correct Security Decision
               </h2>
               <p style={{ color: '#94a3b8', maxWidth: '600px', margin: '0 auto 24px', lineHeight: 1.6 }}>
+<<<<<<< HEAD
                 {decision === 'abort'
                   ? 'You rightly aborted the transmission! Because an eavesdropper was measuring photons in transit, the laws of quantum mechanics (Heisenberg Uncertainty & No-Cloning Theorem) forced irreversible measurement disturbances (~25% error rate), exposing the attack before any confidential embassy data was encrypted!'
                   : `You rightly accepted the quantum key! The observed Quantum Bit Error Rate (${errorRate}%) was within the safe baseline threshold (≤11%), confirming no eavesdropper disturbed the quantum channel. The diplomatic channel is securely encrypted!`}
+=======
+                You rightly aborted the transmission! Because an eavesdropper was measuring photons in transit, the laws of quantum mechanics (Heisenberg Uncertainty & No-Cloning Theorem) forced irreversible measurement disturbances (~25% error rate), exposing the attack before any confidential embassy data was encrypted!
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
               </p>
 
               {/* Badge banner */}
@@ -508,9 +594,15 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
                     Lab Badge Awarded
                   </div>
                   <div style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc' }}>
+<<<<<<< HEAD
                     {badgeName}
                   </div>
                   <div style={{ fontSize: '12px', color: '#94a3b8' }}>+{missionXp} XP added to User Profile</div>
+=======
+                    QKD Channel Verifier
+                  </div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>+150 XP added to User Profile</div>
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
                 </div>
               </div>
             </>
@@ -520,12 +612,19 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
                 <XCircle size={36} color="#ef4444" />
               </div>
               <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#f8fafc', marginBottom: '8px' }}>
+<<<<<<< HEAD
                 {decision === 'accept' ? 'Diplomatic Channel Compromised' : 'Unnecessary Transmission Abort'}
               </h2>
               <p style={{ color: '#94a3b8', maxWidth: '600px', margin: '0 auto 24px', lineHeight: 1.6 }}>
                 {decision === 'accept'
                   ? `The error rate of ${errorRate}% clearly exceeded the safe threshold (≤11%). Accepting the key allowed the adversary to decrypt embassy communications.`
                   : `The error rate was only ${errorRate}%, well within the normal noise baseline (≤11%). Aborting a clean quantum channel caused an operational delay during a critical diplomatic window.`}
+=======
+                Diplomatic Channel Compromised
+              </h2>
+              <p style={{ color: '#94a3b8', maxWidth: '600px', margin: '0 auto 24px', lineHeight: 1.6 }}>
+                The error rate of {errorRate}% clearly exceeded the 11% threshold. Accepting the key allowed the adversary to decrypt embassy communications.
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
               </p>
             </>
           )}
@@ -540,6 +639,7 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
                 setStage(1);
                 setDecision(null);
                 setErrorRate(0);
+<<<<<<< HEAD
                 setEvePresent(Math.random() < 0.5);
                 setAliceBits([]);
                 setAliceBases([]);
@@ -551,6 +651,12 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
             >
               <RotateCcw size={14} />
               <span>Retry Mission</span>
+=======
+              }}
+              style={{ color: '#f8fafc', borderColor: '#475569' }}
+            >
+              Retry Simulation
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
             </Button>
           </div>
         </div>
@@ -584,6 +690,7 @@ const EnterpriseMigrationEngine: React.FC<MigrationSimulationProps> = ({ mission
   const [continuity, setContinuity] = useState(100);
   const [budget, setBudget] = useState(100);
   const [timeMonths, setTimeMonths] = useState(18);
+<<<<<<< HEAD
 
   // Two-step decision state:
   const [selectedChoice, setSelectedChoice] = useState<MissionChoice | null>(null);
@@ -618,12 +725,28 @@ const EnterpriseMigrationEngine: React.FC<MigrationSimulationProps> = ({ mission
     if (typeof cons.time_remaining_months === 'number') {
       setTimeMonths((prev) => Math.max(0, prev + cons.time_remaining_months));
     }
+=======
+  const [selectedChoice, setSelectedChoice] = useState<MissionChoice | null>(null);
+  const [isFinished, setIsFinished] = useState(false);
+
+  const stage = stages[currentStageIdx];
+
+  const handleSelectChoice = (choice: MissionChoice) => {
+    setSelectedChoice(choice);
+    // Apply score deltas
+    const cons = choice.consequence || {};
+    if (cons.readiness_score) setReadiness((prev) => Math.min(100, Math.max(0, prev + cons.readiness_score)));
+    if (cons.business_continuity_score) setContinuity((prev) => Math.min(100, Math.max(0, prev + cons.business_continuity_score)));
+    if (cons.budget_remaining) setBudget((prev) => Math.min(100, Math.max(0, prev + cons.budget_remaining)));
+    if (cons.time_remaining_months) setTimeMonths((prev) => Math.max(0, prev + cons.time_remaining_months));
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
   };
 
   const handleNextStage = () => {
     if (currentStageIdx < stages.length - 1) {
       setCurrentStageIdx((prev) => prev + 1);
       setSelectedChoice(null);
+<<<<<<< HEAD
       setIsCommitted(false);
     } else {
       setIsFinished(true);
@@ -637,15 +760,29 @@ const EnterpriseMigrationEngine: React.FC<MigrationSimulationProps> = ({ mission
   const isSuccess = readiness >= 75 && continuity >= 60;
   const isPartial = !isSuccess && readiness >= 50;
 
+=======
+    } else {
+      setIsFinished(true);
+      onFinished(mission.mission_id, 'Hybrid Deployer', 150);
+    }
+  };
+
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
   return (
     <div>
       {/* Persistent Enterprise HUD */}
       <div
         style={{
           display: 'grid',
+<<<<<<< HEAD
           gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
           gap: '12px',
           backgroundColor: 'var(--cyber-surface, #121827)',
+=======
+          gridTemplateColumns: 'repeat(4, 1fr)',
+          gap: '12px',
+          backgroundColor: 'var(--color-surface-low)',
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
           borderRadius: '12px',
           padding: '16px',
           marginBottom: '28px',
@@ -653,21 +790,37 @@ const EnterpriseMigrationEngine: React.FC<MigrationSimulationProps> = ({ mission
         }}
       >
         <div>
+<<<<<<< HEAD
           <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Quantum Readiness</div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--cyber-primary-violet, #7C5CFF)' }}>{readiness}%</div>
         </div>
         <div>
           <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Business Continuity</div>
+=======
+          <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Quantum Readiness</div>
+          <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-primary)' }}>{readiness}%</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Business Continuity</div>
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
           <div style={{ fontSize: '20px', fontWeight: 700, color: continuity > 70 ? 'var(--color-emerald)' : 'var(--color-amber)' }}>
             {continuity}%
           </div>
         </div>
         <div>
+<<<<<<< HEAD
           <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Budget Remaining</div>
           <div style={{ fontSize: '20px', fontWeight: 700, color: '#f8fafc' }}>{budget}%</div>
         </div>
         <div>
           <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Timeline Left</div>
+=======
+          <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Budget Remaining</div>
+          <div style={{ fontSize: '20px', fontWeight: 700, color: '#f8fafc' }}>{budget}%</div>
+        </div>
+        <div>
+          <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Timeline Left</div>
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
           <div style={{ fontSize: '20px', fontWeight: 700, color: timeMonths > 6 ? 'var(--color-emerald)' : 'var(--color-error)' }}>
             {timeMonths} Months
           </div>
@@ -675,13 +828,18 @@ const EnterpriseMigrationEngine: React.FC<MigrationSimulationProps> = ({ mission
       </div>
 
       {!isFinished && stage ? (
+<<<<<<< HEAD
         <div style={{ backgroundColor: 'var(--cyber-surface, #121827)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' }}>
+=======
+        <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' }}>
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
           <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '4px', backgroundColor: 'var(--color-amber)', color: '#ffffff', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '14px' }}>
             Stage {currentStageIdx + 1} of {stages.length}
           </div>
           <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#f8fafc', marginBottom: '12px' }}>
             {stage.narrative}
           </h2>
+<<<<<<< HEAD
           <p style={{ color: 'var(--cyber-primary-violet, #7C5CFF)', fontSize: '15px', fontWeight: 600, marginBottom: '20px' }}>
             {stage.decision_prompt}
           </p>
@@ -920,6 +1078,76 @@ const EnterpriseMigrationEngine: React.FC<MigrationSimulationProps> = ({ mission
           </div>
 
           <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '14px' }}>
+=======
+          <p style={{ color: 'var(--color-primary)', fontSize: '15px', fontWeight: 600, marginBottom: '20px' }}>
+            {stage.decision_prompt}
+          </p>
+
+          {/* Choices */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
+            {stage.choices.map((choice: MissionChoice) => {
+              const isSelected = selectedChoice?.id === choice.id;
+              return (
+                <div
+                  key={choice.id}
+                  onClick={() => !selectedChoice && handleSelectChoice(choice)}
+                  style={{
+                    padding: '16px 20px',
+                    borderRadius: '10px',
+                    backgroundColor: isSelected ? 'rgba(84, 39, 230, 0.2)' : 'var(--color-surface-low)',
+                    border: `1px solid ${isSelected ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                    cursor: selectedChoice ? 'default' : 'pointer',
+                    fontSize: '14px',
+                    color: '#f8fafc',
+                    lineHeight: 1.5,
+                    transition: 'all 0.15s ease'
+                  }}
+                >
+                  {choice.text}
+                </div>
+              );
+            })}
+          </div>
+
+          {/* Feedback */}
+          {selectedChoice && (
+            <div
+              style={{
+                padding: '16px',
+                borderRadius: '8px',
+                backgroundColor: 'rgba(56, 189, 248, 0.1)',
+                border: '1px solid #0284c7',
+                marginBottom: '24px'
+              }}
+            >
+              <div style={{ fontSize: '13px', fontWeight: 700, color: 'var(--color-primary)', marginBottom: '4px' }}>
+                Consequence Analysis:
+              </div>
+              <div style={{ fontSize: '14px', color: '#cbd5e1', lineHeight: 1.5 }}>
+                {selectedChoice.feedback}
+              </div>
+            </div>
+          )}
+
+          {selectedChoice && (
+            <Button variant="primary" onClick={handleNextStage}>
+              {currentStageIdx < stages.length - 1 ? 'Advance to Next Stage →' : 'View Migration Debrief →'}
+            </Button>
+          )}
+        </div>
+      ) : (
+        /* Debrief */
+        <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid #25334d', borderRadius: '14px', padding: '32px', textAlign: 'center' }}>
+          <Award size={48} color="#10b981" style={{ margin: '0 auto 16px' }} />
+          <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#f8fafc', marginBottom: '8px' }}>
+            Enterprise Migration Mandate Concluded
+          </h2>
+          <p style={{ color: '#94a3b8', maxWidth: '600px', margin: '0 auto 24px', lineHeight: 1.6 }}>
+            Final Readiness: <strong>{readiness}%</strong> · Business Continuity: <strong>{continuity}%</strong>. You successfully prioritized critical 20-year data assets and balanced hybrid ML-KEM migration against business operational stability.
+          </p>
+
+          <div style={{ display: 'flex', justifyContent: 'center', gap: '14px' }}>
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
             <Button variant="primary" onClick={() => navigate('/missions')}>
               Return to Mission Hub
             </Button>
@@ -928,17 +1156,26 @@ const EnterpriseMigrationEngine: React.FC<MigrationSimulationProps> = ({ mission
               onClick={() => {
                 setCurrentStageIdx(0);
                 setSelectedChoice(null);
+<<<<<<< HEAD
                 setIsCommitted(false);
+=======
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
                 setReadiness(12);
                 setContinuity(100);
                 setBudget(100);
                 setTimeMonths(18);
                 setIsFinished(false);
               }}
+<<<<<<< HEAD
               style={{ color: '#f8fafc', borderColor: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <RotateCcw size={14} />
               <span>Replay Migration Scenario</span>
+=======
+              style={{ color: '#f8fafc', borderColor: '#475569' }}
+            >
+              Replay Migration Scenario
+>>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
             </Button>
           </div>
         </div>
