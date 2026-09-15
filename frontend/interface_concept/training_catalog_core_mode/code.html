@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+
+<html lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Q-CAPS Training Catalog</title>
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600;700&amp;family=JetBrains+Mono:wght@400;500&amp;display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&amp;display=swap" rel="stylesheet"/>
+<script id="tailwind-config">
+        tailwind.config = {
+            darkMode: "class",
+            theme: {
+                extend: {
+                    "colors": {
+                        "surface-container-highest": "#e5e0ef",
+                        "core-bg": "#F5F5FA",
+                        "surface-container": "#f1ebfa",
+                        "surface-container-low": "#f7f1ff",
+                        "inverse-on-surface": "#f4eefd",
+                        "secondary-fixed-dim": "#c5c6ce",
+                        "on-primary-container": "#f4eeff",
+                        "on-secondary-container": "#63646b",
+                        "core-text-secondary": "#666978",
+                        "inverse-surface": "#312f3a",
+                        "surface-tint": "#5d36ef",
+                        "error-container": "#ffdad6",
+                        "tertiary-container": "#b44f00",
+                        "outline-variant": "#c9c4d9",
+                        "secondary-container": "#e2e2ea",
+                        "on-secondary": "#ffffff",
+                        "surface-bright": "#fdf8ff",
+                        "core-text-primary": "#171821",
+                        "surface-variant": "#e5e0ef",
+                        "tertiary-fixed-dim": "#ffb68f",
+                        "cyber-secondary-bg": "#0D1220",
+                        "tertiary-fixed": "#ffdbca",
+                        "cyber-text-primary": "#F7F8FC",
+                        "cyber-surface": "#121827",
+                        "cyber-bg": "#080B14",
+                        "surface": "#fdf8ff",
+                        "on-secondary-fixed": "#191b21",
+                        "surface-dim": "#ddd8e6",
+                        "secondary": "#5d5e65",
+                        "on-background": "#1c1a24",
+                        "core-surface": "#FFFFFF",
+                        "background": "#fdf8ff",
+                        "on-surface": "#1c1a24",
+                        "primary-container": "#6d4aff",
+                        "cyber-text-secondary": "#A8AFBF",
+                        "on-tertiary": "#ffffff",
+                        "cyber-primary-violet": "#7C5CFF",
+                        "inverse-primary": "#c9bfff",
+                        "primary-fixed": "#e5deff",
+                        "on-tertiary-fixed": "#331100",
+                        "surface-container-lowest": "#ffffff",
+                        "on-secondary-fixed-variant": "#45474d",
+                        "on-surface-variant": "#484556",
+                        "secondary-fixed": "#e2e2ea",
+                        "on-error-container": "#93000a",
+                        "cyber-border": "#252E42",
+                        "surface-container-high": "#ebe6f5",
+                        "on-tertiary-container": "#ffede5",
+                        "tertiary": "#8e3d00",
+                        "error": "#ba1a1a",
+                        "on-primary-fixed-variant": "#4500d8",
+                        "primary": "#5427e6",
+                        "primary-fixed-dim": "#c9bfff",
+                        "on-primary": "#ffffff",
+                        "on-error": "#ffffff",
+                        "outline": "#797588",
+                        "on-tertiary-fixed-variant": "#773200",
+                        "core-border": "#E5E5EE",
+                        "cyber-elevated": "#182033",
+                        "on-primary-fixed": "#1b0063"
+                    },
+                    "borderRadius": {
+                        "DEFAULT": "0.25rem",
+                        "lg": "0.5rem",
+                        "xl": "0.75rem",
+                        "full": "9999px"
+                    },
+                    "spacing": {
+                        "gutter": "24px",
+                        "base": "4px",
+                        "stack_gap_lg": "32px",
+                        "sidebar_width": "250px",
+                        "container_padding": "32px",
+                        "stack_gap_md": "16px",
+                        "card_padding": "24px"
+                    },
+                    "fontFamily": {
+                        "display-lg": ["Inter", "sans-serif"],
+                        "headline-lg-mobile": ["Inter", "sans-serif"],
+                        "mono-code": ["JetBrains Mono", "monospace"],
+                        "mono-label": ["JetBrains Mono", "monospace"],
+                        "headline-md": ["Inter", "sans-serif"],
+                        "headline-lg": ["Inter", "sans-serif"],
+                        "body-sm": ["Inter", "sans-serif"],
+                        "body-lg": ["Inter", "sans-serif"],
+                        "body-md": ["Inter", "sans-serif"]
+                    },
+                    "fontSize": {
+                        "display-lg": ["48px", { "lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700" }],
+                        "headline-lg-mobile": ["28px", { "lineHeight": "36px", "fontWeight": "600" }],
+                        "mono-code": ["14px", { "lineHeight": "22px", "fontWeight": "400" }],
+                        "mono-label": ["13px", { "lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "500" }],
+                        "headline-md": ["24px", { "lineHeight": "32px", "fontWeight": "600" }],
+                        "headline-lg": ["32px", { "lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600" }],
+                        "body-sm": ["14px", { "lineHeight": "20px", "fontWeight": "400" }],
+                        "body-lg": ["18px", { "lineHeight": "28px", "fontWeight": "400" }],
+                        "body-md": ["16px", { "lineHeight": "24px", "fontWeight": "400" }]
+                    }
+                }
+            }
+        }
+    </script>
+<style>
+        .material-symbols-outlined {
+            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+        .material-symbols-outlined.fill {
+            font-variation-settings: 'FILL' 1, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+        }
+    </style>
+</head>
+<body class="bg-core-bg text-core-text-primary font-body-md text-body-md h-screen flex overflow-hidden">
+<!-- SideNavBar -->
+<nav class="bg-core-surface w-[250px] h-screen fixed left-0 top-0 border-r border-core-border flex flex-col py-gutter h-full z-20">
+<div class="px-gutter mb-stack_gap_lg flex items-center gap-3">
+<div class="w-10 h-10 rounded bg-primary flex items-center justify-center text-on-primary">
+<span class="material-symbols-outlined fill">shield</span>
+</div>
+<div>
+<h1 class="font-display-lg text-headline-md font-bold text-core-text-primary tracking-tight">Q-CAPS</h1>
+<p class="font-body-sm text-body-sm text-core-text-secondary">Quantum Assessment</p>
+</div>
+</div>
+<ul class="flex flex-col gap-1 px-4 flex-1">
+<!-- Inactive -->
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-core-text-secondary hover:text-primary hover:bg-surface-container-low transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="dashboard">dashboard</span>
+<span class="font-body-md text-body-md">Overview</span>
+</a>
+</li>
+<!-- Inactive -->
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-core-text-secondary hover:text-primary hover:bg-surface-container-low transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="rocket_launch">rocket_launch</span>
+<span class="font-body-md text-body-md">Mission Control</span>
+</a>
+</li>
+<!-- Active -->
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-primary font-bold border-r-4 border-primary bg-surface-container scale-95 transition-transform duration-150" href="#">
+<span class="material-symbols-outlined fill" data-icon="monitoring">monitoring</span>
+<span class="font-body-md text-body-md">Progress</span>
+</a>
+</li>
+<!-- Inactive -->
+<li>
+<a class="flex items-center gap-3 px-4 py-3 rounded-lg text-core-text-secondary hover:text-primary hover:bg-surface-container-low transition-colors duration-200 group" href="#">
+<span class="material-symbols-outlined group-hover:scale-110 transition-transform" data-icon="account_circle">account_circle</span>
+<span class="font-body-md text-body-md">Account</span>
+</a>
+</li>
+</ul>
+<div class="px-4 mt-auto">
+<button class="w-full bg-primary text-on-primary font-body-md text-body-md h-[44px] rounded-DEFAULT hover:bg-primary/90 transition-colors mb-4 flex items-center justify-center gap-2">
+<span class="material-symbols-outlined text-sm">security</span>
+                Upgrade Security
+            </button>
+<ul class="flex flex-col gap-1">
+<li>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-core-text-secondary hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="settings">settings</span>
+<span class="font-body-sm text-body-sm">Settings</span>
+</a>
+</li>
+<li>
+<a class="flex items-center gap-3 px-4 py-2 rounded-lg text-core-text-secondary hover:text-primary hover:bg-surface-container-low transition-colors duration-200" href="#">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+<span class="font-body-sm text-body-sm">Support</span>
+</a>
+</li>
+</ul>
+</div>
+</nav>
+<!-- TopNavBar -->
+<header class="bg-core-surface/80 backdrop-blur-md fixed top-0 right-0 w-[calc(100%-250px)] h-16 border-b border-core-border flex justify-between items-center px-container_padding h-full z-10 transition-opacity opacity-100">
+<div class="flex items-center bg-core-bg border border-core-border rounded-full px-4 py-2 w-96">
+<span class="material-symbols-outlined text-core-text-secondary mr-2" data-icon="search">search</span>
+<input class="bg-transparent border-none outline-none text-body-sm w-full text-core-text-primary placeholder:text-core-text-secondary focus:ring-0" placeholder="Search modules..." type="text"/>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-core-text-secondary hover:text-primary transition-colors duration-200 hover:opacity-80">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-core-text-secondary hover:text-primary transition-colors duration-200 hover:opacity-80">
+<span class="material-symbols-outlined" data-icon="help">help</span>
+</button>
+<div class="w-8 h-8 rounded-full overflow-hidden border border-core-border ml-2 hover:opacity-80 cursor-pointer">
+<img alt="User Profile" class="w-full h-full object-cover" data-alt="A professional headshot of an administrative user in a brightly lit, modern corporate environment. The lighting is soft and neutral, conveying trust and competence in a high-tech SaaS platform context." src="https://lh3.googleusercontent.com/aida-public/AB6AXuAnttOMU9ElD_FQW6wEYLY2iEadhnP3vZIYJmcYHJNgEzIOwUYKEJSu2_kbXpXBfU6mgxlJjApg_M58ce7p7TN4Ej9jxYP_IOauqgxNe4nCiDXthpKD4ZR8Unt-RPd9I9174hVEwirM0edgamccmyGqHkLuj8cRIMi30LicLekzDOjxtGtcQ3wowqgrVT-6oepjPjX8PlXxFfNVMu4q4bP0up8AiGRZzpA8FlADkI6JvfdG1AOq9e4puw"/>
+</div>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="ml-[250px] pt-16 w-full h-full overflow-y-auto bg-core-bg">
+<div class="px-container_padding py-stack_gap_lg max-w-7xl mx-auto">
+<!-- Header Section -->
+<div class="mb-stack_gap_lg">
+<h2 class="font-headline-lg text-headline-lg text-core-text-primary mb-2">Training Catalog</h2>
+<p class="font-body-lg text-body-lg text-core-text-secondary max-w-3xl">Master the principles of cryptography and prepare your organization for the post-quantum transition. Select a module below to begin or continue your assessment training.</p>
+</div>
+<!-- Bento Grid -->
+<div class="grid grid-cols-1 md:grid-cols-12 gap-gutter">
+<!-- Hero Module: Quantum Fundamentals -->
+<div class="md:col-span-8 bg-core-surface rounded-xl border border-core-border overflow-hidden flex flex-col group cursor-pointer hover:shadow-sm transition-shadow">
+<div class="h-48 w-full relative bg-surface-container-low" data-alt="A high-key, modern architectural rendering of a pristine, white laboratory space illustrating abstract quantum concepts. Subtle glowing blue lines intersect in the bright environment, representing quantum entanglement in a clean, corporate technology setting. The mood is analytical, advanced, and sterile." style="background-image: url('https://lh3.googleusercontent.com/aida-public/AB6AXuCPjygyaSZ8wUHQN5Q1qP8BJaii6avoel-v6C9fL8Ol5DcRJ1cNQODD-3eFI6qd99HKdetpzvQ7CGVAYhnxufIUV10KFag_--Myg8XvqJZ2U6dSNXNZpGnbm8l98gIHyXNjMMZWzvf6Ud7ukON2m2YNlTWpzj1BTSpU4tP6oKqpsXe3kzEdPrdAwrEjN4LpoWNkt96kzBdi5Q_dH0YLNl_yYiR_yEGoZ4PR4W0un4G9PpLRLGujxA6qYw')">
+<div class="absolute inset-0 bg-gradient-to-t from-core-surface to-transparent"></div>
+<div class="absolute bottom-4 left-6 flex gap-2">
+<span class="bg-primary/10 text-primary px-2 py-1 rounded text-xs font-mono-label uppercase tracking-wider">Featured</span>
+<span class="bg-core-bg text-core-text-secondary border border-core-border px-2 py-1 rounded text-xs font-mono-label uppercase tracking-wider">Intermediate</span>
+</div>
+</div>
+<div class="p-card_padding flex-1 flex flex-col">
+<div class="flex justify-between items-start mb-4">
+<h3 class="font-headline-md text-headline-md text-core-text-primary group-hover:text-primary transition-colors">Quantum Fundamentals</h3>
+<span class="material-symbols-outlined text-core-text-secondary" data-icon="arrow_outward">arrow_outward</span>
+</div>
+<p class="font-body-md text-body-md text-core-text-secondary mb-6 flex-1">
+                            Understand the core mechanics of quantum computing, qubits, superposition, and entanglement. Learn why these principles threaten current cryptographic standards.
+                        </p>
+<div class="flex items-center gap-4 border-t border-core-border pt-4">
+<div class="flex items-center gap-2 text-core-text-secondary">
+<span class="material-symbols-outlined text-sm" data-icon="schedule">schedule</span>
+<span class="font-body-sm text-body-sm">4 Hours</span>
+</div>
+<div class="flex items-center gap-2 text-core-text-secondary">
+<span class="material-symbols-outlined text-sm" data-icon="menu_book">menu_book</span>
+<span class="font-body-sm text-body-sm">12 Lessons</span>
+</div>
+</div>
+</div>
+</div>
+<!-- Secondary Module: Classical Cryptography -->
+<div class="md:col-span-4 bg-core-surface rounded-xl border border-core-border p-card_padding flex flex-col group cursor-pointer hover:shadow-sm transition-shadow relative overflow-hidden">
+<div class="absolute top-0 right-0 w-32 h-32 bg-primary-container/20 rounded-bl-full -mr-8 -mt-8 pointer-events-none"></div>
+<div class="w-12 h-12 rounded-lg bg-surface-container-low flex items-center justify-center mb-6 text-primary border border-surface-variant">
+<span class="material-symbols-outlined" data-icon="vpn_key">vpn_key</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-core-text-primary mb-2 group-hover:text-primary transition-colors">Classical Cryptography</h3>
+<p class="font-body-md text-body-md text-core-text-secondary mb-6 flex-1">
+                        A comprehensive review of RSA, ECC, and symmetric key algorithms currently securing digital infrastructure.
+                    </p>
+<div class="flex items-center justify-between border-t border-core-border pt-4">
+<span class="text-xs font-mono-label text-core-text-secondary uppercase tracking-wider">Foundation</span>
+<div class="w-full max-w-[100px] h-2 bg-surface-container-highest rounded-full overflow-hidden">
+<div class="w-[100%] h-full bg-primary"></div>
+</div>
+</div>
+</div>
+<!-- Secondary Module: The Threat & Mitigation -->
+<div class="md:col-span-6 bg-core-surface rounded-xl border border-core-border p-card_padding flex flex-col group cursor-pointer hover:shadow-sm transition-shadow">
+<div class="flex items-start gap-4 mb-4">
+<img alt="Threat Mitigation" class="w-20 h-20 rounded border border-core-border object-cover" data-alt="A stylized, minimalist diagram in light mode depicting a network under a simulated stress test. Clean white lines and geometric shapes over a soft gray background communicate data flow and security mitigation strategies in a modern corporate tech style." src="https://lh3.googleusercontent.com/aida-public/AB6AXuBeRMQ6yHLb1l55CqS6v-tu_EZH2-MGHiAvTkmXLcoJgnw8LS_N_AJjz1uQE2N92KlVEzdud4kXcNSdXePqFGj_DrRHqTdlIEaeL6RyxQpVYkfXhHBc7e7kGuIr3E7KDlC_aWHmtrPgRLzg4B0rDM9CE1JWThTJvQcvifBLCwqY-K92qg7aU08QhaGc8-6aAUbB9NQxMSp-e-zpu6F6Jmt7G9f2dVu6CMjvxuw1_SL-wISrc2p75rx2ag"/>
+<div>
+<h3 class="font-headline-md text-headline-md text-core-text-primary group-hover:text-primary transition-colors text-xl">The Threat &amp; Mitigation</h3>
+<span class="inline-block mt-1 bg-error-container/50 text-error px-2 py-0.5 rounded text-[10px] font-mono-label uppercase tracking-wider">Critical</span>
+</div>
+</div>
+<p class="font-body-md text-body-md text-core-text-secondary mb-6">
+                        Analyze Shor's algorithm and its impact on public-key cryptography. Explore Post-Quantum Cryptography (PQC) standards and transition strategies.
+                    </p>
+<button class="mt-auto w-full border border-core-border bg-transparent hover:bg-surface-container-low text-core-text-primary font-body-md h-[44px] rounded transition-colors flex items-center justify-center gap-2">
+                        Start Module
+                        <span class="material-symbols-outlined text-sm" data-icon="play_arrow">play_arrow</span>
+</button>
+</div>
+<!-- Info Card -->
+<div class="md:col-span-6 bg-surface-container-low rounded-xl border border-primary/20 p-card_padding flex flex-col justify-center items-center text-center">
+<div class="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center mb-4 text-primary">
+<span class="material-symbols-outlined text-3xl" data-icon="military_tech">military_tech</span>
+</div>
+<h3 class="font-headline-md text-headline-md text-core-text-primary mb-2">Certification Track</h3>
+<p class="font-body-sm text-body-sm text-core-text-secondary mb-4 max-w-md">
+                        Complete all modules in the Quantum Readiness track to earn your Q-CAPS Assessor Certification.
+                    </p>
+<a class="text-primary font-body-md hover:underline font-bold" href="#">View Requirements</a>
+</div>
+</div>
+</div>
+</main>
+</body></html>

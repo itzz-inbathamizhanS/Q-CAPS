@@ -1,0 +1,13 @@
+{
+  "module_id": "track_a_a5_cryptography_foundations",
+  "title": "A5 Quiz: Cryptography Foundations",
+  "difficulty": "novice",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "a5-q1", "prompt": "What does a MAC (Message Authentication Code) provide using only symmetric cryptography?", "options": ["Confidentiality only", "Integrity and authenticity", "Availability", "Anonymity"], "correct_index": 1, "explanation": "A MAC combines a hash function with a shared secret key to prove integrity and authenticity." },
+    { "id": "a5-q2", "prompt": "What problem does Diffie-Hellman / ECDH solve?", "options": ["Password storage", "Establishing a shared secret key over an insecure channel without transmitting it directly", "Hashing large files", "Certificate revocation"], "correct_index": 1, "explanation": "Diffie-Hellman/ECDH lets two parties derive a shared secret without ever transmitting the secret itself." },
+    { "id": "a5-q3", "prompt": "What does 'non-repudiation' mean in the context of digital signatures?", "options": ["The signer can later deny signing", "The signer cannot credibly deny having signed the message", "The message can be edited after signing", "Signatures never expire"], "correct_index": 1, "explanation": "Non-repudiation means the signer can't credibly deny they signed the message, since only their private key could have produced it." },
+    { "id": "a5-q4", "prompt": "What TLS handshake step establishes the shared symmetric session key?", "options": ["Certificate validation alone", "A key exchange step (e.g., ECDHE)", "The HTTP request", "DNS resolution"], "correct_index": 1, "explanation": "The key exchange step (commonly ECDHE) is what allows client and server to derive a shared symmetric key." },
+    { "id": "a5-q5", "prompt": "Why does poor key management matter even with a strong algorithm?", "options": ["It doesn't matter if the algorithm is strong", "Weak randomness or poor storage/rotation can undermine security regardless of algorithm strength", "Key management only affects speed", "Keys never need to be rotated"], "correct_index": 1, "explanation": "A strong algorithm can still be undermined by weak randomness, poor storage, or lack of key rotation — key management is a common real-world failure point." }
+  ]
+}

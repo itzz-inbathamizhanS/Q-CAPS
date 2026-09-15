@@ -1,0 +1,13 @@
+{
+  "module_id": "track_b_b4_quantum_programming",
+  "title": "B4 Quiz: Quantum Programming",
+  "difficulty": "professional",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "b4-q1", "prompt": "What is transpilation in the context of quantum programming?", "options": ["Translating quantum code into a classical language", "Converting an abstract circuit into one compatible with a specific backend's native gates and connectivity", "Deleting unused qubits", "Encrypting a circuit's contents"], "correct_index": 1, "explanation": "Transpilation converts an abstract circuit into a form compatible with a specific backend's native gate set and qubit connectivity." },
+    { "id": "b4-q2", "prompt": "How does error mitigation differ from full error correction?", "options": ["They are identical techniques", "Error mitigation reduces noise impact without the massive qubit overhead full error correction requires", "Error mitigation requires more qubits than error correction", "Error mitigation only works on classical computers"], "correct_index": 1, "explanation": "Error mitigation techniques reduce noise impact on results without requiring the large qubit overhead of full fault-tolerant error correction." },
+    { "id": "b4-q3", "prompt": "Why is circuit optimization especially important on noisy hardware?", "options": ["It has no real impact", "Fewer gates mean fewer opportunities for error to accumulate", "It makes circuits run on classical computers instead", "It increases circuit depth intentionally"], "correct_index": 1, "explanation": "Reducing gate count and circuit depth through optimization reduces the opportunities for noise-induced errors to accumulate." },
+    { "id": "b4-q4", "prompt": "What describes the interaction pattern of most practically useful near-term quantum algorithms?", "options": ["Purely quantum with no classical involvement", "A hybrid quantum-classical loop alternating between circuit execution and classical processing", "Purely classical simulation only", "A one-time single circuit run with no follow-up"], "correct_index": 1, "explanation": "Most near-term useful algorithms alternate between quantum circuit execution and classical post-processing/parameter adjustment." },
+    { "id": "b4-q5", "prompt": "What does benchmarking a quantum circuit typically measure?", "options": ["Only the circuit's color scheme", "Success probability, fidelity vs. ideal simulation, and runtime", "The programmer's typing speed", "The price of the quantum computer"], "correct_index": 1, "explanation": "Benchmarking evaluates success probability, fidelity compared to ideal simulation, and runtime performance." }
+  ]
+}

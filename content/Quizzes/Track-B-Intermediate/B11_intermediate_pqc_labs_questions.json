@@ -1,0 +1,13 @@
+{
+  "module_id": "track_b_b11_intermediate_pqc_labs",
+  "title": "B11 Quiz: Intermediate PQC Labs",
+  "difficulty": "professional",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "b11-q1", "prompt": "What is the purpose of benchmarking RSA against ML-KEM hands-on?", "options": ["To prove RSA is always better", "To turn conceptual comparisons into measured, personally-verified data on key size, generation time, and speed", "To delete RSA from all systems immediately", "Benchmarking serves no real purpose"], "correct_index": 1, "explanation": "Hands-on benchmarking converts conceptual comparisons into real, measured data the learner can verify and reason from." },
+    { "id": "b11-q2", "prompt": "What does a hybrid handshake (e.g., X25519 + ML-KEM) combine?", "options": ["Two classical algorithms only", "A classical algorithm and a PQC algorithm combined into one session key", "Two unrelated hash functions", "Only symmetric encryption"], "correct_index": 1, "explanation": "A hybrid handshake combines a classical algorithm (like X25519) with a PQC algorithm (like ML-KEM) into a single combined session key." },
+    { "id": "b11-q3", "prompt": "What does a cryptographic inventory exercise at this stage rehearse for later tracks?", "options": ["Nothing relevant to later content", "A smaller-scale version of the organizational-scale Cryptographic Discovery process covered in the Enterprise track", "Only quiz-writing skills", "Physical security testing"], "correct_index": 1, "explanation": "This hands-on inventory exercise is a smaller, individual rehearsal of the Cryptographic Discovery process covered at organizational scale in Track D." },
+    { "id": "b11-q4", "prompt": "What should a PQC migration plan produced in this module's lab be based on?", "options": ["Guesswork with no supporting data", "The benchmark data and cryptographic inventory the learner produced in this same module", "A randomly generated list", "Only theoretical algorithm names with no testing"], "correct_index": 1, "explanation": "The migration plan should be grounded in the actual benchmark data and cryptographic inventory produced hands-on in this module." },
+    { "id": "b11-q5", "prompt": "What does completing B11 unlock, per the Intermediate track structure?", "options": ["Nothing further", "The CQSE certificate and progression toward Track C", "Automatic enrollment in Track A", "A password reset"], "correct_index": 1, "explanation": "Completing B11 and the Intermediate Capstone unlocks the CQSE certificate and progression to Track C." }
+  ]
+}

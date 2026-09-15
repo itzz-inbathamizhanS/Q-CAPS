@@ -1,0 +1,13 @@
+{
+  "module_id": "track_c_c7_advanced_cryptography",
+  "title": "C7 Quiz: Advanced Cryptography",
+  "difficulty": "quantum_expert",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "c7-q1", "prompt": "What formal security notion is the gold standard for modern KEMs like ML-KEM?", "options": ["IND-CCA2 (indistinguishability under adaptive chosen-ciphertext attack)", "Simple key length", "Password complexity", "Certificate expiration date"], "correct_index": 0, "explanation": "IND-CCA2 security is the standard modern KEMs, including ML-KEM, are designed and formally proven against." },
+    { "id": "c7-q2", "prompt": "What does 'provable security' mean in cryptography?", "options": ["A scheme has never been attacked", "Reducing a scheme's security to the hardness of a well-studied mathematical problem via a formal proof", "The scheme is open-source", "The scheme runs quickly"], "correct_index": 1, "explanation": "Provable security means formally reducing a scheme's security to a well-studied hard math problem, rather than relying on the absence of known attacks alone." },
+    { "id": "c7-q3", "prompt": "What historically underestimated topic is a frequent real-world cause of cryptographic failure?", "options": ["Algorithm marketing", "Weak or poor-quality randomness during key generation", "Too much documentation", "Overly long key sizes"], "correct_index": 1, "explanation": "Weak randomness during key generation is a frequently underestimated but historically significant cause of real-world cryptographic failures." },
+    { "id": "c7-q4", "prompt": "What does EUF-CMA stand for and apply to?", "options": ["A network protocol", "Existential Unforgeability under Chosen-Message Attack — a formal signature security notion", "A type of hash function", "An encryption mode"], "correct_index": 1, "explanation": "EUF-CMA (Existential Unforgeability under Chosen-Message Attack) is the standard formal security proof target for signature schemes." },
+    { "id": "c7-q5", "prompt": "Why can protocol-level attacks succeed even when no individual cryptographic primitive is weak?", "options": ["This is impossible", "Composition security issues can emerge purely from how primitives are combined into a protocol", "Protocols never have vulnerabilities", "Only weak primitives can ever cause protocol failures"], "correct_index": 1, "explanation": "Protocol-level attacks can exploit how individually-secure primitives are combined, independent of any single primitive's own weakness." }
+  ]
+}
