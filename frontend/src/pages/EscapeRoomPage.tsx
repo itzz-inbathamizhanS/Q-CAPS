@@ -1,10 +1,6 @@
 // src/pages/EscapeRoomPage.tsx
-<<<<<<< HEAD
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-=======
-import React, { useState } from 'react';
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
 import {
   Award,
   Zap,
@@ -13,19 +9,14 @@ import {
   RotateCcw,
   ChevronLeft,
   ChevronRight,
-<<<<<<< HEAD
   Flame,
   ShieldCheck,
   ArrowRight
-=======
-  Flame
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
 } from 'lucide-react';
 import { escapeRoomScenarios, EscapeScenarioChoice } from '@/data/escapeRoomData';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 import { Button } from '@/components/ui/Button';
 
-<<<<<<< HEAD
 function shuffleArray<T>(array: T[]): T[] {
   const arr = [...array];
   for (let i = arr.length - 1; i > 0; i--) {
@@ -52,15 +43,6 @@ export const EscapeRoomPage: React.FC = () => {
     }
   }, [currentIdx, scenario]);
 
-=======
-export const EscapeRoomPage: React.FC = () => {
-  const { completedEscapes, completeEscape } = useCurriculumStore();
-  const [currentIdx, setCurrentIdx] = useState(0);
-  const [selectedChoice, setSelectedChoice] = useState<EscapeScenarioChoice | null>(null);
-
-  const scenario = escapeRoomScenarios[currentIdx] || escapeRoomScenarios[0];
-
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
   const handleSelectChoice = (choice: EscapeScenarioChoice) => {
     if (selectedChoice) return; // Prevent changing after selection without clicking try again
     setSelectedChoice(choice);
@@ -71,7 +53,6 @@ export const EscapeRoomPage: React.FC = () => {
 
   const handleTryAgain = () => {
     setSelectedChoice(null);
-<<<<<<< HEAD
     if (scenario?.choices) {
       setShuffledChoices(shuffleArray(scenario.choices));
     }
@@ -81,11 +62,6 @@ export const EscapeRoomPage: React.FC = () => {
 
   const handleNext = () => {
     if (!isCurrentSolved) return;
-=======
-  };
-
-  const handleNext = () => {
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
     if (currentIdx < escapeRoomScenarios.length - 1) {
       setCurrentIdx((prev) => prev + 1);
       setSelectedChoice(null);
@@ -109,7 +85,6 @@ export const EscapeRoomPage: React.FC = () => {
 
   const diffStyle = difficultyColors[scenario.difficulty] || difficultyColors.intermediate;
 
-<<<<<<< HEAD
   // Completion Screen View
   if (showCompletion) {
     const totalXp = escapeRoomScenarios.reduce((sum, s) => sum + s.mission_xp_awarded, 0);
@@ -323,8 +298,6 @@ export const EscapeRoomPage: React.FC = () => {
     );
   }
 
-=======
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
   return (
     <div style={{ maxWidth: '960px', margin: '0 auto', paddingBottom: '60px' }}>
       {/* Header */}
@@ -365,10 +338,7 @@ export const EscapeRoomPage: React.FC = () => {
 
         {/* Progress Pill */}
         <div
-<<<<<<< HEAD
           onClick={() => completedEscapes.length === escapeRoomScenarios.length && setShowCompletion(true)}
-=======
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
           style={{
             padding: '8px 16px',
             borderRadius: '10px',
@@ -376,7 +346,6 @@ export const EscapeRoomPage: React.FC = () => {
             border: '1px solid var(--color-border, #e2e8f0)',
             fontSize: '13px',
             fontWeight: 600,
-<<<<<<< HEAD
             color: 'var(--color-text-primary)',
             display: 'flex',
             alignItems: 'center',
@@ -392,13 +361,6 @@ export const EscapeRoomPage: React.FC = () => {
               View Summary
             </span>
           )}
-=======
-            color: 'var(--color-text-primary)'
-          }}
-        >
-          Scenario {currentIdx + 1} of {escapeRoomScenarios.length} ·{' '}
-          <span style={{ color: 'var(--color-emerald)' }}>{completedEscapes.length} Solved</span>
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
         </div>
       </div>
 
@@ -462,11 +424,7 @@ export const EscapeRoomPage: React.FC = () => {
             borderRadius: '0 10px 10px 0',
             padding: '16px 20px',
             fontSize: '15px',
-<<<<<<< HEAD
             color: 'var(--color-text-primary)',
-=======
-            color: 'var(--color-border)',
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
             lineHeight: 1.6,
             marginBottom: '24px'
           }}
@@ -481,11 +439,7 @@ export const EscapeRoomPage: React.FC = () => {
 
         {/* Choices (Without A/B/C labels per spec) */}
         <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-<<<<<<< HEAD
           {(shuffledChoices.length > 0 ? shuffledChoices : scenario.choices).map((choice) => {
-=======
-          {scenario.choices.map((choice) => {
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
             const isSelected = selectedChoice?.id === choice.id;
 
             let border = '1px solid var(--color-border, #e2e8f0)';
@@ -553,11 +507,7 @@ export const EscapeRoomPage: React.FC = () => {
               )}
             </div>
 
-<<<<<<< HEAD
             <p style={{ fontSize: '14px', color: 'var(--color-text-primary, #0f172a)', lineHeight: 1.6, margin: 0 }}>
-=======
-            <p style={{ fontSize: '14px', color: 'var(--color-surface-low)', lineHeight: 1.6, margin: 0 }}>
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
               {selectedChoice.feedback}
             </p>
 
@@ -604,7 +554,6 @@ export const EscapeRoomPage: React.FC = () => {
                 </button>
               </div>
             )}
-<<<<<<< HEAD
 
             {/* Completion CTA if on final scenario & correct */}
             {currentIdx === escapeRoomScenarios.length - 1 && selectedChoice.correct && (
@@ -619,8 +568,6 @@ export const EscapeRoomPage: React.FC = () => {
                 </Button>
               </div>
             )}
-=======
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
           </div>
         )}
       </div>
@@ -672,7 +619,6 @@ export const EscapeRoomPage: React.FC = () => {
           })}
         </div>
 
-<<<<<<< HEAD
         {currentIdx === escapeRoomScenarios.length - 1 ? (
           <Button
             variant={isCurrentSolved ? 'primary' : 'outline'}
@@ -698,17 +644,6 @@ export const EscapeRoomPage: React.FC = () => {
             <ChevronRight size={16} />
           </Button>
         )}
-=======
-        <Button
-          variant="outline"
-          disabled={currentIdx === escapeRoomScenarios.length - 1}
-          onClick={handleNext}
-          style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
-        >
-          <span>Next Scenario</span>
-          <ChevronRight size={16} />
-        </Button>
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
       </div>
     </div>
   );

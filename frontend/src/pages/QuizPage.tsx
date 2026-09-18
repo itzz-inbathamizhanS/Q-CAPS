@@ -17,7 +17,6 @@ import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 
-<<<<<<< HEAD
 interface ShuffledOption {
   text: string;
   originalIndex: number;
@@ -32,8 +31,6 @@ function shuffleArray<T>(array: T[]): T[] {
   return arr;
 }
 
-=======
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
 export const QuizPage: React.FC = () => {
   const { moduleId } = useParams<{ moduleId: string }>();
   const navigate = useNavigate();
@@ -57,7 +54,6 @@ export const QuizPage: React.FC = () => {
   const [answersHistory, setAnswersHistory] = useState<
     Array<{ selected: number; isCorrect: boolean }>
   >([]);
-<<<<<<< HEAD
   const [shuffledOptionsList, setShuffledOptionsList] = useState<ShuffledOption[][]>([]);
 
   const questions = quiz?.questions || [];
@@ -66,10 +62,6 @@ export const QuizPage: React.FC = () => {
   const passingScorePercent = quiz?.passingScorePercent || 70;
 
   // Reset & re-shuffle options if moduleId or quiz changes
-=======
-
-  // Reset if moduleId changes
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
   useEffect(() => {
     setCurrentIndex(0);
     setSelectedOption(null);
@@ -77,7 +69,6 @@ export const QuizPage: React.FC = () => {
     setCorrectCount(0);
     setQuizFinished(false);
     setAnswersHistory([]);
-<<<<<<< HEAD
     if (quiz?.questions) {
       setShuffledOptionsList(
         quiz.questions.map((q) =>
@@ -86,9 +77,6 @@ export const QuizPage: React.FC = () => {
       );
     }
   }, [moduleId, quiz]);
-=======
-  }, [moduleId]);
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
 
   if (!quiz || !currentMod) {
     return (
@@ -109,18 +97,11 @@ export const QuizPage: React.FC = () => {
     );
   }
 
-<<<<<<< HEAD
   const currentOptions: ShuffledOption[] =
     shuffledOptionsList[currentIndex] ||
     (currentQuestion
       ? currentQuestion.options.map((text, originalIndex) => ({ text, originalIndex }))
       : []);
-=======
-  const questions = quiz.questions || [];
-  const currentQuestion = questions[currentIndex];
-  const totalQuestions = questions.length;
-  const passingScorePercent = quiz.passingScorePercent || 70;
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
 
   const handleSelectOption = (idx: number) => {
     if (isAnswerSubmitted) return;
@@ -128,14 +109,9 @@ export const QuizPage: React.FC = () => {
   };
 
   const handleSubmitAnswer = () => {
-<<<<<<< HEAD
     if (selectedOption === null || isAnswerSubmitted || !currentQuestion) return;
     const selectedOriginalIndex = currentOptions[selectedOption]?.originalIndex;
     const isCorrect = selectedOriginalIndex === currentQuestion.correctIndex;
-=======
-    if (selectedOption === null || isAnswerSubmitted) return;
-    const isCorrect = selectedOption === currentQuestion.correctIndex;
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
     setIsAnswerSubmitted(true);
     if (isCorrect) {
       setCorrectCount((prev) => prev + 1);
@@ -171,7 +147,6 @@ export const QuizPage: React.FC = () => {
     setCorrectCount(0);
     setQuizFinished(false);
     setAnswersHistory([]);
-<<<<<<< HEAD
     if (quiz?.questions) {
       setShuffledOptionsList(
         quiz.questions.map((q) =>
@@ -179,8 +154,6 @@ export const QuizPage: React.FC = () => {
         )
       );
     }
-=======
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
   };
 
   const finalScorePercent = Math.round((correctCount / totalQuestions) * 100);
@@ -317,15 +290,9 @@ export const QuizPage: React.FC = () => {
 
               {/* Options */}
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-<<<<<<< HEAD
                 {currentOptions.map((opt, optIdx) => {
                   const isSelected = selectedOption === optIdx;
                   const isCorrectAnswer = opt.originalIndex === currentQuestion.correctIndex;
-=======
-                {currentQuestion.options.map((optionText, optIdx) => {
-                  const isSelected = selectedOption === optIdx;
-                  const isCorrectAnswer = optIdx === currentQuestion.correctIndex;
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
 
                   let rowBorder = '1px solid var(--color-border, #e2e8f0)';
                   let rowBg = 'var(--color-surface, #ffffff)';
@@ -373,11 +340,7 @@ export const QuizPage: React.FC = () => {
                           fontWeight: isSelected ? 500 : 400
                         }}
                       >
-<<<<<<< HEAD
                         {opt.text}
-=======
-                        {optionText}
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
                       </span>
 
                       {isAnswerSubmitted && (
@@ -414,11 +377,7 @@ export const QuizPage: React.FC = () => {
                 >
                   Explanation
                 </div>
-<<<<<<< HEAD
                 <div style={{ fontSize: '14px', color: 'var(--color-text-primary, #1e293b)', lineHeight: 1.5 }}>
-=======
-                <div style={{ fontSize: '14px', color: 'var(--color-surface)', lineHeight: 1.5 }}>
->>>>>>> f062018aa6ab8ffdcaf3ff4ae6d74c3c28808d14
                   {currentQuestion.explanation}
                 </div>
               </div>
