@@ -31,10 +31,10 @@ export const Learning: React.FC = () => {
   } = getPersonalizedLearning(profile, completedModules);
 
   return (
-    <div className="page-container fade-in">
+    <div className="min-h-screen bg-slate-50/50 pb-20">
       <LearningHeader hasAssessmentEvidence={hasAssessmentEvidence} />
 
-      <div className="page-content" style={{ display: 'flex', flexDirection: 'column', gap: '32px' }}>
+      <div className="flex flex-col gap-16 md:gap-24">
         {!hasAssessmentEvidence && <LearningEmptyState />}
 
         {hasAssessmentEvidence && (

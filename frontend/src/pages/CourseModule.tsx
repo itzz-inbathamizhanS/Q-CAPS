@@ -93,17 +93,21 @@ export const CourseModule: React.FC = () => {
     <div className="max-w-7xl mx-auto p-8 md:p-12 flex flex-col min-h-screen bg-slate-50/50">
       
       {/* TOP MODULE CONTEXT HEADER & METADATA BAR */}
-      <section className="bg-white/80 border-b border-slate-200/60 backdrop-blur-md -mx-8 md:-mx-12 px-8 md:px-12 py-10 mb-12 shadow-sm">
-        <div className="w-full max-w-7xl mx-auto">
+      <section className="relative overflow-hidden bg-white/80 border-b border-slate-200/60 backdrop-blur-md -mx-8 md:-mx-12 px-8 md:px-12 py-12 mb-16 shadow-sm">
+        {/* Background Decorative Gradients */}
+        <div className="absolute top-0 right-0 -mr-20 -mt-20 w-96 h-96 bg-indigo-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute bottom-0 left-0 -ml-20 -mb-20 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none"></div>
+        
+        <div className="w-full max-w-7xl mx-auto relative z-10">
           {/* Top Breadcrumb & Return */}
-          <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
+          <div className="flex flex-wrap items-center justify-between gap-6 mb-8">
             <div className="flex items-center gap-4">
-              <Link to="/learning" className="flex items-center gap-1 text-slate-500 hover:text-primary text-sm font-medium transition-colors">
-                <ArrowLeft size={16} />
+              <Link to="/learning" className="flex items-center gap-2 text-slate-500 hover:text-primary text-base font-medium transition-colors bg-white/50 px-4 py-2 rounded-full border border-slate-200/60 shadow-sm hover:shadow">
+                <ArrowLeft size={18} />
                 <span>Back to Learning</span>
               </Link>
-              <span className="text-slate-300 font-mono">/</span>
-              <div className="flex items-center gap-1.5 text-xs text-slate-500">
+              <div className="hidden sm:flex items-center gap-2 text-sm text-slate-500">
+                <span className="text-slate-300 font-mono">/</span>
                 <span>Cyber Fundamentals Path</span>
                 <span className="text-slate-300">&gt;</span>
                 <span className="text-primary font-bold">{moduleData.code}</span>
@@ -112,22 +116,22 @@ export const CourseModule: React.FC = () => {
             
             {/* Badges Cluster */}
             <div className="flex flex-wrap items-center gap-4">
-              <div className="flex items-center gap-1 bg-slate-50 px-3 py-1 rounded-full border border-slate-200 text-slate-600 text-xs font-medium">
-                <BookOpen size={15} />
+              <div className="flex items-center gap-2 bg-slate-50 px-4 py-2 rounded-full border border-slate-200 text-slate-700 text-sm font-medium shadow-sm">
+                <BookOpen size={18} className="text-slate-400" />
                 <span>{moduleData.estimatedMinutes} mins</span>
               </div>
-              <div className="flex items-center gap-1.5 bg-indigo-50 px-3 py-1 rounded-full border border-indigo-200 text-primary text-xs font-medium">
-                <Zap size={16} />
+              <div className="flex items-center gap-2 bg-indigo-50 px-4 py-2 rounded-full border border-indigo-200 text-primary text-sm font-medium shadow-sm">
+                <Zap size={18} />
                 <span>+{moduleData.xp} XP</span>
-                {completed && <span className="text-[10px] bg-indigo-100 text-primary px-1.5 rounded font-bold">+50 Streak Bonus</span>}
+                {completed && <span className="text-xs bg-indigo-100 text-primary px-2.5 py-0.5 rounded-full font-bold ml-1">+50 Streak Bonus</span>}
               </div>
-              <div className="flex items-center gap-2 bg-white px-3 py-1 rounded-full border border-slate-200 text-xs font-medium">
+              <div className="flex items-center gap-3 bg-white px-5 py-2 rounded-full border border-slate-200 text-sm font-medium shadow-sm">
                 <span className="text-slate-500">Module {currentIdx + 1} of {curriculumModules.length}</span>
-                <div className="w-16 h-1.5 bg-slate-100 rounded-full overflow-hidden">
-                  <div className={`h-full rounded-full transition-all duration-500 ${completed ? 'bg-emerald-500 w-[100%] shadow-[0_0_8px_#10B981]' : 'bg-primary w-[35%]'}`}></div>
+                <div className="w-24 h-2 bg-slate-100 rounded-full overflow-hidden">
+                  <div className={`h-full rounded-full transition-all duration-1000 ${completed ? 'bg-emerald-500 w-[100%] shadow-[0_0_12px_#10B981]' : 'bg-primary w-[35%]'}`}></div>
                 </div>
                 {completed ? (
-                  <span className="text-emerald-600 font-bold flex items-center gap-1"><CheckCircle size={12}/> Completed</span>
+                  <span className="text-emerald-600 font-bold flex items-center gap-1.5"><CheckCircle size={16}/> Completed</span>
                 ) : (
                   <span className="text-primary font-bold">In Progress</span>
                 )}
@@ -136,20 +140,21 @@ export const CourseModule: React.FC = () => {
           </div>
           
           {/* Module Headline Banner */}
-          <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
-            <div>
-              <div className="flex items-center gap-2 mb-2">
-                <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 text-xs px-2 py-0.5 rounded tracking-widest font-bold uppercase">{moduleData.level}</span>
-                <span className="text-slate-400 text-xs font-mono">{moduleData.code}</span>
+          <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 mt-4">
+            <div className="space-y-4">
+              <div className="flex items-center gap-3">
+                <span className="bg-emerald-50 border border-emerald-200 text-emerald-600 text-sm px-3 py-1 rounded-md tracking-widest font-bold uppercase shadow-sm">{moduleData.level}</span>
+                <span className="text-slate-400 text-sm font-mono bg-slate-50 px-3 py-1 rounded-md border border-slate-100">{moduleData.code}</span>
               </div>
-              <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900">
+              <h1 className="text-4xl md:text-5xl lg:text-6xl font-extrabold tracking-tight text-slate-900 leading-tight">
                 {moduleData.title}
               </h1>
             </div>
             {quizScore !== undefined && (
-              <div className="flex items-center gap-2">
-                 <span className="px-4 py-2 rounded-lg border border-amber-200 text-amber-700 bg-amber-50 flex items-center gap-2 font-bold text-sm shadow-sm">
-                   <Trophy size={18} /> Quiz: {quizScore}%
+              <div className="flex items-center gap-2 mb-2">
+                 <span className="px-5 py-3 rounded-xl border-2 border-amber-200 text-amber-700 bg-amber-50 flex items-center gap-2 font-bold text-lg shadow-sm">
+                   <Trophy size={24} className="text-amber-500" /> 
+                   <span>Quiz: {quizScore}%</span>
                  </span>
               </div>
             )}

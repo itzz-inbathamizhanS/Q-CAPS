@@ -1,5 +1,5 @@
 import React from 'react';
-import { Sparkles } from 'lucide-react';
+import { Sparkles, Target } from 'lucide-react';
 import { LearningModule } from '../learningTypes';
 import { LearningModuleCard } from './LearningModuleCard';
 
@@ -15,29 +15,35 @@ export const RecommendedLearning: React.FC<RecommendedLearningProps> = ({
   if (recommendedModules.length === 0) return null;
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '8px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <Sparkles size={18} color="var(--color-primary)" />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', textTransform: 'uppercase', color: 'var(--color-primary)', fontWeight: 700, letterSpacing: '0.04em' }}>
-              Adaptive Recommendation
+    <section className="max-w-7xl mx-auto px-8 md:px-12 mb-16 space-y-8 animate-in fade-in slide-in-from-bottom-8 duration-700">
+      <div className="flex flex-col md:flex-row md:items-end justify-between gap-6 border-b border-slate-200 pb-6">
+        <div className="space-y-3 max-w-3xl">
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 text-amber-600 border border-amber-200 text-xs font-bold uppercase tracking-widest shadow-sm">
+              <Sparkles size={14} /> Priority Mission
             </span>
           </div>
-          <h2 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 flex items-center gap-3">
+            <Target className="text-primary" size={32} />
             Recommended For You
           </h2>
           {topPriorityReason && (
-            <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+            <p className="text-lg text-slate-600 font-medium">
               {topPriorityReason}
             </p>
           )}
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         {recommendedModules.map((module) => (
-          <LearningModuleCard key={module.id} module={module} featured />
+          <div key={module.id} className="relative group">
+            {/* Glow effect behind featured cards */}
+            <div className="absolute -inset-1 bg-gradient-to-r from-primary to-emerald-400 rounded-3xl blur opacity-20 group-hover:opacity-40 transition duration-500"></div>
+            <div className="relative h-full transform transition duration-500 group-hover:scale-[1.01]">
+              <LearningModuleCard module={module} featured />
+            </div>
+          </div>
         ))}
       </div>
     </section>

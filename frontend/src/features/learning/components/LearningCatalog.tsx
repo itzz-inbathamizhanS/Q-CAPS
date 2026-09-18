@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen } from 'lucide-react';
+import { BookOpen, Compass } from 'lucide-react';
 import { AssessmentDomain } from '@/features/assessment/assessmentTypes';
 import { LearningModule } from '../learningTypes';
 import { LearningModuleCard } from './LearningModuleCard';
@@ -26,25 +26,25 @@ export const LearningCatalog: React.FC<LearningCatalogProps> = ({ allModules }) 
   });
 
   return (
-    <section style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '16px' }}>
-        <div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '4px' }}>
-            <BookOpen size={18} color="var(--color-secondary)" />
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', textTransform: 'uppercase', color: 'var(--color-secondary)', fontWeight: 700, letterSpacing: '0.04em' }}>
-              Full Curriculum
+    <section className="max-w-7xl mx-auto px-8 md:px-12 pb-32 space-y-8 animate-in fade-in slide-in-from-bottom-12 duration-700">
+      <div className="flex flex-col xl:flex-row xl:items-end justify-between gap-6 border-b border-slate-200 pb-6">
+        <div className="space-y-3 max-w-3xl">
+          <div className="flex items-center gap-2">
+            <span className="flex items-center gap-1.5 px-3 py-1 rounded-full bg-slate-100 text-slate-500 border border-slate-200 text-xs font-bold uppercase tracking-widest shadow-sm">
+              <Compass size={14} /> Full Catalog
             </span>
           </div>
-          <h2 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+          <h2 className="text-3xl md:text-4xl font-extrabold text-slate-900 flex items-center gap-3">
+            <BookOpen className="text-primary" size={32} />
             All Learning Modules
           </h2>
-          <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+          <p className="text-lg text-slate-600 font-medium">
             Structured, progressive learning path from classical cryptography to applied post-quantum migration.
           </p>
         </div>
 
         {/* Filter Tabs */}
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '6px', padding: '4px', backgroundColor: 'var(--color-surface-dim)', borderRadius: '8px', border: '1px solid var(--color-border)' }}>
+        <div className="flex flex-wrap gap-2 p-1.5 bg-slate-100/80 backdrop-blur-sm rounded-xl border border-slate-200 shadow-sm">
           {filterTabs.map((tab) => {
             const isActive = activeTab === tab.id;
             return (
@@ -52,18 +52,11 @@ export const LearningCatalog: React.FC<LearningCatalogProps> = ({ allModules }) 
                 key={tab.id}
                 type="button"
                 onClick={() => setActiveTab(tab.id)}
-                style={{
-                  padding: '6px 14px',
-                  borderRadius: '6px',
-                  border: 'none',
-                  fontSize: '13px',
-                  fontWeight: isActive ? 600 : 500,
-                  backgroundColor: isActive ? 'var(--color-surface)' : 'transparent',
-                  color: isActive ? 'var(--color-primary)' : 'var(--color-text-secondary)',
-                  boxShadow: isActive ? '0 1px 3px rgba(0,0,0,0.05)' : 'none',
-                  cursor: 'pointer',
-                  transition: 'all 0.2s',
-                }}
+                className={`px-5 py-2.5 rounded-lg text-sm font-bold transition-all duration-300 ${
+                  isActive 
+                    ? 'bg-white text-primary shadow-[0_2px_10px_rgba(0,0,0,0.05)] border border-slate-200/50' 
+                    : 'bg-transparent text-slate-500 hover:text-slate-800 hover:bg-slate-200/50'
+                }`}
               >
                 {tab.label}
               </button>
@@ -72,9 +65,12 @@ export const LearningCatalog: React.FC<LearningCatalogProps> = ({ allModules }) 
         </div>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(320px, 1fr))', gap: '20px' }}>
+      {/* Grid container with spacious gap-10 */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-10">
         {filteredModules.map((module) => (
-          <LearningModuleCard key={module.id} module={module} />
+          <div key={module.id} className="transform transition-all duration-300 hover:-translate-y-1">
+            <LearningModuleCard module={module} />
+          </div>
         ))}
       </div>
     </section>
