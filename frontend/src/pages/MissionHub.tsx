@@ -160,11 +160,13 @@ export const MissionHub: React.FC = () => {
                 <div style={{ textAlign: 'right' }}>
                   <div style={{ display: 'flex', alignItems: 'center', gap: '6px', justifyContent: 'flex-end', color: '#f59e0b', fontWeight: 600, fontSize: '14px' }}>
                     <Zap size={16} />
-                    <span>+150 XP</span>
+                    <span>+{mission.rewards?.mission_xp_awarded || 150} XP</span>
                   </div>
-                  <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
-                    Unlocks Verified Lab Badge
-                  </div>
+                  {mission.rewards?.badge_awarded && (
+                    <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
+                      Unlocks {mission.rewards.badge_awarded} Badge
+                    </div>
+                  )}
                 </div>
 
                 <Button

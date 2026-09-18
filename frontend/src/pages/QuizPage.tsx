@@ -125,9 +125,15 @@ export const QuizPage: React.FC = () => {
       setSelectedOption(null);
       setIsAnswerSubmitted(false);
     } else {
-      // Finished!
-      const finalCorrect = correctCount;
-      const scorePercent = Math.round((finalCorrect / totalQuestions) * 100);
+      // Finished! correctCount may not yet include the last answer due to async setState,
+      // so we check the last entry in answersHistory to get the true final count.
+      const lastAnswer = answersHistory[answersHistory.length - 1];
+      const finalCorrect = lastAnswer?.isCorrect ? correctCount : correctCount;
+      // Actually: correctCount IS already updated because handleSubmitAnswer called
+      // setCorrectCount before this function runs (same render cycle completes setState).
+      // But to be safe, recalculate from answersHistory which is the source of truth:
+      const trueCorrect = answersHistory.filter(a => a.isCorrect).length;
+      const scorePercent = Math.round((trueCorrect / totalQuestions) * 100);
       setQuizFinished(true);
 
       // Trigger store completion
@@ -156,7 +162,8 @@ export const QuizPage: React.FC = () => {
     }
   };
 
-  const finalScorePercent = Math.round((correctCount / totalQuestions) * 100);
+  const displayCorrectCount = answersHistory.filter(a => a.isCorrect).length;
+  const finalScorePercent = Math.round((displayCorrectCount / totalQuestions) * 100);
   const isPassed = finalScorePercent >= passingScorePercent;
 
   // Find next module
@@ -443,7 +450,7 @@ export const QuizPage: React.FC = () => {
             </div>
 
             <p style={{ fontSize: '16px', color: 'var(--color-text-secondary)', marginTop: '4px' }}>
-              You answered <strong>{correctCount}</strong> of <strong>{totalQuestions}</strong> questions correctly.
+              You answered <strong>{displayCorrectCount}</strong> of <strong>{totalQuestions}</strong> questions correctly.
               (Passing benchmark: {passingScorePercent}%)
             </p>
 

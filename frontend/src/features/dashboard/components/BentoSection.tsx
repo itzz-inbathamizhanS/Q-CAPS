@@ -7,6 +7,8 @@ import { Clock, Play, Radar, Rocket } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 
 import { UserRecommendation } from '@/services/backendService';
+import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
+import { curriculumModules } from '@/data/curriculumData';
 
 interface BentoSectionProps {
   liveRecommendation?: UserRecommendation | null;
@@ -14,16 +16,23 @@ interface BentoSectionProps {
 
 export const BentoSection: React.FC<BentoSectionProps> = ({ liveRecommendation }) => {
   const navigate = useNavigate();
-  const displayTitle = liveRecommendation?.title || 'Shor’s Algorithm & RSA';
+  const { getRecommendedNextModule, completedModules } = useCurriculumStore();
+  const recommendedId = liveRecommendation?.course_id || getRecommendedNextModule();
+  const recommendedMod = curriculumModules.find(m => m.id === recommendedId);
+
+  const displayTitle = liveRecommendation?.title || recommendedMod?.title || 'Shor\'s Algorithm & RSA';
   const displayDesc = liveRecommendation?.reason || 'Critical for understanding the upcoming PQC migration.';
   const displayBadge = liveRecommendation?.priority ? `Priority: ${liveRecommendation.priority}` : 'Recommended';
 
+  const totalModules = curriculumModules.length;
+  const progressPercent = Math.round((completedModules.length / totalModules) * 100);
+
   const recommendedLearning = {
-    level: 'L3 / Advanced',
-    duration: '45 mins',
-    progress: 0,
+    level: recommendedMod?.level || 'Intermediate',
+    duration: recommendedMod ? `${recommendedMod.estimatedMinutes} mins` : '45 mins',
+    progress: progressPercent,
     ctaText: 'Start Module',
-    ctaLink: '/learning',
+    ctaLink: `/learning/${recommendedId}`,
   };
 
   const practicalChallenge = {

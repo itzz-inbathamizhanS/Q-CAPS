@@ -188,30 +188,12 @@ def get_recommendation(user_id: int, db: Session = Depends(get_db)):
     return recommendations
 
 @app.get("/api/leaderboard")
-def get_leaderboard():
+def get_leaderboard(db: Session = Depends(get_db)):
     """
     Returns the top users sorted by XP in descending order.
     """
-    DB_PATH = os.path.join(os.path.dirname(__file__), "qcaps.db")
     try:
-        conn = sqlite3.connect(DB_PATH)
-        c = conn.cursor()
-        c.execute('''
-            SELECT id, name, xp 
-            FROM users 
-            ORDER BY xp DESC
-        ''')
-        rows = c.fetchall()
-        conn.close()
-        
-        leaderboard = []
-        for row in rows:
-            leaderboard.append({
-                "id": row[0],
-                "name": row[1],
-                "xp": row[2]
-            })
-        return leaderboard
+        return get_leaderboard_data(db)
     except Exception as e:
         raise HTTPException(status_code=500, detail=str(e))
 

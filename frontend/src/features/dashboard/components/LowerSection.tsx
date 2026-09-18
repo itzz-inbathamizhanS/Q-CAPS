@@ -13,7 +13,7 @@ export interface AchievementItem {
 }
 
 export const LowerSection: React.FC = () => {
-  const { unlockedBadges, quizScores } = useCurriculumStore();
+  const { unlockedBadges, quizScores, streakDays, lastActivityDate } = useCurriculumStore();
 
   const achievements: AchievementItem[] = unlockedBadges.map((badge, idx) => ({
     id: `badge-${idx}`,
@@ -32,17 +32,31 @@ export const LowerSection: React.FC = () => {
     });
   }
 
+  // Generate days array based on streakDays and current day
+  const daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
+  const today = new Date().getDay();
+  // Adjust so Monday is 0, Sunday is 6
+  const currentDayIndex = today === 0 ? 6 : today - 1;
+  
+  const days = daysOfWeek.map((day, idx) => {
+    // If the streak includes this day (working backwards from today)
+    const isPastOrToday = idx <= currentDayIndex;
+    const daysAgo = currentDayIndex - idx;
+    // Check if there was activity recently to maintain the streak
+    const hasActivityToday = lastActivityDate === new Date().toISOString().split('T')[0];
+    const isStreakActive = hasActivityToday 
+      ? daysAgo < streakDays 
+      : daysAgo < (streakDays - 1);
+      
+    return {
+      day,
+      active: isPastOrToday && isStreakActive
+    };
+  });
+
   const weeklyPractice = {
-    activeDaysCount: 3,
-    days: [
-      { day: 'M', active: true },
-      { day: 'T', active: true },
-      { day: 'W', active: false },
-      { day: 'T', active: true },
-      { day: 'F', active: false },
-      { day: 'S', active: false },
-      { day: 'S', active: false },
-    ],
+    activeDaysCount: streakDays,
+    days,
   };
 
   // Compute skill breakdown dynamically from real quiz scores using canonical module domain metadata

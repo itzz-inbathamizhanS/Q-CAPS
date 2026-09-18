@@ -15,6 +15,8 @@ interface CurriculumState {
   completedCapstones: string[];
   /** Tracks which module IDs have already been awarded XP (prevents double-awards) */
   xpAwardedModules: string[];
+  streakDays: number;
+  lastActivityDate: string | null;
 
   // Actions
   completeQuiz: (moduleId: string, scorePercent: number, badgeName?: string, xpEarned?: number) => void;
@@ -37,7 +39,7 @@ const INITIAL_BADGES: string[] = [];
 
 // Helper to fire backend sync
 const persistToBackend = (state: CurriculumState) => {
-  const { completedModules, currentModuleId, quizScores, unlockedBadges, completedEscapes, completedMissions, totalXp, completedCapstones } = state;
+  const { completedModules, currentModuleId, quizScores, unlockedBadges, completedEscapes, completedMissions, totalXp, completedCapstones, streakDays, lastActivityDate } = state;
   syncProgressData({
     completedModules,
     currentModuleId,
@@ -46,7 +48,9 @@ const persistToBackend = (state: CurriculumState) => {
     completedEscapes,
     completedMissions,
     totalXp,
-    completedCapstones
+    completedCapstones,
+    streakDays,
+    lastActivityDate
   }).catch(console.error);
 };
 
@@ -56,6 +60,21 @@ const calcReadinessScore = (quizScores: Record<string, number>): number => {
   if (entries.length === 0) return 0;
   const avg = entries.reduce((sum, s) => sum + s, 0) / entries.length;
   return Math.min(100, Math.round(avg));
+};
+
+// Helper: calculate new streak
+const updateStreak = (currentStreak: number, lastDate: string | null): { streakDays: number, lastActivityDate: string } => {
+  const today = new Date().toISOString().split('T')[0];
+  if (!lastDate) return { streakDays: 1, lastActivityDate: today };
+  
+  const last = new Date(lastDate);
+  const now = new Date(today);
+  const diffTime = Math.abs(now.getTime() - last.getTime());
+  const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+  
+  if (diffDays === 0) return { streakDays: currentStreak, lastActivityDate: today };
+  if (diffDays === 1) return { streakDays: currentStreak + 1, lastActivityDate: today };
+  return { streakDays: 1, lastActivityDate: today };
 };
 
 export const useCurriculumStore = create<CurriculumState>()(
@@ -71,6 +90,8 @@ export const useCurriculumStore = create<CurriculumState>()(
   completedMissions: [],
   completedCapstones: [],
   xpAwardedModules: [],
+  streakDays: 0,
+  lastActivityDate: null,
 
   completeQuiz: (moduleId, scorePercent, badgeName, xpEarned) => {
     set((state) => {
@@ -114,6 +135,8 @@ export const useCurriculumStore = create<CurriculumState>()(
         [moduleId]: Math.max(state.quizScores[moduleId] || 0, scorePercent)
       };
 
+      const streakData = updateStreak(state.streakDays, state.lastActivityDate);
+
       const newState = {
         ...state,
         completedModules: newCompleted,
@@ -123,6 +146,7 @@ export const useCurriculumStore = create<CurriculumState>()(
         totalXp: state.totalXp + xpToAward,
         xpAwardedModules: newXpAwardedModules,
         readinessScore: calcReadinessScore(newQuizScores),
+        ...streakData
       };
       
       persistToBackend(newState);
@@ -151,12 +175,15 @@ export const useCurriculumStore = create<CurriculumState>()(
         nextMod = curriculumModules[currentIdx + 1].id;
       }
 
+      const streakData = updateStreak(state.streakDays, state.lastActivityDate);
+
       const newState = {
         ...state,
         completedModules: [...state.completedModules, moduleId],
         totalXp: state.totalXp + xpToAward,
         xpAwardedModules: newXpAwardedModules,
         currentModuleId: nextMod,
+        ...streakData
       };
       persistToBackend(newState);
       return newState;
@@ -183,11 +210,14 @@ export const useCurriculumStore = create<CurriculumState>()(
         ? [...state.unlockedBadges, badgeName]
         : state.unlockedBadges;
         
+      const streakData = updateStreak(state.streakDays, state.lastActivityDate);
+        
       const newState = {
         ...state,
         completedEscapes: [...state.completedEscapes, escapeId],
         unlockedBadges: newBadges,
         totalXp: state.totalXp + (xp ?? 0),
+        ...streakData
       };
       persistToBackend(newState);
       return newState;
@@ -201,11 +231,14 @@ export const useCurriculumStore = create<CurriculumState>()(
         ? [...state.unlockedBadges, badgeName]
         : state.unlockedBadges;
         
+      const streakData = updateStreak(state.streakDays, state.lastActivityDate);
+        
       const newState = {
         ...state,
         completedMissions: [...state.completedMissions, missionId],
         unlockedBadges: newBadges,
         totalXp: state.totalXp + (xp ?? 0),
+        ...streakData
       };
       persistToBackend(newState);
       return newState;
@@ -215,10 +248,12 @@ export const useCurriculumStore = create<CurriculumState>()(
   completeCapstone: (capstoneId, xp = 0) => {
     set((state) => {
       if (state.completedCapstones.includes(capstoneId)) return state;
+      const streakData = updateStreak(state.streakDays, state.lastActivityDate);
       const newState = {
         ...state,
         completedCapstones: [...state.completedCapstones, capstoneId],
         totalXp: state.totalXp + (xp ?? 0),
+        ...streakData
       };
       persistToBackend(newState);
       return newState;

@@ -112,14 +112,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onCloseMobil
           <span>Crypto Scanner</span>
         </NavLink>
 
-        <NavLink
-          to="/scanner"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-          onClick={handleLinkClick}
-        >
-          <History size={18} />
-          <span>Scan History</span>
-        </NavLink>
 
         {/* Metrics Group */}
         <div className="nav-divider">

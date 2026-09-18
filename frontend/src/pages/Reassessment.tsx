@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/Card';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 import { useAuthStore } from '@/features/auth/authStore';
+import { curriculumModules } from '@/data/curriculumData';
 import {
   Radar,
   RadarChart,
@@ -17,42 +18,56 @@ import {
   Tooltip,
   Legend
 } from 'recharts';
-import { Target, Activity, Zap } from 'lucide-react';
+import { Target, Activity, Zap, BookOpen } from 'lucide-react';
 
 export const Reassessment: React.FC = () => {
-  const { quizScores } = useCurriculumStore();
+  const { quizScores, completedModules, totalXp } = useCurriculumStore();
   const { userId } = useAuthStore();
 
-  // Mapping topics to readable labels for charts
-  const topicMap: Record<string, string> = {
-    'classical_crypto': 'Classical Crypto',
-    'quantum_mechanics': 'Quantum Basics',
-    'pqc_algorithms': 'PQC Algorithms',
-    'practical_security': 'Practical Sec',
-    'networking': 'Networking',
-    'algorithms': 'Algorithms'
+  // Aggregate quiz scores by domain using the canonical module metadata
+  const domainScoresMap: Record<string, number[]> = {};
+  for (const [moduleId, score] of Object.entries(quizScores)) {
+    const mod = curriculumModules.find(m => m.id === moduleId);
+    const domain = mod?.domain ?? 'Unknown';
+    if (!domainScoresMap[domain]) domainScoresMap[domain] = [];
+    domainScoresMap[domain].push(score);
+  }
+
+  const domainAvg = (domain: string): number => {
+    const scores = domainScoresMap[domain];
+    if (!scores || scores.length === 0) return 0;
+    return Math.round(scores.reduce((a, b) => a + b, 0) / scores.length);
   };
 
-  // Transform quizScores dictionary into an array for Recharts
-  const data = Object.keys(topicMap).map(key => ({
-    subject: topicMap[key],
-    score: quizScores[key] || 0,
+  // Build radar chart data from the 4 assessment domains
+  const domainLabels: Record<string, string> = {
+    'Cybersecurity Fundamentals': 'Cybersecurity',
+    'Cryptography Fundamentals': 'Cryptography',
+    'PQC Fundamentals': 'PQC',
+    'Applied PQC': 'Applied PQC',
+  };
+
+  const radarData = Object.entries(domainLabels).map(([domain, label]) => ({
+    subject: label,
+    score: domainAvg(domain),
     fullMark: 100
   }));
 
-  // Calculate some delta metrics (mocking previous score vs current score for visual impact)
-  const deltaData = Object.keys(topicMap).map(key => {
-    const current = quizScores[key] || 0;
-    const previous = Math.max(0, current - (Math.random() * 30 + 10)); // simulated previous score
-    return {
-      name: topicMap[key],
-      Baseline: Math.round(previous),
-      Current: current
-    };
-  });
+  // Bar chart: show per-module quiz scores (real data, no fake baselines)
+  const barData = Object.entries(quizScores)
+    .map(([moduleId, score]) => {
+      const mod = curriculumModules.find(m => m.id === moduleId);
+      return {
+        name: mod?.code ?? moduleId.slice(-6),
+        Score: score,
+      };
+    })
+    .sort((a, b) => a.name.localeCompare(b.name));
 
-  const totalScore = Object.values(quizScores).reduce((a, b) => a + b, 0);
-  const avgScore = Object.keys(quizScores).length > 0 ? Math.round(totalScore / Object.keys(quizScores).length) : 0;
+  const quizCount = Object.keys(quizScores).length;
+  const avgScore = quizCount > 0
+    ? Math.round(Object.values(quizScores).reduce((a, b) => a + b, 0) / quizCount)
+    : 0;
 
   if (!userId) {
     return (
@@ -68,7 +83,7 @@ export const Reassessment: React.FC = () => {
       <div style={{ marginBottom: '32px' }}>
         <h1 style={{ fontSize: '28px', fontWeight: 700, color: 'var(--color-text-primary)', display: 'flex', alignItems: 'center', gap: '12px' }}>
           <Target className="text-primary-500" />
-          Progress & Reassessment Delta
+          Progress & Reassessment
         </h1>
         <p style={{ fontSize: '15px', color: 'var(--color-text-secondary)', marginTop: '8px' }}>
           Empirical capability tracking. Visualizing your acquisition of quantum-safe cryptographic skills.
@@ -76,7 +91,7 @@ export const Reassessment: React.FC = () => {
       </div>
 
       {/* Summary KPI Cards */}
-      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))', gap: '16px', marginBottom: '24px' }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '16px', marginBottom: '24px' }}>
         <Card variant="glass" padding="normal" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-text-secondary)' }}>
             <Activity size={18} />
@@ -90,10 +105,30 @@ export const Reassessment: React.FC = () => {
         <Card variant="glass" padding="normal" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-text-secondary)' }}>
             <Zap size={18} />
-            <span style={{ fontSize: '13px', fontWeight: 600 }}>MODULES MASTERED</span>
+            <span style={{ fontSize: '13px', fontWeight: 600 }}>QUIZZES PASSED</span>
           </div>
           <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-            {Object.keys(quizScores).length}
+            {quizCount}
+          </div>
+        </Card>
+
+        <Card variant="glass" padding="normal" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-text-secondary)' }}>
+            <BookOpen size={18} />
+            <span style={{ fontSize: '13px', fontWeight: 600 }}>MODULES COMPLETED</span>
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+            {completedModules.length}
+          </div>
+        </Card>
+
+        <Card variant="glass" padding="normal" style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: '8px', color: 'var(--color-text-secondary)' }}>
+            <Zap size={18} />
+            <span style={{ fontSize: '13px', fontWeight: 600 }}>TOTAL XP</span>
+          </div>
+          <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
+            {totalXp.toLocaleString()}
           </div>
         </Card>
       </div>
@@ -104,11 +139,11 @@ export const Reassessment: React.FC = () => {
         {/* Radar Chart */}
         <Card variant="glass" padding="large">
           <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '16px' }}>
-            Capability Matrix (Radar)
+            Domain Capability (Radar)
           </h2>
           <div style={{ width: '100%', height: '300px' }}>
             <ResponsiveContainer width="100%" height="100%">
-              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={data}>
+              <RadarChart cx="50%" cy="50%" outerRadius="80%" data={radarData}>
                 <PolarGrid stroke="var(--color-border)" />
                 <PolarAngleAxis dataKey="subject" tick={{ fill: 'var(--color-text-secondary)', fontSize: 12 }} />
                 <PolarRadiusAxis angle={30} domain={[0, 100]} tick={false} axisLine={false} />
@@ -128,26 +163,31 @@ export const Reassessment: React.FC = () => {
           </div>
         </Card>
 
-        {/* Delta Bar Chart */}
+        {/* Per-Module Bar Chart */}
         <Card variant="glass" padding="large">
           <h2 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '16px' }}>
-            Acquisition Delta (Before / After)
+            Quiz Scores by Module
           </h2>
           <div style={{ width: '100%', height: '300px' }}>
-            <ResponsiveContainer width="100%" height="100%">
-              <BarChart data={deltaData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
-                <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
-                <XAxis dataKey="name" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
-                <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} domain={[0, 100]} />
-                <Tooltip 
-                  contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px' }}
-                  cursor={{ fill: 'rgba(0,0,0,0.05)' }}
-                />
-                <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
-                <Bar dataKey="Baseline" fill="#94a3b8" radius={[4, 4, 0, 0]} />
-                <Bar dataKey="Current" fill="var(--color-emerald)" radius={[4, 4, 0, 0]} />
-              </BarChart>
-            </ResponsiveContainer>
+            {barData.length === 0 ? (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: '100%', color: 'var(--color-text-secondary)', fontSize: '14px' }}>
+                Complete quizzes to see your scores here.
+              </div>
+            ) : (
+              <ResponsiveContainer width="100%" height="100%">
+                <BarChart data={barData} margin={{ top: 10, right: 10, left: -20, bottom: 0 }}>
+                  <CartesianGrid strokeDasharray="3 3" stroke="var(--color-border)" vertical={false} />
+                  <XAxis dataKey="name" tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} />
+                  <YAxis tick={{ fill: 'var(--color-text-secondary)', fontSize: 11 }} domain={[0, 100]} />
+                  <Tooltip 
+                    contentStyle={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '8px' }}
+                    cursor={{ fill: 'rgba(0,0,0,0.05)' }}
+                  />
+                  <Legend iconType="circle" wrapperStyle={{ fontSize: '12px' }} />
+                  <Bar dataKey="Score" fill="var(--color-primary)" radius={[4, 4, 0, 0]} />
+                </BarChart>
+              </ResponsiveContainer>
+            )}
           </div>
         </Card>
 
