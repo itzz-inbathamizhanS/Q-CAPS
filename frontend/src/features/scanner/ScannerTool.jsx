@@ -515,8 +515,9 @@ const ScannerTool = () => {
           <div className="st-box-scroll custom-scrollbar" style={{ height: '100%', maxHeight: '160px' }}>
             {scanResult.infrastructure?.subdomains?.length > 0 ? (
               scanResult.infrastructure.subdomains.map((sub, idx) => (
-                <div key={idx} style={{ whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', color: 'var(--color-primary)', cursor: 'default' }} title={sub}>
-                  <span style={{ color: 'var(--color-text-secondary)', marginRight: '8px' }}>↳</span>{sub}
+                <div key={idx} style={{ color: 'var(--color-text-primary)' }} title={String(sub)}>
+                  <span style={{ color: 'var(--color-secondary)', fontWeight: 'bold', marginRight: '8px' }}>↳</span>
+                  <span style={{ wordBreak: 'break-all' }}>DEBUG: {JSON.stringify(sub)}</span>
                 </div>
               ))
             ) : (

@@ -49,7 +49,6 @@ export const QuizPage: React.FC = () => {
   const [currentIndex, setCurrentIndex] = useState(0);
   const [selectedOption, setSelectedOption] = useState<number | null>(null);
   const [isAnswerSubmitted, setIsAnswerSubmitted] = useState(false);
-  const [correctCount, setCorrectCount] = useState(0);
   const [quizFinished, setQuizFinished] = useState(false);
   const [answersHistory, setAnswersHistory] = useState<
     Array<{ selected: number; isCorrect: boolean }>
@@ -66,7 +65,6 @@ export const QuizPage: React.FC = () => {
     setCurrentIndex(0);
     setSelectedOption(null);
     setIsAnswerSubmitted(false);
-    setCorrectCount(0);
     setQuizFinished(false);
     setAnswersHistory([]);
     if (quiz?.questions) {
@@ -113,9 +111,6 @@ export const QuizPage: React.FC = () => {
     const selectedOriginalIndex = currentOptions[selectedOption]?.originalIndex;
     const isCorrect = selectedOriginalIndex === currentQuestion.correctIndex;
     setIsAnswerSubmitted(true);
-    if (isCorrect) {
-      setCorrectCount((prev) => prev + 1);
-    }
     setAnswersHistory((prev) => [...prev, { selected: selectedOption, isCorrect }]);
   };
 
@@ -127,8 +122,6 @@ export const QuizPage: React.FC = () => {
     } else {
       // Finished! correctCount may not yet include the last answer due to async setState,
       // so we check the last entry in answersHistory to get the true final count.
-      const lastAnswer = answersHistory[answersHistory.length - 1];
-      const finalCorrect = lastAnswer?.isCorrect ? correctCount : correctCount;
       // Actually: correctCount IS already updated because handleSubmitAnswer called
       // setCorrectCount before this function runs (same render cycle completes setState).
       // But to be safe, recalculate from answersHistory which is the source of truth:
@@ -150,7 +143,6 @@ export const QuizPage: React.FC = () => {
     setCurrentIndex(0);
     setSelectedOption(null);
     setIsAnswerSubmitted(false);
-    setCorrectCount(0);
     setQuizFinished(false);
     setAnswersHistory([]);
     if (quiz?.questions) {

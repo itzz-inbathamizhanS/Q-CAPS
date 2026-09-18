@@ -7,7 +7,6 @@ import {
   Terminal,
   Rocket,
   ShieldCheck,
-  History,
   TrendingUp,
   Award,
   Trophy,

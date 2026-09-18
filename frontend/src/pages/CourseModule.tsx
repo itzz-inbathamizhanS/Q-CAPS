@@ -90,7 +90,7 @@ export const CourseModule: React.FC = () => {
   };
   
   return (
-    <div className="max-w-4xl mx-auto p-6 md:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
+    <div className="max-w-6xl mx-auto p-6 md:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
       
       {/* Header Section */}
       <div className="space-y-4">
@@ -145,31 +145,63 @@ export const CourseModule: React.FC = () => {
         </div>
       )}
 
-      {/* Course Content Sections */}
-      <div className="space-y-8 mt-8">
-        {moduleData.sections.map((section) => (
-          <div key={section.id} className="bg-white rounded-2xl border border-slate-200 p-8 shadow-sm transition-shadow hover:shadow-md">
-            <h2 className="text-2xl font-bold text-slate-900 mb-6 pb-4 border-b border-slate-100">
-              {section.title}
-            </h2>
-            <div className="prose prose-slate prose-lg max-w-none 
-              prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary 
-              prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1 prose-code:py-0.5 prose-code:rounded
-              prose-pre:bg-slate-900 prose-pre:text-slate-50 prose-pre:border prose-pre:border-slate-800">
-              <ReactMarkdown remarkPlugins={[remarkGfm]}>
-                {section.content}
-              </ReactMarkdown>
+      {/* Course Content Layout */}
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-8 mt-12">
+        
+        {/* Left Rail: Sticky Timeline Navigation */}
+        <div className="lg:col-span-1 hidden lg:block">
+          <div className="sticky top-24 bg-white/50 backdrop-blur-sm rounded-xl p-6 border border-slate-200/60 shadow-sm">
+            <h3 className="text-xs font-bold text-slate-500 uppercase tracking-wider mb-6">Milestones</h3>
+            <div className="space-y-6 relative before:absolute before:inset-y-0 before:left-4 before:w-0.5 before:bg-slate-200">
+              {moduleData.sections.map((section, index) => (
+                <div key={`nav-${section.id}`} className="relative flex items-center gap-4">
+                  <div className="w-8 h-8 rounded-full bg-white border-2 border-primary text-primary flex items-center justify-center text-xs font-bold z-10 shrink-0 shadow-sm">
+                    {index + 1}
+                  </div>
+                  <span className="text-sm font-medium text-slate-700 leading-tight">
+                    {section.title}
+                  </span>
+                </div>
+              ))}
             </div>
-            
-            {section.interactiveCallout && (
-              <div className="mt-6 p-4 bg-amber-50 border border-amber-200 rounded-lg text-amber-800 flex items-start gap-3">
-                <div className="prose prose-amber max-w-none text-sm">
-                  <ReactMarkdown>{section.interactiveCallout}</ReactMarkdown>
+          </div>
+        </div>
+
+        {/* Right Rail: Rich Content Cards */}
+        <div className="lg:col-span-3 space-y-8">
+          {moduleData.sections.map((section, index) => (
+            <div key={section.id} className="bg-white rounded-2xl border border-slate-200 p-6 md:p-8 shadow-sm transition-all duration-300 hover:shadow-md hover:border-primary/30 scroll-mt-24">
+              <div className="flex items-start gap-4 mb-6 pb-4 border-b border-slate-100">
+                <div className="flex items-center justify-center w-10 h-10 rounded-full bg-indigo-50 text-primary font-bold shrink-0 mt-1">
+                  {index + 1}
+                </div>
+                <div>
+                  <h2 className="text-2xl font-bold text-slate-900 leading-tight">
+                    {section.title}
+                  </h2>
                 </div>
               </div>
-            )}
-          </div>
-        ))}
+              
+              <div className="prose prose-slate prose-lg max-w-none 
+                prose-headings:font-bold prose-headings:tracking-tight prose-a:text-primary 
+                prose-code:text-indigo-600 prose-code:bg-indigo-50 prose-code:px-1.5 prose-code:py-0.5 prose-code:rounded-md
+                prose-pre:bg-[#080B14] prose-pre:text-slate-50 prose-pre:border prose-pre:border-slate-800 prose-pre:shadow-inner">
+                <ReactMarkdown remarkPlugins={[remarkGfm]}>
+                  {section.content}
+                </ReactMarkdown>
+              </div>
+              
+              {section.interactiveCallout && (
+                <div className="mt-8 p-5 bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200/60 rounded-xl flex items-start gap-4 shadow-sm">
+                  <div className="text-amber-500 mt-0.5 bg-white p-2 rounded-lg shadow-sm border border-amber-100"><Zap size={20} /></div>
+                  <div className="prose prose-amber max-w-none text-sm font-medium">
+                    <ReactMarkdown>{section.interactiveCallout}</ReactMarkdown>
+                  </div>
+                </div>
+              )}
+            </div>
+          ))}
+        </div>
       </div>
 
       {/* Action Footer */}

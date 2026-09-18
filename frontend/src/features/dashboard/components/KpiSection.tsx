@@ -3,14 +3,13 @@ import { StatCard } from '@/components/ui/StatCard';
 import { Flame, Star } from 'lucide-react';
 import { UserProfile } from '@/services/backendService';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
-import { curriculumModules } from '@/data/curriculumData';
 
 interface KpiSectionProps {
   liveProfile?: UserProfile | null;
 }
 
 export const KpiSection: React.FC<KpiSectionProps> = ({ liveProfile }) => {
-  const { completedModules, totalXp, readinessScore, streakDays } = useCurriculumStore();
+  const { totalXp, readinessScore, streakDays } = useCurriculumStore();
 
   // Use backend values when available, fall back to local store
   const displayXp = liveProfile?.xp ?? totalXp;
@@ -75,7 +74,6 @@ export const KpiSection: React.FC<KpiSectionProps> = ({ liveProfile }) => {
           key={metric.id}
           title={metric.title}
           value={metric.value}
-          badge={metric.badge}
           supportingText={metric.supportingText}
           linkText={metric.linkText}
           linkTo={metric.linkTo}
