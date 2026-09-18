@@ -90,10 +90,10 @@ export const CourseModule: React.FC = () => {
   };
   
   return (
-    <div className="max-w-7xl mx-auto p-6 md:p-8 flex flex-col min-h-screen bg-slate-50/50">
+    <div className="max-w-7xl mx-auto p-8 md:p-12 flex flex-col min-h-screen bg-slate-50/50">
       
       {/* TOP MODULE CONTEXT HEADER & METADATA BAR */}
-      <section className="bg-white/80 border-b border-slate-200/60 backdrop-blur-md -mx-6 md:-mx-8 px-6 md:px-8 py-6 mb-8 shadow-sm">
+      <section className="bg-white/80 border-b border-slate-200/60 backdrop-blur-md -mx-8 md:-mx-12 px-8 md:px-12 py-10 mb-12 shadow-sm">
         <div className="w-full max-w-7xl mx-auto">
           {/* Top Breadcrumb & Return */}
           <div className="flex flex-wrap items-center justify-between gap-4 mb-4">
@@ -159,23 +159,23 @@ export const CourseModule: React.FC = () => {
 
       {/* MAIN OPERATIONAL WORKSPACE (Bento & Timeline Layout) */}
       <main className="w-full mx-auto flex-1 pb-32">
-        <div className="grid grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+        <div className="grid grid-cols-1 lg:grid-cols-12 gap-12 lg:gap-16 items-start">
           
           {/* LEFT COLUMN: Sticky Vertical Milestone Timeline Navigation (4 cols) */}
-          <aside className="lg:col-span-4 lg:sticky lg:top-24 space-y-6">
+          <aside className="lg:col-span-4 lg:sticky lg:top-28 space-y-8">
             
             {/* Timeline Navigation Card */}
-            <div className="bg-white/90 border border-slate-200/70 rounded-xl p-6 shadow-sm backdrop-blur-md relative overflow-hidden">
-              <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
-                <div className="flex items-center gap-2">
-                  <BookOpen className="text-primary" size={20} />
+            <div className="bg-white/90 border border-slate-200/70 rounded-2xl p-8 shadow-sm backdrop-blur-md relative overflow-hidden">
+              <div className="flex items-center justify-between pb-6 border-b border-slate-100 mb-8">
+                <div className="flex items-center gap-3">
+                  <BookOpen className="text-primary" size={24} />
                   <h2 className="text-sm font-bold uppercase tracking-wider text-slate-800">Execution Sequence</h2>
                 </div>
-                <span className="text-primary text-xs font-bold bg-indigo-50 px-2 py-0.5 rounded">{moduleData.code}</span>
+                <span className="text-primary text-xs font-bold bg-indigo-50 px-2.5 py-1 rounded">{moduleData.code}</span>
               </div>
               
               {/* Step Progression Node Track */}
-              <div className="relative space-y-6 before:absolute before:left-[17px] before:top-3 before:bottom-3 before:w-0.5 before:bg-slate-200">
+              <div className="relative space-y-8 before:absolute before:left-[17px] before:top-4 before:bottom-4 before:w-0.5 before:bg-slate-200">
                 {moduleData.sections.map((section, index) => {
                   // For visual demonstration, we'll mark the first one as active, others pending/done based on index
                   // Since we don't have per-section tracking, we just style them dynamically
@@ -221,15 +221,15 @@ export const CourseModule: React.FC = () => {
             </div>
             
             {/* Operator Session Status Widget (Aesthetic) */}
-            <div className="p-4 rounded-lg bg-white border border-slate-200/60 font-mono text-xs shadow-sm">
-              <div className="flex items-center justify-between text-slate-500 mb-2">
+            <div className="p-6 rounded-2xl bg-white border border-slate-200/60 font-mono text-sm shadow-sm mt-8">
+              <div className="flex items-center justify-between text-slate-500 mb-4">
                 <span>TARGET INSTANCE</span>
-                <span className="text-emerald-500 flex items-center gap-1">
-                  <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-ping"></span> ONLINE
+                <span className="text-emerald-500 flex items-center gap-1.5">
+                  <span className="w-2 h-2 rounded-full bg-emerald-500 animate-ping"></span> ONLINE
                 </span>
               </div>
-              <div className="text-slate-800 font-bold">192.168.104.{Math.floor(Math.random() * 50) + 10} ({moduleData.code.toLowerCase()}-node)</div>
-              <div className="text-slate-400 text-[10px] mt-2 flex justify-between">
+              <div className="text-slate-800 font-bold text-base">192.168.104.{Math.floor(Math.random() * 50) + 10} ({moduleData.code.toLowerCase()}-node)</div>
+              <div className="text-slate-400 text-xs mt-3 flex justify-between">
                 <span>PORT: 2222 (SSH)</span>
                 <span>ARCH: ELF 64-bit</span>
               </div>
@@ -238,12 +238,12 @@ export const CourseModule: React.FC = () => {
           </aside>
 
           {/* RIGHT COLUMN: Step-by-Step Rich Content Cards (8 cols) */}
-          <div className="lg:col-span-8 space-y-8">
+          <div className="lg:col-span-8 space-y-12">
             
             {/* Learning Objectives Header Card */}
             {moduleData.learningObjectives && moduleData.learningObjectives.length > 0 && (
-              <div className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm relative overflow-hidden transition-all hover:border-slate-300">
-                <div className="flex items-center justify-between pb-4 border-b border-slate-100 mb-6">
+              <div className="bg-white border border-slate-200 rounded-2xl p-10 shadow-sm relative overflow-hidden transition-all hover:border-slate-300">
+                <div className="flex items-center justify-between pb-6 border-b border-slate-100 mb-8">
                   <div className="flex items-center gap-4">
                     <div className="p-2 rounded bg-indigo-50 text-primary border border-indigo-100">
                       <BookOpen size={24} />
@@ -272,13 +272,13 @@ export const CourseModule: React.FC = () => {
 
             {/* Dynamic Content Sections */}
             {moduleData.sections.map((section, index) => (
-              <div key={section.id} className="bg-white border border-slate-200 rounded-xl p-8 shadow-sm space-y-6 relative group hover:border-primary/30 transition-colors">
-                <div className="space-y-2 border-b border-slate-100 pb-4">
+              <div key={section.id} className="bg-white border border-slate-200 rounded-2xl p-10 md:p-12 shadow-sm space-y-8 relative group hover:border-primary/30 transition-colors">
+                <div className="space-y-4 border-b border-slate-100 pb-6">
                   <div className="flex items-center gap-2">
-                    <span className="text-primary text-xs tracking-wider font-bold uppercase">SECTION {String(index + 1).padStart(2, '0')} • CORE MATERIAL</span>
+                    <span className="text-primary text-sm tracking-wider font-bold uppercase">SECTION {String(index + 1).padStart(2, '0')} • CORE MATERIAL</span>
                   </div>
-                  <h2 className="text-2xl font-bold text-slate-900 flex items-center gap-3">
-                    <span className="w-8 h-8 rounded-full bg-indigo-50 text-primary flex items-center justify-center text-sm shrink-0">
+                  <h2 className="text-3xl font-bold text-slate-900 flex items-center gap-4">
+                    <span className="w-10 h-10 rounded-full bg-indigo-50 text-primary flex items-center justify-center text-lg shrink-0">
                       {index + 1}
                     </span>
                     {section.title}
@@ -297,16 +297,16 @@ export const CourseModule: React.FC = () => {
                 
                 {/* Interactive Callout (Tactical Advisory) */}
                 {section.interactiveCallout && (
-                  <div className="relative rounded-xl border border-amber-200/80 bg-gradient-to-r from-amber-50 to-orange-50 p-6 shadow-sm overflow-hidden mt-8">
-                    <div className="absolute top-0 right-0 w-32 h-32 bg-amber-400/10 rounded-full blur-2xl pointer-events-none"></div>
-                    <div className="flex items-start gap-4 relative z-10">
-                      <div className="p-2 rounded-lg bg-white border border-amber-200 text-amber-500 shadow-sm shrink-0 mt-1">
-                        <Zap size={24} />
+                  <div className="relative rounded-2xl border border-amber-200/80 bg-gradient-to-r from-amber-50 to-orange-50 p-8 md:p-10 shadow-sm overflow-hidden mt-10">
+                    <div className="absolute top-0 right-0 w-40 h-40 bg-amber-400/10 rounded-full blur-3xl pointer-events-none"></div>
+                    <div className="flex items-start gap-6 relative z-10">
+                      <div className="p-3 rounded-xl bg-white border border-amber-200 text-amber-500 shadow-sm shrink-0 mt-1">
+                        <Zap size={28} />
                       </div>
-                      <div className="flex-1 space-y-3">
+                      <div className="flex-1 space-y-4">
                         <div className="flex flex-wrap items-center justify-between gap-2">
                           <div className="flex items-center gap-2">
-                            <span className="text-xs font-bold text-amber-600 uppercase tracking-widest bg-white px-2 py-0.5 rounded border border-amber-200 shadow-sm">
+                            <span className="text-sm font-bold text-amber-600 uppercase tracking-widest bg-white px-3 py-1 rounded border border-amber-200 shadow-sm">
                               TACTICAL ADVISORY
                             </span>
                           </div>
