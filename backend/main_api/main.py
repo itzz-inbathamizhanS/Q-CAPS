@@ -87,6 +87,12 @@ def submit_quiz_score(submission: schemas.QuizSubmission, db: Session = Depends(
     if submission.total_questions <= 0:
         raise HTTPException(status_code=400, detail="Total questions must be greater than zero")
         
+    if submission.correct_answers < 0:
+        raise HTTPException(status_code=400, detail="Correct answers cannot be negative")
+        
+    if submission.correct_answers > submission.total_questions:
+        raise HTTPException(status_code=400, detail="Correct answers cannot exceed total questions")
+        
     score_pct = (submission.correct_answers / submission.total_questions) * 100
     
     # Store quiz score
@@ -211,4 +217,6 @@ def get_leaderboard():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run("main:app", host="127.0.0.1", port=8000, reload=True)
+    import os
+    port = int(os.environ.get("PORT", 8000))
+    uvicorn.run("main:app", host="0.0.0.0", port=port, reload=False)

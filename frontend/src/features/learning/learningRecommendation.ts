@@ -1,6 +1,6 @@
 import { SkillGapProfile } from '@/features/skills/skillsTypes';
 import { LearningModule } from './learningTypes';
-import { learningModules } from '@/data/learningData';
+import { curriculumModules } from '@/data/curriculumData';
 
 export interface PersonalizedLearningResult {
   hasAssessmentEvidence: boolean;
@@ -17,11 +17,12 @@ export const getPersonalizedLearning = (
     return {
       hasAssessmentEvidence: false,
       recommendedModules: [],
-      allModules: learningModules.map((m) => ({
+      allModules: curriculumModules.map((m) => ({
         ...m,
+        progressPercentage: 0,
         isRecommended: false,
         priorityLevel: 'Low Priority',
-      })),
+      }) as LearningModule),
     };
   }
 
@@ -39,8 +40,8 @@ export const getPersonalizedLearning = (
   });
 
   // Enrich all modules with learner's priority
-  const enrichedModules: LearningModule[] = learningModules.map((module) => {
-    const analysis = domainAnalysisMap.get(module.domain);
+  const enrichedModules: LearningModule[] = curriculumModules.map((module) => {
+    const analysis = module.domain ? domainAnalysisMap.get(module.domain) : undefined;
     const priorityLevel = analysis ? analysis.priorityLevel : 'Medium Priority';
     const score = analysis ? analysis.score : 0;
 
@@ -53,12 +54,16 @@ export const getPersonalizedLearning = (
       recommendationReason = `Capability verified (${score}%). Available for continuous refresher and advanced mastery.`;
     }
 
+    // Determine ordering priority based on trackId (A before B, etc) and code
+    const isRecommended = priorityLevel === 'High Priority' || priorityLevel === 'Medium Priority';
+
     return {
       ...module,
+      progressPercentage: 0,
       priorityLevel,
       recommendationReason,
-      isRecommended: priorityLevel === 'High Priority' || (priorityLevel === 'Medium Priority' && module.order <= 4),
-    };
+      isRecommended,
+    } as LearningModule;
   });
 
   // Get top recommended modules based on highest-priority domains
@@ -66,7 +71,7 @@ export const getPersonalizedLearning = (
   for (const domainAnalysis of sortedDomains) {
     const domainMods = enrichedModules
       .filter((m) => m.domain === domainAnalysis.domain)
-      .sort((a, b) => a.order - b.order);
+      .sort((a, b) => a.id.localeCompare(b.id)); // Fallback to id-based alphabetical sort (which inherently groups track_a before track_b)
 
     for (const mod of domainMods) {
       if (recommendedModules.length < 3) {

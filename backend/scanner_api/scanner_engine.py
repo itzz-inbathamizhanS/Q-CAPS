@@ -89,9 +89,30 @@ def analyze_headers(hostname):
         pass
     return headers
 
+import ipaddress
+
 # PROBLEM 4: Combine Solutions
 def analyze_domain(hostname, port=443):
     
+    # 0. SSRF Protection & Validation
+    try:
+        ip = socket.gethostbyname(hostname)
+        ip_obj = ipaddress.ip_address(ip)
+        if ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_multicast or ip_obj.is_reserved:
+            raise ValueError(f"Scan target '{hostname}' resolves to a restricted IP address ({ip}).")
+    except Exception as e:
+        return {
+            "target_url": hostname,
+            "scan_timestamp": datetime.utcnow().isoformat() + "Z",
+            "error": f"Invalid or restricted domain: {str(e)}",
+            "crypto": {
+                "encryption_detected": "Unknown",
+                "is_quantum_safe": False,
+                "vulnerabilities_found": [f"Invalid or restricted domain: {str(e)}"],
+                "mission_xp_awarded": 0
+            }
+        }
+
     # 1. OSINT / WHOIS Scanning
     osint_data = {
         "registrar": "Unknown",
@@ -155,23 +176,28 @@ def analyze_domain(hostname, port=443):
             with context.wrap_socket(sock, server_hostname=hostname) as ssock:
                 cipher = ssock.cipher()
                 cipher_name = cipher[0]
+                result["crypto"]["encryption_detected"] = cipher_name
                 
                 # Heuristic analysis
                 if "RSA" in cipher_name:
-                    result["crypto"]["encryption_detected"] = "RSA"
-                    result["crypto"]["vulnerabilities_found"].append("Vulnerable to Shor's Algorithm (Classical RSA detected)")
+                    result["crypto"]["vulnerabilities_found"].append("Public-key crypto vulnerable to Shor's Algorithm (Classical RSA detected)")
                     result["crypto"]["mission_xp_awarded"] += 50
                 elif "ECDHE" in cipher_name or "ECDSA" in cipher_name:
-                    result["crypto"]["encryption_detected"] = "Elliptic Curve (ECC)"
-                    result["crypto"]["vulnerabilities_found"].append("Vulnerable to Shor's Algorithm (Classical ECC detected)")
+                    result["crypto"]["vulnerabilities_found"].append("Public-key crypto vulnerable to Shor's Algorithm (Classical ECC detected)")
                     result["crypto"]["mission_xp_awarded"] += 25
-                elif "KYBER" in cipher_name or "ML-KEM" in cipher_name or "DILITHIUM" in cipher_name:
-                    result["crypto"]["encryption_detected"] = "Post-Quantum Cryptography"
+                
+                # Check for PQC
+                if "KYBER" in cipher_name or "ML-KEM" in cipher_name or "DILITHIUM" in cipher_name:
                     result["crypto"]["is_quantum_safe"] = True
                     result["crypto"]["mission_xp_awarded"] += 10
-                else:
-                    result["crypto"]["encryption_detected"] = cipher_name
-                    result["crypto"]["vulnerabilities_found"].append("Unknown or weak classical algorithm")
+                    
+                # Note about symmetric
+                if "AES" in cipher_name or "CHACHA20" in cipher_name:
+                    # Symmetric is generally quantum-safe against Shor's, susceptible to Grover's but not critically if 256-bit
+                    pass
+                    
+                if not result["crypto"]["vulnerabilities_found"] and not result["crypto"]["is_quantum_safe"]:
+                    result["crypto"]["vulnerabilities_found"].append("Could not conclusively determine quantum safety from cipher string")
                     result["crypto"]["mission_xp_awarded"] += 10
 
     except Exception as e:

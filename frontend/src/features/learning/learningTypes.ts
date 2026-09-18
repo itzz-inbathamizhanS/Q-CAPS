@@ -1,21 +1,10 @@
-import { AssessmentDomain } from '@/features/assessment/assessmentTypes';
 import { PriorityLevel } from '@/features/skills/skillsTypes';
+import { CurriculumModule } from '@/features/curriculum/curriculumTypes';
 
 export type ModuleLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 
-export interface LearningModule {
-  id: string;
-  domain: AssessmentDomain;
-  title: string;
-  subtitle: string;
-  description: string;
-  level: ModuleLevel;
-  durationMinutes: number;
-  lessonCount: number;
-  objectives: string[];
-  order: number;
-  prerequisites: string[];
-  tags: string[];
+// LearningModule is just a CurriculumModule that has been enriched by the recommendation engine
+export interface LearningModule extends CurriculumModule {
   progressPercentage: number;
   recommendationReason?: string;
   priorityLevel?: PriorityLevel;

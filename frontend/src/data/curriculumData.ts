@@ -22,7 +22,7 @@ export const curriculumTracks: CurriculumTrack[] = [
       "track_a_a5_cryptography_foundations",
       "track_a_a6_quantum_foundations",
       "track_a_a7_first_quantum_programming",
-      "module_3_pqc_mitigation"
+      "track_a_a8_pqc_mitigation"
     ]
   },
   {
@@ -543,7 +543,7 @@ export const curriculumModules: CurriculumModule[] = [
     "prerequisites": [
       "track_a_a6_quantum_foundations"
     ],
-    "unlocks": "module_3_pqc_mitigation",
+    "unlocks": "track_a_a8_pqc_mitigation",
     "learningObjectives": [
       "Write and run a basic quantum circuit using Qiskit.",
       "Use a quantum simulator to test circuits before ever touching real hardware.",
@@ -598,7 +598,7 @@ export const curriculumModules: CurriculumModule[] = [
     }
   },
   {
-    "id": "module_3_pqc_mitigation",
+    "id": "track_a_a8_pqc_mitigation",
     "trackId": "track-a",
     "code": "A8",
     "title": "Module 3: PQC Mitigation",

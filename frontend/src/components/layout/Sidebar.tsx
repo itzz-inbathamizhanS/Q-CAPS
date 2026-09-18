@@ -15,6 +15,7 @@ import {
 } from 'lucide-react';
 import qcapsLogo from '@/assets/brand/qcaps-logo.png';
 import { useAuthStore } from '@/features/auth/authStore';
+import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 
 interface SidebarProps {
   isMobile?: boolean;
@@ -24,6 +25,7 @@ interface SidebarProps {
 export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onCloseMobile }) => {
   const navigate = useNavigate();
   const { userName, logout } = useAuthStore();
+  const { clearLocalProgress } = useCurriculumStore();
 
   const handleLinkClick = () => {
     if (isMobile && onCloseMobile) {
@@ -33,6 +35,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onCloseMobil
 
   const handleLogout = () => {
     logout();
+    clearLocalProgress();
     navigate('/login');
     if (isMobile && onCloseMobile) {
       onCloseMobile();

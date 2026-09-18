@@ -8,18 +8,18 @@ import json
 # ---------------------------------------------------------------------------
 COURSES = [
     {
-        "course_id": "tc_qf",
-        "title": "Quantum Fundamentals",
+        "course_id": "track_a_a6_quantum_foundations",
+        "title": "Quantum Foundations",
         "topic": "quantum_fundamentals"
     },
     {
-        "course_id": "tc_pqc",
-        "title": "Introduction to Post-Quantum Cryptography",
+        "course_id": "track_b_b9_pqc_fundamentals",
+        "title": "PQC Fundamentals",
         "topic": "pqc"
     },
     {
-        "course_id": "tc_ca",
-        "title": "Cryptographic Agility & Migration",
+        "course_id": "track_d_e4_crypto_agility",
+        "title": "Cryptographic Agility",
         "topic": "practical_security"
     }
 ]

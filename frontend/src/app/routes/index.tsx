@@ -6,6 +6,7 @@ import { Dashboard } from '@/pages/Dashboard';
 import { Assessment } from '@/pages/Assessment';
 import { Skills } from '@/pages/Skills';
 import { CurriculumMap } from '@/pages/CurriculumMap';
+import { Learning } from '@/pages/Learning';
 import { CourseModule } from '@/pages/CourseModule';
 import { QuizPage } from '@/pages/QuizPage';
 import { BadgesAndCerts } from '@/pages/BadgesAndCerts';
@@ -48,6 +49,10 @@ export const router = createBrowserRouter([
           },
           {
             path: 'learning',
+            element: <Learning />,
+          },
+          {
+            path: 'curriculum',
             element: <CurriculumMap />,
           },
           {

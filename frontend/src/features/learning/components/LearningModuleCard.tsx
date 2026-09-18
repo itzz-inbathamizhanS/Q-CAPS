@@ -1,6 +1,6 @@
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/Card';
-import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { Clock, BookOpen, CheckCircle2, Play, AlertCircle } from 'lucide-react';
@@ -15,69 +15,77 @@ export const LearningModuleCard: React.FC<LearningModuleCardProps> = ({
   module,
   featured = false,
 }) => {
-  const getLevelBadgeVariant = (level: string) => {
-    switch (level) {
-      case 'Beginner':
-        return 'success';
-      case 'Intermediate':
-        return 'secondary';
-      case 'Advanced':
-      default:
-        return 'neutral';
-    }
-  };
-
-  const getPriorityBadgeVariant = (priority?: string) => {
-    switch (priority) {
-      case 'High Priority':
-        return 'error';
-      case 'Medium Priority':
-        return 'warning';
-      case 'Low Priority':
-      default:
-        return 'neutral';
-    }
-  };
-
+  const navigate = useNavigate();
+  
   return (
-    <Card
-      variant="glass"
-      padding="normal"
+    <Card 
+      variant={featured ? "glass" : "flat"}
+      padding="large"
       style={{
         display: 'flex',
         flexDirection: 'column',
         justifyContent: 'space-between',
-        gap: '20px',
-        borderLeft: featured ? '4px solid var(--color-primary)' : undefined,
+        height: '100%',
+        border: featured ? '1px solid var(--color-primary)' : '1px solid var(--color-border)',
+        boxShadow: featured ? '0 8px 24px rgba(84, 39, 230, 0.15)' : 'none',
         position: 'relative',
+        overflow: 'hidden',
       }}
     >
-      <div>
-        {/* Badges Header */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '8px', marginBottom: '12px' }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
-            <Badge variant="primary">{module.domain}</Badge>
-            <Badge variant={getLevelBadgeVariant(module.level)}>{module.level}</Badge>
-          </div>
+      {featured && (
+        <div style={{
+          position: 'absolute',
+          top: 0,
+          left: 0,
+          right: 0,
+          height: '4px',
+          background: 'linear-gradient(90deg, var(--color-primary), var(--color-secondary))'
+        }} />
+      )}
 
-          {module.priorityLevel && (
-            <Badge variant={getPriorityBadgeVariant(module.priorityLevel)}>
-              {module.priorityLevel}
-            </Badge>
-          )}
+      <div style={{ flex: 1 }}>
+        {/* Header Tags */}
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: '16px' }}>
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap' }}>
+            <span style={{ 
+              padding: '4px 10px', 
+              borderRadius: '20px', 
+              fontSize: '11px', 
+              fontWeight: 600, 
+              backgroundColor: 'var(--color-surface-dim)',
+              color: 'var(--color-text-secondary)',
+              border: '1px solid var(--color-border)',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '4px'
+            }}>
+              {module.domain}
+            </span>
+            <span style={{ 
+              padding: '4px 10px', 
+              borderRadius: '20px', 
+              fontSize: '11px', 
+              fontWeight: 600, 
+              backgroundColor: module.level === 'Beginner' ? 'rgba(34, 197, 94, 0.1)' 
+                : module.level === 'Intermediate' ? 'rgba(234, 179, 8, 0.1)' 
+                : 'rgba(239, 68, 68, 0.1)',
+              color: module.level === 'Beginner' ? '#16a34a' 
+                : module.level === 'Intermediate' ? '#ca8a04' 
+                : '#dc2626',
+            }}>
+              {module.level}
+            </span>
+          </div>
         </div>
 
-        {/* Title and Subtitle */}
-        <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-text-primary)', lineHeight: 1.3, marginBottom: '4px' }}>
+        {/* Title */}
+        <h3 style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '8px', lineHeight: 1.3 }}>
           {module.title}
         </h3>
-        <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-mono)', marginBottom: '12px' }}>
-          {module.subtitle}
-        </p>
 
         {/* Description */}
         <p style={{ fontSize: '14px', color: 'var(--color-text-on-surface-variant)', lineHeight: 1.5, marginBottom: '16px' }}>
-          {module.description}
+          {module.subtitle || 'Learn the foundational concepts and skills needed for this curriculum track.'}
         </p>
 
         {/* Explainability Reason if recommended */}
@@ -107,7 +115,7 @@ export const LearningModuleCard: React.FC<LearningModuleCardProps> = ({
             Core Objectives:
           </span>
           <div style={{ display: 'flex', flexDirection: 'column', gap: '6px' }}>
-            {module.objectives.map((obj, idx) => (
+            {module.learningObjectives?.map((obj, idx) => (
               <div key={idx} style={{ display: 'flex', alignItems: 'flex-start', gap: '6px', fontSize: '12px', color: 'var(--color-text-secondary)' }}>
                 <CheckCircle2 size={13} color="var(--color-primary)" style={{ flexShrink: 0, marginTop: '2px' }} />
                 <span>{obj}</span>
@@ -122,18 +130,18 @@ export const LearningModuleCard: React.FC<LearningModuleCardProps> = ({
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '12px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-mono)' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <Clock size={14} />
-            <span>{module.durationMinutes} min</span>
+            <span>{module.estimatedMinutes || 45} min</span>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
             <BookOpen size={14} />
-            <span>{module.lessonCount} Lessons</span>
+            <span>{module.sections?.length || 0} Lessons</span>
           </div>
           <div>
-            <span>Progress: {module.progressPercentage}%</span>
+            <span>Progress: {module.progressPercentage || 0}%</span>
           </div>
         </div>
 
-        <ProgressBar progress={module.progressPercentage} height={6} />
+        <ProgressBar progress={module.progressPercentage || 0} height={6} />
 
         <div style={{ display: 'flex', justifyContent: 'flex-end', marginTop: '4px' }}>
           <Button
@@ -141,7 +149,7 @@ export const LearningModuleCard: React.FC<LearningModuleCardProps> = ({
             size="sm"
             fullWidth
             rightIcon={<Play size={14} fill="currentColor" />}
-            title="Lesson player planned for subsequent phase"
+            onClick={() => navigate(`/learning/${module.id}`)}
           >
             Start Module
           </Button>

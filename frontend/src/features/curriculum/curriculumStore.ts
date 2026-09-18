@@ -22,6 +22,7 @@ interface CurriculumState {
   isModuleCompleted: (moduleId: string) => boolean;
   getRecommendedNextModule: () => string;
   resetProgress: () => void;
+  clearLocalProgress: () => void;
   rehydrate: (progressDataStr?: string) => void;
 }
 
@@ -194,6 +195,17 @@ export const useCurriculumStore = create<CurriculumState>()((set, get) => ({
     };
     persistToBackend(newState);
     set(newState);
+  },
+
+  clearLocalProgress: () => {
+    set({
+      completedModules: INITIAL_COMPLETED,
+      currentModuleId: 'track_a_a1_computing_foundations',
+      quizScores: {},
+      unlockedBadges: INITIAL_BADGES,
+      completedEscapes: [],
+      completedMissions: [],
+    });
   },
 
   rehydrate: (progressDataStr?: string) => {

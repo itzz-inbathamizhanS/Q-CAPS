@@ -1,6 +1,8 @@
 // src/features/curriculum/curriculumTypes.ts
 // Q-CAPS Content Security Curriculum Types (Tracks A -> B -> C -> D)
 
+import { AssessmentDomain } from '../assessment/assessmentTypes';
+
 export type TrackId = 'track-a' | 'track-b' | 'track-c' | 'track-d';
 
 export type ModuleDifficulty = 'Novice' | 'Beginner' | 'Intermediate' | 'Advanced' | 'Enterprise';
@@ -19,7 +21,9 @@ export interface CurriculumModule {
   id: string; // e.g. track_a_a1_computing_foundations
   trackId: TrackId;
   code: string; // e.g. A1, B3, C6, E2
+  domain?: AssessmentDomain; // Used for gap analysis mapping
   title: string;
+  subtitle?: string;
   level: ModuleDifficulty;
   estimatedMinutes: number;
   xp: number;
