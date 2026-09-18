@@ -8,8 +8,8 @@ interface LearningHeaderProps {
 export const LearningHeader: React.FC<LearningHeaderProps> = ({
   hasAssessmentEvidence,
 }) => {
-  const { streakDays, xp } = useCurriculumStore();
-  const currentLevel = Math.floor(xp / 500) + 1;
+  const { streakDays, totalXp } = useCurriculumStore();
+  const currentLevel = Math.floor(totalXp / 500) + 1;
 
   return (
     <section className="relative overflow-hidden bg-white/80 border-b border-slate-200/60 backdrop-blur-md px-8 md:px-12 py-16 lg:py-24 shadow-sm mb-12">
@@ -64,7 +64,7 @@ export const LearningHeader: React.FC<LearningHeaderProps> = ({
           <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Total XP</p>
-              <p className="text-lg font-bold text-primary flex items-center gap-1.5"><Zap size={16} /> {xp}</p>
+              <p className="text-lg font-bold text-primary flex items-center gap-1.5"><Zap size={16} /> {totalXp}</p>
             </div>
             <div>
               <p className="text-xs font-bold text-slate-400 uppercase tracking-widest mb-1">Active Streak</p>
