@@ -1,6 +1,5 @@
-import React from 'react';
 import { BookOpen, Sparkles, Target, Zap } from 'lucide-react';
-import { useCurriculumStore } from '../curriculumStore';
+import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 
 interface LearningHeaderProps {
   hasAssessmentEvidence: boolean;
