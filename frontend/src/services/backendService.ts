@@ -52,7 +52,7 @@ export interface ScannerLogPayload {
   details?: string;
 }
 
-export async function syncProgressData(progressData: Record<string, any>) {
+export async function syncProgressData(progressData: Record<string, unknown>) {
   const userId = useAuthStore.getState().userId;
   if (!userId) return null;
 

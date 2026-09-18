@@ -1,13 +1,23 @@
 import React from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { curriculumModules } from '@/data/curriculumData';
+import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
+import { quizzesData } from '@/data/quizzesData';
 import ReactMarkdown from 'react-markdown';
 import remarkGfm from 'remark-gfm';
-import { BookOpen, CheckCircle, ArrowLeft } from 'lucide-react';
+import { BookOpen, CheckCircle, ArrowLeft, ArrowRight, Lock, Trophy, Zap } from 'lucide-react';
 import { Button } from '@/components/ui/Button';
 
 export const CourseModule: React.FC = () => {
   const { moduleId } = useParams();
+  const navigate = useNavigate();
+  
+  const {
+    markModuleRead,
+    isModuleUnlocked,
+    isModuleCompleted,
+    quizScores,
+  } = useCurriculumStore();
   
   const moduleData = curriculumModules.find(m => m.id === moduleId);
 
@@ -22,6 +32,62 @@ export const CourseModule: React.FC = () => {
       </div>
     );
   }
+
+  // Prerequisite guard: prevent direct URL access to locked modules
+  const unlocked = isModuleUnlocked(moduleData.id);
+  if (!unlocked) {
+    return (
+      <div className="max-w-2xl mx-auto p-8 text-center space-y-6 animate-in fade-in slide-in-from-bottom-4 duration-500">
+        <div className="mx-auto w-16 h-16 rounded-full bg-red-50 flex items-center justify-center">
+          <Lock className="text-red-500" size={32} />
+        </div>
+        <h1 className="text-2xl font-bold text-slate-900">Module Locked</h1>
+        <p className="text-slate-600">
+          This module requires completing prerequisite modules before it can be accessed.
+        </p>
+        {moduleData.prerequisites.length > 0 && (
+          <div className="text-sm text-slate-500">
+            <p className="font-medium mb-2">Prerequisites:</p>
+            <ul className="space-y-1">
+              {moduleData.prerequisites.map(prereqId => {
+                const prereq = curriculumModules.find(m => m.id === prereqId);
+                const completed = isModuleCompleted(prereqId);
+                return (
+                  <li key={prereqId} className="flex items-center justify-center gap-2">
+                    {completed ? (
+                      <CheckCircle size={14} className="text-green-500" />
+                    ) : (
+                      <Lock size={14} className="text-red-400" />
+                    )}
+                    <span>{prereq?.code} — {prereq?.title ?? prereqId}</span>
+                  </li>
+                );
+              })}
+            </ul>
+          </div>
+        )}
+        <Link to="/curriculum">
+          <Button variant="primary">View Curriculum Map</Button>
+        </Link>
+      </div>
+    );
+  }
+
+  const completed = isModuleCompleted(moduleData.id);
+  const quizScore = quizScores[moduleData.id];
+  const hasQuiz = !!(moduleId && quizzesData[moduleId]);
+
+  // Find previous and next modules in the curriculum
+  const currentIdx = curriculumModules.findIndex(m => m.id === moduleId);
+  const prevModule = currentIdx > 0 ? curriculumModules[currentIdx - 1] : null;
+  const nextModule = currentIdx >= 0 && currentIdx < curriculumModules.length - 1
+    ? curriculumModules[currentIdx + 1]
+    : null;
+
+  const handleMarkComplete = () => {
+    if (!moduleId || completed) return;
+    markModuleRead(moduleId);
+  };
   
   return (
     <div className="max-w-4xl mx-auto p-6 md:p-8 space-y-8 animate-in fade-in slide-in-from-bottom-4 duration-500">
@@ -43,6 +109,16 @@ export const CourseModule: React.FC = () => {
               <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-indigo-50 text-indigo-600 border border-indigo-100 flex items-center gap-1">
                 <BookOpen size={12} /> {moduleData.estimatedMinutes} mins
               </span>
+              {completed && (
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-green-50 text-green-600 border border-green-200 flex items-center gap-1">
+                  <CheckCircle size={12} /> Completed
+                </span>
+              )}
+              {quizScore !== undefined && (
+                <span className="px-2.5 py-0.5 rounded-full text-xs font-semibold bg-amber-50 text-amber-600 border border-amber-200 flex items-center gap-1">
+                  <Trophy size={12} /> Quiz: {quizScore}%
+                </span>
+              )}
             </div>
             <h1 className="text-3xl md:text-4xl font-extrabold tracking-tight text-slate-900 mt-2">
               {moduleData.title}
@@ -97,13 +173,63 @@ export const CourseModule: React.FC = () => {
       </div>
 
       {/* Action Footer */}
-      <div className="flex justify-between items-center pt-6 border-t border-slate-200 mt-12 mb-8">
-        <Link to="/learning">
-          <Button variant="outline">Back to Learning</Button>
-        </Link>
-        <Button variant="primary" className="shadow-lg shadow-primary/20">
-          Mark as Complete (+{moduleData.xp} XP)
-        </Button>
+      <div className="flex flex-col gap-4 pt-6 border-t border-slate-200 mt-12 mb-8">
+        {/* Navigation Row */}
+        <div className="flex justify-between items-center">
+          <div>
+            {prevModule ? (
+              <Link to={`/learning/${prevModule.id}`}>
+                <Button variant="outline" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  <ArrowLeft size={14} /> {prevModule.code}: {prevModule.title}
+                </Button>
+              </Link>
+            ) : (
+              <Link to="/learning">
+                <Button variant="outline">Back to Learning</Button>
+              </Link>
+            )}
+          </div>
+          <div className="flex items-center gap-3">
+            {/* Mark Complete or Completed state */}
+            {completed ? (
+              <Button variant="outline" disabled style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                <CheckCircle size={16} className="text-green-500" />
+                Completed
+              </Button>
+            ) : (
+              <Button
+                variant="primary"
+                className="shadow-lg shadow-primary/20"
+                onClick={handleMarkComplete}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Zap size={16} />
+                Mark as Complete (+{moduleData.xp} XP)
+              </Button>
+            )}
+
+            {/* Quiz button */}
+            {hasQuiz && (
+              <Button
+                variant={completed ? 'primary' : 'outline'}
+                onClick={() => navigate(`/quiz/${moduleId}`)}
+                style={{ display: 'flex', alignItems: 'center', gap: '6px' }}
+              >
+                <Trophy size={16} />
+                {quizScore !== undefined ? `Retake Quiz (${quizScore}%)` : 'Take Quiz'}
+              </Button>
+            )}
+
+            {/* Next module */}
+            {nextModule && (
+              <Link to={`/learning/${nextModule.id}`}>
+                <Button variant="outline" style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
+                  {nextModule.code}: {nextModule.title} <ArrowRight size={14} />
+                </Button>
+              </Link>
+            )}
+          </div>
+        </div>
       </div>
 
     </div>

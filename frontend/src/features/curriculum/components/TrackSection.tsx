@@ -230,19 +230,19 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
               {/* Individual nodes */}
               {modules.map((mod, idx) => {
                 const isCompleted = completedModules.includes(mod.id);
-                const isCur = mod.id === currentModuleId;
                 let status: ModuleStatus = 'locked';
 
                 if (isCompleted) {
                   status = 'completed';
-                } else if (isCur) {
-                  status = 'in_progress';
                 } else {
-                  // Check if previous module is completed or if no prerequisites
-                  const prevMod = idx > 0 ? modules[idx - 1] : null;
-                  const prereqsMet = !prevMod || completedModules.includes(prevMod.id);
+                  // Use the canonical prerequisite check from the module's actual prerequisites
+                  const prereqsMet = mod.prerequisites.length === 0 ||
+                    mod.prerequisites.every(prereqId => completedModules.includes(prereqId));
+
                   if (prereqsMet && !isLockedTrack) {
-                    status = 'available';
+                    // Module is accessible — determine if it's the current one or just available
+                    const isCur = mod.id === currentModuleId;
+                    status = isCur ? 'in_progress' : 'available';
                   } else {
                     status = 'locked';
                   }

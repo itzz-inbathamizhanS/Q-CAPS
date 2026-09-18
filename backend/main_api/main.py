@@ -178,11 +178,11 @@ def get_recommendation(user_id: int, db: Session = Depends(get_db)):
     if not recommendations:
         # Default recommendation if no data
         return schemas.RecommendationOut(
-            course_id="crypto-101",
-            title="Introduction to Cryptography",
-            topic="classical_crypto",
+            course_id="track_a_a1_computing_foundations",
+            title="Computing Foundations",
+            topic="practical_security",
             priority="high",
-            reason="Start your journey by building a strong foundation in classical cryptography."
+            reason="Start your journey by building a strong foundation in computing and cybersecurity."
         )
         
     return recommendations

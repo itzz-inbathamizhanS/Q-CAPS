@@ -137,7 +137,7 @@ export const LearningModuleCard: React.FC<LearningModuleCardProps> = ({
             <span>{module.sections?.length || 0} Lessons</span>
           </div>
           <div>
-            <span>Progress: {module.progressPercentage || 0}%</span>
+            <span>{module.progressPercentage >= 100 ? '✓ Completed' : `Progress: ${module.progressPercentage || 0}%`}</span>
           </div>
         </div>
 
@@ -151,7 +151,7 @@ export const LearningModuleCard: React.FC<LearningModuleCardProps> = ({
             rightIcon={<Play size={14} fill="currentColor" />}
             onClick={() => navigate(`/learning/${module.id}`)}
           >
-            Start Module
+            {module.progressPercentage >= 100 ? 'Review Module' : 'Start Module'}
           </Button>
         </div>
       </div>

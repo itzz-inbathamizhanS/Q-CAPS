@@ -119,7 +119,20 @@ export const generateSkillGapProfile = (
 
   // Weakest domain is the highest priority gap (lowest score)
   const sortedByScore = [...domains].sort((a, b) => a.score - b.score);
-  const topPriorityGap = sortedByScore[0] || domains[0];
+
+  // Defensive: ensure topPriorityGap is never undefined even if domainScores is empty
+  const fallbackGap: SkillDomainAnalysis = {
+    domain: 'Cybersecurity Fundamentals',
+    score: 0,
+    capabilityLevel: 'Needs Improvement',
+    priorityLevel: 'High Priority',
+    explanation: 'No domain scores available. Complete the diagnostic assessment to generate analysis.',
+    suggestedFocusTopics: [],
+    color: 'var(--color-error)',
+    totalQuestions: 0,
+    correctCount: 0,
+  };
+  const topPriorityGap = sortedByScore[0] ?? domains[0] ?? fallbackGap;
 
   const overallCapability = getCapabilityLevel(overallScore);
 

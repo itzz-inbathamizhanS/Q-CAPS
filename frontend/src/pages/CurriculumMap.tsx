@@ -10,6 +10,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { curriculumTracks, curriculumModules } from '@/data/curriculumData';
+import { badgesData } from '@/data/badgesData';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 import { TrackSection } from '@/features/curriculum/components/TrackSection';
 import { Card } from '@/components/ui/Card';
@@ -93,7 +94,7 @@ export const CurriculumMap: React.FC = () => {
             </h1>
           </div>
           <p style={{ fontSize: '15px', color: 'var(--color-text-secondary, #64748b)' }}>
-            36 modules across 4 tracks — your linear progression toward <strong>PQCTP</strong> (Post-Quantum Cryptography Technical Professional) certification.
+            {totalModules} modules across 4 tracks — your linear progression toward <strong>PQCTP</strong> (Post-Quantum Cryptography Technical Professional) certification.
           </p>
         </div>
 
@@ -208,7 +209,7 @@ export const CurriculumMap: React.FC = () => {
             <Award size={16} color="#10b981" />
           </div>
           <div style={{ fontSize: '26px', fontWeight: 700, color: '#10b981', marginTop: '6px' }}>
-            {unlockedBadges.length} / 45
+            {unlockedBadges.length} / {badgesData.length}
           </div>
           <span
             onClick={() => navigate('/badges')}
@@ -231,14 +232,14 @@ export const CurriculumMap: React.FC = () => {
 
           if (track.id === 'track-b' && !trackAComplete) {
             isLocked = true;
-            gateText = 'Pass all 8 Track A modules (A1–A8) and Beginner Capstone to unlock Track B.';
+            gateText = `Complete all ${trackModulesMap['track-a'].length} Track A modules to unlock Track B.`;
           } else if (track.id === 'track-c' && !trackBComplete) {
             isLocked = true;
-            gateText = 'Complete all 11 Track B modules (B1–B11) and Intermediate Capstone to unlock Track C.';
+            gateText = `Complete all ${trackModulesMap['track-b'].length} Track B modules to unlock Track C.`;
           } else if (track.id === 'track-d') {
             if (!trackCComplete) {
               isLocked = true;
-              gateText = 'Requires: Track C complete + Advanced Specialist Capstone.';
+              gateText = `Complete all ${trackModulesMap['track-c'].length} Track C modules to unlock Track D.`;
             }
           }
 

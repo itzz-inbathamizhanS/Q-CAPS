@@ -2,6 +2,7 @@ import React from 'react';
 import { Card } from '@/components/ui/Card';
 import { Trophy, Shield, Compass, Check, Minus } from 'lucide-react';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
+import { curriculumModules } from '@/data/curriculumData';
 
 export interface AchievementItem {
   id: string;
@@ -44,18 +45,34 @@ export const LowerSection: React.FC = () => {
     ],
   };
 
-  // Compute skill breakdown dynamically from real quiz scores
+  // Compute skill breakdown dynamically from real quiz scores using canonical module domain metadata
   const scoreEntries = Object.entries(quizScores);
-  const quantumScores = scoreEntries.filter(([k]) => k.includes('track_a_a6') || k.includes('track_a_a7') || k.includes('track_c'));
-  const cryptoScores = scoreEntries.filter(([k]) => k.includes('track_a_a5') || k.includes('track_b_b7') || k.includes('track_b_b8'));
-  const algoScores = scoreEntries.filter(([k]) => k.includes('track_a_a1') || k.includes('track_a_a2') || k.includes('track_a_a4'));
+
+  // Build a lookup from moduleId to domain
+  const getModuleDomain = (moduleId: string): string | undefined => {
+    const mod = curriculumModules.find(m => m.id === moduleId);
+    return mod?.domain;
+  };
+
+  const quantumScores = scoreEntries.filter(([k]) => {
+    const d = getModuleDomain(k);
+    return d === 'PQC Fundamentals';
+  });
+  const cryptoScores = scoreEntries.filter(([k]) => {
+    const d = getModuleDomain(k);
+    return d === 'Cryptography Fundamentals';
+  });
+  const algoScores = scoreEntries.filter(([k]) => {
+    const d = getModuleDomain(k);
+    return d === 'Cybersecurity Fundamentals';
+  });
 
   const avg = (arr: [string, number][]) => arr.length > 0 ? Math.round(arr.reduce((sum, [, v]) => sum + v, 0) / arr.length) : 0;
 
   const skillBreakdown = [
-    { name: 'Quantum Basics', score: avg(quantumScores), color: '#3CB7E8' },
+    { name: 'Quantum & PQC', score: avg(quantumScores), color: '#3CB7E8' },
     { name: 'Applied Cryptography', score: avg(cryptoScores), color: '#5427E6' },
-    { name: 'Algorithm Analysis', score: avg(algoScores), color: '#EF4444' },
+    { name: 'Cybersecurity', score: avg(algoScores), color: '#EF4444' },
   ];
   const renderAchievementIcon = (achievement: AchievementItem) => {
     switch (achievement.iconName) {

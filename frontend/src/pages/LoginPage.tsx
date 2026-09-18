@@ -30,7 +30,7 @@ export const LoginPage: React.FC = () => {
       } else {
         setError('Authentication failed. Backend unavailable.');
       }
-    } catch (err) {
+    } catch {
       setError('An error occurred during authentication.');
     } finally {
       setIsLoading(false);

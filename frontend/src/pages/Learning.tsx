@@ -6,9 +6,13 @@ import { LearningCatalog } from '@/features/learning/components/LearningCatalog'
 import { getPersonalizedLearning } from '@/features/learning/learningRecommendation';
 import { getLatestAssessmentResult } from '@/utils/assessmentStorage';
 import { generateSkillGapProfile } from '@/features/skills/skillsTypes';
+import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 
 export const Learning: React.FC = () => {
   const latestResult = getLatestAssessmentResult();
+
+  // Connect to the canonical curriculum progress store
+  const { completedModules } = useCurriculumStore();
 
   const profile = React.useMemo(() => {
     if (!latestResult) return null;
@@ -24,7 +28,7 @@ export const Learning: React.FC = () => {
     recommendedModules,
     allModules,
     topPriorityReason
-  } = getPersonalizedLearning(profile);
+  } = getPersonalizedLearning(profile, completedModules);
 
   return (
     <div className="page-container fade-in">

@@ -8,8 +8,14 @@ import dns.resolver
 from datetime import datetime
 
 # PROBLEM 1: IP Geolocation Tracking
-def get_geolocation(hostname):
+def get_geolocation(hostname, enable_geo=False):
+    """
+    Geolocation requires sending IP to a third-party service (ip-api.com).
+    For privacy, it is disabled by default. Set enable_geo=True to use.
+    """
     data = {"ip": "Unknown", "country": "Unknown", "isp": "Unknown"}
+    if not enable_geo:
+        return data
     try:
         ip = socket.gethostbyname(hostname)
         data["ip"] = ip
@@ -92,7 +98,7 @@ def analyze_headers(hostname):
 import ipaddress
 
 # PROBLEM 4: Combine Solutions
-def analyze_domain(hostname, port=443):
+def analyze_domain(hostname, port=443, enable_geo=False):
     
     # 0. SSRF Protection & Validation
     try:
@@ -107,7 +113,7 @@ def analyze_domain(hostname, port=443):
             "error": f"Invalid or restricted domain: {str(e)}",
             "crypto": {
                 "encryption_detected": "Unknown",
-                "is_quantum_safe": False,
+                "quantum_status": "inconclusive",
                 "vulnerabilities_found": [f"Invalid or restricted domain: {str(e)}"],
                 "mission_xp_awarded": 0
             }
@@ -141,7 +147,7 @@ def analyze_domain(hostname, port=443):
         osint_data["error"] = f"WHOIS lookup failed: {str(e)}"
 
     # Add Advanced OSINT Features
-    geo_data = get_geolocation(hostname)
+    geo_data = get_geolocation(hostname, enable_geo)
     dns_data = enumerate_dns(hostname)
     header_data = analyze_headers(hostname)
     subdomains = enumerate_subdomains(hostname)
@@ -165,7 +171,7 @@ def analyze_domain(hostname, port=443):
         },
         "crypto": {
             "encryption_detected": "Unknown",
-            "is_quantum_safe": False,
+            "quantum_status": "inconclusive",
             "vulnerabilities_found": [],
             "mission_xp_awarded": 0
         }
@@ -188,15 +194,16 @@ def analyze_domain(hostname, port=443):
                 
                 # Check for PQC
                 if "KYBER" in cipher_name or "ML-KEM" in cipher_name or "DILITHIUM" in cipher_name:
-                    result["crypto"]["is_quantum_safe"] = True
+                    result["crypto"]["quantum_status"] = "quantum_safe"
                     result["crypto"]["mission_xp_awarded"] += 10
                     
                 # Note about symmetric
                 if "AES" in cipher_name or "CHACHA20" in cipher_name:
                     # Symmetric is generally quantum-safe against Shor's, susceptible to Grover's but not critically if 256-bit
+                    # Conservative crypto classification: We only classify as quantum_safe if PQC is explicitly detected
                     pass
                     
-                if not result["crypto"]["vulnerabilities_found"] and not result["crypto"]["is_quantum_safe"]:
+                if not result["crypto"]["vulnerabilities_found"] and result["crypto"]["quantum_status"] == "inconclusive":
                     result["crypto"]["vulnerabilities_found"].append("Could not conclusively determine quantum safety from cipher string")
                     result["crypto"]["mission_xp_awarded"] += 10
 

@@ -10,16 +10,30 @@ export interface PersonalizedLearningResult {
   topPriorityReason?: string;
 }
 
+/**
+ * Generate personalized learning data by combining assessment skill-gap analysis
+ * with actual curriculum progress from the curriculum store.
+ *
+ * @param profile - Skill gap profile from the assessment, or null if no assessment taken
+ * @param completedModules - Array of completed module IDs from the curriculum store
+ */
 export const getPersonalizedLearning = (
-  profile: SkillGapProfile | null
+  profile: SkillGapProfile | null,
+  completedModules: string[] = []
 ): PersonalizedLearningResult => {
+
+  // Helper: derive progress from completion state
+  const getProgress = (moduleId: string): number => {
+    return completedModules.includes(moduleId) ? 100 : 0;
+  };
+
   if (!profile) {
     return {
       hasAssessmentEvidence: false,
       recommendedModules: [],
       allModules: curriculumModules.map((m) => ({
         ...m,
-        progressPercentage: 0,
+        progressPercentage: getProgress(m.id),
         isRecommended: false,
         priorityLevel: 'Low Priority',
       }) as LearningModule),
@@ -39,14 +53,17 @@ export const getPersonalizedLearning = (
     return a.score - b.score;
   });
 
-  // Enrich all modules with learner's priority
+  // Enrich all modules with learner's priority AND actual progress
   const enrichedModules: LearningModule[] = curriculumModules.map((module) => {
     const analysis = module.domain ? domainAnalysisMap.get(module.domain) : undefined;
     const priorityLevel = analysis ? analysis.priorityLevel : 'Medium Priority';
     const score = analysis ? analysis.score : 0;
+    const isCompleted = completedModules.includes(module.id);
 
     let recommendationReason = '';
-    if (priorityLevel === 'High Priority') {
+    if (isCompleted) {
+      recommendationReason = `Completed. Module mastery verified.`;
+    } else if (priorityLevel === 'High Priority') {
       recommendationReason = `Priority #1: Recommended to close your critical ${score}% capability gap in ${module.domain}.`;
     } else if (priorityLevel === 'Medium Priority') {
       recommendationReason = `Priority #2: Recommended to strengthen your developing ${score}% capability in ${module.domain}.`;
@@ -55,22 +72,22 @@ export const getPersonalizedLearning = (
     }
 
     // Determine ordering priority based on trackId (A before B, etc) and code
-    const isRecommended = priorityLevel === 'High Priority' || priorityLevel === 'Medium Priority';
+    const isRecommended = !isCompleted && (priorityLevel === 'High Priority' || priorityLevel === 'Medium Priority');
 
     return {
       ...module,
-      progressPercentage: 0,
+      progressPercentage: getProgress(module.id),
       priorityLevel,
       recommendationReason,
       isRecommended,
     } as LearningModule;
   });
 
-  // Get top recommended modules based on highest-priority domains
+  // Get top recommended modules based on highest-priority domains — exclude completed modules
   const recommendedModules: LearningModule[] = [];
   for (const domainAnalysis of sortedDomains) {
     const domainMods = enrichedModules
-      .filter((m) => m.domain === domainAnalysis.domain)
+      .filter((m) => m.domain === domainAnalysis.domain && !completedModules.includes(m.id))
       .sort((a, b) => a.id.localeCompare(b.id)); // Fallback to id-based alphabetical sort (which inherently groups track_a before track_b)
 
     for (const mod of domainMods) {

@@ -239,7 +239,7 @@ const ScannerTool = () => {
   const calculateThreatScore = (result) => {
     if (!result) return 0;
     let score = 0;
-    if (!result.crypto?.is_quantum_safe) score += 40;
+    if (result.crypto?.quantum_status !== 'quantum_safe') score += 40;
     const headers = result.infrastructure?.security_headers;
     if (headers) {
       if (!headers.hsts) score += 10;
@@ -289,7 +289,7 @@ const ScannerTool = () => {
           logScannerResult({
             user_id: 1,
             endpoint: scanUrl,
-            status: result?.crypto?.is_quantum_safe ? 'Quantum Safe' : 'Vulnerable',
+            status: result?.crypto?.quantum_status === 'quantum_safe' ? 'Quantum Safe' : 'Vulnerable',
             vulnerabilities_found: vulnCount,
             details: JSON.stringify(detailsList)
           });
@@ -456,8 +456,8 @@ const ScannerTool = () => {
             <DataRow label="CIPHER" value={scanResult.crypto?.encryption_detected || 'Unknown'} />
             <DataRow
               label="Q-SAFE"
-              value={scanResult.crypto?.is_quantum_safe ? 'SECURE' : 'VULNERABLE'}
-              valueColor={scanResult.crypto?.is_quantum_safe ? 'var(--color-emerald)' : 'var(--color-error)'}
+              value={scanResult.crypto?.quantum_status === 'quantum_safe' ? 'SECURE' : (scanResult.crypto?.quantum_status === 'inconclusive' ? 'INCONCLUSIVE' : 'VULNERABLE')}
+              valueColor={scanResult.crypto?.quantum_status === 'quantum_safe' ? 'var(--color-emerald)' : (scanResult.crypto?.quantum_status === 'inconclusive' ? 'var(--color-amber-500)' : 'var(--color-error)')}
             />
           </div>
         </ResultCard>
@@ -534,9 +534,13 @@ const ScannerTool = () => {
               </div>
               <div className="st-box-row" style={{ padding: '12px', marginTop: '4px' }}>
                 <span style={{ color: 'var(--color-text-secondary)', fontWeight: 'bold' }}>QUANTUM READINESS</span>
-                {scanResult.crypto?.is_quantum_safe ? (
+                {scanResult.crypto?.quantum_status === 'quantum_safe' ? (
                   <span style={{ backgroundColor: 'rgba(16,185,129,0.2)', color: 'var(--color-emerald)', border: '1px solid rgba(16,185,129,0.5)', padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '12px', letterSpacing: '0.05em' }}>
                     SECURE
+                  </span>
+                ) : scanResult.crypto?.quantum_status === 'inconclusive' ? (
+                  <span style={{ backgroundColor: 'rgba(245,158,11,0.2)', color: 'var(--color-amber-500)', border: '1px solid rgba(245,158,11,0.5)', padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '12px', letterSpacing: '0.05em' }}>
+                    INCONCLUSIVE
                   </span>
                 ) : (
                   <span style={{ backgroundColor: 'rgba(186,26,26,0.1)', color: 'var(--color-error)', border: '1px solid rgba(186,26,26,0.3)', padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '12px', letterSpacing: '0.05em' }}>
@@ -546,8 +550,10 @@ const ScannerTool = () => {
               </div>
               <div style={{ marginTop: '8px', color: 'var(--color-text-primary)', fontSize: '12px', lineHeight: '1.6', backgroundColor: 'var(--color-surface-low)', padding: '12px', borderRadius: '8px', borderLeft: `4px solid ${threatColor}` }}>
                 <span style={{ fontWeight: 'bold', marginRight: '8px' }}>AI RECOMMENDATION:</span>
-                {scanResult.crypto?.is_quantum_safe
+                {scanResult.crypto?.quantum_status === 'quantum_safe'
                   ? 'Target is currently using post-quantum algorithms. Continue monitoring for compliance updates.'
+                  : scanResult.crypto?.quantum_status === 'inconclusive'
+                  ? 'Could not conclusively determine quantum safety. Further manual assessment required.'
                   : 'Immediate migration to post-quantum cryptographic algorithms (e.g., Kyber, Dilithium) advised for long-term data security against harvest-now-decrypt-later attacks.'}
               </div>
             </div>

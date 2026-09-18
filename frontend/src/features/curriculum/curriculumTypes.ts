@@ -22,6 +22,7 @@ export interface CurriculumModule {
   trackId: TrackId;
   code: string; // e.g. A1, B3, C6, E2
   domain?: AssessmentDomain; // Used for gap analysis mapping
+  recommendationTopic?: string; // Canonical backend quiz topic (e.g. 'quantum_fundamentals', 'pqc', 'practical_security', 'classical_crypto')
   title: string;
   subtitle?: string;
   level: ModuleDifficulty;
