@@ -453,7 +453,13 @@ const ScannerTool = () => {
                 {scanResult.crypto?.encryption_detected || 'Unknown'}
               </span>
             </div>
-            <DataRow label="CIPHER" value={scanResult.crypto?.encryption_detected || 'Unknown'} />
+            {scanResult.crypto?.certificate && (
+              <>
+                <DataRow label="SIGNATURE ALG" value={scanResult.crypto.certificate.signature_algorithm} />
+                <DataRow label="ISSUER" value={scanResult.crypto.certificate.issuer.split(',')[0].replace('CN=', '')} />
+                <DataRow label="EXPIRES" value={scanResult.crypto.certificate.expires.split('T')[0]} />
+              </>
+            )}
             <DataRow
               label="Q-SAFE"
               value={scanResult.crypto?.quantum_status === 'quantum_safe' ? 'SECURE' : (scanResult.crypto?.quantum_status === 'inconclusive' ? 'INCONCLUSIVE' : 'VULNERABLE')}

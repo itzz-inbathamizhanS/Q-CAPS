@@ -6,6 +6,8 @@ import whois
 import requests
 import dns.resolver
 from datetime import datetime
+from cryptography import x509
+from cryptography.hazmat.backends import default_backend
 
 # PROBLEM 1: IP Geolocation Tracking
 def get_geolocation(hostname, enable_geo=False):
@@ -173,7 +175,8 @@ def analyze_domain(hostname, port=443, enable_geo=False):
             "encryption_detected": "Unknown",
             "quantum_status": "inconclusive",
             "vulnerabilities_found": [],
-            "mission_xp_awarded": 0
+            "mission_xp_awarded": 0,
+            "certificate": None
         }
     }
 
@@ -183,6 +186,33 @@ def analyze_domain(hostname, port=443, enable_geo=False):
                 cipher = ssock.cipher()
                 cipher_name = cipher[0]
                 result["crypto"]["encryption_detected"] = cipher_name
+                
+                # X.509 Certificate Extraction
+                try:
+                    der_cert = ssock.getpeercert(binary_form=True)
+                    if der_cert:
+                        cert = x509.load_der_x509_certificate(der_cert, default_backend())
+                        sig_alg = cert.signature_algorithm_oid._name
+                        issuer = cert.issuer.rfc4514_string()
+                        
+                        # Handle timezone-aware deprecations in cryptography
+                        expires = cert.not_valid_after_utc.isoformat() if hasattr(cert, 'not_valid_after_utc') else cert.not_valid_after.isoformat()
+                        
+                        result["crypto"]["certificate"] = {
+                            "signature_algorithm": sig_alg,
+                            "issuer": issuer,
+                            "expires": expires
+                        }
+                        
+                        # Check certificate signature algorithm for quantum vulnerabilities
+                        if "rsa" in (sig_alg or "").lower():
+                            result["crypto"]["vulnerabilities_found"].append(f"X.509 Cert signed with legacy RSA ({sig_alg}) - Vulnerable to Shor's Algorithm")
+                            result["crypto"]["mission_xp_awarded"] += 50
+                        elif "ecdsa" in (sig_alg or "").lower() or "ecdhe" in (sig_alg or "").lower():
+                            result["crypto"]["vulnerabilities_found"].append(f"X.509 Cert signed with legacy ECC ({sig_alg}) - Vulnerable to Shor's Algorithm")
+                            result["crypto"]["mission_xp_awarded"] += 25
+                except Exception as cert_err:
+                    pass
                 
                 # Heuristic analysis
                 if "RSA" in cipher_name:
