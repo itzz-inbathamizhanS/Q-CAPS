@@ -1,0 +1,266 @@
+<!DOCTYPE html>
+
+<html class="dark" lang="en"><head>
+<meta charset="utf-8"/>
+<meta content="width=device-width, initial-scale=1.0" name="viewport"/>
+<title>Q-CAPS Mobile Dashboard</title>
+<!-- Material Symbols -->
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Material+Symbols+Outlined:wght,FILL@100..700,0..1&display=swap" rel="stylesheet"/>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@100..900&display=swap" rel="stylesheet"/>
+<!-- Tailwind CSS -->
+<script src="https://cdn.tailwindcss.com?plugins=forms,container-queries"></script>
+<!-- Tailwind Config from Guidelines -->
+<script id="tailwind-config">
+      tailwind.config = {
+        darkMode: "class",
+        theme: {
+          extend: {
+            "colors": {
+                    "surface-container-highest": "#e5e0ef",
+                    "core-bg": "#F5F5FA",
+                    "surface-container": "#f1ebfa",
+                    "surface-container-low": "#f7f1ff",
+                    "inverse-on-surface": "#f4eefd",
+                    "secondary-fixed-dim": "#c5c6ce",
+                    "on-primary-container": "#f4eeff",
+                    "on-secondary-container": "#63646b",
+                    "core-text-secondary": "#666978",
+                    "inverse-surface": "#312f3a",
+                    "surface-tint": "#5d36ef",
+                    "error-container": "#ffdad6",
+                    "tertiary-container": "#b44f00",
+                    "outline-variant": "#c9c4d9",
+                    "secondary-container": "#e2e2ea",
+                    "on-secondary": "#ffffff",
+                    "surface-bright": "#fdf8ff",
+                    "core-text-primary": "#171821",
+                    "surface-variant": "#e5e0ef",
+                    "tertiary-fixed-dim": "#ffb68f",
+                    "cyber-secondary-bg": "#0D1220",
+                    "tertiary-fixed": "#ffdbca",
+                    "cyber-text-primary": "#F7F8FC",
+                    "cyber-surface": "#121827",
+                    "cyber-bg": "#080B14",
+                    "surface": "#fdf8ff",
+                    "on-secondary-fixed": "#191b21",
+                    "surface-dim": "#ddd8e6",
+                    "secondary": "#5d5e65",
+                    "on-background": "#1c1a24",
+                    "core-surface": "#FFFFFF",
+                    "background": "#fdf8ff",
+                    "on-surface": "#1c1a24",
+                    "primary-container": "#6d4aff",
+                    "cyber-text-secondary": "#A8AFBF",
+                    "on-tertiary": "#ffffff",
+                    "cyber-primary-violet": "#7C5CFF",
+                    "inverse-primary": "#c9bfff",
+                    "primary-fixed": "#e5deff",
+                    "on-tertiary-fixed": "#331100",
+                    "surface-container-lowest": "#ffffff",
+                    "on-secondary-fixed-variant": "#45474d",
+                    "on-surface-variant": "#484556",
+                    "secondary-fixed": "#e2e2ea",
+                    "on-error-container": "#93000a",
+                    "cyber-border": "#252E42",
+                    "surface-container-high": "#ebe6f5",
+                    "on-tertiary-container": "#ffede5",
+                    "tertiary": "#8e3d00",
+                    "error": "#ba1a1a",
+                    "on-primary-fixed-variant": "#4500d8",
+                    "primary": "#5427e6",
+                    "primary-fixed-dim": "#c9bfff",
+                    "on-primary": "#ffffff",
+                    "on-error": "#ffffff",
+                    "outline": "#797588",
+                    "on-tertiary-fixed-variant": "#773200",
+                    "core-border": "#E5E5EE",
+                    "cyber-elevated": "#182033",
+                    "on-primary-fixed": "#1b0063"
+            },
+            "borderRadius": {
+                    "DEFAULT": "0.25rem",
+                    "lg": "0.5rem",
+                    "xl": "0.75rem",
+                    "full": "9999px"
+            },
+            "spacing": {
+                    "gutter": "24px",
+                    "base": "4px",
+                    "stack_gap_lg": "32px",
+                    "sidebar_width": "250px",
+                    "container_padding": "32px",
+                    "stack_gap_md": "16px",
+                    "card_padding": "24px"
+            },
+            "fontFamily": {
+                    "display-lg": ["Inter"],
+                    "headline-lg-mobile": ["Inter"],
+                    "mono-code": ["JetBrains Mono"],
+                    "mono-label": ["JetBrains Mono"],
+                    "headline-md": ["Inter"],
+                    "headline-lg": ["Inter"],
+                    "body-sm": ["Inter"],
+                    "body-lg": ["Inter"],
+                    "body-md": ["Inter"]
+            },
+            "fontSize": {
+                    "display-lg": ["48px", {"lineHeight": "56px", "letterSpacing": "-0.02em", "fontWeight": "700"}],
+                    "headline-lg-mobile": ["28px", {"lineHeight": "36px", "fontWeight": "600"}],
+                    "mono-code": ["14px", {"lineHeight": "22px", "fontWeight": "400"}],
+                    "mono-label": ["13px", {"lineHeight": "18px", "letterSpacing": "0.02em", "fontWeight": "500"}],
+                    "headline-md": ["24px", {"lineHeight": "32px", "fontWeight": "600"}],
+                    "headline-lg": ["32px", {"lineHeight": "40px", "letterSpacing": "-0.01em", "fontWeight": "600"}],
+                    "body-sm": ["14px", {"lineHeight": "20px", "fontWeight": "400"}],
+                    "body-lg": ["18px", {"lineHeight": "28px", "fontWeight": "400"}],
+                    "body-md": ["16px", {"lineHeight": "24px", "fontWeight": "400"}]
+            }
+          }
+        }
+      }
+    </script>
+<style>
+        /* Custom scrollbar for cyber mode */
+        ::-webkit-scrollbar {
+            width: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: transparent;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #252E42;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #7C5CFF;
+        }
+    </style>
+<style>
+    body {
+      min-height: max(884px, 100dvh);
+    }
+  </style>
+  </head>
+<body class="bg-cyber-bg text-cyber-text-primary font-body-md h-screen flex flex-col overflow-hidden antialiased selection:bg-cyber-primary-violet/30 selection:text-white">
+<!-- Mobile Top App Bar (Derived from TopNavBar JSON) -->
+<header class="fixed top-0 left-0 right-0 z-50 h-16 bg-cyber-bg/90 backdrop-blur-md flex justify-between items-center px-[16px] md:px-container_padding shadow-[0_4px_24px_rgba(0,0,0,0.3)] transition-colors duration-200">
+<div class="flex items-center gap-2">
+<span class="material-symbols-outlined text-cyber-primary-violet" style="font-variation-settings: 'FILL' 1;">security</span>
+<span class="font-headline-md text-headline-md text-cyber-text-primary">Q-CAPS</span>
+</div>
+<div class="flex items-center gap-4">
+<button class="text-cyber-text-secondary hover:text-cyber-primary-violet transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="notifications">notifications</span>
+</button>
+<button class="text-cyber-text-secondary hover:text-cyber-primary-violet transition-colors duration-200">
+<span class="material-symbols-outlined" data-icon="account_circle">account_circle</span>
+</button>
+</div>
+</header>
+<!-- Main Content Canvas -->
+<main class="flex-1 overflow-y-auto pt-[80px] pb-[100px] px-[16px] md:px-container_padding">
+<div class="flex flex-col gap-stack_gap_md max-w-[600px] mx-auto">
+<!-- Context Header -->
+<div class="mb-2">
+<p class="font-mono-label text-mono-label text-cyber-primary-violet uppercase tracking-widest">Active Session</p>
+<h1 class="font-headline-lg-mobile text-headline-lg-mobile text-cyber-text-primary mt-1">Quantum Status</h1>
+</div>
+<!-- KPI Card 1: Primary Score -->
+<div class="bg-cyber-surface rounded-xl p-card_padding flex flex-col relative overflow-hidden group">
+<!-- Subtle background glow -->
+<div class="absolute -right-20 -top-20 w-40 h-40 bg-cyber-primary-violet/10 rounded-full blur-3xl group-hover:bg-cyber-primary-violet/20 transition-all duration-500"></div>
+<div class="flex justify-between items-start mb-4 relative z-10">
+<span class="font-body-md text-body-md text-cyber-text-secondary">Global Threat Index</span>
+<span class="material-symbols-outlined text-cyber-primary-violet bg-cyber-elevated p-2 rounded-lg text-[20px]" style="font-variation-settings: 'FILL' 1;">monitoring</span>
+</div>
+<div class="flex items-baseline gap-2 relative z-10">
+<span class="font-display-lg text-display-lg text-cyber-text-primary">98.4</span>
+<span class="font-mono-code text-mono-code text-cyber-primary-violet">%</span>
+</div>
+<div class="mt-4 flex items-center gap-2 relative z-10">
+<div class="h-1.5 w-full bg-cyber-secondary-bg rounded-full overflow-hidden">
+<div class="h-full bg-cyber-primary-violet rounded-full w-[98.4%]"></div>
+</div>
+</div>
+<p class="font-mono-label text-mono-label text-cyber-text-secondary mt-2 text-right relative z-10">OPTIMAL STATE</p>
+</div>
+<!-- Bento Grid: Secondary Metrics -->
+<div class="grid grid-cols-2 gap-stack_gap_md">
+<!-- KPI Card 2 -->
+<div class="bg-cyber-surface rounded-xl p-[20px] flex flex-col justify-between h-[140px]">
+<div class="flex items-center gap-2 text-cyber-text-secondary">
+<span class="material-symbols-outlined text-[18px]">vpn_key</span>
+<span class="font-body-sm text-body-sm">Key Integrity</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-cyber-text-primary">AES-256</div>
+<div class="font-mono-code text-mono-code text-[#4ade80] mt-1 text-[12px]">SECURE</div>
+</div>
+</div>
+<!-- KPI Card 3 -->
+<div class="bg-cyber-surface rounded-xl p-[20px] flex flex-col justify-between h-[140px]">
+<div class="flex items-center gap-2 text-cyber-text-secondary">
+<span class="material-symbols-outlined text-[18px]">wifi_tethering</span>
+<span class="font-body-sm text-body-sm">Nodes Active</span>
+</div>
+<div>
+<div class="font-headline-md text-headline-md text-cyber-text-primary">1,024</div>
+<div class="font-mono-code text-mono-code text-cyber-text-secondary mt-1 text-[12px]">SYNCED 0.2ms ago</div>
+</div>
+</div>
+</div>
+<!-- Terminal / Log Streamer Snippet -->
+<div class="bg-[#080B14] rounded-xl p-[16px] border border-cyber-border mt-2 font-mono-code text-mono-code text-[12px] h-[160px] overflow-y-auto flex flex-col gap-2 relative">
+<div class="sticky top-0 bg-[#080B14]/90 backdrop-blur pb-2 border-b border-cyber-border/50 mb-1 text-cyber-text-secondary flex justify-between">
+<span>>_ AUDIT_LOG_STREAM</span>
+<span class="text-cyber-primary-violet animate-pulse">● LIVE</span>
+</div>
+<div class="text-cyber-text-secondary"><span class="text-cyber-primary-violet">[SYS]</span> Initializing quantum handshake...</div>
+<div class="text-cyber-text-secondary"><span class="text-cyber-primary-violet">[SYS]</span> Verification node 0x8F2A connected.</div>
+<div class="text-[#4ade80]"><span class="text-cyber-primary-violet">[OK]</span> Handshake successful. Latency 0.04ms.</div>
+<div class="text-cyber-text-secondary"><span class="text-cyber-primary-violet">[SYS]</span> Scanning for entanglements...</div>
+<div class="text-cyber-text-secondary opacity-50">Awaiting next sequence...</div>
+</div>
+<!-- Quick Action Button -->
+<button class="w-full h-[44px] bg-cyber-primary-violet hover:bg-[#8A6FFF] text-white rounded-lg font-body-md font-bold transition-all duration-200 mt-2 active:scale-95 flex justify-center items-center gap-2">
+<span class="material-symbols-outlined text-[20px]">rocket_launch</span>
+<span>Run Full Diagnostic</span>
+</button>
+</div>
+</main>
+<!-- Mobile Bottom Navigation (Derived from SideNavBar JSON for mobile context) -->
+<nav class="md:hidden fixed bottom-0 left-0 right-0 h-[80px] bg-cyber-surface pb-safe pt-2 px-4 shadow-[0_-8px_32px_rgba(0,0,0,0.4)] flex justify-around items-center z-50">
+<!-- Active Tab: Overview (Matches Intent: Dashboard) -->
+<button class="flex flex-col items-center justify-center gap-1 min-w-[64px] text-cyber-primary-violet transition-transform duration-150 scale-100">
+<div class="w-[64px] h-[32px] rounded-full bg-cyber-elevated flex items-center justify-center">
+<span class="material-symbols-outlined text-[24px]" data-icon="dashboard" data-weight="fill" style="font-variation-settings: 'FILL' 1;">dashboard</span>
+</div>
+<span class="font-body-sm text-[11px] font-bold">Overview</span>
+</button>
+<!-- Inactive Tab: Mission Control -->
+<button class="flex flex-col items-center justify-center gap-1 min-w-[64px] text-cyber-text-secondary hover:text-cyber-primary-violet transition-colors duration-200">
+<div class="w-[64px] h-[32px] rounded-full flex items-center justify-center hover:bg-cyber-bg transition-colors duration-200">
+<span class="material-symbols-outlined text-[24px]" data-icon="rocket_launch">rocket_launch</span>
+</div>
+<span class="font-body-sm text-[11px]">Mission Control</span>
+</button>
+<!-- Inactive Tab: Progress -->
+<button class="flex flex-col items-center justify-center gap-1 min-w-[64px] text-cyber-text-secondary hover:text-cyber-primary-violet transition-colors duration-200">
+<div class="w-[64px] h-[32px] rounded-full flex items-center justify-center hover:bg-cyber-bg transition-colors duration-200">
+<span class="material-symbols-outlined text-[24px]" data-icon="monitoring">monitoring</span>
+</div>
+<span class="font-body-sm text-[11px]">Progress</span>
+</button>
+<!-- Inactive Tab: Account -->
+<button class="flex flex-col items-center justify-center gap-1 min-w-[64px] text-cyber-text-secondary hover:text-cyber-primary-violet transition-colors duration-200">
+<div class="w-[64px] h-[32px] rounded-full flex items-center justify-center hover:bg-cyber-bg transition-colors duration-200">
+<span class="material-symbols-outlined text-[24px]" data-icon="account_circle">account_circle</span>
+</div>
+<span class="font-body-sm text-[11px]">Account</span>
+</button>
+</nav>
+<!-- Support for safe area inset on modern mobile devices -->
+<style>
+        .pb-safe { padding-bottom: env(safe-area-inset-bottom); }
+    </style>
+</body></html>

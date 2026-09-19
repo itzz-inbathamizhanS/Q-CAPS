@@ -1,0 +1,13 @@
+{
+  "module_id": "track_d_e1_quantum_risk_management",
+  "title": "E1 Quiz: Quantum Risk Management",
+  "difficulty": "professional",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "e1-q1", "prompt": "Why is translating technical quantum threats into business-impact terms important?", "options": ["It's unnecessary — executives understand factoring algorithms directly", "It secures executive buy-in and budget by framing risk in terms of financial loss, regulatory penalty, and reputational damage", "Technical framing is always more persuasive", "Business impact framing is only for marketing purposes"], "correct_index": 1, "explanation": "Business-impact framing (financial, regulatory, reputational) is the language that secures executive buy-in and budget for migration work." },
+    { "id": "e1-q2", "prompt": "What two inputs determine an asset's HNDL exposure?", "options": ["Data sensitivity and required confidentiality lifetime", "Server color and physical location only", "Employee headcount", "Marketing budget"], "correct_index": 0, "explanation": "Data sensitivity (how damaging exposure would be) and confidentiality lifetime (how long it must stay protected) together determine HNDL exposure." },
+    { "id": "e1-q3", "prompt": "Why must third-party vendor dependencies be included in organizational risk modeling?", "options": ["Vendors never handle sensitive data", "Vendors and partners handling sensitive data introduce dependency risk that must be assessed and contractually addressed", "Third parties are outside the scope of any risk model", "Only internal systems carry any risk"], "correct_index": 1, "explanation": "Vendor and partner dependencies introduce real organizational risk that must be assessed and addressed, often through contractual requirements." },
+    { "id": "e1-q4", "prompt": "What three factors combine into a structured organizational risk model?", "options": ["Employee satisfaction, office location, budget", "Threat likelihood, data sensitivity/lifetime, and system criticality", "Marketing reach, brand recognition, stock price", "None of the above"], "correct_index": 1, "explanation": "A structured risk model combines threat likelihood, data sensitivity/lifetime, and system criticality into a scored output." },
+    { "id": "e1-q5", "prompt": "What does this module's risk model directly mirror in the Q-CAPS platform itself?", "options": ["Nothing related", "The readiness/risk scoring approach used in Q-CAPS's own Organization module", "Only the login page design", "The quiz difficulty levels"], "correct_index": 1, "explanation": "This structured risk-scoring approach directly mirrors the readiness scoring used in Q-CAPS's own Organization module." }
+  ]
+}

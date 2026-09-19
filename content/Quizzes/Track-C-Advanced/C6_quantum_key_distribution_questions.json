@@ -1,0 +1,13 @@
+{
+  "module_id": "track_c_c6_quantum_key_distribution",
+  "title": "C6 Quiz: Quantum Key Distribution",
+  "difficulty": "quantum_expert",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "c6-q1", "prompt": "What physical principle does BB84's security rest on?", "options": ["RSA factoring difficulty", "The no-cloning theorem — an eavesdropper measuring photons in transit introduces detectable errors", "AES key length", "Classical firewall rules"], "correct_index": 1, "explanation": "BB84's security stems from the no-cloning theorem: an eavesdropper cannot measure transmitted photons without introducing detectable errors." },
+    { "id": "c6-q2", "prompt": "What makes E91 different from BB84 in its foundational mechanism?", "options": ["E91 uses no photons", "E91 is built on shared entanglement and Bell inequality violations, rather than single photons in random bases", "E91 doesn't require any security proof", "E91 is identical to BB84"], "correct_index": 1, "explanation": "E91 uses entanglement and Bell inequality violations to establish a key and prove the absence of eavesdropping, unlike BB84's single-photon-basis approach." },
+    { "id": "c6-q3", "prompt": "What real-world vulnerability does Measurement-Device-Independent QKD (MDI-QKD) specifically address?", "options": ["Vulnerabilities in the classical internet", "Vulnerabilities in the measurement devices used in standard QKD implementations", "Weaknesses in RSA factoring", "AES key length weaknesses"], "correct_index": 1, "explanation": "MDI-QKD addresses measurement-device vulnerabilities, a common real-world attack surface in standard QKD hardware implementations." },
+    { "id": "c6-q4", "prompt": "Why is QKD generally considered less practical for internet-scale deployment than PQC?", "options": ["QKD is actually more scalable than PQC", "QKD requires specialized hardware, has distance limitations, and doesn't easily support many-to-many communication patterns", "PQC requires special satellites", "There is no meaningful difference in deployability"], "correct_index": 1, "explanation": "QKD's hardware requirements, distance limitations, and difficulty scaling to many-to-many communication make it less practical for internet-scale deployment than PQC." },
+    { "id": "c6-q5", "prompt": "What does QKD alone NOT provide, even when properly implemented?", "options": ["Key distribution security", "The actual encryption of data itself, which still relies on a classical symmetric algorithm like AES", "Physics-based security guarantees", "Eavesdropping detection"], "correct_index": 1, "explanation": "QKD only secures key distribution — actual data encryption still relies on a classical symmetric algorithm like AES using the distributed key." }
+  ]
+}

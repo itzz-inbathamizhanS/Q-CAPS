@@ -1,0 +1,104 @@
+{
+  "module_id": "track_a_a8_pqc_mitigation",
+  "title": "Module 3 Quiz: PQC Mitigation",
+  "difficulty": "quantum_expert",
+  "passing_score_percent": 70,
+  "questions": [
+    {
+      "id": "a8-q1",
+      "prompt": "Shor's algorithm poses a threat to which cryptographic systems?",
+      "options": [
+        "AES and SHA-256 only",
+        "RSA and ECC (via factoring and discrete log)",
+        "Hash-based signatures only",
+        "Symmetric ciphers only"
+      ],
+      "correct_index": 1,
+      "explanation": "Shor's algorithm efficiently solves integer factorization (breaking RSA) and discrete logarithms (breaking ECC/Diffie-Hellman) on a sufficiently large fault-tolerant quantum computer."
+    },
+    {
+      "id": "a8-q2",
+      "prompt": "What is the primary impact of Grover's algorithm on symmetric cryptography?",
+      "options": [
+        "It fully breaks AES regardless of key size",
+        "It provides a quadratic speedup, roughly halving effective key strength",
+        "It has no impact on symmetric crypto",
+        "It only affects hash-based signatures"
+      ],
+      "correct_index": 1,
+      "explanation": "Grover's algorithm gives a quadratic speedup, so AES-128 behaves like ~64-bit security against a quantum attacker — mitigated by doubling key/hash lengths."
+    },
+    {
+      "id": "a8-q3",
+      "prompt": "What does 'Harvest Now, Decrypt Later' describe?",
+      "options": [
+        "A PQC algorithm name",
+        "Adversaries recording encrypted data today to decrypt once quantum computers are capable",
+        "A quantum error-correction technique",
+        "A type of phishing attack"
+      ],
+      "correct_index": 1,
+      "explanation": "HNDL means encrypted data is captured today and stored, to be decrypted later once cryptographically relevant quantum computers exist."
+    },
+    {
+      "id": "a8-q4",
+      "prompt": "Which NIST-standardized algorithm is used for key encapsulation (key exchange) in the PQC suite?",
+      "options": [
+        "ML-DSA",
+        "SLH-DSA",
+        "ML-KEM",
+        "AES-256"
+      ],
+      "correct_index": 2,
+      "explanation": "ML-KEM (formerly CRYSTALS-Kyber) is the NIST standard for post-quantum key exchange (FIPS 203)."
+    },
+    {
+      "id": "a8-q5",
+      "prompt": "Why does SLH-DSA (hash-based signatures) exist alongside ML-DSA (lattice-based signatures)?",
+      "options": [
+        "SLH-DSA is faster and should replace ML-DSA entirely",
+        "It serves as a conservative backup based on well-understood hash security, in case lattice-based math is later weakened",
+        "SLH-DSA is used only for symmetric encryption",
+        "They are functionally identical"
+      ],
+      "correct_index": 1,
+      "explanation": "SLH-DSA relies only on hash function security, providing a diversified backup in case unforeseen weaknesses are found in lattice-based approaches."
+    },
+    {
+      "id": "a8-q6",
+      "prompt": "What is 'crypto-agility'?",
+      "options": [
+        "Using the fastest possible encryption algorithm always",
+        "The ability to swap cryptographic algorithms without a full system re-architecture",
+        "A quantum computing benchmark",
+        "A synonym for hybrid cryptography"
+      ],
+      "correct_index": 1,
+      "explanation": "Crypto-agility is a design property letting organizations swap algorithms as standards evolve, without rebuilding entire systems."
+    },
+    {
+      "id": "a8-q7",
+      "prompt": "Why do organizations often use hybrid cryptography (classical + PQC) during migration?",
+      "options": [
+        "It's required by law in all countries",
+        "It ensures security holds even if one of the two algorithm families is later broken or found flawed",
+        "It makes systems faster than using either alone",
+        "It removes the need for certificates"
+      ],
+      "correct_index": 1,
+      "explanation": "Hybrid cryptography combines classical and PQC algorithms so security is maintained as long as at least one remains unbroken."
+    },
+    {
+      "id": "a8-q8",
+      "prompt": "An RSA-2048 certificate is found on a critical system holding data with a 20-year confidentiality requirement. Under the HNDL model, what is the most accurate assessment?",
+      "options": [
+        "No risk exists until a quantum computer capable of breaking RSA is built",
+        "The data may already be at risk today if it is being intercepted and stored for future decryption",
+        "RSA-2048 is already quantum-safe",
+        "This only matters for symmetric encryption"
+      ],
+      "correct_index": 1,
+      "explanation": "Because of Harvest Now, Decrypt Later, data with a long confidentiality lifetime is at risk from today's interception, even before decryption capability exists."
+    }
+  ]
+}

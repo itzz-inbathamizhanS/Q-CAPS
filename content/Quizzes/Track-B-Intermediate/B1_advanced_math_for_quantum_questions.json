@@ -1,0 +1,13 @@
+{
+  "module_id": "track_b_b1_advanced_math_for_quantum",
+  "title": "B1 Quiz: Advanced Mathematics for Quantum",
+  "difficulty": "professional",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "b1-q1", "prompt": "What property must a valid quantum gate's matrix representation have?", "options": ["It must be symmetric", "It must be unitary (preserves total probability)", "It must have all positive entries", "It must be diagonal"], "correct_index": 1, "explanation": "A unitary operator preserves the total probability (sums to 1) when applied to a quantum state — required for any valid gate." },
+    { "id": "b1-q2", "prompt": "What does the inner product of two quantum states help compute?", "options": ["The color of the qubit", "The probability of measuring one state given the other", "The physical temperature", "The circuit depth"], "correct_index": 1, "explanation": "The squared magnitude of the inner product between states gives the probability of a particular measurement outcome." },
+    { "id": "b1-q3", "prompt": "What notation uses |ψ⟩ (ket) and ⟨ψ| (bra)?", "options": ["Boolean notation", "Dirac (bra-ket) notation", "Big-O notation", "Binary notation"], "correct_index": 1, "explanation": "Dirac notation is the standard shorthand for quantum state vectors used throughout quantum computing literature." },
+    { "id": "b1-q4", "prompt": "Combining two 2-dimensional single-qubit spaces via tensor product produces a space of what dimension?", "options": ["2-dimensional", "4-dimensional", "8-dimensional", "16-dimensional"], "correct_index": 1, "explanation": "Two 2-dimensional spaces combine via tensor product into a 4-dimensional space (2 x 2), generalizing to 2^n for n qubits." },
+    { "id": "b1-q5", "prompt": "What quantum computing concept does basic optimization math prepare learners for?", "options": ["Classical firewall rules", "Variational algorithms like VQE and QAOA", "DNS resolution", "Symmetric key generation"], "correct_index": 1, "explanation": "Optimization concepts are groundwork for variational quantum algorithms, which combine quantum circuits with classical optimization." }
+  ]
+}

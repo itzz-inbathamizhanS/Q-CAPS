@@ -1,0 +1,13 @@
+{
+  "module_id": "track_b_b7_advanced_cryptography",
+  "title": "B7 Quiz: Advanced Cryptography",
+  "difficulty": "professional",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "b7-q1", "prompt": "What is a KEM (Key Encapsulation Mechanism) structurally different from?", "options": ["It's identical to encrypting an arbitrary message", "It generates and securely transmits a random shared secret, rather than encrypting arbitrary chosen data", "It only works with symmetric keys", "It replaces the need for a public key"], "correct_index": 1, "explanation": "A KEM generates a random shared secret and securely transmits it, a slightly different structure than encrypting arbitrary chosen plaintext." },
+    { "id": "b7-q2", "prompt": "What does an HSM (Hardware Security Module) primarily protect against?", "options": ["Network latency", "Exposing private keys to software compromise by keeping operations in tamper-resistant hardware", "DNS spoofing", "Password reuse"], "correct_index": 1, "explanation": "An HSM performs key operations in tamper-resistant hardware without ever exposing the private key to the host software." },
+    { "id": "b7-q3", "prompt": "What security property does a signature scheme's 'existential unforgeability' guarantee?", "options": ["Signatures never expire", "An attacker cannot forge a valid signature on any new message, even after seeing many valid ones", "All signatures look identical", "Signatures can be reused across different messages"], "correct_index": 1, "explanation": "Existential unforgeability means an attacker cannot produce a valid forged signature, even after observing many legitimate signatures." },
+    { "id": "b7-q4", "prompt": "What is a common real-world cause of PKI failure, independent of any cryptographic weakness?", "options": ["Poor certificate lifecycle management (e.g., expired certificates)", "Using AES-256", "Having too many CAs", "Using ECC instead of RSA"], "correct_index": 0, "explanation": "Poor lifecycle management — like certificates expiring unnoticed — is one of the most common real-world PKI failure modes, unrelated to cryptographic strength." },
+    { "id": "b7-q5", "prompt": "Why is SSH grouped with TLS in terms of underlying cryptographic building blocks?", "options": ["They are the exact same protocol", "Both use asymmetric key exchange, symmetric encryption, and MACs, just in different protocol structures", "SSH doesn't use any cryptography", "TLS is only used for email"], "correct_index": 1, "explanation": "SSH and TLS both rely on the same core cryptographic building blocks (key exchange, symmetric encryption, MACs) within different protocol structures." }
+  ]
+}

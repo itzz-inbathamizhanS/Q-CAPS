@@ -1,0 +1,13 @@
+{
+  "module_id": "track_d_e6_governance",
+  "title": "E6 Quiz: Governance",
+  "difficulty": "professional",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "e6-q1", "prompt": "Why does a migration project need a formal quantum-readiness policy rather than just a technical project plan?", "options": ["Policy is purely symbolic", "It institutionalizes the effort, ensuring it outlasts any single project team or budget cycle", "Technical plans are always sufficient alone", "Policy replaces the need for any technical work"], "correct_index": 1, "explanation": "Formal policy turns a technical project into an institutionalized, ongoing organizational priority beyond any single team or budget cycle." },
+    { "id": "e6-q2", "prompt": "What tends to happen to a well-designed migration plan without clear risk ownership?", "options": ["It always succeeds regardless", "It tends to stall, since no one is accountable for driving it forward against competing priorities", "Ownership doesn't affect outcomes", "It automatically completes itself"], "correct_index": 1, "explanation": "Without a named accountable owner, even a well-designed plan tends to stall against competing organizational priorities." },
+    { "id": "e6-q3", "prompt": "What does embedding cryptographic requirements into procurement processes prevent?", "options": ["Nothing meaningful", "New systems entering the organization non-agile and non-PQC-capable, adding to future migration debt", "Faster hardware purchases", "Vendor relationships"], "correct_index": 1, "explanation": "Procurement requirements ensure new systems arrive crypto-agile and PQC-capable, preventing them from adding to future migration debt." },
+    { "id": "e6-q4", "prompt": "What increasingly common driver is making PQC migration timelines externally mandated in some industries?", "options": ["Social media trends", "Regulatory and compliance requirements in regulated industries like finance, healthcare, government", "Weather patterns", "Employee preferences"], "correct_index": 1, "explanation": "Compliance requirements in regulated industries are increasingly making PQC migration externally mandated rather than purely voluntary." },
+    { "id": "e6-q5", "prompt": "What is the highest-level certificate awarded upon full program completion, spanning all tracks?", "options": ["CQF only", "PQCTP — Professional Quantum Computing & Quantum-Safe Technology Professional", "QSA only", "There is no final certificate"], "correct_index": 1, "explanation": "PQCTP is the program's highest-level certification, awarded after progressing through the Shared Professional Core following Track D completion." }
+  ]
+}

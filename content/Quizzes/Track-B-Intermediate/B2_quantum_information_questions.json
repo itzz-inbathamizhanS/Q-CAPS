@@ -1,0 +1,13 @@
+{
+  "module_id": "track_b_b2_quantum_information",
+  "title": "B2 Quiz: Quantum Information",
+  "difficulty": "professional",
+  "passing_score_percent": 70,
+  "questions": [
+    { "id": "b2-q1", "prompt": "What does a density matrix describe that a simple state vector cannot?", "options": ["Only pure states", "Mixed states (statistical uncertainty), in addition to pure states", "Only classical bits", "Nothing new"], "correct_index": 1, "explanation": "Density matrices can represent mixed states — statistical uncertainty about the state itself — unlike a simple state vector which only describes pure states." },
+    { "id": "b2-q2", "prompt": "What does the no-cloning theorem prove?", "options": ["Quantum states can always be perfectly copied", "It's impossible to create an identical copy of an arbitrary unknown quantum state", "Classical bits cannot be copied", "Entanglement is impossible"], "correct_index": 1, "explanation": "The no-cloning theorem proves that an arbitrary unknown quantum state cannot be perfectly copied — a foundational result with security implications." },
+    { "id": "b2-q3", "prompt": "What is decoherence?", "options": ["A type of quantum gate", "The process by which a qubit's quantum information leaks into its environment, degrading its state", "A measurement technique", "A classical encryption method"], "correct_index": 1, "explanation": "Decoherence is the loss of quantum information due to unwanted interactions with the environment — the central engineering challenge for quantum hardware." },
+    { "id": "b2-q4", "prompt": "How does measuring one qubit in an entangled pair affect the other?", "options": ["It has no effect on the other qubit", "It instantly affects the correlated state of the other qubit", "It destroys both qubits permanently", "It only affects qubits in the same physical location"], "correct_index": 1, "explanation": "Due to entanglement, measuring one qubit instantly determines correlated information about the other, regardless of distance." },
+    { "id": "b2-q5", "prompt": "What formal object generalizes projective measurement to describe imperfect real measurement devices?", "options": ["A Hadamard gate", "A POVM (Positive Operator-Valued Measure)", "A Bloch sphere", "A classical bit"], "correct_index": 1, "explanation": "A POVM generalizes measurement theory to accurately model real, imperfect measurement devices." }
+  ]
+}

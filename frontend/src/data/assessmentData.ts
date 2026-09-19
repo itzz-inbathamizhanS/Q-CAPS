@@ -1,0 +1,161 @@
+import { AssessmentQuestion } from '@/features/assessment/assessmentTypes';
+
+export const assessmentQuestions: AssessmentQuestion[] = [
+  // --- Domain 1: Cybersecurity Fundamentals ---
+  {
+    id: 'q1',
+    number: 1,
+    domain: 'Cybersecurity Fundamentals',
+    domainCode: 'SEC.01 SECURITY CORE',
+    question: 'What is the primary objective of data confidentiality in information security?',
+    options: [
+      { id: 'a', text: 'Ensuring data cannot be modified by unauthorized users' },
+      { id: 'b', text: 'Ensuring data is accessible only to authorized individuals' },
+      { id: 'c', text: 'Ensuring systems remain continuously operational without interruption' },
+      { id: 'd', text: 'Ensuring senders cannot deny transmitting a message' },
+    ],
+    correctOptionId: 'b',
+    explanation: 'Confidentiality ensures that sensitive information is accessible only to authorized users and protected from unauthorized disclosure.',
+  },
+  {
+    id: 'q2',
+    number: 2,
+    domain: 'Cybersecurity Fundamentals',
+    domainCode: 'SEC.02 INTEGRITY & HASHING',
+    question: 'Which cryptographic mechanism provides a one-way mathematical transformation to verify data integrity?',
+    options: [
+      { id: 'a', text: 'Cryptographic hash functions (e.g., SHA-256, SHA-3)' },
+      { id: 'b', text: 'Base64 stream encoding' },
+      { id: 'c', text: 'Symmetric block permutation' },
+      { id: 'd', text: 'Data obfuscation and masking' },
+    ],
+    correctOptionId: 'a',
+    explanation: 'Cryptographic hash functions produce a fixed-size digest from input data; any modification to the original data alters the digest.',
+  },
+
+  // --- Domain 2: Cryptography Fundamentals ---
+  {
+    id: 'q3',
+    number: 3,
+    domain: 'Cryptography Fundamentals',
+    domainCode: 'CRYPTO.01 ENCRYPTION TYPES',
+    question: 'Which cryptographic method uses a mathematically linked pair of public and private keys?',
+    options: [
+      { id: 'a', text: 'Symmetric key encryption' },
+      { id: 'b', text: 'Asymmetric (public-key) cryptography' },
+      { id: 'c', text: 'One-Time Pad streaming' },
+      { id: 'd', text: 'Caesar substitution cipher' },
+    ],
+    correctOptionId: 'b',
+    explanation: 'Asymmetric cryptography uses a public key for encryption/verification and a mathematically paired private key for decryption/signing.',
+  },
+  {
+    id: 'q4',
+    number: 4,
+    domain: 'Cryptography Fundamentals',
+    domainCode: 'CRYPTO.02 KEY EXCHANGE',
+    question: 'What is the primary role of the Diffie-Hellman protocol in secure communications?',
+    options: [
+      { id: 'a', text: 'Compressing network payloads before transmission' },
+      { id: 'b', text: 'Securely establishing a shared symmetric key over an untrusted channel' },
+      { id: 'c', text: 'Scanning network packets for signature anomalies' },
+      { id: 'd', text: 'Storing encrypted credentials in hardware security modules' },
+    ],
+    correctOptionId: 'b',
+    explanation: 'Diffie-Hellman allows two parties to agree on a shared secret over an insecure channel without transmitting the secret itself.',
+  },
+  {
+    id: 'q5',
+    number: 5,
+    domain: 'Cryptography Fundamentals',
+    domainCode: 'CRYPTO.03 DIGITAL SIGNATURES',
+    question: 'What two critical security properties are established when an entity signs data with their private key?',
+    options: [
+      { id: 'a', text: 'Authentication and Non-repudiation' },
+      { id: 'b', text: 'Encryption speed and Compression ratio' },
+      { id: 'c', text: 'Network bandwidth and Anonymity' },
+      { id: 'd', text: 'Payload obfuscation and Token generation' },
+    ],
+    correctOptionId: 'a',
+    explanation: 'Digital signatures verify the sender identity (authentication) and prove the origin of the message (non-repudiation).',
+  },
+
+  // --- Domain 3: PQC Fundamentals ---
+  {
+    id: 'q6',
+    number: 6,
+    domain: 'PQC Fundamentals',
+    domainCode: 'PQC.01 QUANTUM THREAT',
+    question: "Why does Shor's quantum algorithm pose a catastrophic threat to classical RSA and ECC algorithms?",
+    options: [
+      { id: 'a', text: 'It brute-forces AES-256 keys in constant time' },
+      { id: 'b', text: 'It efficiently solves integer factorization and discrete logarithms in polynomial time' },
+      { id: 'c', text: 'It disables firewall routing rules across the internet' },
+      { id: 'd', text: 'It intercepts optical fiber signals without physical access' },
+    ],
+    correctOptionId: 'b',
+    explanation: "Shor's algorithm solves prime factorization (underpinning RSA) and discrete log problems (underpinning ECC) exponentially faster than classical computers.",
+  },
+  {
+    id: 'q7',
+    number: 7,
+    domain: 'PQC Fundamentals',
+    domainCode: 'PQC.02 HARVEST NOW',
+    question: 'What is the "Harvest Now, Decrypt Later" (HNDL) cybersecurity threat model?',
+    options: [
+      { id: 'a', text: 'Malware extracting private keys from browser cache files' },
+      { id: 'b', text: 'Adversaries intercepting and storing encrypted traffic today to decrypt with future quantum computers' },
+      { id: 'c', text: 'Automated scraping of public GitHub repositories for hardcoded API keys' },
+      { id: 'd', text: 'Ransomware encrypting local database partitions' },
+    ],
+    correctOptionId: 'b',
+    explanation: 'In HNDL attacks, adversaries capture and archive encrypted communications today, anticipating future cryptanalytically relevant quantum computers (CRQCs) to decrypt them.',
+  },
+  {
+    id: 'q8',
+    number: 8,
+    domain: 'PQC Fundamentals',
+    domainCode: 'PQC.03 LATTICE CRYPTO',
+    question: 'Which mathematical framework serves as the primary foundation for modern NIST post-quantum standards (such as ML-KEM and ML-DSA)?',
+    options: [
+      { id: 'a', text: 'Lattice-based cryptography (Learning With Errors)' },
+      { id: 'b', text: 'Elliptic curve point multiplication' },
+      { id: 'c', text: 'Linear feedback shift registers (LFSR)' },
+      { id: 'd', text: 'Diffie-Hellman discrete exponentiation' },
+    ],
+    correctOptionId: 'a',
+    explanation: 'Lattice-based cryptography, particularly the Learning With Errors (LWE / Module-LWE) problem, provides hardness against both classical and quantum attacks.',
+  },
+
+  // --- Domain 4: Applied PQC ---
+  {
+    id: 'q9',
+    number: 9,
+    domain: 'Applied PQC',
+    domainCode: 'APPLIED.01 NIST STANDARDS',
+    question: 'Which NIST Post-Quantum Cryptographic standard represents the standardized Module-Lattice Key Encapsulation Mechanism (formerly CRYSTALS-Kyber)?',
+    options: [
+      { id: 'a', text: 'NIST FIPS 203 (ML-KEM)' },
+      { id: 'b', text: 'NIST FIPS 204 (ML-DSA)' },
+      { id: 'c', text: 'NIST FIPS 205 (SLH-DSA)' },
+      { id: 'd', text: 'NIST SP 800-53' },
+    ],
+    correctOptionId: 'a',
+    explanation: 'FIPS 203 defines ML-KEM (Module-Lattice-Based Key-Encapsulation Mechanism), the primary quantum-resistant standard for general encryption and key exchange.',
+  },
+  {
+    id: 'q10',
+    number: 10,
+    domain: 'Applied PQC',
+    domainCode: 'APPLIED.02 HYBRID MIGRATION',
+    question: 'What is the recommended transitional strategy for migrating enterprise TLS protocols to post-quantum security?',
+    options: [
+      { id: 'a', text: 'Immediately deprecating all symmetric AES ciphers' },
+      { id: 'b', text: 'Deploying hybrid key exchange combining classical algorithms (e.g., X25519) with PQC algorithms (e.g., ML-KEM-768)' },
+      { id: 'c', text: 'Disabling TLS session resumption entirely' },
+      { id: 'd', text: 'Switching all web traffic to plain unencrypted HTTP' },
+    ],
+    correctOptionId: 'b',
+    explanation: 'Hybrid key exchange pairs classical algorithms with post-quantum algorithms, ensuring security is maintained even if one algorithm experiences an unforeseen weakness.',
+  },
+];
