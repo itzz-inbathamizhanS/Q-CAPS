@@ -11,7 +11,8 @@ import {
   Award,
   Trophy,
   LogOut,
-  Compass
+  Compass,
+  Zap
 } from 'lucide-react';
 import qcapsLogo from '@/assets/brand/qcaps-logo.png';
 import { useAuthStore } from '@/features/auth/authStore';
@@ -102,6 +103,17 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onCloseMobil
           <Terminal size={18} />
           <span>Practical Labs</span>
         </NavLink>
+
+        <NavLink
+          to="/sandbox"
+          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+          onClick={handleLinkClick}
+        >
+          <Zap size={18} />
+          <span>PQ Sandbox</span>
+        </NavLink>
+
+        <div className="nav-divider">Community</div>
 
         <NavLink
           to="/missions"

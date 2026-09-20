@@ -14,6 +14,7 @@ import { MissionHub } from '@/pages/MissionHub';
 import { MissionPlay } from '@/pages/MissionPlay';
 import { EscapeRoomPage } from '@/pages/EscapeRoomPage';
 import { ScannerPage } from '@/pages/ScannerPage';
+import { SandboxPage } from '@/pages/SandboxPage';
 import { Organization } from '@/pages/Organization';
 import { Reassessment } from '@/pages/Reassessment';
 import { Community } from '@/pages/Community';
@@ -82,6 +83,10 @@ export const router = createBrowserRouter([
           {
             path: 'scanner',
             element: <ScannerPage />,
+          },
+          {
+            path: 'sandbox',
+            element: <SandboxPage />,
           },
           {
             path: 'reassessment',
