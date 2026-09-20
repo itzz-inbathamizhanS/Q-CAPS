@@ -26,12 +26,16 @@ export const scanEndpoint = async (url) => {
         const results = await response.json();
 
         // Send to analytics backend
-        logScannerResult({
+        const logResponse = await logScannerResult({
             endpoint: url,
-            status: results.success ? 'success' : 'failed',
-            vulnerabilities_found: results.crypto?.vulnerabilities?.length || 0,
-            details: `OSINT Risk: ${results.osint?.risk_level}`
+            status: results.error ? 'failed' : 'success',
+            vulnerabilities_found: results.crypto?.vulnerabilities_found?.length || 0,
+            details: JSON.stringify(results)
         }).catch(console.error);
+
+        if (logResponse && logResponse.id) {
+            results.logId = logResponse.id;
+        }
 
         return results;
     } catch (error) {

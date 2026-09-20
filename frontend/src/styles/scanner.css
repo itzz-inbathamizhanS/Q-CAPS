@@ -621,6 +621,10 @@
   gap: 6px;
 }
 
+.st-box-scroll > * {
+  flex-shrink: 0;
+}
+
 .st-quantum-card {
   border-top: 4px solid;
   grid-column: 1 / -1;
@@ -721,4 +725,9 @@
 }
 .animate-fade-in-up {
   animation: fade-in-up 0.4s ease-out forwards;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
 }

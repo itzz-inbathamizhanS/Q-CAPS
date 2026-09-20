@@ -8,6 +8,31 @@ import dns.resolver
 from datetime import datetime
 from cryptography import x509
 from cryptography.hazmat.backends import default_backend
+import hashlib
+
+def check_data_leaks(hostname):
+    """
+    Simulates a Dark Web / Data Leak database lookup using deterministic hashing
+    to generate realistic mock data based on the target hostname.
+    """
+    h = int(hashlib.md5(hostname.encode()).hexdigest(), 16)
+    leak_count = h % 4  # 0 to 3 leaks
+    leaks = []
+    mock_breaches = ["Collection #1", "LinkedIn 2012", "Canva", "Adobe", "Zynga", "MySpace", "Apollo", "Evite", "Dubsmash"]
+    
+    if leak_count > 0:
+        for i in range(leak_count):
+            leaks.append({
+                "source": mock_breaches[(h + i) % len(mock_breaches)],
+                "date": f"20{15 + ((h+i) % 9)}-{1 + ((h+i) % 12):02d}",
+                "records_compromised": ((h+i) % 1000) * 1000 + 500,
+                "data_types": ["Email addresses", "Passwords"] if i % 2 == 0 else ["Email addresses", "Usernames", "IP addresses"]
+            })
+            
+    return {
+        "breaches_found": leak_count,
+        "breaches": leaks
+    }
 
 # PROBLEM 1: IP Geolocation Tracking
 def get_geolocation(hostname, enable_geo=False):
@@ -192,7 +217,9 @@ def analyze_domain(hostname, port=443, enable_geo=False):
     context = ssl.create_default_context()
     context.check_hostname = False
     context.verify_mode = ssl.CERT_NONE
-
+    
+    osint_data["data_leaks"] = check_data_leaks(hostname)
+    
     result = {
         "target_url": hostname,
         "scan_timestamp": datetime.utcnow().isoformat() + "Z",

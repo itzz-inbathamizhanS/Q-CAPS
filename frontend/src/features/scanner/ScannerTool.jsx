@@ -1,6 +1,8 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useMemo } from 'react';
 import { scanEndpoint } from './scannerService';
+import { downloadScannerReport } from '../../services/backendService';
 import { useAuthStore } from '../auth/authStore';
+import { useCurriculumStore } from '../curriculum/curriculumStore';
 
 const SCAN_STEPS = [
   { id: 1, label: 'DNS Resolve', icon: 'dns' },
@@ -13,53 +15,61 @@ const SCAN_STEPS = [
 const PRESETS = ['google.com', 'github.com', 'amazon.com', 'facebook.com'];
 
 // ─── Scan Progress Stepper ────────────────────────────────
-const ScanStepper = ({ currentStep }) => (
-  <div className="st-stepper">
-    <div className="st-stepper-line">
-      {SCAN_STEPS.slice(0, -1).map((_, i) => (
-        <div
-          key={i}
-          className="st-stepper-line-fill"
-          style={{ backgroundColor: i < currentStep - 1 ? 'var(--color-primary)' : i === currentStep - 1 ? 'var(--color-secondary)' : 'transparent' }}
-        />
-      ))}
-    </div>
-    <div className="st-stepper-nodes">
-      {SCAN_STEPS.map((step) => {
-        const isCompleted = step.id < currentStep;
-        const isActive = step.id === currentStep;
-        const isPending = step.id > currentStep;
-        
-        let circleClass = "st-step-circle";
-        if (isCompleted) circleClass += " completed";
-        if (isActive) circleClass += " active";
-        if (isPending) circleClass += " pending";
+const ScanStepper = ({ currentStep }) => {
+  // Memoize random step times so they don't flicker on re-render
+  const stepTimes = useMemo(
+    () => SCAN_STEPS.map(() => (Math.random() * 2 + 0.3).toFixed(2)),
+    [] // generated once per mount
+  );
 
-        let labelClass = "st-step-label";
-        if (isCompleted) labelClass += " completed";
-        if (isActive) labelClass += " active";
-        if (isPending) labelClass += " pending";
+  return (
+    <div className="st-stepper">
+      <div className="st-stepper-line">
+        {SCAN_STEPS.slice(0, -1).map((_, i) => (
+          <div
+            key={i}
+            className="st-stepper-line-fill"
+            style={{ backgroundColor: i < currentStep - 1 ? 'var(--color-primary)' : i === currentStep - 1 ? 'var(--color-secondary)' : 'transparent' }}
+          />
+        ))}
+      </div>
+      <div className="st-stepper-nodes">
+        {SCAN_STEPS.map((step, idx) => {
+          const isCompleted = step.id < currentStep;
+          const isActive = step.id === currentStep;
+          const isPending = step.id > currentStep;
 
-        return (
-          <div key={step.id} className="st-step">
-            <div className={circleClass}>
-              {isCompleted && <span className="material-symbols-outlined" style={{fontSize:'28px'}}>check</span>}
-              {isActive && <span className="material-symbols-outlined" style={{fontSize:'28px', animation:'spin 3s linear infinite'}}>sync</span>}
-              {isPending && <span className="material-symbols-outlined" style={{fontSize:'24px'}}>{step.icon}</span>}
+          let circleClass = "st-step-circle";
+          if (isCompleted) circleClass += " completed";
+          if (isActive) circleClass += " active";
+          if (isPending) circleClass += " pending";
+
+          let labelClass = "st-step-label";
+          if (isCompleted) labelClass += " completed";
+          if (isActive) labelClass += " active";
+          if (isPending) labelClass += " pending";
+
+          return (
+            <div key={step.id} className="st-step">
+              <div className={circleClass}>
+                {isCompleted && <span className="material-symbols-outlined" style={{fontSize:'28px'}}>check</span>}
+                {isActive && <span className="material-symbols-outlined" style={{fontSize:'28px', animation:'spin 3s linear infinite'}}>sync</span>}
+                {isPending && <span className="material-symbols-outlined" style={{fontSize:'24px'}}>{step.icon}</span>}
+              </div>
+              <div style={{textAlign:'center'}}>
+                <p className={labelClass}>{step.label}</p>
+                <p className="st-step-time" style={{ color: isActive ? 'var(--color-secondary)' : 'var(--color-text-secondary)' }}>
+                  {isCompleted ? `${stepTimes[idx]}s` :
+                   isActive ? 'Analyzing...' : 'Pending'}
+                </p>
+              </div>
             </div>
-            <div style={{textAlign:'center'}}>
-              <p className={labelClass}>{step.label}</p>
-              <p className="st-step-time" style={{ color: isActive ? 'var(--color-secondary)' : 'var(--color-text-secondary)' }}>
-                {isCompleted ? `${(Math.random() * 2 + 0.3).toFixed(2)}s` :
-                 isActive ? 'Analyzing...' : 'Pending'}
-              </p>
-            </div>
-          </div>
-        );
-      })}
+          );
+        })}
+      </div>
     </div>
-  </div>
-);
+  );
+};
 
 // ─── Terminal Log ─────────────────────────────────────────
 const TerminalLog = ({ logs }) => {
@@ -194,7 +204,9 @@ const RecentScans = ({ history, onRescan }) => {
 // ─── Main Scanner Tool Component ──────────────────────────
 const ScannerTool = () => {
   const { userId } = useAuthStore();
+  const { addXp } = useCurriculumStore();
   const historyKey = `qcapsScanHistory-${userId || 'guest'}`;
+  const resultTimeoutRef = useRef(null);
 
   const [url, setUrl] = useState('');
   const [isScanning, setIsScanning] = useState(false);
@@ -205,6 +217,13 @@ const ScannerTool = () => {
     const stored = localStorage.getItem(historyKey);
     return stored ? JSON.parse(stored) : [];
   });
+
+  // Cleanup result timeout on unmount to prevent state updates on unmounted component
+  useEffect(() => {
+    return () => {
+      if (resultTimeoutRef.current) clearTimeout(resultTimeoutRef.current);
+    };
+  }, []);
 
   // Reload history when user changes
   useEffect(() => {
@@ -263,7 +282,7 @@ const ScannerTool = () => {
 
     try {
       const result = await scanEndpoint(scanUrl);
-      setTimeout(() => {
+      resultTimeoutRef.current = setTimeout(() => {
         setScanResult(result);
         setIsScanning(false);
         setCurrentStep(0);
@@ -279,23 +298,16 @@ const ScannerTool = () => {
           localStorage.setItem(historyKey, JSON.stringify(updated));
           return updated;
         });
-
-        try {
-          const vulnCount = result?.crypto?.vulnerabilities_found?.length || 0;
-          const detailsList = (result?.crypto?.vulnerabilities_found || []).map(v => ({
-            algorithmDetected: result?.crypto?.encryption_detected || 'RSA',
-            threatLevel: v
-          }));
-          logScannerResult({
-            user_id: 1,
-            endpoint: scanUrl,
-            status: result?.crypto?.quantum_status === 'quantum_safe' ? 'Quantum Safe' : 'Vulnerable',
-            vulnerabilities_found: vulnCount,
-            details: JSON.stringify(detailsList)
-          });
-        } catch (err) {
-          console.debug('Backend scanner logging skipped:', err);
+        
+        // Award XP to match backend logic
+        const numVulns = result.crypto?.vulnerabilities_found?.length || 0;
+        const xpEarned = 10 + (numVulns * 5);
+        if (xpEarned > 0) {
+          addXp(xpEarned);
         }
+
+        // Note: scanner result is already logged to the analytics backend by scannerService.js.
+        // No duplicate call needed here.
       }, 6000);
     } catch (error) {
       console.error('Scan failed', error);
@@ -317,10 +329,13 @@ const ScannerTool = () => {
   const handleExportJSON = () => {
     if (!scanResult) return;
     const blob = new Blob([JSON.stringify(scanResult, null, 2)], { type: 'application/json' });
+    const objectUrl = URL.createObjectURL(blob);
     const a = document.createElement('a');
-    a.href = URL.createObjectURL(blob);
+    a.href = objectUrl;
     a.download = `qcaps-scan-${scanResult.target_url}-${Date.now()}.json`;
     a.click();
+    // Revoke the object URL to free memory
+    URL.revokeObjectURL(objectUrl);
   };
 
   // ─── DEFAULT STATE ────────────────────────────
@@ -405,7 +420,9 @@ const ScannerTool = () => {
           <ThreatScoreRing score={threatScore} />
           <div className="st-xp-badge">
             <span className="material-symbols-outlined">military_tech</span>
-            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 'bold', letterSpacing: '0.05em' }}>+{scanResult.crypto?.mission_xp_awarded || 0} XP EARNED</span>
+            <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', fontWeight: 'bold', letterSpacing: '0.05em' }}>
+              +{10 + (scanResult.crypto?.vulnerabilities_found?.length || 0) * 5} XP EARNED
+            </span>
           </div>
         </div>
       </section>
@@ -463,7 +480,7 @@ const ScannerTool = () => {
             <DataRow
               label="Q-SAFE"
               value={scanResult.crypto?.quantum_status === 'quantum_safe' ? 'SECURE' : (scanResult.crypto?.quantum_status === 'inconclusive' ? 'INCONCLUSIVE' : 'VULNERABLE')}
-              valueColor={scanResult.crypto?.quantum_status === 'quantum_safe' ? 'var(--color-emerald)' : (scanResult.crypto?.quantum_status === 'inconclusive' ? 'var(--color-amber-500)' : 'var(--color-error)')}
+              valueColor={scanResult.crypto?.quantum_status === 'quantum_safe' ? 'var(--color-emerald)' : (scanResult.crypto?.quantum_status === 'inconclusive' ? 'var(--color-amber)' : 'var(--color-error)')}
             />
           </div>
         </ResultCard>
@@ -517,11 +534,42 @@ const ScannerTool = () => {
               scanResult.infrastructure.subdomains.map((sub, idx) => (
                 <div key={idx} style={{ color: 'var(--color-text-primary)' }} title={String(sub)}>
                   <span style={{ color: 'var(--color-secondary)', fontWeight: 'bold', marginRight: '8px' }}>↳</span>
-                  <span style={{ wordBreak: 'break-all' }}>DEBUG: {JSON.stringify(sub)}</span>
+                  <span style={{ wordBreak: 'break-all' }}>{typeof sub === 'string' ? sub : JSON.stringify(sub)}</span>
                 </div>
               ))
             ) : (
               <div style={{ color: 'var(--color-text-secondary)', fontStyle: 'italic', textAlign: 'center', padding: '16px 0' }}>No subdomains found</div>
+            )}
+          </div>
+        </ResultCard>
+
+        <ResultCard title="DARK WEB & LEAKS" icon="policy" iconColor="var(--color-error)">
+          <div className="st-box-scroll custom-scrollbar" style={{ height: '100%', maxHeight: '160px' }}>
+            {scanResult.osint?.data_leaks?.breaches_found > 0 ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
+                <div style={{ color: 'var(--color-error)', fontWeight: 'bold', fontSize: '12px', marginBottom: '4px' }}>
+                  ⚠️ {scanResult.osint.data_leaks.breaches_found} BREACHES DETECTED
+                </div>
+                {scanResult.osint.data_leaks.breaches.map((b, idx) => (
+                  <div key={idx} style={{ backgroundColor: 'rgba(186,26,26,0.1)', border: '1px solid rgba(186,26,26,0.3)', borderRadius: '4px', padding: '8px', fontSize: '11px' }}>
+                    <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: '4px' }}>
+                      <span style={{ color: 'var(--color-text-primary)', fontWeight: 'bold' }}>{b.source}</span>
+                      <span style={{ color: 'var(--color-text-secondary)' }}>{b.date}</span>
+                    </div>
+                    <div style={{ color: 'var(--color-text-secondary)', marginBottom: '2px' }}>
+                      Records: <span style={{ color: 'var(--color-text-primary)' }}>{b.records_compromised.toLocaleString()}</span>
+                    </div>
+                    <div style={{ color: 'var(--color-text-secondary)' }}>
+                      Leaked: <span style={{ color: 'var(--color-error)' }}>{b.data_types.join(', ')}</span>
+                    </div>
+                  </div>
+                ))}
+              </div>
+            ) : (
+              <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', gap: '8px', height: '100%' }}>
+                <span className="material-symbols-outlined" style={{ color: 'var(--color-emerald)' }}>verified_user</span>
+                <span style={{ color: 'var(--color-emerald)', fontWeight: 'bold' }}>No known data leaks</span>
+              </div>
             )}
           </div>
         </ResultCard>
@@ -546,7 +594,7 @@ const ScannerTool = () => {
                     SECURE
                   </span>
                 ) : scanResult.crypto?.quantum_status === 'inconclusive' ? (
-                  <span style={{ backgroundColor: 'rgba(245,158,11,0.2)', color: 'var(--color-amber-500)', border: '1px solid rgba(245,158,11,0.5)', padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '12px', letterSpacing: '0.05em' }}>
+                  <span style={{ backgroundColor: 'rgba(245,158,11,0.2)', color: 'var(--color-amber)', border: '1px solid rgba(245,158,11,0.5)', padding: '4px 12px', borderRadius: '4px', fontWeight: 'bold', fontSize: '12px', letterSpacing: '0.05em' }}>
                     INCONCLUSIVE
                   </span>
                 ) : (
@@ -588,7 +636,13 @@ const ScannerTool = () => {
       </section>
 
       <section className="st-actions">
-        <button onClick={() => alert("PDF Generation will be implemented soon!")} className="st-btn-outline">
+        <button onClick={() => {
+          if (scanResult.logId) {
+            downloadScannerReport(scanResult.logId).catch(console.error);
+          } else {
+            alert("Report ID not found. Please run a new scan.");
+          }
+        }} className="st-btn-outline">
           <span className="material-symbols-outlined" style={{ fontSize: '16px' }}>picture_as_pdf</span> REPORT
         </button>
         <button onClick={handleExportJSON} className="st-btn-outline">
