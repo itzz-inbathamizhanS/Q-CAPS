@@ -1,5 +1,5 @@
-import React from 'react';
-import { Bell, HelpCircle, Menu, Search } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Bell, HelpCircle, Menu, Search, Moon, Sun } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/authStore';
 
 interface HeaderProps {
@@ -12,6 +12,21 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
   const initials = userName 
     ? userName.slice(0, 2).toUpperCase()
     : '??';
+
+  const [isDark, setIsDark] = useState(() => {
+    return localStorage.getItem('theme') === 'dark' || 
+           (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
+  });
+
+  useEffect(() => {
+    if (isDark) {
+      document.documentElement.setAttribute('data-theme', 'dark');
+      localStorage.setItem('theme', 'dark');
+    } else {
+      document.documentElement.removeAttribute('data-theme');
+      localStorage.setItem('theme', 'light');
+    }
+  }, [isDark]);
 
   return (
     <header className="app-header">
@@ -47,6 +62,15 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
 
       {/* Right side Actions */}
       <div className="header-actions">
+        {/* Theme Toggle */}
+        <button
+          className="header-icon-btn"
+          aria-label="Toggle Theme"
+          onClick={() => setIsDark(!isDark)}
+        >
+          {isDark ? <Sun size={19} /> : <Moon size={19} />}
+        </button>
+
         {/* Notifications */}
         <button
           className="header-icon-btn"

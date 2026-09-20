@@ -77,6 +77,53 @@
   --shadow-card-hover: 0px 8px 24px rgba(0, 0, 0, 0.06);
 }
 
+[data-theme="dark"] {
+  /* Surface & Canvas Tokens */
+  --color-bg: var(--cyber-bg);
+  --color-surface: var(--cyber-surface);
+  --color-surface-dim: var(--cyber-card);
+  --color-surface-low: #151B2B;
+  --color-surface-container: #1A2135;
+  --color-surface-high: #212A42;
+  --color-surface-variant: #283350;
+
+  /* Primary Brand Violet Scale */
+  --color-primary: var(--cyber-primary-violet);
+  --color-primary-container: #6243E5;
+  --color-primary-hover: #8D73FF;
+  --color-primary-fixed: #39219A;
+  --color-on-primary: #FFFFFF;
+  --color-on-primary-container: #E2D9FF;
+
+  /* Secondary Lavender Scale */
+  --color-secondary: #7463E0;
+  --color-secondary-container: #8372EB;
+  --color-secondary-fixed: #44379E;
+
+  /* Tertiary / Technical Scale */
+  --color-tertiary: #197C9E;
+  --color-tertiary-container: #2389AD;
+  --color-technical-cyan: #4ECBFF;
+  --color-technical-cyan-hover: #3BB7EA;
+
+  /* Border & Dividers */
+  --color-border: var(--cyber-border);
+  --color-border-hover: #35415B;
+  --color-outline: #8E96A8;
+  --color-outline-variant: #434B5E;
+
+  /* Text & Content */
+  --color-text-primary: var(--cyber-text-primary);
+  --color-text-secondary: var(--cyber-text-secondary);
+  --color-text-on-surface-variant: #B0B8C8;
+  
+  /* Feedback Colors */
+  --color-error: #FF5A5A;
+  --color-error-container: rgba(186, 26, 26, 0.2);
+  --color-emerald: #34D399;
+  --color-amber: #FBBF24;
+}
+
 /* Base Resets */
 *, *::before, *::after {
   box-sizing: border-box;
@@ -359,6 +406,14 @@ button, input, select, textarea {
   border-color: var(--color-border-hover);
   box-shadow: var(--shadow-card-hover);
   transform: translateY(-1px);
+}
+
+[data-theme="dark"] .glass-card:hover {
+  background-color: var(--color-surface-high);
+}
+
+[data-theme="dark"] .app-header {
+  background-color: rgba(18, 24, 39, 0.85);
 }
 
 /* ==========================================================
