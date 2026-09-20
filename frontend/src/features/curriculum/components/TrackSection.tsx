@@ -199,10 +199,13 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
 
           {/* Node Chain Container */}
           <div
+            className="custom-scrollbar"
             style={{
               overflowX: 'auto',
-              paddingBottom: '20px',
-              paddingTop: '10px'
+              paddingBottom: '40px',
+              paddingTop: '20px',
+              position: 'relative',
+              zIndex: 10
             }}
           >
             <div

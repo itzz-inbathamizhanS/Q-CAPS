@@ -18,7 +18,6 @@ export const ModuleNode: React.FC<ModuleNodeProps> = ({
   prevModuleTitle
 }) => {
   const navigate = useNavigate();
-  const [showTooltip, setShowTooltip] = useState(false);
   const [toastMessage, setToastMessage] = useState<string | null>(null);
 
   const handleClick = () => {
@@ -47,10 +46,8 @@ export const ModuleNode: React.FC<ModuleNodeProps> = ({
         alignItems: 'center',
         cursor: isLocked ? 'not-allowed' : 'pointer',
         userSelect: 'none',
-        zIndex: showTooltip ? 30 : 10
+        zIndex: 10
       }}
-      onMouseEnter={() => setShowTooltip(true)}
-      onMouseLeave={() => setShowTooltip(false)}
       onClick={handleClick}
     >
       {/* Node Circle */}
@@ -127,49 +124,6 @@ export const ModuleNode: React.FC<ModuleNodeProps> = ({
       >
         {module.code}
       </span>
-
-      {/* Tooltip on Hover */}
-      {showTooltip && (
-        <div
-          style={{
-            position: 'absolute',
-            bottom: 'calc(100% + 10px)',
-            left: '50%',
-            transform: 'translateX(-50%)',
-            minWidth: '200px',
-            maxWidth: '260px',
-            backgroundColor: '#0f172a',
-            border: '1px solid #334155',
-            borderRadius: '8px',
-            padding: '10px 12px',
-            boxShadow: '0 8px 24px rgba(0,0,0,0.5)',
-            pointerEvents: 'none',
-            zIndex: 50,
-            textAlign: 'center'
-          }}
-        >
-          <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
-            {module.code} · {module.level}
-          </div>
-          <div style={{ fontSize: '13px', fontWeight: 600, color: '#f8fafc', marginTop: '2px' }}>
-            {module.title}
-          </div>
-          <div style={{ fontSize: '11px', color: '#cbd5e1', marginTop: '6px', display: 'flex', justifyContent: 'center', gap: '8px' }}>
-            <span>⏱️ {module.estimatedMinutes}m</span>
-            <span>⚡ +{module.xp} XP</span>
-          </div>
-          {isCompleted && score !== undefined && (
-            <div style={{ marginTop: '6px', fontSize: '11px', color: '#34d399', fontWeight: 600 }}>
-              Quiz Score: {score}%
-            </div>
-          )}
-          {isLocked && (
-            <div style={{ marginTop: '6px', fontSize: '11px', color: '#f87171' }}>
-              🔒 Locked
-            </div>
-          )}
-        </div>
-      )}
 
       {/* Toast Warning if clicked while locked */}
       {toastMessage && (
