@@ -416,7 +416,7 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
             Stage 4: Security Verification
           </div>
           <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#f8fafc', marginBottom: '10px' }}>
-            ⚠️ Error-Rate Assessment: Channel Under Inspection
+            Error-Rate Assessment: Channel Under Inspection
           </h2>
           <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: 1.5, marginBottom: '20px' }}>
             To verify if an eavesdropper (Eve) intercepted the quantum transmission, Alice and Bob publicly sacrifice a sample of sifted bits to calculate the Quantum Bit Error Rate (QBER).
@@ -870,7 +870,7 @@ const EnterpriseMigrationEngine: React.FC<MigrationSimulationProps> = ({ mission
                 }}
               >
                 <div style={{ fontSize: '12px', textTransform: 'uppercase', fontWeight: 700, color: isSuccess ? '#10b981' : isPartial ? '#f59e0b' : '#ef4444', marginBottom: '6px' }}>
-                  {isSuccess ? '🏆 Full Migration Approved' : isPartial ? '⚖️ Partial Success — On Track' : '⚠️ Migration At Risk'}
+                  {isSuccess ? 'Full Migration Approved' : isPartial ? 'Partial Success — On Track' : 'Migration At Risk'}
                 </div>
                 <p style={{ fontSize: '15px', color: '#f8fafc', lineHeight: 1.6, margin: 0 }}>
                   {isSuccess

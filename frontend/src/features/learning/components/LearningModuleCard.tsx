@@ -33,7 +33,7 @@ export const LearningModuleCard: React.FC<LearningModuleCardProps> = ({
     completed: '✓ Completed',
     inprogress: '● In Progress',
     available: '→ Available',
-    locked: '🔒 Locked',
+    locked: 'Locked',
   };
 
   // Find prerequisite names for locked modules

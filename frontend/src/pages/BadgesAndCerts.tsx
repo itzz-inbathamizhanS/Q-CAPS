@@ -457,7 +457,7 @@ export const BadgesAndCerts: React.FC = () => {
                   color: unlockedBadges.includes(activeModalBadge.name) ? '#065f46' : '#64748b'
                 }}
               >
-                {unlockedBadges.includes(activeModalBadge.name) ? '✓ Unlocked' : '🔒 Locked'}
+                {unlockedBadges.includes(activeModalBadge.name) ? '✓ Unlocked' : 'Locked'}
               </span>
             </div>
 

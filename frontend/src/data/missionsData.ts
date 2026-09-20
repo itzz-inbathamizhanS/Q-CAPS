@@ -62,7 +62,7 @@ export const missionsData: MissionData[] = [
       },
       {
         "stage_id": "stage_4_security_alert",
-        "narrative": "⚠️ SECURITY ALERT: Your quantum channel has been compromised. (Internally: `eve_present` is now set to true for this run — the learner doesn't know this yet, only that something triggered the alert.)",
+        "narrative": "SECURITY ALERT: Your quantum channel has been compromised. (Internally: `eve_present` is now set to true for this run — the learner doesn't know this yet, only that something triggered the alert.)",
         "learner_action": "The learner is told error-checking is now mandatory before trusting this key. They choose a sample of bits from the sifted key to publicly compare (sacrificing those bits — they can't be used in the final key either way).",
         "system_reaction": "The simulation computes `observed_error_rate` honestly: with `eve_present = true`, an eavesdropper measuring photons in transit (necessarily guessing bases herself, same as Bob) introduces detectable disturbance — roughly 25% error rate in the compared sample, versus near-0% in a clean run. The exact rate should have realistic random variance, not a fixed constant, so repeated missions don't all show identically '25.00%.'",
         "investigation_prompt": "Learner is shown the observed error rate and asked: 'Based on this number, do you think this key is safe to use?' — before any threshold is given to them.",
