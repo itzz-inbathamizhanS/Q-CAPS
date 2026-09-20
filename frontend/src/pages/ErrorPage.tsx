@@ -80,7 +80,7 @@ export const ErrorPage: React.FC = () => {
           </Button>
         </div>
         
-        {process.env.NODE_ENV === 'development' && statusCode !== 404 && (
+        {import.meta.env.DEV && statusCode !== 404 && (
           <div style={{ marginTop: '32px', textAlign: 'left', backgroundColor: 'rgba(0,0,0,0.3)', padding: '16px', borderRadius: '8px' }}>
             <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', fontFamily: 'monospace', margin: 0, whiteSpace: 'pre-wrap' }}>
               {error instanceof Error ? error.stack : JSON.stringify(error, null, 2)}

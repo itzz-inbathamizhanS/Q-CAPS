@@ -40,7 +40,7 @@ def run_tests():
     }
     rec = get_recommendation_from_scores(scores)
     print_rec(rec)
-    check("course_id == tc_pqc", rec["course_id"] == "tc_pqc",
+    check("course_id == track_b_b9_pqc_fundamentals", rec["course_id"] == "track_b_b9_pqc_fundamentals",
           f"got {rec['course_id']}")
     check("priority == Critical", rec["priority"] == "Critical",
           f"got {rec['priority']}")

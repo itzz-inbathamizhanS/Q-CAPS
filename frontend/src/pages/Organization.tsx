@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useRef } from 'react';
 import { Card } from '@/components/ui/Card';
 import { fetchLeaderboard, LeaderboardEntry } from '@/services/backendService';
 import { useAuthStore } from '@/features/auth/authStore';
@@ -7,7 +7,8 @@ import { Trophy, Medal, Star, TrendingUp } from 'lucide-react';
 export const Organization: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
-  const { userId } = useAuthStore();
+  const { userId, token } = useAuthStore();
+  const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     let isMounted = true;
@@ -30,10 +31,40 @@ export const Organization: React.FC = () => {
         console.error('Error fetching leaderboard:', error);
         if (isMounted) setIsLoading(false);
       });
+
+    // Connect to WebSocket for real-time updates
+    if (token) {
+      const wsUrl = `ws://localhost:8000/api/ws/leaderboard?token=${token}`;
+      const ws = new WebSocket(wsUrl);
+      wsRef.current = ws;
+
+      ws.onmessage = (event) => {
+        if (!isMounted) return;
+        try {
+          const data = JSON.parse(event.data);
+          const sorted = [...data].sort((a: any, b: any) => b.xp - a.xp);
+          const ranked = sorted.map((entry: any, index: number) => ({
+            ...entry,
+            rank: index + 1
+          }));
+          setLeaderboard(ranked);
+        } catch (err) {
+          console.error("Error parsing WebSocket message:", err);
+        }
+      };
+
+      ws.onclose = () => {
+        console.log("Leaderboard WebSocket disconnected");
+      };
+    }
+
     return () => {
       isMounted = false;
+      if (wsRef.current) {
+        wsRef.current.close();
+      }
     };
-  }, []);
+  }, [token]);
 
   const getRankIcon = (rank: number) => {
     switch (rank) {

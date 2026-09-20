@@ -1,37 +1,51 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Shield, Fingerprint, Activity, ChevronRight } from 'lucide-react';
+import { Shield, Fingerprint, Activity, ChevronRight, Lock } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/authStore';
-import { loginUser } from '@/services/backendService';
+import { loginUser, registerUser, fetchUserProfile } from '@/services/backendService';
 import { Button } from '@/components/ui/Button';
 
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 
 export const LoginPage: React.FC = () => {
   const [name, setName] = useState('');
+  const [password, setPassword] = useState('');
+  const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { login } = useAuthStore();
 
-  const handleLogin = async (e: React.FormEvent) => {
+  const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!name.trim()) return;
+    if (!name.trim() || !password.trim()) {
+      setError('Name and Password are required.');
+      return;
+    }
 
     setIsLoading(true);
     setError('');
 
     try {
-      const user = await loginUser(name.trim());
-      if (user && user.id) {
-        login(user.id, user.name);
-        useCurriculumStore.getState().rehydrate(user.progress_data); // Hydrate from backend
+      if (isRegisterMode) {
+        await registerUser(name.trim(), password.trim());
+      }
+      
+      const authData = await loginUser(name.trim(), password.trim());
+      if (authData && authData.access_token) {
+        login(authData.user_id, authData.user_name, authData.access_token);
+        
+        // Fetch profile to get progress data
+        const profile = await fetchUserProfile(authData.user_id);
+        if (profile) {
+            useCurriculumStore.getState().rehydrate(profile.progress_data);
+        }
         navigate('/dashboard');
       } else {
-        setError('Authentication failed. Backend unavailable.');
+        setError('Authentication failed. Invalid response.');
       }
-    } catch {
-      setError('An error occurred during authentication.');
+    } catch (err: any) {
+      setError(err.message || 'An error occurred during authentication.');
     } finally {
       setIsLoading(false);
     }
@@ -99,7 +113,7 @@ export const LoginPage: React.FC = () => {
           </p>
         </div>
 
-        <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
+        <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
             <label style={{
               display: 'flex',
@@ -134,6 +148,39 @@ export const LoginPage: React.FC = () => {
             />
           </div>
 
+          <div>
+            <label style={{
+              display: 'flex',
+              alignItems: 'center',
+              gap: '8px',
+              fontSize: '13px',
+              fontWeight: 600,
+              color: 'var(--color-text-primary)',
+              marginBottom: '8px'
+            }}>
+              <Lock size={16} color="var(--color-text-secondary)" />
+              ACCESS KEY (PASSWORD)
+            </label>
+            <input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              style={{
+                width: '100%',
+                padding: '14px 16px',
+                borderRadius: '12px',
+                border: '1px solid var(--color-border, #e2e8f0)',
+                backgroundColor: 'rgba(248, 250, 252, 0.5)',
+                fontSize: '15px',
+                color: 'var(--color-text-primary)',
+                outline: 'none',
+                transition: 'all 0.2s ease',
+                boxSizing: 'border-box'
+              }}
+            />
+          </div>
+
           {error && (
             <div style={{
               padding: '12px',
@@ -153,7 +200,7 @@ export const LoginPage: React.FC = () => {
           <Button
             variant="primary"
             type="submit"
-            disabled={!name.trim() || isLoading}
+            disabled={!name.trim() || !password.trim() || isLoading}
             style={{
               padding: '14px',
               fontSize: '15px',
@@ -165,9 +212,25 @@ export const LoginPage: React.FC = () => {
               gap: '8px'
             }}
           >
-            {isLoading ? 'Authenticating...' : 'Initialize Session'}
+            {isLoading ? 'Authenticating...' : (isRegisterMode ? 'Register Account' : 'Initialize Session')}
             {!isLoading && <ChevronRight size={18} />}
           </Button>
+          
+          <button
+            type="button"
+            onClick={() => setIsRegisterMode(!isRegisterMode)}
+            style={{
+              background: 'none',
+              border: 'none',
+              color: 'var(--color-primary)',
+              fontSize: '14px',
+              cursor: 'pointer',
+              textDecoration: 'underline',
+              marginTop: '8px'
+            }}
+          >
+            {isRegisterMode ? 'Already have an account? Sign In' : 'Need an account? Register'}
+          </button>
         </form>
       </div>
     </div>

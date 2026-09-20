@@ -25,9 +25,9 @@ interface CurriculumState {
   completeEscape: (escapeId: string, badgeName?: string, xp?: number) => void;
   completeMission: (missionId: string, badgeName?: string, xp?: number) => void;
   completeCapstone: (capstoneId: string, xp?: number) => void;
-  isModuleUnlocked: (moduleId: string) => boolean;
   isModuleCompleted: (moduleId: string) => boolean;
   getRecommendedNextModule: () => string;
+  addXp: (amount: number) => void;
   resetProgress: () => void;
   clearLocalProgress: () => void;
   rehydrate: (progressDataStr?: string) => void;
@@ -260,7 +260,7 @@ export const useCurriculumStore = create<CurriculumState>()(
     });
   },
 
-  isModuleUnlocked: (moduleId) => {
+  isModuleUnlocked: (moduleId: string) => {
     const { completedModules } = get();
     if (completedModules.includes(moduleId)) return true;
     const mod = curriculumModules.find((m) => m.id === moduleId);
@@ -268,7 +268,7 @@ export const useCurriculumStore = create<CurriculumState>()(
     return mod.prerequisites.every((prereqId) => completedModules.includes(prereqId));
   },
 
-  isModuleCompleted: (moduleId) => {
+  isModuleCompleted: (moduleId: string) => {
     return get().completedModules.includes(moduleId);
   },
 
@@ -282,6 +282,18 @@ export const useCurriculumStore = create<CurriculumState>()(
       }
     }
     return curriculumModules[0].id;
+  },
+
+  addXp: (amount) => {
+    set((state) => {
+      if (!amount || amount <= 0) return state;
+      const newState = {
+        ...state,
+        totalXp: state.totalXp + amount
+      };
+      persistToBackend(newState);
+      return newState;
+    });
   },
 
   resetProgress: () => {

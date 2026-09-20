@@ -5,7 +5,8 @@ interface AuthState {
   isAuthenticated: boolean;
   userId: number | null;
   userName: string | null;
-  login: (id: number, name: string) => void;
+  token: string | null;
+  login: (id: number, name: string, token: string) => void;
   logout: () => void;
 }
 
@@ -15,8 +16,9 @@ export const useAuthStore = create<AuthState>()(
       isAuthenticated: false,
       userId: null,
       userName: null,
-      login: (id, name) => set({ isAuthenticated: true, userId: id, userName: name }),
-      logout: () => set({ isAuthenticated: false, userId: null, userName: null }),
+      token: null,
+      login: (id, name, token) => set({ isAuthenticated: true, userId: id, userName: name, token }),
+      logout: () => set({ isAuthenticated: false, userId: null, userName: null, token: null }),
     }),
     {
       name: 'qcaps-auth-storage',

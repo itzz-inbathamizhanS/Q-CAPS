@@ -4,6 +4,17 @@ from pydantic import BaseModel
 
 class UserCreate(BaseModel):
     name: str
+    password: str
+
+class UserLogin(BaseModel):
+    name: str
+    password: str
+
+class Token(BaseModel):
+    access_token: str
+    token_type: str
+    user_id: int
+    user_name: str
 
 class UserOut(BaseModel):
     id: int

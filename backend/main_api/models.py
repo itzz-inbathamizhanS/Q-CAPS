@@ -1,4 +1,4 @@
-from datetime import datetime
+from datetime import datetime, timezone
 from sqlalchemy import Column, DateTime, Float, Integer, String, Text
 from database import Base
 
@@ -6,7 +6,8 @@ class User(Base):
     __tablename__ = "users"
 
     id = Column(Integer, primary_key=True, index=True)
-    name = Column(String, nullable=False)
+    name = Column(String, nullable=False, unique=True, index=True)
+    hashed_password = Column(String, nullable=False)
     xp = Column(Integer, default=0)
     progress_data = Column(Text, nullable=True, default="{}")
 
@@ -21,7 +22,7 @@ class QuizScore(Base):
     total_questions = Column(Integer, nullable=False)
     created_at = Column(
         DateTime,
-        default=datetime.utcnow
+        default=lambda: datetime.now(timezone.utc)
     )
 
 class ScannerLog(Base):
@@ -35,5 +36,5 @@ class ScannerLog(Base):
     details = Column(Text, nullable=True)
     created_at = Column(
         DateTime,
-        default=datetime.utcnow
+        default=lambda: datetime.now(timezone.utc)
     )
