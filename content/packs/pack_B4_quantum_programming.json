@@ -1,0 +1,1131 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B111",
+      "title": "Qiskit SDK documentation and guides (quantum.cloud.ibm.com/docs), accessed 2026-10-04",
+      "authors": "IBM Quantum",
+      "edition": "accessed 2026-10-04",
+      "year": 2026,
+      "publisher": "IBM"
+    },
+    {
+      "id": "B114",
+      "title": "Qiskit Aer 0.17.1 API documentation: qiskit_aer.noise (accessed 2026-10-04)",
+      "authors": "Qiskit Development Team",
+      "edition": "0.17.1",
+      "year": 2025,
+      "publisher": "IBM"
+    },
+    {
+      "id": "B131",
+      "title": "qiskit-ibm-runtime 0.50.0: fake backends and primitives (package behaviour exercised in the labs)",
+      "authors": "IBM Quantum",
+      "edition": "0.50.0",
+      "year": 2026,
+      "publisher": "IBM"
+    },
+    {
+      "id": "B125",
+      "title": "A variational eigenvalue solver on a quantum processor (arXiv:1304.3061)",
+      "authors": "Alberto Peruzzo et al.",
+      "edition": "2013",
+      "year": 2013
+    },
+    {
+      "id": "B132",
+      "title": "Robust randomized benchmarking of quantum processes (arXiv:1009.3639; Phys. Rev. Lett. 106, 180504)",
+      "authors": "Easwar Magesan, J. M. Gambetta, Joseph Emerson",
+      "edition": "2011",
+      "year": 2011
+    },
+    {
+      "id": "B133",
+      "title": "Error mitigation for short-depth quantum circuits (arXiv:1612.02058)",
+      "authors": "Kristan Temme, Sergey Bravyi, Jay M. Gambetta",
+      "edition": "2016",
+      "year": 2016
+    },
+    {
+      "id": "B134",
+      "title": "Efficient variational quantum simulator incorporating active error minimisation (arXiv:1611.09301)",
+      "authors": "Ying Li, Simon C. Benjamin",
+      "edition": "2016",
+      "year": 2016
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_b_b4_quantum_programming",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "4.1 Qiskit (Intermediate Usage)",
+          "summary": "Parameterised circuits, the Estimator and Sampler primitives, and how to get reproducible sampling.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Beyond building circuits gate by gate, intermediate Qiskit work revolves around three ideas. **Parameters**: a circuit can contain symbolic angles that you bind later, so you build and compile once and run many times. **Primitives**: instead of asking a backend for raw measurement records, you use two higher-level objects. The **Estimator** computes expectation values of observables for states prepared by circuits; the **Sampler** samples the measured output register. The Qiskit documentation describes them as the two most common tasks for quantum computers, and notes that the primitives interface supersedes the older `backend.run` route. **Reference implementations** of the V2 primitives, `StatevectorEstimator` and `StatevectorSampler`, run on the built-in exact simulator; provider implementations (IBM Quantum hardware, Aer) follow the same interface, so code written against them moves between simulator and device with little change.\n\nA primitive request is a **PUB** (primitive unified bloc): the circuit, plus the observables (Estimator) or nothing (Sampler), plus an array of parameter values, with NumPy-style broadcasting so one PUB can describe a whole sweep. The first listing sweeps the angle of RY(θ)|0⟩ over five values and measures both Z and X in a single PUB, and checks the analytic answers ⟨Z⟩ = cos θ and ⟨X⟩ = sin θ. The second uses the Sampler, shows that a fixed seed reproduces the counts exactly, and demonstrates circuit composition and control. The labs use `qiskit` 2.5.2, `qiskit-aer` 0.17.2 and `qiskit-ibm-runtime` 0.50.0 (`pip install qiskit==2.5.2 qiskit-aer==0.17.2 qiskit-ibm-runtime==0.50.0`). **No account or hardware is needed**: everything runs locally, using *fake backends* that bundle a stored snapshot of a real device's layout and calibration data. A fake backend is for testing code and for qualitative studies; it is **not** a live description of any machine. Where results come from random sampling the generator is seeded, so the printed numbers are reproducible with these versions."
+            },
+            {
+              "type": "code",
+              "id": "c-estimator",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.circuit import Parameter\nfrom qiskit.primitives import StatevectorEstimator\nfrom qiskit.quantum_info import SparsePauliOp\n\ntheta = Parameter(\"theta\")\nqc = QuantumCircuit(1)\nqc.ry(theta, 0)\n\nangles = np.linspace(0, np.pi, 5)\nobservables = [[SparsePauliOp(\"Z\")], [SparsePauliOp(\"X\")]]                  # shape (2, 1)\nvalues = angles.reshape(5, 1)                                               # shape (5, 1): five values of the single parameter\nresult = StatevectorEstimator().run([(qc, observables, values)]).result()[0]\nprint(\"result shape (observables x parameter sets):\", result.data.evs.shape)\nprint(\"<Z> = cos(theta) for each angle:\", np.allclose(result.data.evs[0], np.cos(angles)))\nprint(\"<X> = sin(theta) for each angle:\", np.allclose(result.data.evs[1], np.sin(angles)))\nprint(\"angles (units of pi):\", np.round(angles / np.pi, 2).tolist())\nprint(\"<Z>:\", np.round(result.data.evs[0], 4).tolist())\nprint(\"<X>:\", np.round(result.data.evs[1], 4).tolist())"
+            },
+            {
+              "type": "code",
+              "id": "o-c-estimator",
+              "language": "text",
+              "code": "result shape (observables x parameter sets): (2, 5)\n<Z> = cos(theta) for each angle: True\n<X> = sin(theta) for each angle: True\nangles (units of pi): [0.0, 0.25, 0.5, 0.75, 1.0]\n<Z>: [1.0, 0.7071, 0.0, -0.7071, -1.0]\n<X>: [0.0, 0.7071, 1.0, 0.7071, 0.0]",
+              "caption": "Expected output"
+            },
+            {
+              "type": "code",
+              "id": "c-sampler",
+              "language": "python",
+              "code": "from qiskit import QuantumCircuit\nfrom qiskit.primitives import StatevectorSampler\n\nbell = QuantumCircuit(2)\nbell.h(0); bell.cx(0, 1)\nbell.measure_all()\n\ndef counts(seed):\n    return StatevectorSampler(seed=seed).run([bell], shots=1000).result()[0].data.meas.get_counts()\n\nprint(\"seed 7, first run: \", counts(7))\nprint(\"seed 7, second run:\", counts(7), \"-> identical:\", counts(7) == counts(7))\nprint(\"seed 8:            \", counts(8), \"-> different samples from the same state\")\n\n# Composition and control: build a circuit once and reuse it as a gate\nsub = QuantumCircuit(2, name=\"entangle\")\nsub.h(0); sub.cx(0, 1)\nouter = QuantumCircuit(3)\nouter.compose(sub, [0, 1], inplace=True)\ncontrolled = sub.to_gate().control(1)                         # a controlled version of the whole block\nouter.append(controlled, [2, 0, 1])\nprint(\"outer circuit: depth\", outer.depth(), \"| gates:\", dict(outer.count_ops()))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-sampler",
+              "language": "text",
+              "code": "seed 7, first run:  {'11': 498, '00': 502}\nseed 7, second run: {'11': 498, '00': 502} -> identical: True\nseed 8:             {'00': 519, '11': 481} -> different samples from the same state\nouter circuit: depth 3 | gates: {'h': 1, 'cx': 1, 'centangle': 1}",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The Estimator output has shape (2, 5): two observables by five parameter sets, from a single request, and both analytic checks hold. The Sampler counts show the two things worth knowing about random sampling: the counts are only **estimates** of the probabilities (the Bell state gives roughly half 00 and half 11, with fluctuations of order 1/√N), and a seeded generator reproduces them exactly, which is how you write a test for code that samples. Composition and `control` let you build libraries of subcircuits and reuse them.\n\n**Common mistakes.** Passing parameter values with the wrong trailing dimension (the last axis must match the number of parameters), and assuming a Sampler result is deterministic. Also remember that the exact-simulator primitives return values with *no* hardware noise, so they are a check of the algorithm, not a prediction of device results."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the Estimator primitive compute?",
+              "options": [
+                "Expectation values of observables for states prepared by circuits",
+                "Raw measurement signals",
+                "The transpiled circuit"
+              ],
+              "correct_index": 0,
+              "explanation": "The Estimator returns expectation values; the Sampler returns samples of the measured register."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "A PUB with observables of shape (2,1) and parameter values of shape (5,1) produces results of what shape?",
+              "options": [
+                "(2, 5)",
+                "(5, 1)",
+                "(10,)"
+              ],
+              "correct_index": 0,
+              "explanation": "The observable and parameter-set axes broadcast against each other."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why seed a sampler in tests?",
+              "options": [
+                "So that random sampling gives reproducible counts",
+                "To make the circuit faster",
+                "To remove noise from hardware"
+              ],
+              "correct_index": 0,
+              "explanation": "A fixed seed makes the same shots come out each run."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B111",
+              "locator": "Guide 'Introduction to primitives': why primitives were introduced, Estimator and Sampler, base classes and implementations (StatevectorEstimator, StatevectorSampler, BackendEstimatorV2 and BackendSamplerV2)"
+            },
+            {
+              "book": "B111",
+              "locator": "Guides on circuit construction and parameterised circuits in the Qiskit SDK"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement that PUB shapes broadcast follows the V2 primitives interface and is confirmed by the listing; the guide page on PUB broadcasting was not read in full."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "4.2 Circuit Optimization",
+          "summary": "Reducing gate count and depth while provably preserving the circuit's unitary, and what each optimisation level actually does.",
+          "estimated_minutes": 38,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Every gate costs fidelity and time, so quantum compilers optimise aggressively. The optimisations are exact identities from linear algebra (B1): **inverse gates cancel** (H·H = I, T·T† = I, CNOT·CNOT = I), **rotations about the same axis merge** (RZ(a)·RZ(b) = RZ(a + b)), consecutive single-qubit gates **fuse** into one, and gates that **commute** can be reordered so that cancelling partners meet. Qiskit's transpiler applies these in its optimisation stage. According to the Qiskit documentation, level 1 combines chains of single-qubit gates and cancels back-to-back CNOTs; level 2 uses commutation relations to cancel redundant gates; and level 3 additionally consolidates two-qubit blocks and re-synthesises them. Higher levels cost more compile time.\n\nThe most important property of an optimisation is **correctness**: the optimised circuit must implement the same unitary (up to a global phase). The listing builds a small circuit with deliberate redundancy, transpiles it at each level to a generic gate set (RZ, SX, X, CX), prints size, depth and CNOT count, and **verifies equivalence** with `Operator.equiv`, which checks equality up to global phase. The labs use `qiskit` 2.5.2, `qiskit-aer` 0.17.2 and `qiskit-ibm-runtime` 0.50.0 (`pip install qiskit==2.5.2 qiskit-aer==0.17.2 qiskit-ibm-runtime==0.50.0`). **No account or hardware is needed**: everything runs locally, using *fake backends* that bundle a stored snapshot of a real device's layout and calibration data. A fake backend is for testing code and for qualitative studies; it is **not** a live description of any machine. Where results come from random sampling the generator is seeded, so the printed numbers are reproducible with these versions."
+            },
+            {
+              "type": "code",
+              "id": "c-optimize",
+              "language": "python",
+              "code": "from qiskit import QuantumCircuit, transpile\nfrom qiskit.quantum_info import Operator\n\nqc = QuantumCircuit(3)\nqc.h(0); qc.cx(0, 1); qc.cx(0, 1)              # a CNOT followed by itself cancels\nqc.t(2); qc.tdg(2)                              # T followed by its inverse cancels\nqc.rz(0.3, 0); qc.rz(0.5, 0)                    # two rotations about Z merge into RZ(0.8)\nqc.cx(1, 2)\nqc.h(1); qc.h(1)                                # H H cancels\nqc.cz(0, 2)\n\nbasis = [\"rz\", \"sx\", \"x\", \"cx\"]\nprint(f\"{'level':>5} {'size':>5} {'depth':>6} {'cx':>3} {'gates':<40} same unitary\")\nprint(f\"{'input':>5} {qc.size():>5} {qc.depth():>6} {qc.count_ops().get('cx', 0):>3} {str(dict(qc.count_ops())):<40} -\")\nfor level in range(4):\n    out = transpile(qc, basis_gates=basis, optimization_level=level, seed_transpiler=1)\n    same = Operator(out).equiv(Operator(qc))\n    print(f\"{level:>5} {out.size():>5} {out.depth():>6} {out.count_ops().get('cx', 0):>3} {str(dict(out.count_ops())):<40} {same}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-optimize",
+              "language": "text",
+              "code": "level  size  depth  cx gates                                    same unitary\ninput    11      6   3 {'h': 3, 'cx': 3, 'rz': 2, 't': 1, 'tdg': 1, 'cz': 1} -\n    0    23     13   4 {'rz': 14, 'sx': 5, 'cx': 4}             True\n    1    11      8   2 {'rz': 6, 'sx': 3, 'cx': 2}              True\n    2    11      8   2 {'rz': 6, 'sx': 3, 'cx': 2}              True\n    3    11      8   2 {'rz': 6, 'sx': 3, 'cx': 2}              True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The input has 11 gates and 3 CNOTs. Level 0 only rewrites them into the target gate set, so it *grows* the circuit to 23 gates and 4 CNOTs (H and CZ are not native and each expands into several gates). Levels 1 to 3 remove the cancelling CNOT pair, the T·T† pair and the H·H pair and merge the two rotations, ending with 11 native gates and only 2 CNOTs: the same number of gates as the input, but already in the device's gate set and with fewer two-qubit gates. The unitary stays equal. The check `equiv` is what makes an optimiser trustworthy: a transformation that changes the unitary is a bug, however good the gate count looks.\n\n**Two cautions.** First, optimisation level is a **trade-off**, not a free lunch: higher levels take longer to compile and, being heuristic, are not guaranteed to produce the fewest gates for every circuit (the Qiskit documentation notes that routing uses a stochastic heuristic, so results can vary between runs unless a seed is fixed). Second, an optimisation that is exact on paper can change the **noise** behaviour in practice: fewer gates is usually better, but replacing one gate by an equivalent sequence of others may not be, if the replacement uses noisier native gates."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which optimisation does not change a circuit's unitary?",
+              "options": [
+                "Cancelling a CNOT with an immediately following identical CNOT",
+                "Deleting a Hadamard gate",
+                "Replacing CNOT with CZ"
+              ],
+              "correct_index": 0,
+              "explanation": "Back-to-back identical CNOT gates multiply to the identity, so removing them preserves the unitary exactly."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "How is the equality of two circuits checked up to a global phase?",
+              "options": [
+                "Operator.equiv",
+                "Comparing gate counts",
+                "Comparing depth"
+              ],
+              "correct_index": 0,
+              "explanation": "Equivalent circuits can have different gates; only the unitary (up to phase) matters."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does optimization level 2 add over level 1, according to the Qiskit documentation?",
+              "options": [
+                "Cancellation using commutation relations",
+                "Automatic error mitigation",
+                "Real hardware execution"
+              ],
+              "correct_index": 0,
+              "explanation": "Level 2 uses CommutativeCancellation in place of CXCancellation."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B111",
+              "locator": "Guide 'Transpiler stages', Optimization stage: levels 1, 2 and 3 and the passes they use"
+            },
+            {
+              "book": "B111",
+              "locator": "Guide 'Introduction to transpilation': Default transpilation and the optimization_level flag"
+            }
+          ],
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "4.3 Transpilation",
+          "summary": "The six stages, what layout and routing cost on a heavy-hex device, and programmatic checks that the output obeys the device's constraints.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A circuit written for the idealised model cannot run on a device unchanged: it uses gates the hardware lacks and connects qubits that the hardware does not couple. **Transpilation** rewrites it for a specific device and then optimises it. Qiskit's prebuilt pipeline has six stages (init, layout, routing, translation, optimisation, scheduling). **Layout** maps your virtual qubits to physical qubits; **routing** inserts SWAP gates where two-qubit gates act on qubits that are not neighbours on the coupling map (finding the optimal SWAP placement is NP-hard, so Qiskit uses the stochastic SabreSwap heuristic, which is why results vary unless you fix a seed); **translation** rewrites gates into the device's native set (for this fake IBM Eagle-class device, ECR, SX, RZ and X); **scheduling** is optional and accounts for idle time. A circuit that obeys the device is said to be in the backend's **ISA** (instruction set architecture) form.\n\nThe cost of routing is the reason circuit connectivity matters. The listing transpiles a 15-qubit GHZ circuit (one Hadamard and 14 CNOTs from qubit 0) for the 127-qubit `FakeSherbrooke` at all four optimisation levels with a fixed seed and reports depth, two-qubit gate count and total gates. It then **checks the result programmatically**: every instruction belongs to the device's gate set and every two-qubit gate acts on a coupled pair. The labs use `qiskit` 2.5.2, `qiskit-aer` 0.17.2 and `qiskit-ibm-runtime` 0.50.0 (`pip install qiskit==2.5.2 qiskit-aer==0.17.2 qiskit-ibm-runtime==0.50.0`). **No account or hardware is needed**: everything runs locally, using *fake backends* that bundle a stored snapshot of a real device's layout and calibration data. A fake backend is for testing code and for qualitative studies; it is **not** a live description of any machine. Where results come from random sampling the generator is seeded, so the printed numbers are reproducible with these versions."
+            },
+            {
+              "type": "code",
+              "id": "c-transpile",
+              "language": "python",
+              "code": "from qiskit import QuantumCircuit\nfrom qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager\nfrom qiskit_ibm_runtime.fake_provider import FakeSherbrooke\n\nbackend = FakeSherbrooke()\nghz = QuantumCircuit(15)\nghz.h(0)\nghz.cx(0, range(1, 15))                                         # a star: qubit 0 must interact with all 14 others\nprint(f\"{backend.name}: {backend.num_qubits} qubits, native gates: {sorted(set(backend.operation_names) & {'ecr', 'sx', 'rz', 'x'})}\")\nprint(f\"input circuit: depth {ghz.depth()}, {ghz.count_ops()['cx']} CNOTs\")\n\nedges = {tuple(edge) for edge in backend.coupling_map.get_edges()}\nprint(f\"{'level':>5} {'depth':>6} {'ecr':>4} {'total gates':>12}  uses native gates only  every ecr on a coupled pair\")\nfor level in range(4):\n    pass_manager = generate_preset_pass_manager(optimization_level=level, backend=backend, seed_transpiler=7)\n    isa = pass_manager.run(ghz)\n    counts = isa.count_ops()\n    native_only = set(counts) <= set(backend.operation_names)\n    coupled = all(tuple(isa.find_bit(q).index for q in instruction.qubits) in edges\n                  for instruction in isa.data if instruction.operation.name == \"ecr\")\n    print(f\"{level:>5} {isa.depth():>6} {counts.get('ecr', 0):>4} {sum(counts.values()):>12}  {native_only!s:>22}  {coupled!s:>26}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-transpile",
+              "language": "text",
+              "code": "fake_sherbrooke: 127 qubits, native gates: ['ecr', 'rz', 'sx', 'x']\ninput circuit: depth 15, 14 CNOTs\nlevel  depth  ecr  total gates  uses native gates only  every ecr on a coupled pair\n    0    451  101          976                    True                        True\n    1    147   44          266                    True                        True\n    2    150   30          268                    True                        True\n    3    150   30          267                    True                        True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Read the table as a lesson in cost. The input has 14 two-qubit gates; the transpiled circuit at level 0 needs 101 ECR gates because routing a star-shaped circuit onto a heavy-hex lattice (where most qubits have only two or three neighbours) inserts SWAPs, and its depth is nearly 450. Levels 1 to 3 cut the two-qubit count to 44 and then 30 by better layout and optimisation; the depth falls about threefold. That is what \"the transpiler matters\" means in practice: **the same algorithm can differ by a factor of three in two-qubit gates**, and on real hardware each of those gates costs a percent or so of fidelity (the next lessons quantify it).\n\n**How to use this.** Design circuits to **match the device topology** (a GHZ state is better prepared by a chain of CNOTs along a path than a star), check the ISA conditions programmatically as above, fix `seed_transpiler` when you need reproducible results, and look at the transpiled circuit, not only the one you wrote.\n\n**Common mistake.** Reporting the gate count of the circuit *before* transpilation as the cost of running on hardware."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does routing add SWAP gates?",
+              "options": [
+                "Two-qubit gates need the qubits to be neighbours on the device's coupling map",
+                "SWAPs reduce noise",
+                "Hardware cannot apply CNOT"
+              ],
+              "correct_index": 0,
+              "explanation": "When a gate acts on non-adjacent qubits, SWAPs move the states next to each other."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why do transpilation results vary between runs unless a seed is set?",
+              "options": [
+                "Routing uses a stochastic heuristic (SabreSwap)",
+                "Hardware is random",
+                "Quantum circuits are random"
+              ],
+              "correct_index": 0,
+              "explanation": "Finding the optimal SWAP mapping is NP-hard, so a randomised heuristic is used."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which circuit shape is cheaper to run on a heavy-hex device?",
+              "options": [
+                "A chain of CNOTs along a path of connected qubits",
+                "A star of CNOTs from one qubit to all the others",
+                "They cost the same"
+              ],
+              "correct_index": 0,
+              "explanation": "Matching the coupling map avoids SWAPs: the star needed 101 two-qubit gates at level 0 where the input had 14."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B111",
+              "locator": "Guide 'Transpiler stages': the six stages, layout (VF2Layout, SabreLayout), routing (SabreSwap, NP-hard) and optimisation levels"
+            },
+            {
+              "book": "B111",
+              "locator": "Guide 'Introduction to transpilation': ISA, pass managers and generate_preset_pass_manager"
+            },
+            {
+              "book": "B131",
+              "locator": "fake_provider.FakeSherbrooke (127 qubits; ecr, sx, rz, x)",
+              "note": "Snapshot of calibration data bundled with the package."
+            }
+          ],
+          "needs_verification": {
+            "reason": "Gate counts depend on the Qiskit version and on the seed; the numbers quoted are those printed by the listing with qiskit 2.5.2 and seed_transpiler=7."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "4.4 Backend Selection",
+          "summary": "Reading a backend's properties and choosing qubits by calibration data, with the caveat that fake-backend numbers are a stored snapshot.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Backends differ in size, connectivity, native gates, speed and **quality**, and quality varies **within** a device: some qubits and couplers are much better than others, and calibration data change every day. A backend's `target` exposes the information a compiler uses: the coupling map, the native instructions, and per-qubit and per-gate **error rates and durations**. Qubit properties include the T1 and T2 coherence times (B2) and readout error. Layout selection in Qiskit uses this data: according to the documentation, `VF2Layout` finds a subgraph that fits the circuit and, when several fit, scores them and picks the one with the lowest average error.\n\nThis lesson reads those properties from the fake device and does its own simple selection: it summarises the device, then searches all simple paths of five connected qubits for the one with the lowest **sum of two-qubit gate errors plus readout errors**, which is what you would want for a five-qubit GHZ state prepared along a line. It then compares that with the layout the transpiler picks automatically. **Important:** the data in a fake backend is a **stored snapshot** (the listing prints its date), so the *method* transfers to a real device but the *numbers* describe a past day. The labs use `qiskit` 2.5.2, `qiskit-aer` 0.17.2 and `qiskit-ibm-runtime` 0.50.0 (`pip install qiskit==2.5.2 qiskit-aer==0.17.2 qiskit-ibm-runtime==0.50.0`). **No account or hardware is needed**: everything runs locally, using *fake backends* that bundle a stored snapshot of a real device's layout and calibration data. A fake backend is for testing code and for qualitative studies; it is **not** a live description of any machine. Where results come from random sampling the generator is seeded, so the printed numbers are reproducible with these versions."
+            },
+            {
+              "type": "code",
+              "id": "c-backend",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager\nfrom qiskit_ibm_runtime.fake_provider import FakeSherbrooke\n\nbackend = FakeSherbrooke()\ntarget = backend.target\necr_error = {tuple(q): p.error for q, p in target[\"ecr\"].items() if p is not None and p.error is not None}\nreadout_error = {q[0]: p.error for q, p in target[\"measure\"].items() if p is not None and p.error is not None}\nt1 = np.array([backend.qubit_properties(q).t1 for q in range(backend.num_qubits)]) * 1e6        # microseconds\nt2 = np.array([backend.qubit_properties(q).t2 for q in range(backend.num_qubits)]) * 1e6\nprint(\"calibration snapshot date:\", backend.properties().last_update_date.date(), \"(stored with the fake backend, not live)\")\nprint(f\"qubits {backend.num_qubits}; two-qubit gate error: best {min(ecr_error.values()):.4f}, median {np.median(list(ecr_error.values())):.4f}, worst {max(ecr_error.values()):.4f}\")\nprint(f\"readout error: best {min(readout_error.values()):.4f}, median {np.median(list(readout_error.values())):.4f}, worst {max(readout_error.values()):.4f}\")\nprint(f\"T1 median {np.median(t1):.0f} us, T2 median {np.median(t2):.0f} us; T2 <= 2 T1 holds for every qubit: {bool(np.all(t2 <= 2 * t1 + 1e-9))}\")\n\nneighbours = {q: set() for q in range(backend.num_qubits)}\nfor a, b in ecr_error:\n    neighbours[a].add(b)\ndef paths(length):\n    def extend(path):\n        if len(path) == length:\n            yield tuple(path)\n            return\n        for nxt in neighbours[path[-1]]:\n            if nxt not in path:\n                yield from extend(path + [nxt])\n    for start in range(backend.num_qubits):\n        yield from extend([start])\ndef cost(path):\n    gates = sum(min(ecr_error.get((a, b), 1), ecr_error.get((b, a), 1)) for a, b in zip(path, path[1:]))\n    return gates + sum(readout_error[q] for q in path)\n\nbest = min(paths(5), key=cost)\nworst = max(paths(5), key=cost)\nprint(\"best 5-qubit path:\", best, f\"cost {cost(best):.4f}\", \"| worst:\", worst, f\"cost {cost(worst):.4f}\", f\"-> {cost(worst) / cost(best):.1f}x worse\")\n\nghz = QuantumCircuit(5); ghz.h(0); ghz.cx(0, 1); ghz.cx(1, 2); ghz.cx(2, 3); ghz.cx(3, 4); ghz.measure_all()\nchosen = generate_preset_pass_manager(optimization_level=1, backend=backend, seed_transpiler=3).run(ghz)\nindex = lambda instruction: tuple(chosen.find_bit(q).index for q in instruction.qubits)\nedges_used = {index(i) for i in chosen.data if i.operation.name == \"ecr\"}\nmeasured = {index(i)[0] for i in chosen.data if i.operation.name == \"measure\"}\ntranspiler_cost = sum(min(ecr_error.get(e, 1), ecr_error.get(e[::-1], 1)) for e in edges_used) + sum(readout_error[q] for q in measured)\nprint(\"transpiler's automatic choice: couplings\", sorted(edges_used), f\"cost {transpiler_cost:.4f}\", \"(same formula: gate errors on the couplings used plus readout errors of the measured qubits)\")\nprint(f\"ratio of the transpiler's choice to the best path found by search: {transpiler_cost / cost(best):.2f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-backend",
+              "language": "text",
+              "code": "calibration snapshot date: 2025-02-26 (stored with the fake backend, not live)\nqubits 127; two-qubit gate error: best 0.0035, median 0.0078, worst 1.0000\nreadout error: best 0.0029, median 0.0198, worst 0.5000\nT1 median 278 us, T2 median 170 us; T2 <= 2 T1 holds for every qubit: True\nbest 5-qubit path: (126, 125, 124, 123, 122) cost 0.0682 | worst: (7, 6, 5, 4, 15) cost 2.4927 -> 36.5x worse\ntranspiler's automatic choice: couplings [(1, 0), (1, 2), (3, 2), (4, 3)] cost 0.1218 (same formula: gate errors on the couplings used plus readout errors of the measured qubits)\nratio of the transpiler's choice to the best path found by search: 1.79",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The spread within one device is the finding: the best five-qubit path costs 0.068 in total error while the worst costs 2.5, about 36 times more (the worst path crosses a coupler whose error is 1.0 in this snapshot, which means it is effectively unusable, and readout errors range up to 0.5). So *which* qubits you run on matters as much as which device. The transpiler's automatic layout searches for low-error subgraphs, but it optimises its own scoring: here its choice costs about 1.8 times our best path by our measure, so for an important experiment you can fix `initial_layout` yourself and compare.\n\n**Selecting a backend in practice** means weighing: number of qubits and connectivity (do the circuit's interactions fit?), error rates and coherence times for the qubits you will use, gate and readout speed, queue time and cost, and the **freshness of the calibration** (fake data are old by construction; real calibrations drift within a day). **Common mistake:** choosing by qubit count alone; a larger device with worse two-qubit gates can give worse results than a smaller, cleaner one."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why can the choice of physical qubits on one device change results substantially?",
+              "options": [
+                "Error rates and coherence times vary from qubit to qubit and coupler to coupler",
+                "Qubits on the same chip are identical",
+                "Only the number of qubits matters"
+              ],
+              "correct_index": 0,
+              "explanation": "Calibration data show large spreads within a device."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does a fake backend's calibration data represent?",
+              "options": [
+                "A stored snapshot of a past calibration, not live data",
+                "The current state of the real device",
+                "Random numbers"
+              ],
+              "correct_index": 0,
+              "explanation": "It is useful for testing code and qualitative studies, not for predicting today's performance."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which is NOT a good criterion for choosing a backend?",
+              "options": [
+                "Qubit count alone",
+                "Two-qubit gate errors on the qubits used",
+                "Coherence times"
+              ],
+              "correct_index": 0,
+              "explanation": "Quality and connectivity matter as much as size."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B111",
+              "locator": "Guide 'Transpiler stages', Layout stage: VF2Layout scores layouts by average error; the importance of well-calibrated qubits"
+            },
+            {
+              "book": "B131",
+              "locator": "FakeSherbrooke.target and qubit_properties: error rates, T1, T2 and the calibration snapshot date"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The numeric properties printed are a stored 2025 snapshot bundled with qiskit-ibm-runtime 0.50.0 and are not live calibration data."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "4.5 Noise Models",
+          "summary": "Building a noise model from device data, simulating noisy GHZ states of growing size, and seeing fidelity fall with qubit count.",
+          "estimated_minutes": 42,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **noise model** assigns quantum channels (B2) to a circuit's gates, idle periods and measurements. Qiskit Aer can derive one directly from a backend's properties: `NoiseModel.from_backend` builds gate errors (depolarizing plus thermal relaxation from T1, T2 and the gate duration) and readout errors from the stored calibration data, and `AerSimulator.from_backend` packages the device's coupling map, native gates and noise into a simulator. Running a **transpiled** circuit on it gives a realistic *qualitative* picture of how a device would behave, at the cost of simulating the noise, which limits the size to a few tens of qubits at most.\n\nA natural experiment: prepare an n-qubit **GHZ state** (|00…0⟩ + |11…1⟩)/√2 and measure it. Ideally only two outcomes occur, all zeros and all ones. A simple figure of merit is the probability of those two outcomes, the **GHZ population**; noise leaks probability into other strings. The listing runs n = 3, 5, 7, 9 on the noisy simulator with a fixed seed, also runs the noiseless simulator as a check (population exactly 1), and prints how the noise model is composed. The labs use `qiskit` 2.5.2, `qiskit-aer` 0.17.2 and `qiskit-ibm-runtime` 0.50.0 (`pip install qiskit==2.5.2 qiskit-aer==0.17.2 qiskit-ibm-runtime==0.50.0`). **No account or hardware is needed**: everything runs locally, using *fake backends* that bundle a stored snapshot of a real device's layout and calibration data. A fake backend is for testing code and for qualitative studies; it is **not** a live description of any machine. Where results come from random sampling the generator is seeded, so the printed numbers are reproducible with these versions."
+            },
+            {
+              "type": "code",
+              "id": "c-noise-model",
+              "language": "python",
+              "code": "from qiskit import QuantumCircuit\nfrom qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager\nfrom qiskit_aer import AerSimulator\nfrom qiskit_aer.noise import NoiseModel\nfrom qiskit_ibm_runtime.fake_provider import FakeSherbrooke\n\nbackend = FakeSherbrooke()\nnoise_model = NoiseModel.from_backend(backend)\nprint(\"noisy instructions in the model:\", sorted(noise_model.noise_instructions))\nnoisy = AerSimulator.from_backend(backend, seed_simulator=11)\nideal = AerSimulator(seed_simulator=11)\n\ntarget = backend.target\necr_error = {tuple(q): p.error for q, p in target[\"ecr\"].items() if p is not None and p.error is not None}\nreadout_error = {q[0]: p.error for q, p in target[\"measure\"].items() if p is not None and p.error is not None}\nneighbours = {q: set() for q in range(backend.num_qubits)}\nfor a, b in ecr_error:\n    neighbours[a].add(b)\n\ndef best_path(length):                                                 # the path of connected qubits with the lowest summed gate and readout error\n    def extend(path):\n        if len(path) == length:\n            yield tuple(path)\n            return\n        for nxt in neighbours[path[-1]]:\n            if nxt not in path:\n                yield from extend(path + [nxt])\n    cost = lambda path: sum(min(ecr_error.get((a, b), 1), ecr_error.get((b, a), 1)) for a, b in zip(path, path[1:])) + sum(readout_error[q] for q in path)\n    return min((p for start in range(backend.num_qubits) for p in extend([start])), key=cost)\n\ndef ghz(n):\n    qc = QuantumCircuit(n)\n    qc.h(0)\n    for q in range(n - 1):\n        qc.cx(q, q + 1)                                              # a chain: fits the device topology\n    qc.measure_all()\n    return qc\n\ndef population(simulator, circuit, shots=4000):\n    counts = simulator.run(circuit, shots=shots).result().get_counts()\n    width = len(next(iter(counts)))                                     # number of measured bits (a transpiled circuit has 127 qubits but only n clbits)\n    return (counts.get(\"0\" * width, 0) + counts.get(\"1\" * width, 0)) / shots\n\ndef worst_coupler(isa):\n    edges = [tuple(isa.find_bit(q).index for q in i.qubits) for i in isa.data if i.operation.name == \"ecr\"]\n    return max(ecr_error.get(e, ecr_error.get(e[::-1], 0)) for e in edges)\n\nprint(f\"{'qubits':<7} {'ideal':>6} {'automatic layout: worst coupler error':>38} {'population':>11} {'searched best path: worst coupler error':>40} {'population':>11}\")\nfor n in (3, 5, 7, 9):\n    automatic = generate_preset_pass_manager(optimization_level=1, backend=backend, seed_transpiler=5).run(ghz(n))\n    chosen = generate_preset_pass_manager(optimization_level=1, backend=backend, seed_transpiler=5, initial_layout=list(best_path(n))).run(ghz(n))\n    print(f\"{n:<7} {population(ideal, ghz(n)):>6.3f} {worst_coupler(automatic):>38.4f} {population(noisy, automatic):>11.3f} {worst_coupler(chosen):>40.4f} {population(noisy, chosen):>11.3f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-noise-model",
+              "language": "text",
+              "code": "noisy instructions in the model: ['ecr', 'id', 'measure', 'reset', 'sx', 'x']\nqubits   ideal  automatic layout: worst coupler error  population  searched best path: worst coupler error  population\n3        1.000                                 0.0088       0.917                                   0.0053       0.963\n5        1.000                                 0.0088       0.882                                   0.0063       0.931\n7        1.000                                 1.0000       0.193                                   0.0167       0.884\n9        1.000                                 1.0000       0.092                                   0.0167       0.838",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The noiseless run gives exactly 1.000 each time (the check that the circuit and the population measure are right). With a layout chosen by searching the calibration data, the noisy population declines smoothly as the circuit grows (0.96, 0.93, 0.88, 0.84 for 3, 5, 7 and 9 qubits): each added qubit adds a two-qubit gate and a readout, and the errors compound as the depolarizing analysis in B2 predicted. Rough scaling is easy to remember: with per-gate error ε and N two-qubit gates the population is about (1 − ε)^N, so halving the error rate roughly doubles the circuit size you can run.\n\nThe first columns hold a more important lesson. With the **automatic layout** the population collapses at 7 and 9 qubits (0.19 and 0.09) even though the circuit is only a little bigger. The reason is visible in the second column: for those sizes the automatically chosen layout includes a coupler whose error is 1.0 in this snapshot (and a qubit with a readout error of 0.26), so some gate scrambles the state completely. The transpiler's layout heuristics are good, but **they did not avoid the worst hardware here**, so inspect the layout and the error values of the qubits it chose, and fix `initial_layout` yourself when the result matters. On a live device a coupler that bad would normally be marked unavailable in the target; the stored snapshot keeps it as an ordinary gate with error 1.0.\n\n**How to use a noise model well.** Treat it as a **qualitative** guide. It captures calibration-snapshot errors but not everything real devices do: crosstalk, correlated errors, leakage and drift are not in the simple model. Use it to compare strategies (layouts, mitigation) *under the same assumptions*, not to promise a number on hardware. **Common mistake:** simulating the *untranspiled* circuit with a device noise model, which silently applies no gate errors because the gates it uses are not the native ones."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does NoiseModel.from_backend build?",
+              "options": [
+                "Gate and readout errors derived from the backend's calibration data",
+                "A circuit optimiser",
+                "A real hardware job"
+              ],
+              "correct_index": 0,
+              "explanation": "It uses the stored properties (errors, T1, T2, durations) to attach channels to the native gates and measurements."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why must the circuit be transpiled before simulating with a device noise model?",
+              "options": [
+                "The noise model attaches errors to the device's native gates",
+                "The simulator cannot run untranspiled circuits at all",
+                "Transpiling removes noise"
+              ],
+              "correct_index": 0,
+              "explanation": "Gates outside the native set carry no errors in the model, so the result would look unrealistically clean."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How does the GHZ population change as the number of qubits grows, under device noise?",
+              "options": [
+                "It decreases, since errors accumulate with more gates and readouts",
+                "It increases",
+                "It stays at 1"
+              ],
+              "correct_index": 0,
+              "explanation": "More two-qubit gates and measurements mean more places for errors."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B114",
+              "locator": "Noise models: amplitude damping, depolarizing and thermal relaxation errors used by NoiseModel.from_backend"
+            },
+            {
+              "book": "B111",
+              "locator": "Guide 'Exact and noisy simulation with Qiskit Aer primitives'"
+            },
+            {
+              "book": "B131",
+              "locator": "fake_provider.FakeSherbrooke and AerSimulator.from_backend"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Aer sampling is seeded, but exact counts can differ between Aer versions or platforms; the qualitative decay with qubit number does not."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "4.6 Error Mitigation",
+          "summary": "Readout-error correction by matrix inversion and zero-noise extrapolation by gate folding, built from scratch with their costs and limits.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Error mitigation** reduces the effect of noise on an *estimate* without the qubit overhead of error correction (C3), at the price of more circuit executions and extra classical processing. Two basic techniques show the idea. **Readout mitigation**: measure the **confusion matrix** (the probability of reading each outcome given each prepared basis state) by preparing basis states, then multiply measured distributions by its inverse. IBM's documentation describes a related method, TREX (twirled readout error extinction), which twirls measurements to make the readout noise easy to invert and learns the rescaling from calibration circuits. **Zero-noise extrapolation (ZNE)**: run the circuit with the noise **deliberately amplified** (for instance by replacing each gate G with G G† G, which is the same ideal operation but three times the noise), measure the expectation value at several noise scales, and **extrapolate back to scale zero**. Temme, Bravyi and Gambetta describe the extrapolation with Richardson's method, and Li and Benjamin proposed boosting the errors artificially in a variational setting.\n\nThe mitigation menu in IBM's Quantum Compute documentation also lists **dynamical decoupling** (inserting pulse sequences on idle qubits to cancel unwanted coherent interactions, useful only when the circuit has idle gaps) and **Pauli twirling** (randomised compiling that turns arbitrary noise into Pauli noise, which accumulates linearly rather than coherently). Those operate on pulses and compilation and cannot be reproduced exactly on a simulator, so they are described but not run here.\n\nThe first listing demonstrates readout mitigation on a single qubit with a known readout error. The second demonstrates ZNE on a Bell state under depolarizing noise on the CNOT, using exact density-matrix simulation so the extrapolation is not hidden by sampling noise, and also computes what the extrapolation costs in shot noise. The labs use `qiskit` 2.5.2, `qiskit-aer` 0.17.2 and `qiskit-ibm-runtime` 0.50.0 (`pip install qiskit==2.5.2 qiskit-aer==0.17.2 qiskit-ibm-runtime==0.50.0`). **No account or hardware is needed**: everything runs locally, using *fake backends* that bundle a stored snapshot of a real device's layout and calibration data. A fake backend is for testing code and for qualitative studies; it is **not** a live description of any machine. Where results come from random sampling the generator is seeded, so the printed numbers are reproducible with these versions."
+            },
+            {
+              "type": "code",
+              "id": "c-readout",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit_aer import AerSimulator\nfrom qiskit_aer.noise import NoiseModel, ReadoutError\n\np01, p10 = 0.03, 0.07                                              # P(read 1 | prepared 0), P(read 0 | prepared 1): ASSUMED values\nnoise = NoiseModel()\nnoise.add_all_qubit_readout_error(ReadoutError([[1 - p01, p01], [p10, 1 - p10]]))\nsimulator = AerSimulator(noise_model=noise, seed_simulator=21)\n\ndef read_distribution(prepare_one, rotation=0.0, shots=200_000):\n    qc = QuantumCircuit(1)\n    if prepare_one:\n        qc.x(0)\n    if rotation:\n        qc.ry(rotation, 0)\n    qc.measure_all()\n    counts = simulator.run(qc, shots=shots).result().get_counts()\n    return np.array([counts.get(\"0\", 0), counts.get(\"1\", 0)]) / shots\n\nconfusion = np.column_stack([read_distribution(False), read_distribution(True)])        # column j = distribution measured when state j was prepared\nprint(\"estimated confusion matrix (columns: prepared 0, prepared 1):\", np.round(confusion, 3).tolist())\n\ntheta = 1.0\nideal_z = np.cos(theta)                                              # <Z> of RY(theta)|0>\nraw = read_distribution(False, theta)\nmitigated = np.linalg.solve(confusion, raw)\nexpectation = lambda p: p[0] - p[1]\nprint(f\"ideal <Z> = {ideal_z:.4f} | measured with readout error = {expectation(raw):.4f} | after inverting the confusion matrix = {expectation(mitigated):.4f}\")\nprint(\"mitigation moved the estimate toward the ideal value:\", abs(expectation(mitigated) - ideal_z) < abs(expectation(raw) - ideal_z))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-readout",
+              "language": "text",
+              "code": "estimated confusion matrix (columns: prepared 0, prepared 1): [[0.97, 0.07], [0.03, 0.93]]\nideal <Z> = 0.5403 | measured with readout error = 0.5249 | after inverting the confusion matrix = 0.5386\nmitigation moved the estimate toward the ideal value: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "code",
+              "id": "c-zne",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit, transpile\nfrom qiskit.quantum_info import DensityMatrix, SparsePauliOp\nfrom qiskit_aer import AerSimulator\nfrom qiskit_aer.noise import NoiseModel, depolarizing_error\n\nlam = 0.03                                                          # ASSUMED two-qubit depolarizing parameter per CNOT\nnoise = NoiseModel()\nnoise.add_all_qubit_quantum_error(depolarizing_error(lam, 2), [\"cx\"])\nsimulator = AerSimulator(method=\"density_matrix\", noise_model=noise)\nZZ = SparsePauliOp(\"ZZ\")\n\ndef expectation(scale):\n    qc = QuantumCircuit(2)\n    qc.h(0)\n    for _ in range(scale):                                           # fold: CX CX CX has the ideal effect of one CX and scale-times the noise\n        qc.cx(0, 1)\n    qc.save_density_matrix()\n    rho = simulator.run(transpile(qc, simulator, optimization_level=0)).result().data()[\"density_matrix\"]\n    return float(DensityMatrix(rho).expectation_value(ZZ).real)\n\nscales = np.array([1, 3, 5])\nvalues = np.array([expectation(int(s)) for s in scales])\nprint(\"noise scale factors:\", scales.tolist(), \"| measured <ZZ>:\", np.round(values, 5).tolist(), \"| ideal <ZZ> = 1\")\nprint(\"each scale follows (1 - lambda)^scale:\", np.allclose(values, (1 - lam) ** scales))\n\n# Richardson extrapolation to zero noise with a polynomial through the three points\ncoefficients = np.polyfit(scales, values, 2)\nestimate = np.polyval(coefficients, 0)\nprint(f\"raw (scale 1) error: {abs(values[0] - 1):.5f} | extrapolated to scale 0: {estimate:.5f} (error {abs(estimate - 1):.5f})\")\n\n# The price: the extrapolated value is a weighted sum of noisy estimates, so shot noise is amplified\nweights = np.linalg.solve(np.vander(scales, 3, increasing=True).T, np.array([1, 0, 0]))     # weights w with sum(w_i * f(scale_i)) = f(0) for quadratics\nprint(\"Richardson weights:\", np.round(weights, 4).tolist(), \"| standard-error amplification:\", round(float(np.sqrt(np.sum(weights ** 2))), 2), \"x\")\nprint(\"circuits executed per estimate:\", len(scales), \"| two-qubit gates in total relative to one run:\", int(scales.sum()), \"x\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-zne",
+              "language": "text",
+              "code": "noise scale factors: [1, 3, 5] | measured <ZZ>: [0.97, 0.91267, 0.85873] | ideal <ZZ> = 1\neach scale follows (1 - lambda)^scale: True\nraw (scale 1) error: 0.03000 | extrapolated to scale 0: 0.99993 (error 0.00007)\nRichardson weights: [1.875, -1.25, 0.375] | standard-error amplification: 2.28 x\ncircuits executed per estimate: 3 | two-qubit gates in total relative to one run: 9 x",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Readout mitigation** moved the estimate of ⟨Z⟩ from 0.525 (raw, with 3% and 7% flip errors; ideal 0.540) to 0.539, using a calibration measurement and one 2×2 linear solve. It needs no change to the algorithm, but its cost grows with the number of qubits (the full confusion matrix has 2^n × 2^n entries, so practical methods approximate it with per-qubit or correlated-subset matrices) and it corrects only measurement errors.\n\n**ZNE** turned a raw error of about 3% into one of about 0.003% in this idealised setting, because the noise here is exactly a smooth function of the scale factor, so a quadratic fit through three points recovers the zero-noise value. That is the best case. The costs are clear: nine times the two-qubit gates in total, and the extrapolated value is a weighted sum with weights 1.875, −1.25 and 0.375, which **amplifies shot noise by more than a factor of two**, so you need several times more shots for the same statistical precision. On a real device the noise is not a clean polynomial in the scale, the extrapolation can be biased, and the folded circuits are deeper, so they accumulate additional error; ZNE is therefore a heuristic that works best for short circuits with modest error.\n\n**The bigger picture.** Mitigation gives better *estimates of expectation values*, not better *quantum states*: it cannot make a noisy circuit produce an accurate sample, and its overhead typically grows exponentially with circuit size and error rate. That limit is why fault-tolerant error correction (C3) is needed for large computations."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the idea of zero-noise extrapolation?",
+              "options": [
+                "Run with amplified noise at several scales and extrapolate the expectation value to zero noise",
+                "Remove all noise from the hardware",
+                "Repeat every gate twice and take the average"
+              ],
+              "correct_index": 0,
+              "explanation": "The ideal effect is unchanged by folding, while the noise grows; the trend is extrapolated back."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the main cost of ZNE with three noise scales 1, 3, 5?",
+              "options": [
+                "More gates (9x here) and amplified shot noise",
+                "No cost",
+                "Fewer qubits"
+              ],
+              "correct_index": 0,
+              "explanation": "The circuit is executed at several scales and the extrapolation weights amplify statistical error."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does error mitigation improve?",
+              "options": [
+                "Estimates of expectation values, not the quantum state itself",
+                "The coherence time",
+                "The number of qubits"
+              ],
+              "correct_index": 0,
+              "explanation": "Mitigation post-processes noisy results; it does not protect the quantum information during the computation."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B111",
+              "locator": "Guide 'Error mitigation and suppression techniques': dynamical decoupling, Pauli twirling, TREX (twirled readout error extinction) and zero-noise extrapolation"
+            },
+            {
+              "book": "B133",
+              "locator": "Abstract: two schemes mitigating errors in short-depth circuits; extrapolation to the zero noise limit using Richardson's deferred approach to the limit"
+            },
+            {
+              "book": "B134",
+              "locator": "Abstract: error impact is minimised by boosting errors artificially and extrapolating to the zero-error case"
+            },
+            {
+              "book": "B114",
+              "locator": "depolarizing_error and ReadoutError (noise model components)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Both listings use an ASSUMED noise level so that the mitigated result can be compared with the known ideal value; real devices will not follow a clean (1 - lambda)^scale law. The claim that mitigation overhead typically grows exponentially is standard in the literature and was not tied to one of the cited abstracts."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "4.7 Runtime Concepts",
+          "summary": "PUBs, shots and precision, and the three execution modes (job, batch, session), with the cost of a request computed.",
+          "estimated_minutes": 38,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Running on shared hardware introduces concepts that a local simulator hides. A **PUB** is the unit of work you submit to a primitive: a circuit, the observables or parameter values to evaluate, and, for the Estimator, optionally a **precision** (the target standard error of each expectation value). Because a Pauli expectation value from N shots has a standard error of at most 1/√N, a precision ε corresponds to about **1/ε² shots**: ten times the precision costs a hundred times the shots. The listing runs an Estimator request with two precisions and shows the error scaling.\n\n**Execution modes** determine how your jobs are scheduled on IBM's service, as described in the Qiskit documentation. **Job mode** is a single primitive request. **Batch mode** submits several independent jobs together so their classical preparation is parallelised and the quantum executions run in quick succession (they do not have exclusive access, and the order is not guaranteed). **Session mode** gives a dedicated window with exclusive access for a multi-job workload such as a variational algorithm, avoiding repeated queueing between iterations. In both batch and session the first job still waits in the normal queue, and a maximum time-to-live timer ends the workload; sessions are not available to Open Plan users. These are properties of a service that changes, so check the current documentation before relying on them. The labs use `qiskit` 2.5.2, `qiskit-aer` 0.17.2 and `qiskit-ibm-runtime` 0.50.0 (`pip install qiskit==2.5.2 qiskit-aer==0.17.2 qiskit-ibm-runtime==0.50.0`). **No account or hardware is needed**: everything runs locally, using *fake backends* that bundle a stored snapshot of a real device's layout and calibration data. A fake backend is for testing code and for qualitative studies; it is **not** a live description of any machine. Where results come from random sampling the generator is seeded, so the printed numbers are reproducible with these versions."
+            },
+            {
+              "type": "code",
+              "id": "c-precision",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.primitives import StatevectorEstimator\nfrom qiskit.quantum_info import SparsePauliOp\n\nqc = QuantumCircuit(1)\nqc.ry(1.0, 0)\nobservable = SparsePauliOp(\"Z\")\nexact = np.cos(1.0)\n\nprint(f\"exact <Z> = {exact:.4f}\")\nprint(f\"{'target precision':>17} {'shots per value (~1/eps^2)':>28} {'mean abs error over 200 runs':>30} {'within 3x target':>17}\")\nfor precision in (0.1, 0.03, 0.01):\n    errors = []\n    for seed in range(200):\n        estimator = StatevectorEstimator(default_precision=precision, seed=seed)\n        value = estimator.run([(qc, observable)]).result()[0].data.evs\n        errors.append(abs(float(value) - exact))\n    print(f\"{precision:>17} {round(1 / precision ** 2):>28,} {np.mean(errors):>30.4f} {str(max(errors) < 3 * precision):>17}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-precision",
+              "language": "text",
+              "code": "exact <Z> = 0.5403\n target precision   shots per value (~1/eps^2)   mean abs error over 200 runs  within 3x target\n              0.1                          100                         0.0795              True\n             0.03                        1,111                         0.0239              True\n             0.01                       10,000                         0.0080              True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The mean error tracks the requested precision (it is a standard error, so the mean absolute error is somewhat smaller) and no run strays beyond three times the target. Shots per value rise from 100 to 10,000 as the precision goes from 0.1 to 0.01. **This is the cost model to carry into any hardware plan**: precision costs quadratically in shots, error mitigation multiplies the shots further (the ZNE lesson), and each variational iteration needs many such evaluations, which is why the choice between job, batch and session matters for total cost and wall-clock time.\n\n**A checklist for a hardware run.** Choose the primitive (Estimator for expectation values, Sampler for distributions); transpile to the backend's ISA; decide precision or shots; choose the execution mode; decide on mitigation options; set seeds and record versions, backend and calibration timestamp so the run is reproducible. A runnable local version of the whole path follows in the last lesson of this module."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Roughly how many shots does a Pauli expectation value need for standard error epsilon?",
+              "options": [
+                "About 1/epsilon^2",
+                "About 1/epsilon",
+                "About log(1/epsilon)"
+              ],
+              "correct_index": 0,
+              "explanation": "The standard error of a mean of N values bounded by 1 is at most 1/sqrt(N)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is session mode for?",
+              "options": [
+                "A dedicated window with exclusive access for a multi-job workload such as a variational algorithm",
+                "Running one job as cheaply as possible",
+                "Simulating without a device"
+              ],
+              "correct_index": 0,
+              "explanation": "Sessions avoid queueing between iterations; the first job still waits in the normal queue."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Does batch mode guarantee exclusive access to the QPU?",
+              "options": [
+                "No, batch jobs can run in parallel with other users' jobs",
+                "Yes",
+                "Only on weekends"
+              ],
+              "correct_index": 0,
+              "explanation": "Only session mode gives exclusive access during its window."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B111",
+              "locator": "Guide 'Introduction to Quantum Compute execution modes': job, batch and session modes, queueing, time-to-live and Open Plan restriction"
+            },
+            {
+              "book": "B111",
+              "locator": "Guide 'Introduction to primitives': Estimator and Sampler, options"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Execution-mode behaviour describes the IBM service as documented on 2026-10-04 and may change; the 1/epsilon^2 relation is the standard error of a mean, confirmed by the listing."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "4.8 Quantum-Classical Workflows",
+          "summary": "A hybrid optimisation loop with noisy cost evaluations: parameter-shift gradient descent versus SPSA under the same circuit budget.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Near-term algorithms are **hybrid**: a classical optimiser repeatedly asks a quantum computer for cost values. Three engineering points follow. **Compile once, bind many**: transpile the parameterised circuit a single time and only change the parameter values between iterations (the PUB mechanism of lesson 4.1). **Budget circuit executions**, because each evaluation costs shots. And **choose the optimiser to match the noise**. With the parameter-shift rule (B1, B3) the gradient of an n-parameter circuit needs 2n circuit evaluations per iteration; **SPSA** (simultaneous perturbation stochastic approximation) estimates a gradient direction from just **two** evaluations per iteration whatever n is, by perturbing all parameters at once with random ±1 signs, which makes it popular for noisy objectives.\n\nThe listing minimises the two-qubit transverse-field Ising Hamiltonian of B3 with a four-parameter ansatz, using an Estimator whose cost values are **noisy** (precision 0.05, about 400 shots per evaluation). Both optimisers get the same budget of 600 cost evaluations, and the final *exact* energies are compared with the true ground energy −√2. The labs use `qiskit` 2.5.2, `qiskit-aer` 0.17.2 and `qiskit-ibm-runtime` 0.50.0 (`pip install qiskit==2.5.2 qiskit-aer==0.17.2 qiskit-ibm-runtime==0.50.0`). **No account or hardware is needed**: everything runs locally, using *fake backends* that bundle a stored snapshot of a real device's layout and calibration data. A fake backend is for testing code and for qualitative studies; it is **not** a live description of any machine. Where results come from random sampling the generator is seeded, so the printed numbers are reproducible with these versions."
+            },
+            {
+              "type": "code",
+              "id": "c-workflow",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.circuit import ParameterVector\nfrom qiskit.primitives import StatevectorEstimator\nfrom qiskit.quantum_info import SparsePauliOp, Statevector\n\nH = SparsePauliOp.from_list([(\"ZZ\", -1.0), (\"XI\", -0.5), (\"IX\", -0.5)])\nparams = ParameterVector(\"t\", 4)\nansatz = QuantumCircuit(2)                                   # built once; parameters are bound per evaluation\nansatz.ry(params[0], 0); ansatz.ry(params[1], 1); ansatz.cx(0, 1); ansatz.ry(params[2], 0); ansatz.ry(params[3], 1)\nexact_energy = lambda theta: Statevector(ansatz.assign_parameters(theta)).expectation_value(H).real\nground = np.linalg.eigvalsh(H.to_matrix())[0]\n\nclass NoisyCost:\n    def __init__(self, seed):\n        self.estimator = StatevectorEstimator(default_precision=0.05, seed=seed)\n        self.calls = 0\n    def __call__(self, theta):\n        self.calls += 1\n        return float(self.estimator.run([(ansatz, H, np.asarray(theta, dtype=float))]).result()[0].data.evs)\n\ndef gradient_descent(cost, theta, budget, rate=0.15):\n    theta = theta.copy()\n    while cost.calls + 8 <= budget:                               # parameter shift: 2 evaluations per parameter, 8 per iteration\n        g = np.array([(cost(theta + np.pi / 2 * np.eye(4)[i]) - cost(theta - np.pi / 2 * np.eye(4)[i])) / 2 for i in range(4)])\n        theta -= rate * g\n    return theta\n\ndef spsa(cost, theta, budget, rng, a=0.4, c=0.2, A=20, alpha=0.602, gamma=0.101):\n    theta, k = theta.copy(), 0\n    while cost.calls + 2 <= budget:                               # SPSA: 2 evaluations per iteration, whatever the number of parameters\n        delta = rng.choice([-1.0, 1.0], size=4)\n        ak, ck = a / (k + 1 + A) ** alpha, c / (k + 1) ** gamma\n        g = (cost(theta + ck * delta) - cost(theta - ck * delta)) / (2 * ck) * (1 / delta)\n        theta -= ak * g\n        k += 1\n    return theta\n\nbudget = 600\nstart = np.array([0.4, -0.3, 0.2, 0.5])\nprint(f\"exact ground energy {ground:.4f}; energy at the starting point {exact_energy(start):.4f}; budget {budget} noisy cost evaluations each\")\nresults = {\"parameter-shift gradient descent\": [], \"SPSA\": []}\nfor seed in range(5):\n    gd_cost, spsa_cost = NoisyCost(seed), NoisyCost(100 + seed)\n    results[\"parameter-shift gradient descent\"].append(exact_energy(gradient_descent(gd_cost, start, budget)))\n    results[\"SPSA\"].append(exact_energy(spsa(spsa_cost, start, budget, np.random.default_rng(seed))))\nfor name, energies in results.items():\n    print(f\"{name:34} final exact energy over 5 runs: mean {np.mean(energies):.4f}, worst {max(energies):.4f}, error vs ground {np.mean(energies) - ground:.4f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-workflow",
+              "language": "text",
+              "code": "exact ground energy -1.4142; energy at the starting point -1.1030; budget 600 noisy cost evaluations each\nparameter-shift gradient descent   final exact energy over 5 runs: mean -1.4135, worst -1.4135, error vs ground 0.0007\nSPSA                               final exact energy over 5 runs: mean -1.4065, worst -1.4037, error vs ground 0.0077",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Both optimisers approach the exact ground energy, using the same 600 evaluations: parameter-shift gradient descent ends within 0.0007 of it and SPSA within 0.008, with a residual error set by the noisy cost values. Parameter shift gets 75 iterations (8 evaluations each) and SPSA gets 300 (2 evaluations each). The comparison is **problem- and tuning-dependent**: with four parameters the gap in cost per iteration is only 4x, and it grows with the number of parameters, which is why SPSA is attractive for larger circuits. Do not read this one table as a general ranking; learning rates and perturbation sizes were fixed by hand and a different tuning could change the order.\n\n**Engineering lessons.** Count executions, not iterations. Evaluate the *final* parameters with a high-precision or exact estimate rather than trusting the last noisy cost value (as the listing does). Record the seeds. And remember that this is the *noisy-estimator* case only: on hardware, gate and readout noise also bias the cost (B4's mitigation lesson), and the optimisation landscape may contain barren plateaus (B3)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How many circuit evaluations does one parameter-shift gradient need for a circuit with n parameters?",
+              "options": [
+                "2n",
+                "2",
+                "n^2"
+              ],
+              "correct_index": 0,
+              "explanation": "Each parameter needs the circuit at two shifted values."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is SPSA popular for noisy objectives?",
+              "options": [
+                "It needs only two evaluations per iteration regardless of the number of parameters",
+                "It removes shot noise",
+                "It never gets stuck"
+              ],
+              "correct_index": 0,
+              "explanation": "It perturbs all parameters at once and estimates a descent direction from two noisy evaluations."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does 'compile once, bind many' mean?",
+              "options": [
+                "Transpile the parameterised circuit once and only change parameter values between iterations",
+                "Run the circuit once",
+                "Bind qubits to physical locations repeatedly"
+              ],
+              "correct_index": 0,
+              "explanation": "Avoids repeating the expensive transpilation in every iteration of an optimisation loop."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B111",
+              "locator": "Guide 'Introduction to primitives' (PUBs with parameter values) and the guides on parameterised circuits"
+            },
+            {
+              "book": "B125",
+              "locator": "Hybrid quantum-classical loop of the variational eigensolver (see B3, lesson 3.10)"
+            },
+            {
+              "book": "B133",
+              "locator": "Error mitigation in variational workflows (see lesson 4.6)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "SPSA is described from its standard definition (perturb all parameters with random signs, two evaluations per iteration); it was not checked against a primary reference here, and the optimiser hyperparameters were set by hand."
+          },
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "4.9 Benchmarking",
+          "summary": "Randomised benchmarking from scratch: random Cliffords, exponential decay, and recovering a known error rate.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "How good is a gate? Measuring a single gate directly mixes the gate's error with **state-preparation and measurement (SPAM) errors**. **Randomised benchmarking (RB)** separates them: apply a random sequence of m Clifford gates followed by the one Clifford that inverts the whole sequence, so ideally the qubit returns to |0⟩. Because errors compound, the **survival probability** (the chance to read 0) decays exponentially with the sequence length, F(m) = A·p^m + B, where the SPAM errors only change the constants A and B, while the decay rate p reflects the average gate error. Magesan, Gambetta and Emerson analysed the protocol and showed that it gives an efficient and reliable estimate of an average error rate under a general noise model. The **error per Clifford** is r = (1 − p)(d − 1)/d, with d = 2 for one qubit.\n\nThe listing implements single-qubit RB on a noisy simulator with a **known** error: depolarizing noise of parameter 0.004 on every √X and X gate (the RZ gate is virtual and noiseless, as on IBM hardware). It generates random Clifford sequences, simulates them exactly with the density-matrix method, fits the decay, and compares the fitted p with the prediction (1 − 0.004)^g, where g is the average number of noisy gates per Clifford counted from the generated circuits. Recovering a known value is the validation that the method works. The labs use `qiskit` 2.5.2, `qiskit-aer` 0.17.2 and `qiskit-ibm-runtime` 0.50.0 (`pip install qiskit==2.5.2 qiskit-aer==0.17.2 qiskit-ibm-runtime==0.50.0`). **No account or hardware is needed**: everything runs locally, using *fake backends* that bundle a stored snapshot of a real device's layout and calibration data. A fake backend is for testing code and for qualitative studies; it is **not** a live description of any machine. Where results come from random sampling the generator is seeded, so the printed numbers are reproducible with these versions."
+            },
+            {
+              "type": "code",
+              "id": "c-rb",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit, transpile\nfrom qiskit.quantum_info import Clifford, random_clifford\nfrom qiskit_aer import AerSimulator\nfrom qiskit_aer.noise import NoiseModel, depolarizing_error\n\nlam = 0.004                                                           # known depolarizing parameter per noisy gate\nnoise = NoiseModel()\nfor gate in (\"sx\", \"x\"):\n    noise.add_all_qubit_quantum_error(depolarizing_error(lam, 1), [gate])\nsimulator = AerSimulator(method=\"density_matrix\", noise_model=noise)\nbasis = [\"sx\", \"rz\", \"x\"]\n\ndef rb_circuit(length, rng):\n    qc = QuantumCircuit(1)\n    total = Clifford(QuantumCircuit(1))\n    for _ in range(length):\n        c = random_clifford(1, seed=int(rng.integers(1 << 30)))\n        qc.compose(c.to_circuit(), inplace=True)\n        qc.barrier()                                                   # keep each Clifford separate so gates are not merged across them\n        total = total.compose(c)\n    qc.compose(total.adjoint().to_circuit(), inplace=True)             # the inverting Clifford\n    compiled = transpile(qc, basis_gates=basis, optimization_level=0)\n    compiled.save_probabilities()                                      # added after transpiling: it is a simulator instruction, not a gate\n    return compiled\n\nrng = np.random.default_rng(2026)\nlengths = [1, 5, 10, 20, 40, 80, 120]\nsequences_per_length = 25\nsurvival, noisy_gates, cliffords = [], 0, 0\nfor m in lengths:\n    values = []\n    for _ in range(sequences_per_length):\n        circuit = rb_circuit(m, rng)\n        ops = circuit.count_ops()\n        noisy_gates += ops.get(\"sx\", 0) + ops.get(\"x\", 0)\n        cliffords += m + 1\n        values.append(simulator.run(circuit).result().data()[\"probabilities\"][0])\n    survival.append(np.mean(values))\n\nx = np.array(lengths) + 1                                              # number of Cliffords applied, including the inverse\nslope, intercept = np.polyfit(x, np.log(2 * np.array(survival) - 1), 1)   # F = 1/2 + 1/2 p^x for one qubit without SPAM errors\np_fit = float(np.exp(slope))\ng = noisy_gates / cliffords\np_predicted = (1 - lam) ** g\nprint(f\"{'sequence length':>16} {'survival probability':>22} {'0.5 + 0.5 p_fit^(m+1)':>22}\")\nfor m, f in zip(lengths, survival):\n    print(f\"{m:>16} {f:>22.4f} {0.5 + 0.5 * p_fit ** (m + 1):>22.4f}\")\nprint(f\"average noisy gates per Clifford counted from the circuits: {g:.3f}\")\nprint(f\"fitted decay parameter p = {p_fit:.4f} | predicted (1 - {lam})^{g:.3f} = {p_predicted:.4f}\")\nprint(f\"error per Clifford r = (1 - p)/2: fitted {(1 - p_fit) / 2:.5f}, predicted {(1 - p_predicted) / 2:.5f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-rb",
+              "language": "text",
+              "code": " sequence length   survival probability  0.5 + 0.5 p_fit^(m+1)\n               1                 0.9949                 0.9953\n               5                 0.9863                 0.9861\n              10                 0.9752                 0.9749\n              20                 0.9527                 0.9532\n              40                 0.9139                 0.9126\n              80                 0.8442                 0.8421\n             120                 0.7827                 0.7836\naverage noisy gates per Clifford counted from the circuits: 1.165\nfitted decay parameter p = 0.9953 | predicted (1 - 0.004)^1.165 = 0.9953\nerror per Clifford r = (1 - p)/2: fitted 0.00234, predicted 0.00233",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The survival probability decays smoothly from nearly 1 toward ½ and the fitted exponential matches it, and the fitted decay parameter agrees with the independent prediction to three or four decimals: a known error is recovered from the data. That is the value of RB: **it estimates an average error without needing to prepare or measure perfectly**, because those errors only change the constants.\n\n**What RB does and does not tell you.** It gives the *average* error per Clifford, not which gate is bad, not coherent versus incoherent structure, and it needs an error model close to gate-independent for the simple formula (Magesan et al. state the conditions). It benchmarks the Clifford group, a convenient set, but not every gate you use (a T gate is not a Clifford). Multi-qubit RB scales poorly because of the cost of random multi-qubit Cliffords. Other benchmarks (quantum volume, cross-entropy benchmarking) answer different questions; **a single number never describes a device**, which is why published results should state the method, circuits, error bars and date."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does randomised benchmarking give a gate-error estimate that is insensitive to SPAM errors?",
+              "options": [
+                "SPAM errors only change the constants A and B of the decay, not the decay rate p",
+                "It does not use measurements",
+                "It uses a perfect qubit"
+              ],
+              "correct_index": 0,
+              "explanation": "The decay parameter reflects accumulated gate error as sequence length grows."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the form of the RB survival probability?",
+              "options": [
+                "A p^m + B (exponential decay in sequence length)",
+                "A linear increase",
+                "A constant"
+              ],
+              "correct_index": 0,
+              "explanation": "Errors compound with each additional Clifford."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is a limitation of single-number benchmarks?",
+              "options": [
+                "They average over gates and do not show which gate is bad or all error types",
+                "They are always exact",
+                "They need no hardware"
+              ],
+              "correct_index": 0,
+              "explanation": "RB reports an average error per Clifford under model assumptions."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B132",
+              "locator": "Abstract: a randomized benchmarking protocol giving an efficient and reliable estimate of an average error rate under a general noise model, with conditions for validity"
+            },
+            {
+              "book": "B111",
+              "locator": "Guides on running experiments with Qiskit (characterisation experiments)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The relation r = (1 - p)(d - 1)/d and the form F = A p^m + B are the standard RB definitions and are not quoted from the abstract; the listing validates the method by recovering a known error."
+          },
+          "after": "sec-8"
+        },
+        {
+          "slug": "sec-10",
+          "action": "replace",
+          "title": "4.10 Hardware Execution",
+          "summary": "The path from circuit to a real device, a verified local dry run of exactly that path, and a checklist for interpreting results honestly.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Running on a real quantum computer is a short script and a long list of things that can go wrong. The path is: **choose a backend**, **transpile to its ISA** (lessons 4.3 and 4.4), **choose a primitive and execution mode** (4.7), **set shots or precision and any mitigation options** (4.6), **submit**, **keep the job ID and the backend's calibration timestamp**, and **compare against a noise-model or exact simulation** (4.5) before believing the result. The first listing is the submission code for IBM's service. It is shown but **not run** here, because it needs an account, uses a shared real machine, and the exact imports follow the documentation as read on 4 October 2026; check the current guide, since the package announces that the legacy server-side primitive shown is being replaced by a client-side one. **Never place an API key in code or a repository**; save credentials with the service's mechanism and keep them out of version control.\n\nThe second listing runs **the same steps locally** against `FakeSherbrooke` using the Qiskit SDK's `BackendSamplerV2`, so you can verify the transpile-to-ISA and sampling path, and the noise behaviour, without an account. It checks that the transpiled circuit uses only native gates and that, as expected for a noisy device, the two GHZ outcomes dominate but other outcomes also appear. The labs use `qiskit` 2.5.2, `qiskit-aer` 0.17.2 and `qiskit-ibm-runtime` 0.50.0 (`pip install qiskit==2.5.2 qiskit-aer==0.17.2 qiskit-ibm-runtime==0.50.0`). **No account or hardware is needed**: everything runs locally, using *fake backends* that bundle a stored snapshot of a real device's layout and calibration data. A fake backend is for testing code and for qualitative studies; it is **not** a live description of any machine. Where results come from random sampling the generator is seeded, so the printed numbers are reproducible with these versions."
+            },
+            {
+              "type": "code",
+              "id": "c-hardware",
+              "language": "python",
+              "code": "# NOT RUN HERE: needs an IBM Quantum account and uses a real, shared device. API names follow the guides read on 2026-10-04\n# (the legacy SamplerV2 shown below is deprecated in qiskit-ibm-runtime 0.50.0 in favour of the client-side Sampler).\nfrom qiskit import QuantumCircuit\nfrom qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager\nfrom qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2\n\nservice = QiskitRuntimeService()                           # reads credentials you saved earlier; never put an API key in code\nbackend = service.least_busy(operational=True, simulator=False)\ncircuit = QuantumCircuit(3)\ncircuit.h(0); circuit.cx(0, 1); circuit.cx(1, 2)\ncircuit.measure_all()\n\nisa = generate_preset_pass_manager(optimization_level=2, backend=backend).run(circuit)     # transpile for THIS device\nsampler = SamplerV2(mode=backend)                           # job mode: one request\njob = sampler.run([isa], shots=2000)\nprint(\"job id:\", job.job_id())                              # keep the id: results can be retrieved later\nresult = job.result()\nprint(result[0].data.meas.get_counts())",
+              "caption": "Not run here: needs an IBM Quantum account and a live device, so no output is shown"
+            },
+            {
+              "type": "code",
+              "id": "c-local-dry-run",
+              "language": "python",
+              "code": "from qiskit import QuantumCircuit\nfrom qiskit.primitives import BackendSamplerV2\nfrom qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager\nfrom qiskit_ibm_runtime.fake_provider import FakeSherbrooke\n\nbackend = FakeSherbrooke()                                 # the same code path, but a local simulation of a stored device snapshot\ncircuit = QuantumCircuit(3)\ncircuit.h(0); circuit.cx(0, 1); circuit.cx(1, 2)\ncircuit.measure_all()\n\nisa = generate_preset_pass_manager(optimization_level=2, backend=backend, seed_transpiler=2).run(circuit)\nprint(\"ISA check: native gates only:\", set(isa.count_ops()) <= set(backend.operation_names) | {\"barrier\"})\ncounts = BackendSamplerV2(backend=backend).run([isa], shots=4000).result()[0].data.meas.get_counts()\nghz_population = (counts.get(\"000\", 0) + counts.get(\"111\", 0)) / 4000\nprint(\"the two GHZ outcomes dominate:\", ghz_population > 0.8, \"| other outcomes present because of device noise:\", len(counts) > 2)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-local-dry-run",
+              "language": "text",
+              "code": "ISA check: native gates only: True\nthe two GHZ outcomes dominate: True | other outcomes present because of device noise: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The dry run confirms the mechanics (ISA conformance, primitive call, counts format) and the qualitative behaviour (dominant GHZ outcomes with a noise floor), which is exactly what to check before spending hardware time.\n\n**Interpreting a hardware result honestly.** (1) State the **device, date and calibration** and keep the job ID; hardware drifts. (2) Report the **transpiled** circuit's two-qubit gate count and depth, not the logical circuit's. (3) Give **shots and error bars**; with N shots a probability has a standard error of order 1/√N. (4) Say whether **mitigation** was on and which kind, and what its overhead was. (5) Compare with the **ideal and noisy-simulation** results. (6) **Do not claim an advantage** from a single run on a small circuit: a result that a laptop can simulate exactly shows the device works, not that it outperforms classical computing. These are also the reporting standards that the Q-CAPS research track expects of any measured claim.\n\n**Queue and cost realities.** Jobs wait in a shared queue, usage may be limited by plan or budget, and sessions and batches have time limits (4.7). Plan experiments so that each submission answers a specific question."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What must you record with a hardware result so it can be interpreted later?",
+              "options": [
+                "Backend, date and calibration timestamp, job ID, shots, transpiled circuit statistics and mitigation settings",
+                "Only the counts",
+                "Only the circuit"
+              ],
+              "correct_index": 0,
+              "explanation": "Device performance drifts; without the context, a result is not reproducible or comparable."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why compare a hardware result with a noisy simulation?",
+              "options": [
+                "To check whether the result is consistent with the expected noise and to catch mistakes in the circuit or transpilation",
+                "To avoid using hardware",
+                "Simulations are always exact"
+              ],
+              "correct_index": 0,
+              "explanation": "A large discrepancy points to a bug, a drifted calibration or unmodelled effects."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Where should an IBM Quantum API key be kept?",
+              "options": [
+                "In the service's saved-credentials mechanism, never in code or a repository",
+                "Hard-coded at the top of the script",
+                "In a public gist"
+              ],
+              "correct_index": 0,
+              "explanation": "Keys are secrets; committing them exposes your account."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B111",
+              "locator": "Guide 'Introduction to Quantum Compute execution modes' (job, batch and session) and the pages on primitives and transpilation"
+            },
+            {
+              "book": "B131",
+              "locator": "qiskit-ibm-runtime 0.50.0: fake backends; deprecation notice for SamplerV2 in favour of the client-side Sampler"
+            },
+            {
+              "book": "B111",
+              "locator": "Guide 'Error mitigation and suppression techniques'"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The hardware listing was NOT executed (it needs an account) and its imports were not checked against a live service; the local dry run was executed. Treat the hardware code as a documented pattern to confirm against the current guide."
+          },
+          "after": "sec-9"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "b4-n01",
+          "prompt": "What is the difference between the Estimator and Sampler primitives?",
+          "options": [
+            "Estimator returns expectation values; Sampler returns samples of the measured register",
+            "They are identical",
+            "Estimator needs hardware"
+          ],
+          "correct_index": 0,
+          "explanation": "The two primitives cover the two most common tasks: expectation estimation and sampling.",
+          "source": {
+            "book": "B111",
+            "locator": "Introduction to primitives"
+          }
+        },
+        {
+          "id": "b4-n02",
+          "prompt": "Which operation is guaranteed to preserve a circuit's unitary?",
+          "options": [
+            "Cancelling back-to-back identical CNOT gates",
+            "Dropping all gates after the first CNOT",
+            "Reducing circuit depth by any means"
+          ],
+          "correct_index": 0,
+          "explanation": "Two identical CNOTs multiply to the identity.",
+          "source": {
+            "book": "B111",
+            "locator": "Transpiler stages: optimization"
+          }
+        },
+        {
+          "id": "b4-n03",
+          "prompt": "What does the routing stage of transpilation insert?",
+          "options": [
+            "SWAP gates",
+            "Measurements",
+            "Hadamard gates"
+          ],
+          "correct_index": 0,
+          "explanation": "SWAPs make two-qubit gates act on neighbouring qubits of the coupling map.",
+          "source": {
+            "book": "B111",
+            "locator": "Transpiler stages: routing"
+          }
+        },
+        {
+          "id": "b4-n04",
+          "prompt": "Why is optimal SWAP routing not computed exactly?",
+          "options": [
+            "It is an NP-hard problem, so a stochastic heuristic is used",
+            "SWAPs cannot be optimised",
+            "It is forbidden"
+          ],
+          "correct_index": 0,
+          "explanation": "SabreSwap is a heuristic.",
+          "source": {
+            "book": "B111",
+            "locator": "Transpiler stages: routing"
+          }
+        },
+        {
+          "id": "b4-n05",
+          "prompt": "Why are fake-backend calibration numbers not suitable for predicting current device performance?",
+          "options": [
+            "They are a stored snapshot from a past date",
+            "They are random",
+            "They are always perfect"
+          ],
+          "correct_index": 0,
+          "explanation": "They are good for testing code and for qualitative studies.",
+          "source": {
+            "book": "B131",
+            "locator": "fake_provider"
+          }
+        },
+        {
+          "id": "b4-n06",
+          "prompt": "What is the idea of zero-noise extrapolation?",
+          "options": [
+            "Measure at several amplified noise levels and extrapolate to zero noise",
+            "Switch the device off",
+            "Average over qubits"
+          ],
+          "correct_index": 0,
+          "explanation": "Folding gates amplifies noise while keeping the ideal circuit the same.",
+          "source": {
+            "book": "B133",
+            "locator": "Abstract"
+          }
+        },
+        {
+          "id": "b4-n07",
+          "prompt": "What does dynamical decoupling do?",
+          "options": [
+            "Inserts pulse sequences on idle qubits to suppress unwanted interactions",
+            "Optimises SWAP count",
+            "Reads out the qubits"
+          ],
+          "correct_index": 0,
+          "explanation": "It is mainly useful for circuits with idle gaps.",
+          "source": {
+            "book": "B111",
+            "locator": "Error mitigation and suppression techniques"
+          }
+        },
+        {
+          "id": "b4-n08",
+          "prompt": "How many shots does a Pauli expectation value need for standard error epsilon?",
+          "options": [
+            "About 1/epsilon^2",
+            "About 1/epsilon",
+            "About epsilon"
+          ],
+          "correct_index": 0,
+          "explanation": "The standard error of a mean of N bounded values is at most 1/sqrt(N).",
+          "source": {
+            "book": "B111",
+            "locator": "Primitives and precision"
+          }
+        },
+        {
+          "id": "b4-n09",
+          "prompt": "Which execution mode gives exclusive access to the system for a window?",
+          "options": [
+            "Session mode",
+            "Batch mode",
+            "Job mode"
+          ],
+          "correct_index": 0,
+          "explanation": "Session mode provides a dedicated window; batch jobs can run alongside other users' jobs.",
+          "source": {
+            "book": "B111",
+            "locator": "Execution modes"
+          }
+        },
+        {
+          "id": "b4-n10",
+          "prompt": "How many circuit evaluations does SPSA need per iteration?",
+          "options": [
+            "Two, regardless of the number of parameters",
+            "2n",
+            "n squared"
+          ],
+          "correct_index": 0,
+          "explanation": "It perturbs all parameters simultaneously.",
+          "source": {
+            "book": "B111",
+            "locator": "Hybrid workflows"
+          }
+        },
+        {
+          "id": "b4-n11",
+          "prompt": "Why does randomised benchmarking estimate gate error independently of SPAM errors?",
+          "options": [
+            "SPAM only changes the constants of the exponential decay",
+            "It avoids measurement",
+            "It uses error correction"
+          ],
+          "correct_index": 0,
+          "explanation": "The decay rate depends on accumulated gate error.",
+          "source": {
+            "book": "B132",
+            "locator": "Abstract"
+          }
+        },
+        {
+          "id": "b4-n12",
+          "prompt": "Which statement about interpreting hardware results is correct?",
+          "options": [
+            "Report device, date, shots, transpiled circuit statistics and mitigation, and compare with simulation",
+            "Report only the best run",
+            "The logical circuit's gate count is the cost on hardware"
+          ],
+          "correct_index": 0,
+          "explanation": "Hardware drifts and transpilation changes the circuit; honest reporting needs the context.",
+          "source": {
+            "book": "B111",
+            "locator": "Hardware execution workflow"
+          }
+        }
+      ],
+      "estimated_minutes": 433,
+      "notes": "Rewrites ten outline sections as lessons built on the official Qiskit guides and executed locally with qiskit 2.5.2, qiskit-aer 0.17.2 and qiskit-ibm-runtime 0.50.0 fake backends: primitives and PUB broadcasting, verified circuit optimisation, transpilation with ISA checks, backend selection from calibration data, noise models, readout mitigation and zero-noise extrapolation, precision and execution modes, a noisy hybrid optimiser comparison, randomised benchmarking that recovers a known error, and a local dry run of the hardware path. The hardware submission listing is labelled as not executed.",
+      "learning_objectives": [
+        "Use parameterised circuits and the Estimator and Sampler primitives, including seeded, reproducible sampling.",
+        "Optimise circuits with verified equivalence and explain what each optimisation level does.",
+        "Transpile for a device, read the layout and routing cost, and verify ISA conformance programmatically.",
+        "Select qubits and backends from calibration data and build noise models from a backend.",
+        "Implement readout mitigation and zero-noise extrapolation and state their costs and limits.",
+        "Plan and report a hardware run: execution modes, precision and shots, hybrid optimisation, randomised benchmarking and honest interpretation."
+      ]
+    }
+  ]
+}
