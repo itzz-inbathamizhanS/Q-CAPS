@@ -3,9 +3,13 @@
   "title": "Module 3 Quiz: PQC Mitigation",
   "difficulty": "quantum_expert",
   "passing_score_percent": 70,
+  "tagging_status": "proposed-unreviewed",
   "questions": [
     {
       "id": "a8-q1",
+      "lesson_id": "A9.L1",
+      "competency_id": "PQC.1",
+      "depth": "Aware",
       "prompt": "Shor's algorithm poses a threat to which cryptographic systems?",
       "options": [
         "AES and SHA-256 only",
@@ -18,6 +22,9 @@
     },
     {
       "id": "a8-q2",
+      "lesson_id": "A9.L1",
+      "competency_id": "PQC.1",
+      "depth": "Explain",
       "prompt": "What is the primary impact of Grover's algorithm on symmetric cryptography?",
       "options": [
         "It fully breaks AES regardless of key size",
@@ -30,6 +37,9 @@
     },
     {
       "id": "a8-q3",
+      "lesson_id": "A9.L2",
+      "competency_id": "PQC.1",
+      "depth": "Aware",
       "prompt": "What does 'Harvest Now, Decrypt Later' describe?",
       "options": [
         "A PQC algorithm name",
@@ -42,6 +52,9 @@
     },
     {
       "id": "a8-q4",
+      "lesson_id": "A9.L4",
+      "competency_id": "PQC.3",
+      "depth": "Aware",
       "prompt": "Which NIST-standardized algorithm is used for key encapsulation (key exchange) in the PQC suite?",
       "options": [
         "ML-DSA",
@@ -54,6 +67,9 @@
     },
     {
       "id": "a8-q5",
+      "lesson_id": "A9.L4",
+      "competency_id": "PQC.3",
+      "depth": "Explain",
       "prompt": "Why does SLH-DSA (hash-based signatures) exist alongside ML-DSA (lattice-based signatures)?",
       "options": [
         "SLH-DSA is faster and should replace ML-DSA entirely",
@@ -66,6 +82,9 @@
     },
     {
       "id": "a8-q6",
+      "lesson_id": "A9.L5",
+      "competency_id": "PQC.6",
+      "depth": "Aware",
       "prompt": "What is 'crypto-agility'?",
       "options": [
         "Using the fastest possible encryption algorithm always",
@@ -78,6 +97,9 @@
     },
     {
       "id": "a8-q7",
+      "lesson_id": "A9.L5",
+      "competency_id": "PQC.6",
+      "depth": "Explain",
       "prompt": "Why do organizations often use hybrid cryptography (classical + PQC) during migration?",
       "options": [
         "It's required by law in all countries",
@@ -90,6 +112,9 @@
     },
     {
       "id": "a8-q8",
+      "lesson_id": "A9.L2",
+      "competency_id": "PQC.1",
+      "depth": "Explain",
       "prompt": "An RSA-2048 certificate is found on a critical system holding data with a 20-year confidentiality requirement. Under the HNDL model, what is the most accurate assessment?",
       "options": [
         "No risk exists until a quantum computer capable of breaking RSA is built",
@@ -99,6 +124,185 @@
       ],
       "correct_index": 1,
       "explanation": "Because of Harvest Now, Decrypt Later, data with a long confidentiality lifetime is at risk from today's interception, even before decryption capability exists."
+    },
+    {
+      "id": "a8-pk01",
+      "lesson_id": "A9.L1",
+      "competency_id": "PQC.1",
+      "depth": "Explain",
+      "prompt": "Which problem does a quantum computer solve in Shor's factoring algorithm?",
+      "options": [
+        "Finding the order of a number modulo n",
+        "Multiplying two large primes",
+        "Hashing a message"
+      ],
+      "correct_index": 0,
+      "explanation": "Factoring reduces to order finding, and order finding is the step a quantum computer performs efficiently.",
+      "source": {
+        "book_id": "B03",
+        "title": "A Tutorial on Post-quantum Cryptography (slides)",
+        "authors": "Douglas R. Stinson",
+        "edition": "11 August 2025",
+        "year": 2025,
+        "publisher": "University of Waterloo",
+        "locator": "Section 1 (Shor's quantum factoring algorithm)"
+      }
+    },
+    {
+      "id": "a8-pk02",
+      "lesson_id": "A9.L1",
+      "competency_id": "QNT.4",
+      "depth": "Aware",
+      "prompt": "Why is AES-256 still considered strong against Grover's algorithm?",
+      "options": [
+        "Grover only gives a square-root speed-up, leaving about 2^128 steps",
+        "Quantum computers cannot run Grover's algorithm",
+        "AES-256 is not a block cipher"
+      ],
+      "correct_index": 0,
+      "explanation": "A square-root speed-up turns 2^256 into about 2^128 steps.",
+      "source": {
+        "book_id": "B01",
+        "title": "Understanding Cryptography: From Established Symmetric and Asymmetric Ciphers to Post-Quantum Algorithms",
+        "authors": "Christof Paar, Jan Pelzl, Tim Güneysu",
+        "edition": "2nd edition",
+        "year": 2024,
+        "publisher": "Springer",
+        "locator": "Section 12.1.1"
+      }
+    },
+    {
+      "id": "a8-pk03",
+      "lesson_id": "A9.L2",
+      "competency_id": "PQC.1",
+      "depth": "Explain",
+      "prompt": "What does harvest now, decrypt later threaten?",
+      "options": [
+        "Recorded encrypted traffic whose protection depends on quantum-vulnerable public-key cryptography",
+        "Only data stored on local disks",
+        "Only quantum networks"
+      ],
+      "correct_index": 0,
+      "explanation": "The attacker records traffic today and decrypts it after a break.",
+      "source": {
+        "book_id": "B05",
+        "title": "Becoming Quantum Safe: Protect Your Business and Mitigate Risks with Post-Quantum Cryptography and Crypto-Agility",
+        "authors": "Jai Singh Arun, Ray Harishankar, Walid Rjaibi",
+        "year": 2026,
+        "publisher": "Wiley",
+        "locator": "Chapter 5, The Harvest Now and Decrypt Later Problem"
+      }
+    },
+    {
+      "id": "a8-pk04",
+      "lesson_id": "A9.L2",
+      "competency_id": "PQC.1",
+      "depth": "Explain",
+      "prompt": "In the timeline check x + y > z, what does y represent?",
+      "options": [
+        "The time your organisation needs to migrate",
+        "The time data must stay secret",
+        "The time until a quantum break"
+      ],
+      "correct_index": 0,
+      "explanation": "x is the shelf life of the data, y the migration time, and z the time until a break.",
+      "source": {
+        "book_id": "B05",
+        "title": "Becoming Quantum Safe: Protect Your Business and Mitigate Risks with Post-Quantum Cryptography and Crypto-Agility",
+        "authors": "Jai Singh Arun, Ray Harishankar, Walid Rjaibi",
+        "year": 2026,
+        "publisher": "Wiley",
+        "locator": "Chapter 5 (urgency of transitioning)"
+      }
+    },
+    {
+      "id": "a8-pk05",
+      "lesson_id": "A9.L3",
+      "competency_id": "PQC.2",
+      "depth": "Aware",
+      "prompt": "What kind of technology is quantum key distribution?",
+      "options": [
+        "A physical key-distribution system that uses quantum effects",
+        "A new classical encryption algorithm",
+        "A hash function"
+      ],
+      "correct_index": 0,
+      "explanation": "QKD sends photons and relies on physics rather than computational hardness, and it needs new devices.",
+      "source": {
+        "book_id": "B05",
+        "title": "Becoming Quantum Safe: Protect Your Business and Mitigate Risks with Post-Quantum Cryptography and Crypto-Agility",
+        "authors": "Jai Singh Arun, Ray Harishankar, Walid Rjaibi",
+        "year": 2026,
+        "publisher": "Wiley",
+        "locator": "Chapter 3, Quantum Key Distribution"
+      }
+    },
+    {
+      "id": "a8-pk06",
+      "lesson_id": "A9.L4",
+      "competency_id": "PQC.3",
+      "depth": "Aware",
+      "prompt": "Which NIST standard defines the stateless hash-based signature scheme formerly known as SPHINCS+?",
+      "options": [
+        "FIPS 205 (SLH-DSA)",
+        "FIPS 203 (ML-KEM)",
+        "FIPS 204 (ML-DSA)"
+      ],
+      "correct_index": 0,
+      "explanation": "SLH-DSA is specified in FIPS 205.",
+      "source": {
+        "book_id": "B03",
+        "title": "A Tutorial on Post-quantum Cryptography (slides)",
+        "authors": "Douglas R. Stinson",
+        "edition": "11 August 2025",
+        "year": 2025,
+        "publisher": "University of Waterloo",
+        "locator": "Section 1 (selected algorithms and FIPS numbers)"
+      }
+    },
+    {
+      "id": "a8-pk07",
+      "lesson_id": "A9.L4",
+      "competency_id": "PQC.3",
+      "depth": "Aware",
+      "prompt": "Roughly how do ML-KEM-768 sizes compare with an RSA-2048 public modulus?",
+      "options": [
+        "The encapsulation key is several times larger",
+        "They are identical",
+        "ML-KEM keys are smaller"
+      ],
+      "correct_index": 0,
+      "explanation": "The ML-KEM-768 encapsulation key is 1,184 bytes against a 256-byte RSA-2048 modulus.",
+      "source": {
+        "book_id": "B04",
+        "title": "FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard",
+        "authors": "National Institute of Standards and Technology",
+        "year": 2024,
+        "publisher": "NIST",
+        "locator": "Table 3"
+      }
+    },
+    {
+      "id": "a8-pk08",
+      "lesson_id": "A9.L5",
+      "competency_id": "PQC.6",
+      "depth": "Aware",
+      "prompt": "What is the main benefit of a crypto-agile architecture?",
+      "options": [
+        "Algorithms and libraries can be changed with few or no application changes",
+        "It makes all algorithms faster",
+        "It removes the need for keys"
+      ],
+      "correct_index": 0,
+      "explanation": "Applications use an abstract cryptographic API, so the implementation behind it can be updated.",
+      "source": {
+        "book_id": "B05",
+        "title": "Becoming Quantum Safe: Protect Your Business and Mitigate Risks with Post-Quantum Cryptography and Crypto-Agility",
+        "authors": "Jai Singh Arun, Ray Harishankar, Walid Rjaibi",
+        "year": 2026,
+        "publisher": "Wiley",
+        "locator": "Chapter 5, Step 3"
+      }
     }
   ]
 }

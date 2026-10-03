@@ -1,0 +1,708 @@
+{
+ "pack_version": 1,
+ "books": [
+  {
+   "id": "B01",
+   "title": "Understanding Cryptography: From Established Symmetric and Asymmetric Ciphers to Post-Quantum Algorithms",
+   "authors": "Christof Paar, Jan Pelzl, Tim Güneysu",
+   "edition": "2nd edition",
+   "year": 2024,
+   "publisher": "Springer"
+  },
+  {
+   "id": "B02",
+   "title": "A Graduate Course in Applied Cryptography",
+   "authors": "Dan Boneh, Victor Shoup",
+   "edition": "Version 0.6",
+   "year": 2023
+  },
+  {
+   "id": "B03",
+   "title": "A Tutorial on Post-quantum Cryptography (slides)",
+   "authors": "Douglas R. Stinson",
+   "edition": "11 August 2025",
+   "year": 2025,
+   "publisher": "University of Waterloo"
+  },
+  {
+   "id": "B04",
+   "title": "FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard",
+   "authors": "National Institute of Standards and Technology",
+   "year": 2024,
+   "publisher": "NIST"
+  },
+  {
+   "id": "B05",
+   "title": "Becoming Quantum Safe: Protect Your Business and Mitigate Risks with Post-Quantum Cryptography and Crypto-Agility",
+   "authors": "Jai Singh Arun, Ray Harishankar, Walid Rjaibi",
+   "year": 2026,
+   "publisher": "Wiley"
+  },
+  {
+   "id": "B09",
+   "title": "Hybrid key exchange in TLS 1.3 using ECDHE and ML-KEM (Internet-Draft draft-ietf-tls-ecdhe-mlkem)",
+   "authors": "IETF TLS Working Group",
+   "year": 2026,
+   "publisher": "IETF"
+  },
+  {
+   "id": "B10",
+   "title": "NIST Computer Security Resource Center: post-quantum cryptography project, FIPS listing and IR 8547 draft",
+   "authors": "National Institute of Standards and Technology",
+   "year": 2026,
+   "publisher": "NIST"
+  }
+ ],
+ "modules": [
+  {
+   "slug": "track_a_a8_pqc_mitigation",
+   "action": "modify",
+   "sections": [
+    {
+     "slug": "sec-1",
+     "action": "replace",
+     "title": "What quantum computers threaten: Shor's algorithm",
+     "summary": "How Shor's algorithm turns factoring into order finding, and why that breaks RSA, Diffie-Hellman and elliptic curves.",
+     "estimated_minutes": 15,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "In the mid-1990s Peter Shor published quantum algorithms that efficiently solve the two problems behind today's public-key cryptography: **integer factoring** (the basis of RSA) and **discrete logarithms** (the basis of Diffie-Hellman, DSA and elliptic-curve schemes). Run on a large enough quantum computer, they break all of these. No one knows exactly when such a machine will exist; the day it breaks today's public-key standards is called **Q-Day**.\n\nHow does it work? Shor's algorithm turns factoring into a different problem, **order finding**. For a number a modulo n, the *order* r is the smallest positive integer with a^r ≡ 1 (mod n). The steps, as Stinson presents them, are:\n\n1. Pick a random a with 1 < a < n. If gcd(a, n) > 1, you already found a factor.\n2. Find the order r of a modulo n. **This is the only quantum step.**\n3. If r is odd, try another a. Otherwise compute b = a^(r/2) mod n. If b ≡ −1 (mod n), try another a.\n4. Otherwise gcd(b − 1, n) and gcd(b + 1, n) are the factors of n.\n\nEverything except step 2 is ordinary arithmetic you met in the mathematics module. A classical computer can also find an order, but only by an exhaustive search that is hopeless for a 2048-bit n. A quantum computer finds it efficiently, which is the entire threat.\n\nThe listing runs steps 1, 3 and 4 for n = 15 and uses brute force for step 2. That only works because n is tiny; it shows the structure of the attack, not its power. Note the failure case for a = 14, where the algorithm simply retries with a different a."
+      },
+      {
+       "type": "code",
+       "id": "c-shor_classical",
+       "language": "python",
+       "code": "# The classical steps of Shor's factoring algorithm, with a TOY stand-in for the quantum step.\n# A quantum computer's only job is order finding. Here it is brute force, which only works for tiny n.\nfrom math import gcd\n\ndef order(a: int, n: int) -> int:\n    \"\"\"Smallest r > 0 with a^r = 1 (mod n). This is the step a quantum computer does efficiently.\"\"\"\n    r, x = 1, a % n\n    while x != 1:\n        x = x * a % n\n        r += 1\n    return r\n\ndef shor_post_processing(n: int, a: int):\n    if gcd(a, n) > 1:\n        return gcd(a, n), n // gcd(a, n)          # lucky: a already shares a factor with n\n    r = order(a, n)                                # <- quantum step in the real algorithm\n    if r % 2 == 1:\n        return None                                # failure: try another a\n    b = pow(a, r // 2, n)\n    if b == n - 1:                                 # b = -1 (mod n): failure, try another a\n        return None\n    return gcd(b - 1, n), gcd(b + 1, n)\n\nn = 15\nfor a in (2, 4, 7, 11, 14):\n    print(f\"a = {a:2d}: order = {order(a, n)} ->\", shor_post_processing(n, a) or \"retry with another a\")",
+       "caption": "Shor's classical steps with a toy stand-in (brute force) for the quantum order-finding step."
+      },
+      {
+       "type": "code",
+       "id": "o-shor_classical",
+       "language": "text",
+       "code": "a =  2: order = 4 -> (3, 5)\na =  4: order = 2 -> (3, 5)\na =  7: order = 4 -> (3, 5)\na = 11: order = 2 -> (5, 3)\na = 14: order = 2 -> retry with another a",
+       "caption": "Expected output"
+      },
+      {
+       "type": "callout",
+       "id": "k1",
+       "variant": "warning",
+       "title": "What this does and does not show",
+       "text": "The listing factors 15 by brute force. It does not demonstrate a quantum speed-up and it cannot break real keys. Its purpose is to show exactly which step a quantum computer would replace."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "In Shor's factoring algorithm, which step requires a quantum computer?",
+       "options": [
+        "Computing gcd(b − 1, n)",
+        "Finding the order r of a modulo n",
+        "Choosing the random number a"
+       ],
+       "correct_index": 1,
+       "explanation": "Order finding is the only step that is infeasible classically for large n. The gcd computations and the random choice are ordinary arithmetic."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Which of these cryptosystems does Shor's algorithm break?",
+       "options": [
+        "RSA, Diffie-Hellman and elliptic-curve cryptography",
+        "AES-256 and SHA-256",
+        "Only the password hashing used by websites"
+       ],
+       "correct_index": 0,
+       "explanation": "Shor's algorithm solves factoring and discrete logarithms, the foundations of RSA, Diffie-Hellman and elliptic-curve schemes."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B03",
+       "locator": "Section 1 (Introduction): order-finding problem, Shor's quantum factoring algorithm and the quantum discrete logarithm algorithm"
+      },
+      {
+       "book": "B01",
+       "locator": "Section 12.1.1 (quantum computing and cryptography)"
+      },
+      {
+       "book": "B02",
+       "locator": "Section 16.5 (quantum attacks on factoring and discrete log)"
+      },
+      {
+       "book": "B05",
+       "locator": "Chapter 5, opening (Shor, Q-Day and harvest now, decrypt later)"
+      }
+     ]
+    },
+    {
+     "slug": "sec-2",
+     "action": "replace",
+     "title": "Grover's algorithm and symmetric cryptography",
+     "summary": "A square-root speed-up for brute-force search, and why longer symmetric keys are enough.",
+     "estimated_minutes": 10,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "**Grover's algorithm** searches an unsorted collection of N items in about √N steps instead of N. Brute-forcing a symmetric key is exactly such a search: try every key until the known plaintext encrypts to the known ciphertext. For a k-bit key that is about 2^k trials classically and about 2^(k/2) steps for Grover.\n\nThis is a very different threat from Shor's. Shor takes problems that are *hard* and makes them *easy*. Grover only takes the square root of a search that is still enormous. For a 128-bit key the quantum cost drops from about 2^128 to about 2^64, and for a 256-bit key from 2^256 to 2^128, which is still out of reach. The remedy is simple: use 256-bit symmetric keys where long-term protection matters.\n\nPaar et al. add a caution that is easy to miss: quantum operations are much more expensive than classical ones, so an attack of 2^64 quantum operations could still be out of range for decades. That is a reason not to panic about AES-128, not a reason to ignore the trend.\n\nSymmetric primitives also serve as the yardstick for the new algorithms. NIST defined five PQC **security categories**, each anchored to a symmetric benchmark that an attack on the new algorithm must be at least as costly as: key search on AES-128, AES-192 or AES-256, or collision search on SHA-256 or SHA-384. The listing prints the key-search arithmetic and the five categories."
+      },
+      {
+       "type": "code",
+       "id": "c-grover",
+       "language": "python",
+       "code": "# Grover's algorithm searches N items in about sqrt(N) steps, so an exhaustive search over a k-bit key\n# drops from about 2^k classical trials to about 2^(k/2) quantum steps.\nprint(\"key bits | classical trials | quantum steps (Grover)\")\nfor bits in (128, 192, 256):\n    print(f\"   {bits}   |      2^{bits}      |      2^{bits // 2}\")\n\n# NIST's five PQC security categories are defined by reference to these same benchmarks.\ncategories = {1: \"key search on AES-128\", 2: \"collision search on SHA-256\", 3: \"key search on AES-192\",\n              4: \"collision search on SHA-384\", 5: \"key search on AES-256\"}\nfor level, benchmark in categories.items():\n    print(f\"category {level}: at least as hard as {benchmark}\")",
+       "caption": "Key-search cost with and without Grover, and the five NIST security categories."
+      },
+      {
+       "type": "code",
+       "id": "o-grover",
+       "language": "text",
+       "code": "key bits | classical trials | quantum steps (Grover)\n   128   |      2^128      |      2^64\n   192   |      2^192      |      2^96\n   256   |      2^256      |      2^128\ncategory 1: at least as hard as key search on AES-128\ncategory 2: at least as hard as collision search on SHA-256\ncategory 3: at least as hard as key search on AES-192\ncategory 4: at least as hard as collision search on SHA-384\ncategory 5: at least as hard as key search on AES-256",
+       "caption": "Expected output"
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "Under Grover's algorithm, roughly how many steps does brute-forcing a 256-bit AES key need?",
+       "options": [
+        "2^64",
+        "2^128",
+        "2^256"
+       ],
+       "correct_index": 1,
+       "explanation": "Grover roughly halves the exponent: 2^256 classical trials become about 2^128 quantum steps."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Why is the quantum threat to AES considered milder than the threat to RSA?",
+       "options": [
+        "AES is a newer algorithm.",
+        "Grover's algorithm only gives a square-root speed-up, which a longer key restores, while Shor's algorithm breaks RSA outright.",
+        "Quantum computers cannot run any algorithm against symmetric ciphers."
+       ],
+       "correct_index": 1,
+       "explanation": "Shor's algorithm makes factoring easy. Grover's algorithm only speeds up a search that stays infeasible once the key is long enough."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Section 12.1.1 (Grover's algorithm and symmetric cryptosystems)"
+      },
+      {
+       "book": "B03",
+       "locator": "Section 1 (Introduction): NIST security categories"
+      }
+     ]
+    },
+    {
+     "slug": "sec-3",
+     "action": "replace",
+     "title": "Harvest now, decrypt later",
+     "summary": "Why data recorded today can be exposed years later, and which data is at risk.",
+     "estimated_minutes": 12,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "A quantum computer that can break RSA does not exist today, so why act now? Because of **harvest now, decrypt later (HNDL)**: an adversary records encrypted traffic today and stores it. When Q-Day arrives, they break the public-key part of the old sessions and read everything that was recorded.\n\nBecoming Quantum Safe describes the mechanism with a TLS example. Two agencies exchange confidential data over TLS. The handshake uses an asymmetric algorithm such as RSA to establish keys. An adversary who captured the whole exchange can, after Q-Day, break that key establishment, recover the session keys and decrypt the data. The book stresses that HNDL targets **data in transit**, where the protocol depends on quantum-vulnerable public-key cryptography.\n\nNot all data is equally exposed. What matters is how long the data must stay secret. A session cookie that expires in an hour is worthless to an attacker years later. Examples of long-lived secrets that the book lists include military and intelligence communications and personal data such as healthcare records that regulations require to be protected for 5, 10, 20 years or more.\n\nThe book also reports incidents in which internet traffic was rerouted through unexpected networks for months (the book gives 2016, 2019 and 2020 examples). Such incidents do not prove that anyone was harvesting, but they show that capturing traffic at scale is practical. Treat HNDL as a planning assumption, not a certainty.\n\nHNDL has one important consequence: **the deadline for protecting long-lived data is earlier than Q-Day**. The next lesson shows how to reason about that deadline."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "Which data is most exposed to a harvest-now-decrypt-later attack?",
+       "options": [
+        "A session token that expires in 15 minutes",
+        "Healthcare records sent over a TLS connection that must remain confidential for decades",
+        "A public marketing web page"
+       ],
+       "correct_index": 1,
+       "explanation": "HNDL works against recorded traffic whose protection depends on quantum-vulnerable public-key cryptography and whose value lasts for years."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Why does the HNDL threat make the deadline for migration earlier than Q-Day?",
+       "options": [
+        "Quantum computers already exist that can break RSA.",
+        "Data recorded now can be decrypted after Q-Day, so data that must stay secret for years needs protection before then.",
+        "Attackers prefer to wait for new standards."
+       ],
+       "correct_index": 1,
+       "explanation": "The adversary only needs to record the traffic today. The damage occurs when the recording is decrypted, long after the traffic was sent."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B05",
+       "locator": "Chapter 5, The Harvest Now and Decrypt Later Problem"
+      }
+     ]
+    },
+    {
+     "slug": "pk-mosca",
+     "action": "new",
+     "after": "sec-3",
+     "title": "Planning the deadline: a Mosca-style timeline",
+     "summary": "Three durations decide whether data is already at risk; a worked check with illustrative inputs.",
+     "estimated_minutes": 12,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "Whether a given system is already in danger depends on three durations:\n\n- **x**: how many years the data must remain confidential (its *shelf life*).\n- **y**: how many years your organisation needs to migrate the system to quantum-safe cryptography.\n- **z**: how many years until a quantum computer can break the algorithm in use.\n\nIf **x + y > z**, there is a period in which the data is still secret-worthy but no longer protected, so the system is at risk even though Q-Day has not happened yet. This relationship is usually named after Michele Mosca, whose estimates of the arrival of a cryptographically relevant quantum computer are cited in Becoming Quantum Safe. The book gives one such estimate, a one-in-seven chance of some asymmetric algorithms being broken by 2026 and a 50% chance by 2031, which is an estimate from one researcher and is dated. Q-CAPS does not predict z. You should treat z as a range, test your systems against several values, and update it as expert guidance changes.\n\nThe same book explains why y is often underestimated. Migration requires finding every use of quantum-vulnerable cryptography, understanding library dependencies (code cannot change until library vendors ship new versions), issuing new certificates, handling larger keys and signatures, and building new skills. It also reports that cryptographic updates have historically taken years, giving the Heartbleed vulnerability (introduced 2012, fixed 2014, with 200,000 devices still unpatched five years later) and the slow adoption of SHA-3 and elliptic-curve cryptography as examples.\n\nThe listing applies the test to five scenarios. **All numbers are illustrative inputs chosen for this exercise, not forecasts or data about any real organisation.** Change them and see how the verdict flips."
+      },
+      {
+       "type": "code",
+       "id": "c-mosca",
+       "language": "python",
+       "code": "# A timeline check in the spirit of Mosca's inequality. ALL NUMBERS BELOW ARE ILLUSTRATIVE INPUTS CHOSEN\n# FOR THIS EXERCISE, NOT FORECASTS. Real planning uses your own data lifetimes and migration estimates.\ndef at_risk(secrecy_years: float, migration_years: float, years_to_break: float) -> bool:\n    \"\"\"True when data must stay secret longer than the time left after migration finishes.\"\"\"\n    return secrecy_years + migration_years > years_to_break\n\nscenarios = [\n    (\"Marketing page (public)\",                 0,  3, 12),\n    (\"Session cookie\",                          0.01, 3, 12),\n    (\"Customer contract archive\",              10,  4, 12),\n    (\"Health records (decades)\",               25,  5, 12),\n    (\"Same contract archive, if break in 20\",  10,  4, 20),\n]\nfor name, x, y, z in scenarios:\n    verdict = \"AT RISK\" if at_risk(x, y, z) else \"ok\"\n    print(f\"{name:42s} x={x:<5} y={y} z={z:<3} -> {verdict}\")",
+       "caption": "A timeline check, x + y > z, with illustrative inputs."
+      },
+      {
+       "type": "code",
+       "id": "o-mosca",
+       "language": "text",
+       "code": "Marketing page (public)                    x=0     y=3 z=12  -> ok\nSession cookie                             x=0.01  y=3 z=12  -> ok\nCustomer contract archive                  x=10    y=4 z=12  -> AT RISK\nHealth records (decades)                   x=25    y=5 z=12  -> AT RISK\nSame contract archive, if break in 20      x=10    y=4 z=20  -> ok",
+       "caption": "Expected output"
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "A system's data must stay secret for 10 years, migration will take 4 years, and you assume a break in 12 years. What does x + y > z say?",
+       "options": [
+        "The system is safe, because 12 is more than 10.",
+        "The system is at risk, because 10 + 4 = 14 exceeds 12.",
+        "Nothing, because z is unknown."
+       ],
+       "correct_index": 1,
+       "explanation": "x + y = 14 years of required protection against only 12 years before a break, so there is a 2-year gap in which recorded data would be exposed."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Which change would make the same system safe under the inequality?",
+       "options": [
+        "Shortening the migration time y enough that x + y no longer exceeds z",
+        "Hoping z gets smaller",
+        "Making x larger"
+       ],
+       "correct_index": 0,
+       "explanation": "Reducing y (a faster migration) or the shelf life x, or a later z, makes x + y ≤ z. A larger x makes things worse."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B05",
+       "locator": "Chapter 5: the opening discussion of Q-Day and Mosca's estimates, and The Urgency of Transitioning to Quantum-Safe Cryptography (the challenges of updating the cryptographic landscape)"
+      }
+     ],
+     "needs_verification": {
+      "reason": "The supplied books cite Mosca's probability estimates but do not state the inequality x + y > z itself; the formula is taken from the literature on his work and should be checked against his publication before it is quoted. The 2026 and 2031 estimates are dated and are not endorsed by Q-CAPS.",
+      "checked_on": "2026-10-03"
+     }
+    },
+    {
+     "slug": "sec-4",
+     "action": "replace",
+     "after": "pk-mosca",
+     "title": "Post-quantum cryptography, QKD and QRNG",
+     "summary": "What post-quantum cryptography is, the algorithm families, and how it differs from quantum key distribution.",
+     "estimated_minutes": 13,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "**Post-quantum cryptography (PQC)** means ordinary, classical algorithms that run on today's computers but are designed so that no known quantum algorithm breaks them. Their security rests on mathematical problems for which no efficient quantum attack is known. This is the main response to the quantum threat, and it is a natural evolution of the cryptography you already use: it needs no new hardware.\n\nPQC algorithms are grouped into families by the mathematics behind them. Stinson's tutorial covers the main ones:\n\n- **Lattice-based**: problems about finding short vectors in high-dimensional lattices, such as Learning With Errors.\n- **Code-based**: problems about decoding error-correcting codes, as in McEliece-style systems.\n- **Hash-based signatures**: signatures built only from hash functions, such as Lamport, Winternitz and Merkle-tree schemes. Their security rests on well-understood hash properties.\n- **Multivariate** and **isogeny-based** schemes: further families, one of which, SIKE, was broken by a classical attack in August 2022, a reminder that new mathematical assumptions need years of scrutiny.\n\nDo not confuse PQC with two other \"quantum-safe\" technologies. **Quantum key distribution (QKD)** is not an algorithm but a physical system: it sends photons over a fibre, and its security comes from the physics that measuring a quantum state disturbs it, so eavesdropping is detectable. It still needs an authenticated classical channel, and it requires new devices in your infrastructure. A **quantum random number generator (QRNG)** uses quantum effects as a source of true randomness for keys; it improves entropy but does not itself encrypt or sign anything. Becoming Quantum Safe concludes that PQC is the technology almost every organisation will need, because it fits existing infrastructure."
+      },
+      {
+       "type": "callout",
+       "id": "k1",
+       "variant": "info",
+       "title": "Names to keep straight",
+       "text": "PQC is classical maths against quantum attackers. QKD is quantum physics used to distribute keys. Neither is the same as a quantum computer."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "What distinguishes post-quantum cryptography from quantum key distribution?",
+       "options": [
+        "PQC needs a quantum computer to run; QKD does not.",
+        "PQC is classical algorithms on ordinary computers; QKD uses quantum physics and special hardware to distribute keys.",
+        "They are two names for the same technology."
+       ],
+       "correct_index": 1,
+       "explanation": "PQC replaces vulnerable algorithms with classical ones based on different hard problems. QKD is a physical key-distribution system."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "SIKE, an isogeny-based candidate, was broken in 2022. What does this show?",
+       "options": [
+        "All PQC is insecure.",
+        "New mathematical assumptions need long public analysis, and algorithm diversity and crypto-agility matter.",
+        "Isogenies can never be used in cryptography."
+       ],
+       "correct_index": 1,
+       "explanation": "A classical attack ended SIKE's candidacy. Its fate is a practical argument for scrutiny before standardization and for being able to change algorithms."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B03",
+       "locator": "Section 1 (NIST standardization), Sections 2 to 5 (hash-based, code-based, lattice-based and other approaches)"
+      },
+      {
+       "book": "B05",
+       "locator": "Chapter 3: Quantum Key Distribution, Quantum Random Number Generators, Contrasting Quantum-Safe Technologies"
+      },
+      {
+       "book": "B01",
+       "locator": "Section 12.1 (post-quantum cryptography: introduction) and Sections 12.2 to 12.4 (lattice, code and hash-based cryptography)"
+      }
+     ]
+    },
+    {
+     "slug": "sec-5",
+     "action": "replace",
+     "after": "sec-4",
+     "title": "The NIST PQC standards",
+     "summary": "ML-KEM, ML-DSA and SLH-DSA, what is still pending, the size cost of switching, and how to read a standards table.",
+     "estimated_minutes": 15,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "In 2016 NIST asked the world for post-quantum proposals. 82 submissions arrived, and after several evaluation rounds NIST announced its first selections in July 2022. On **13 August 2024** it published three final standards:\n\n| Standard | Name | Purpose | Derived from |\n|---|---|---|---|\n| FIPS 203 | **ML-KEM** | Key encapsulation (agreeing on a shared key) | CRYSTALS-Kyber |\n| FIPS 204 | **ML-DSA** | Digital signatures | CRYSTALS-Dilithium |\n| FIPS 205 | **SLH-DSA** | Digital signatures from hash functions | SPHINCS+ |\n\nUse the standard names in your own work. The older names appear in books and papers written before 2024, and ML-KEM is a variant of Kyber, not byte-for-byte the same scheme (FIPS 203 Appendix C lists the differences).\n\n**Still in progress.** NIST has said that the Falcon signature algorithm and the code-based HQC key-encapsulation mechanism (selected on 11 March 2025) are being standardized, and a second call for additional signature schemes reached Round 2 with 14 candidates in October 2024. Treat the status table above as correct on the date it was checked and verify it before relying on it.\n\nEach standard has **parameter sets** matched to NIST security categories, which are defined relative to AES key search. ML-KEM-512, -768 and -1024 target categories 1, 3 and 5. The price of quantum resistance is size. The listing compares ML-KEM public keys and ciphertexts with an RSA-2048 modulus: they are several times larger, and ML-DSA-44 signatures are 2,420 bytes. Protocols, certificates and hardware that assumed small keys must be checked."
+      },
+      {
+       "type": "code",
+       "id": "c-sizes",
+       "language": "python",
+       "code": "# Sizes in bytes. ML-KEM values are from FIPS 203, Table 3 (checked against Becoming Quantum Safe, Table 3-3).\n# The RSA-2048 public modulus is 2048 bits = 256 bytes (the public exponent is extra but small).\nml_kem = {                      # name: (encapsulation key, decapsulation key, ciphertext, shared secret)\n    \"ML-KEM-512\":  (800, 1632, 768, 32),\n    \"ML-KEM-768\":  (1184, 2400, 1088, 32),\n    \"ML-KEM-1024\": (1568, 3168, 1568, 32),\n}\nrsa_modulus_bytes = 2048 // 8\nprint(f\"{'parameter set':12s} {'public key':>10s} {'ciphertext':>10s} {'public key vs RSA-2048 modulus':>32s}\")\nfor name, (ek, dk, ct, ss) in ml_kem.items():\n    print(f\"{name:12s} {ek:>10d} {ct:>10d} {ek / rsa_modulus_bytes:>31.1f}x\")",
+       "caption": "ML-KEM key and ciphertext sizes (FIPS 203, Table 3) compared with an RSA-2048 modulus."
+      },
+      {
+       "type": "code",
+       "id": "o-sizes",
+       "language": "text",
+       "code": "parameter set public key ciphertext   public key vs RSA-2048 modulus\nML-KEM-512          800        768                             3.1x\nML-KEM-768         1184       1088                             4.6x\nML-KEM-1024        1568       1568                             6.1x",
+       "caption": "Expected output"
+      },
+      {
+       "type": "callout",
+       "id": "k1",
+       "variant": "warning",
+       "title": "Status check required",
+       "text": "Standards status changes. Falcon (FN-DSA) and HQC are not yet final standards, and NIST's transition guidance (NIST IR 8547) was still an initial public draft when checked. Do not present draft guidance as a requirement."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "Which standard specifies the key-encapsulation mechanism formerly known as CRYSTALS-Kyber?",
+       "options": [
+        "FIPS 203 (ML-KEM)",
+        "FIPS 204 (ML-DSA)",
+        "FIPS 205 (SLH-DSA)"
+       ],
+       "correct_index": 0,
+       "explanation": "FIPS 203 defines ML-KEM. FIPS 204 and FIPS 205 define signature schemes."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "A team plans to replace an RSA-2048 key exchange with ML-KEM-768. Which practical issue should they check first?",
+       "options": [
+        "ML-KEM needs a quantum computer to run.",
+        "The public key and ciphertext are much larger than RSA-2048's, which can affect packet sizes, certificates and hardware limits.",
+        "ML-KEM cannot be used with TLS at all."
+       ],
+       "correct_index": 1,
+       "explanation": "ML-KEM-768 uses a 1,184-byte encapsulation key and a 1,088-byte ciphertext, several times the size of an RSA-2048 modulus."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B04",
+       "locator": "Section 1 (introduction), Section 8 (parameter sets), Table 3 (sizes) and Appendix C (differences from CRYSTALS-Kyber)"
+      },
+      {
+       "book": "B05",
+       "locator": "Chapter 3: ML-KEM, ML-DSA and SLH-DSA, Tables 3-3 to 3-5"
+      },
+      {
+       "book": "B03",
+       "locator": "Section 1 (NIST standardization of post-quantum cryptography: rounds, selected algorithms, additional signatures)"
+      },
+      {
+       "book": "B10",
+       "locator": "csrc.nist.gov: post-quantum cryptography project page, FIPS publications listing (FIPS 203, 204, 205 final, 13 Aug 2024) and NIST IR 8547 initial public draft (accessed 2026-10-03)"
+      }
+     ],
+     "needs_verification": {
+      "reason": "Standards status is time-sensitive. FIPS 203, 204 and 205 are final; Falcon and HQC are still being standardized; NIST IR 8547 is a draft. The supplied books pre-date or only partly cover these developments.",
+      "checked_on": "2026-10-03"
+     }
+    },
+    {
+     "slug": "sec-6",
+     "action": "replace",
+     "after": "sec-5",
+     "title": "Migration: crypto-agility and hybrid cryptography",
+     "summary": "The five-step migration approach, why crypto-agility matters, and how hybrid key establishment combines two algorithms.",
+     "estimated_minutes": 15,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "Replacing an algorithm is more than a code change. Becoming Quantum Safe describes a five-step approach that later modules develop in detail:\n\n1. **Discover** the cryptographic inventory: algorithms, libraries, cipher suites, key sizes and certificates across the organisation. A *cryptography bill of materials (CBOM)*, an extension of the CycloneDX software-bill-of-materials format, is a standard way to record it.\n2. **Assess risk and prioritize**: find vulnerabilities, not only quantum-vulnerable algorithms, and rank them using context such as how sensitive the data is.\n3. **Design a crypto-agile architecture**: have applications call an abstract cryptographic API (generate key, encrypt, sign, verify) so the algorithm and library behind it can change with few or no application changes.\n4. **Migrate**: operational changes (new library versions, rotating keys, renewing certificates), mitigation changes (such as an adaptive proxy for systems that cannot change) and strategic changes (application code that uses quantum-safe algorithms).\n5. **Monitor continuously** (cryptographic posture management): ingest scan results, apply policies, prioritize remediation and trigger fixes.\n\n**Crypto-agility** is the property that makes steps 3 and 4 affordable. It means the algorithm is a configuration choice, not a decision buried in code. Algorithm negotiation in TLS is one example.\n\n**Hybrid mode** is the transition tool. A hybrid key establishment runs a classical exchange (for example ECDH) and a post-quantum one (for example ML-KEM) together and feeds both secrets into a key derivation function. The session is protected if *either* algorithm remains secure, which hedges against doubts about the newer scheme and against HNDL. The listing sketches only the combining step, using random stand-ins for the two secrets. For TLS 1.3 the IETF's hybrid ML-KEM key-exchange document (draft-ietf-tls-ecdhe-mlkem) was still an Internet-Draft, not an RFC, when checked."
+      },
+      {
+       "type": "code",
+       "id": "c-hybrid",
+       "language": "python",
+       "code": "# Hybrid key establishment: combine a classical secret and a post-quantum secret with a KDF.\n# pip install cryptography. The two secrets here are random STAND-INS for the outputs of a real\n# ECDH exchange and a real ML-KEM encapsulation; this sketch shows only how they are combined.\nimport os\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.kdf.hkdf import HKDF\n\nclassical_secret = os.urandom(32)      # stand-in for the ECDH shared secret\npq_secret = os.urandom(32)             # stand-in for the ML-KEM shared secret\n\ndef combine(*secrets: bytes) -> bytes:\n    return HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b\"hybrid key v1\").derive(b\"\".join(secrets))\n\nsession_key = combine(classical_secret, pq_secret)\nprint(\"both secrets needed to reproduce the key:\", session_key == combine(classical_secret, pq_secret))\nprint(\"classical secret alone gives a different key:\", session_key != combine(classical_secret, os.urandom(32)))\nprint(\"post-quantum secret alone gives a different key:\", session_key != combine(os.urandom(32), pq_secret))",
+       "caption": "Combining a classical and a post-quantum secret with HKDF (random stand-ins for the real exchanges)."
+      },
+      {
+       "type": "code",
+       "id": "o-hybrid",
+       "language": "text",
+       "code": "both secrets needed to reproduce the key: True\nclassical secret alone gives a different key: True\npost-quantum secret alone gives a different key: True",
+       "caption": "Expected output"
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "What is the first step of the five-step migration approach?",
+       "options": [
+        "Migrate applications to ML-KEM",
+        "Discover the cryptographic inventory",
+        "Buy a quantum computer"
+       ],
+       "correct_index": 1,
+       "explanation": "You cannot migrate what you have not found. Discovery produces the inventory that every later step relies on."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Why combine a classical and a post-quantum secret in a hybrid key exchange?",
+       "options": [
+        "The result is protected if either algorithm stays secure.",
+        "It makes the key shorter.",
+        "It removes the need for a key derivation function."
+       ],
+       "correct_index": 0,
+       "explanation": "Both secrets feed a KDF, so an attacker must break both algorithms to learn the session key."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B05",
+       "locator": "Chapter 5: A Prescriptive Approach for Transitioning to Quantum-Safe Cryptography (Steps 1 to 5)"
+      },
+      {
+       "book": "B05",
+       "locator": "Chapter 3: ML-KEM and ML-DSA hybrid mode"
+      },
+      {
+       "book": "B09",
+       "locator": "Internet-Draft draft-ietf-tls-ecdhe-mlkem, revision 05 (accessed 2026-10-03)"
+      }
+     ],
+     "needs_verification": {
+      "reason": "The IETF hybrid key-exchange specification was an Internet-Draft (revision 05, updated August 2026), not an RFC, when checked. Confirm its status before describing it as a standard.",
+      "checked_on": "2026-10-03"
+     }
+    },
+    {
+     "slug": "sec-7",
+     "action": "replace",
+     "after": "sec-6",
+     "title": "Module wrap-up",
+     "summary": "The threat, the deadline, the fix and the plan, in one page.",
+     "estimated_minutes": 8,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "**The threat.** Shor's algorithm would break factoring and discrete-logarithm cryptography: RSA, Diffie-Hellman, DSA and elliptic curves. Grover's algorithm only halves the effective strength of symmetric keys and hashes, which longer keys absorb.\n\n**The deadline.** Harvest-now-decrypt-later means recorded data can be exposed after Q-Day, so the relevant test is shelf life plus migration time against the time to a break (x + y > z). The inputs are uncertain; the sound response is to plan for a range.\n\n**The fix.** Post-quantum cryptography: classical algorithms based on problems with no known quantum attack. NIST has finalized ML-KEM, ML-DSA and SLH-DSA, with Falcon and HQC still in progress. QKD and QRNG are different technologies and do not replace PQC.\n\n**The plan.** Discover, assess, design for agility, migrate (often through hybrid deployment), then monitor. The first step, an accurate inventory, is where the Q-CAPS scanner and later modules on cryptographic discovery take over.\n\nYou now have the vocabulary and the logic for the intermediate track, where you will study the quantum threat in more depth and then the PQC algorithms and standards themselves."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "Which statement best summarises why migration planning must start before Q-Day?",
+       "options": [
+        "Quantum computers already break TLS today.",
+        "Data recorded now can be decrypted later, and migration takes years, so planning has to start while the break is still in the future.",
+        "NIST requires all systems to migrate this year."
+       ],
+       "correct_index": 1,
+       "explanation": "The combination of harvest-now-decrypt-later exposure and long migration times moves the practical deadline earlier than Q-Day."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B05",
+       "locator": "Chapter 5 (urgency, the five-step approach) and Chapter 3 (contrasting quantum-safe technologies)"
+      },
+      {
+       "book": "B01",
+       "locator": "Section 12.1.1 (quantum computing and cryptography)"
+      }
+     ]
+    }
+   ],
+   "quiz": [
+    {
+     "id": "a8-pk01",
+     "lesson_id": "A9.L1",
+     "competency_id": "PQC.1",
+     "depth": "Explain",
+     "prompt": "Which problem does a quantum computer solve in Shor's factoring algorithm?",
+     "options": [
+      "Finding the order of a number modulo n",
+      "Multiplying two large primes",
+      "Hashing a message"
+     ],
+     "correct_index": 0,
+     "explanation": "Factoring reduces to order finding, and order finding is the step a quantum computer performs efficiently.",
+     "source": {
+      "book": "B03",
+      "locator": "Section 1 (Shor's quantum factoring algorithm)"
+     }
+    },
+    {
+     "id": "a8-pk02",
+     "lesson_id": "A9.L1",
+     "competency_id": "QNT.4",
+     "depth": "Aware",
+     "prompt": "Why is AES-256 still considered strong against Grover's algorithm?",
+     "options": [
+      "Grover only gives a square-root speed-up, leaving about 2^128 steps",
+      "Quantum computers cannot run Grover's algorithm",
+      "AES-256 is not a block cipher"
+     ],
+     "correct_index": 0,
+     "explanation": "A square-root speed-up turns 2^256 into about 2^128 steps.",
+     "source": {
+      "book": "B01",
+      "locator": "Section 12.1.1"
+     }
+    },
+    {
+     "id": "a8-pk03",
+     "lesson_id": "A9.L2",
+     "competency_id": "PQC.1",
+     "depth": "Explain",
+     "prompt": "What does harvest now, decrypt later threaten?",
+     "options": [
+      "Recorded encrypted traffic whose protection depends on quantum-vulnerable public-key cryptography",
+      "Only data stored on local disks",
+      "Only quantum networks"
+     ],
+     "correct_index": 0,
+     "explanation": "The attacker records traffic today and decrypts it after a break.",
+     "source": {
+      "book": "B05",
+      "locator": "Chapter 5, The Harvest Now and Decrypt Later Problem"
+     }
+    },
+    {
+     "id": "a8-pk04",
+     "lesson_id": "A9.L2",
+     "competency_id": "PQC.1",
+     "depth": "Explain",
+     "prompt": "In the timeline check x + y > z, what does y represent?",
+     "options": [
+      "The time your organisation needs to migrate",
+      "The time data must stay secret",
+      "The time until a quantum break"
+     ],
+     "correct_index": 0,
+     "explanation": "x is the shelf life of the data, y the migration time, and z the time until a break.",
+     "source": {
+      "book": "B05",
+      "locator": "Chapter 5 (urgency of transitioning)"
+     }
+    },
+    {
+     "id": "a8-pk05",
+     "lesson_id": "A9.L3",
+     "competency_id": "PQC.2",
+     "depth": "Aware",
+     "prompt": "What kind of technology is quantum key distribution?",
+     "options": [
+      "A physical key-distribution system that uses quantum effects",
+      "A new classical encryption algorithm",
+      "A hash function"
+     ],
+     "correct_index": 0,
+     "explanation": "QKD sends photons and relies on physics rather than computational hardness, and it needs new devices.",
+     "source": {
+      "book": "B05",
+      "locator": "Chapter 3, Quantum Key Distribution"
+     }
+    },
+    {
+     "id": "a8-pk06",
+     "lesson_id": "A9.L4",
+     "competency_id": "PQC.3",
+     "depth": "Aware",
+     "prompt": "Which NIST standard defines the stateless hash-based signature scheme formerly known as SPHINCS+?",
+     "options": [
+      "FIPS 205 (SLH-DSA)",
+      "FIPS 203 (ML-KEM)",
+      "FIPS 204 (ML-DSA)"
+     ],
+     "correct_index": 0,
+     "explanation": "SLH-DSA is specified in FIPS 205.",
+     "source": {
+      "book": "B03",
+      "locator": "Section 1 (selected algorithms and FIPS numbers)"
+     }
+    },
+    {
+     "id": "a8-pk07",
+     "lesson_id": "A9.L4",
+     "competency_id": "PQC.3",
+     "depth": "Aware",
+     "prompt": "Roughly how do ML-KEM-768 sizes compare with an RSA-2048 public modulus?",
+     "options": [
+      "The encapsulation key is several times larger",
+      "They are identical",
+      "ML-KEM keys are smaller"
+     ],
+     "correct_index": 0,
+     "explanation": "The ML-KEM-768 encapsulation key is 1,184 bytes against a 256-byte RSA-2048 modulus.",
+     "source": {
+      "book": "B04",
+      "locator": "Table 3"
+     }
+    },
+    {
+     "id": "a8-pk08",
+     "lesson_id": "A9.L5",
+     "competency_id": "PQC.6",
+     "depth": "Aware",
+     "prompt": "What is the main benefit of a crypto-agile architecture?",
+     "options": [
+      "Algorithms and libraries can be changed with few or no application changes",
+      "It makes all algorithms faster",
+      "It removes the need for keys"
+     ],
+     "correct_index": 0,
+     "explanation": "Applications use an abstract cryptographic API, so the implementation behind it can be updated.",
+     "source": {
+      "book": "B05",
+      "locator": "Chapter 5, Step 3"
+     }
+    }
+   ],
+   "estimated_minutes": 100,
+   "notes": "Rewrites the seven outline sections as lessons, adds a Mosca-style timeline lesson, labels all illustrative numbers, and dates every standards-status statement."
+  }
+ ]
+}

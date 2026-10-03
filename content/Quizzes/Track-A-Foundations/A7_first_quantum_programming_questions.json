@@ -3,9 +3,13 @@
   "title": "A7 Quiz: First Quantum Programming",
   "difficulty": "novice",
   "passing_score_percent": 70,
+  "tagging_status": "proposed-unreviewed",
   "questions": [
     {
       "id": "a7-q1",
+      "lesson_id": "A8.L1",
+      "competency_id": "PROG.4",
+      "depth": "Aware",
       "prompt": "What Python framework is used throughout this program for quantum programming?",
       "options": [
         "TensorFlow",
@@ -18,6 +22,9 @@
     },
     {
       "id": "a7-q2",
+      "lesson_id": "A8.L3",
+      "competency_id": "PROG.4",
+      "depth": "Explain",
       "prompt": "Why are simulators used before running circuits on real quantum hardware?",
       "options": [
         "Simulators are required by law",
@@ -30,6 +37,9 @@
     },
     {
       "id": "a7-q3",
+      "lesson_id": "A8.L3",
+      "competency_id": "PROG.4",
+      "depth": "Aware",
       "prompt": "In Qiskit, what does a 'shot' refer to?",
       "options": [
         "A single gate operation",
@@ -42,6 +52,9 @@
     },
     {
       "id": "a7-q4",
+      "lesson_id": "A8.L4",
+      "competency_id": "QNT.2",
+      "depth": "Explain",
       "prompt": "What does noise simulation help demonstrate?",
       "options": [
         "That quantum computers never make errors",

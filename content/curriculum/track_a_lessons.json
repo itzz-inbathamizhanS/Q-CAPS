@@ -1,0 +1,1131 @@
+{
+  "version": 1,
+  "status": "proposed-v1",
+  "description": "Track A lesson structure from Q-CAPS Track A Lesson Design v1. Structure only: no lesson text. Display codes A1-A9 follow Architecture section 4; module_id values are the kept ids, with one new planned module.",
+  "source_document": "docs/Html/Q-CAPS Track A Lesson Design v1.md",
+  "modules": [
+    {
+      "code": "A1",
+      "title": "Computing and Programming Foundations",
+      "module_id": "track_a_a1_computing_foundations",
+      "planned": false,
+      "lesson_count": 7,
+      "required_minutes": 150
+    },
+    {
+      "code": "A2",
+      "title": "Mathematics Foundations",
+      "module_id": "track_a_a2_mathematics_foundations",
+      "planned": false,
+      "lesson_count": 7,
+      "required_minutes": 135
+    },
+    {
+      "code": "A3",
+      "title": "Networking Foundations",
+      "module_id": "track_a_a3_networking_foundations",
+      "planned": false,
+      "lesson_count": 7,
+      "required_minutes": 135
+    },
+    {
+      "code": "A4",
+      "title": "Cybersecurity Foundations",
+      "module_id": "track_a_a4_cybersecurity_foundations",
+      "planned": false,
+      "lesson_count": 8,
+      "required_minutes": 145
+    },
+    {
+      "code": "A5",
+      "title": "Cryptography I: Symmetric Encryption and Integrity",
+      "module_id": "track_a_a5_cryptography_foundations",
+      "planned": false,
+      "lesson_count": 7,
+      "required_minutes": 130
+    },
+    {
+      "code": "A6",
+      "title": "Cryptography II: Public Key, Signatures and PKI",
+      "module_id": "track_a_a5p_public_key_pki",
+      "planned": true,
+      "lesson_count": 7,
+      "required_minutes": 135
+    },
+    {
+      "code": "A7",
+      "title": "Quantum Foundations",
+      "module_id": "track_a_a6_quantum_foundations",
+      "planned": false,
+      "lesson_count": 7,
+      "required_minutes": 135
+    },
+    {
+      "code": "A8",
+      "title": "First Quantum Programming",
+      "module_id": "track_a_a7_first_quantum_programming",
+      "planned": false,
+      "lesson_count": 5,
+      "required_minutes": 90
+    },
+    {
+      "code": "A9",
+      "title": "Quantum Threat and PQC Awareness",
+      "module_id": "track_a_a8_pqc_mitigation",
+      "planned": false,
+      "lesson_count": 6,
+      "required_minutes": 105
+    }
+  ],
+  "lessons": [
+    {
+      "lesson_id": "A1.L1",
+      "module_id": "track_a_a1_computing_foundations",
+      "module_code": "A1",
+      "title": "How a computer runs a program",
+      "objective": "describe how CPU, memory and storage cooperate to execute a program",
+      "competencies": [
+        {
+          "id": "COMP.1",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "1.1, 1.3",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A1.L2",
+      "module_id": "track_a_a1_computing_foundations",
+      "module_code": "A1",
+      "title": "Operating systems, processes and permissions",
+      "objective": "explain processes, users and file permissions, and why least privilege matters",
+      "competencies": [
+        {
+          "id": "COMP.1",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "1.2",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A1.L3",
+      "module_id": "track_a_a1_computing_foundations",
+      "module_code": "A1",
+      "title": "Linux command line",
+      "objective": "navigate, inspect and change permissions on files from a shell",
+      "competencies": [
+        {
+          "id": "COMP.2",
+          "depth": "Apply"
+        }
+      ],
+      "built_from": "1.8",
+      "source": null,
+      "minutes": 25,
+      "optional": false
+    },
+    {
+      "lesson_id": "A1.L4",
+      "module_id": "track_a_a1_computing_foundations",
+      "module_code": "A1",
+      "title": "Python basics",
+      "objective": "write a script using variables, conditions, loops and functions",
+      "competencies": [
+        {
+          "id": "PROG.1",
+          "depth": "Apply"
+        }
+      ],
+      "built_from": "1.4, 1.5",
+      "source": null,
+      "minutes": 25,
+      "optional": false
+    },
+    {
+      "lesson_id": "A1.L5",
+      "module_id": "track_a_a1_computing_foundations",
+      "module_code": "A1",
+      "title": "Working with data and bytes in Python",
+      "objective": "read files and convert between text, bytes and hex",
+      "competencies": [
+        {
+          "id": "PROG.1",
+          "depth": "Apply"
+        }
+      ],
+      "built_from": "1.5 (new emphasis on bytes)",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A1.L6",
+      "module_id": "track_a_a1_computing_foundations",
+      "module_code": "A1",
+      "title": "Algorithms and growth rates",
+      "objective": "compare growth rates and explain why a 2ⁿ search becomes infeasible",
+      "competencies": [
+        {
+          "id": "PROG.2",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "1.6",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A1.L7",
+      "module_id": "track_a_a1_computing_foundations",
+      "module_code": "A1",
+      "title": "Git and development environments",
+      "objective": "clone, commit, branch, and use a virtual environment",
+      "competencies": [
+        {
+          "id": "PROG.3",
+          "depth": "Apply"
+        }
+      ],
+      "built_from": "1.7",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A2.L1",
+      "module_id": "track_a_a2_mathematics_foundations",
+      "module_code": "A2",
+      "title": "Algebra, exponents and logarithms",
+      "objective": "solve exponent and log expressions and relate an n-bit key to 2ⁿ possibilities",
+      "competencies": [
+        {
+          "id": "MATH.1",
+          "depth": "Apply"
+        }
+      ],
+      "built_from": "2.1, 2.2",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A2.L2",
+      "module_id": "track_a_a2_mathematics_foundations",
+      "module_code": "A2",
+      "title": "Probability and statistics",
+      "objective": "compute probabilities of independent events and expected values",
+      "competencies": [
+        {
+          "id": "MATH.2",
+          "depth": "Apply"
+        }
+      ],
+      "built_from": "2.3",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A2.L3",
+      "module_id": "track_a_a2_mathematics_foundations",
+      "module_code": "A2",
+      "title": "Boolean logic and XOR",
+      "objective": "evaluate truth tables and use XOR's self-inverse property",
+      "competencies": [
+        {
+          "id": "MATH.1",
+          "depth": "Apply"
+        }
+      ],
+      "built_from": "2.8",
+      "source": null,
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A2.L4",
+      "module_id": "track_a_a2_mathematics_foundations",
+      "module_code": "A2",
+      "title": "Modular arithmetic, primes and gcd",
+      "objective": "compute small modular sums, products and gcds, and explain \"clock arithmetic\"",
+      "competencies": [
+        {
+          "id": "MATH.4",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "new",
+      "source": "Paar Ch 1.4",
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A2.L5",
+      "module_id": "track_a_a2_mathematics_foundations",
+      "module_code": "A2",
+      "title": "Complex numbers",
+      "objective": "add, multiply and find the magnitude of complex numbers",
+      "competencies": [
+        {
+          "id": "MATH.3",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "2.4",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A2.L6",
+      "module_id": "track_a_a2_mathematics_foundations",
+      "module_code": "A2",
+      "title": "Vectors and matrices",
+      "objective": "multiply a matrix by a vector and interpret a vector as a state",
+      "competencies": [
+        {
+          "id": "MATH.3",
+          "depth": "Apply"
+        }
+      ],
+      "built_from": "2.5, 2.6",
+      "source": null,
+      "minutes": 25,
+      "optional": false
+    },
+    {
+      "lesson_id": "A2.L7",
+      "module_id": "track_a_a2_mathematics_foundations",
+      "module_code": "A2",
+      "title": "Eigenvalues, conceptually",
+      "objective": "explain what an eigenvector is and recognise one in a 2×2 example",
+      "competencies": [
+        {
+          "id": "MATH.3",
+          "depth": "Aware"
+        }
+      ],
+      "built_from": "2.7",
+      "source": null,
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A3.L1",
+      "module_id": "track_a_a3_networking_foundations",
+      "module_code": "A3",
+      "title": "Networks and layered models",
+      "objective": "map common protocols to OSI and TCP/IP layers",
+      "competencies": [
+        {
+          "id": "NET.1",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "3.1, 3.2",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A3.L2",
+      "module_id": "track_a_a3_networking_foundations",
+      "module_code": "A3",
+      "title": "IP addressing and subnetting",
+      "objective": "calculate subnet ranges and contrast IPv4 with IPv6",
+      "competencies": [
+        {
+          "id": "NET.1",
+          "depth": "Apply"
+        }
+      ],
+      "built_from": "3.3, 3.4",
+      "source": null,
+      "minutes": 25,
+      "optional": false
+    },
+    {
+      "lesson_id": "A3.L3",
+      "module_id": "track_a_a3_networking_foundations",
+      "module_code": "A3",
+      "title": "TCP and UDP",
+      "objective": "explain ports, the TCP handshake and when UDP is used",
+      "competencies": [
+        {
+          "id": "NET.1",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "3.5",
+      "source": null,
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A3.L4",
+      "module_id": "track_a_a3_networking_foundations",
+      "module_code": "A3",
+      "title": "DNS and DHCP",
+      "objective": "trace a DNS resolution and explain a DHCP lease",
+      "competencies": [
+        {
+          "id": "NET.2",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "3.6",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A3.L5",
+      "module_id": "track_a_a3_networking_foundations",
+      "module_code": "A3",
+      "title": "HTTP and HTTPS",
+      "objective": "read an HTTP exchange and identify where TLS sits",
+      "competencies": [
+        {
+          "id": "NET.2",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "3.7",
+      "source": null,
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A3.L6",
+      "module_id": "track_a_a3_networking_foundations",
+      "module_code": "A3",
+      "title": "Routing, firewalls and VPNs",
+      "objective": "explain a packet's path and how filtering and tunnelling change it",
+      "competencies": [
+        {
+          "id": "NET.3",
+          "depth": "Aware"
+        }
+      ],
+      "built_from": "3.8, 3.9",
+      "source": "Om Pal Ch 4 (partial)",
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A3.L7",
+      "module_id": "track_a_a3_networking_foundations",
+      "module_code": "A3",
+      "title": "Monitoring and packet capture",
+      "objective": "find a DNS query, TCP handshake and TLS version in a packet capture",
+      "competencies": [
+        {
+          "id": "NET.2",
+          "depth": "Apply"
+        }
+      ],
+      "built_from": "3.10",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A4.L1",
+      "module_id": "track_a_a4_cybersecurity_foundations",
+      "module_code": "A4",
+      "title": "The CIA triad",
+      "objective": "classify an incident by its confidentiality, integrity and availability impact",
+      "competencies": [
+        {
+          "id": "SEC.1",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "4.1",
+      "source": null,
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A4.L2",
+      "module_id": "track_a_a4_cybersecurity_foundations",
+      "module_code": "A4",
+      "title": "Authentication, authorisation and IAM",
+      "objective": "distinguish authentication from authorisation and explain MFA, RBAC and least privilege",
+      "competencies": [
+        {
+          "id": "SEC.1",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "4.2, 4.3",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A4.L3",
+      "module_id": "track_a_a4_cybersecurity_foundations",
+      "module_code": "A4",
+      "title": "Threats, vulnerabilities and attacks",
+      "objective": "distinguish threat, vulnerability and risk, and name common attack classes",
+      "competencies": [
+        {
+          "id": "SEC.2",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "4.4",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A4.L4",
+      "module_id": "track_a_a4_cybersecurity_foundations",
+      "module_code": "A4",
+      "title": "Threat modelling basics",
+      "objective": "identify threats to a simple data-flow diagram using a structured checklist",
+      "competencies": [
+        {
+          "id": "SEC.2",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "new",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A4.L5",
+      "module_id": "track_a_a4_cybersecurity_foundations",
+      "module_code": "A4",
+      "title": "Network and endpoint controls",
+      "objective": "explain how layered network and endpoint controls reduce exposure",
+      "competencies": [
+        {
+          "id": "SEC.1",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "4.5, 4.6",
+      "source": "Om Pal Ch 4 (partial)",
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A4.L6",
+      "module_id": "track_a_a4_cybersecurity_foundations",
+      "module_code": "A4",
+      "title": "Monitoring and incident response",
+      "objective": "order the incident-response phases and triage a sample alert",
+      "competencies": [
+        {
+          "id": "SEC.3",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "4.7, 4.8",
+      "source": "Om Pal Ch 13 (partial)",
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A4.L7",
+      "module_id": "track_a_a4_cybersecurity_foundations",
+      "module_code": "A4",
+      "title": "Risk fundamentals",
+      "objective": "rate a risk as likelihood × impact on a simple matrix",
+      "competencies": [
+        {
+          "id": "SEC.4",
+          "depth": "Aware"
+        }
+      ],
+      "built_from": "4.9",
+      "source": "BQS Ch 4 (heat map)",
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A4.L8",
+      "module_id": "track_a_a4_cybersecurity_foundations",
+      "module_code": "A4",
+      "title": "Ethics, authorisation and legal scope",
+      "objective": "explain why written authorisation and agreed scope are required before any scan, and what Q-CAPS's scanner permits",
+      "competencies": [
+        {
+          "id": "SEC.5",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "new",
+      "source": null,
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A5.L1",
+      "module_id": "track_a_a5_cryptography_foundations",
+      "module_code": "A5",
+      "title": "Goals, keys and Kerckhoffs's principle",
+      "objective": "define plaintext, ciphertext, key and key space, and explain why security must rest on the key",
+      "competencies": [
+        {
+          "id": "CRYPTO.1",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "5.1",
+      "source": "Paar Ch 1",
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A5.L2",
+      "module_id": "track_a_a5_cryptography_foundations",
+      "module_code": "A5",
+      "title": "Block ciphers and AES",
+      "objective": "describe AES as a keyed permutation and compare key sizes",
+      "competencies": [
+        {
+          "id": "CRYPTO.1",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "5.2",
+      "source": "Paar Ch 4",
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A5.L3",
+      "module_id": "track_a_a5_cryptography_foundations",
+      "module_code": "A5",
+      "title": "Modes of operation and AEAD",
+      "objective": "explain why ECB leaks patterns, how CTR and GCM work, and why nonce reuse is dangerous",
+      "competencies": [
+        {
+          "id": "CRYPTO.1",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "new",
+      "source": "Paar Ch 5",
+      "minutes": 25,
+      "optional": false
+    },
+    {
+      "lesson_id": "A5.L4",
+      "module_id": "track_a_a5_cryptography_foundations",
+      "module_code": "A5",
+      "title": "Stream ciphers and ChaCha20",
+      "objective": "explain keystream encryption and the need for unique nonces",
+      "competencies": [
+        {
+          "id": "CRYPTO.1",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "new",
+      "source": "Paar Ch 2",
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A5.L5",
+      "module_id": "track_a_a5_cryptography_foundations",
+      "module_code": "A5",
+      "title": "Hash functions",
+      "objective": "state preimage, second-preimage and collision resistance and name SHA-2 and SHA-3 uses",
+      "competencies": [
+        {
+          "id": "CRYPTO.2",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "5.3",
+      "source": "Paar Ch 11",
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A5.L6",
+      "module_id": "track_a_a5_cryptography_foundations",
+      "module_code": "A5",
+      "title": "MACs and HMAC",
+      "objective": "explain how a MAC adds authenticity that a plain hash lacks",
+      "competencies": [
+        {
+          "id": "CRYPTO.2",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "5.4",
+      "source": "Paar Ch 13",
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A5.L7",
+      "module_id": "track_a_a5_cryptography_foundations",
+      "module_code": "A5",
+      "title": "Randomness and key derivation",
+      "objective": "distinguish a CSPRNG from a PRNG and explain what a KDF does",
+      "competencies": [
+        {
+          "id": "CRYPTO.2",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "new (part of 5.11)",
+      "source": "Paar Ch 2.2, 14.2",
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A6.L1",
+      "module_id": "track_a_a5p_public_key_pki",
+      "module_code": "A6",
+      "title": "The key distribution problem",
+      "objective": "explain why symmetric keys don't scale and what public-key crypto changes",
+      "competencies": [
+        {
+          "id": "CRYPTO.3",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "5.6 intro",
+      "source": "Paar Ch 6",
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A6.L2",
+      "module_id": "track_a_a5p_public_key_pki",
+      "module_code": "A6",
+      "title": "RSA with small numbers",
+      "objective": "compute a toy RSA key pair, encryption and decryption, and explain why real RSA needs padding",
+      "competencies": [
+        {
+          "id": "CRYPTO.3",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "5.6",
+      "source": "Paar Ch 7",
+      "minutes": 25,
+      "optional": false
+    },
+    {
+      "lesson_id": "A6.L3",
+      "module_id": "track_a_a5p_public_key_pki",
+      "module_code": "A6",
+      "title": "Diffie–Hellman and discrete logs",
+      "objective": "compute a toy Diffie–Hellman exchange and state the discrete-log problem",
+      "competencies": [
+        {
+          "id": "CRYPTO.3",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "5.8",
+      "source": "Paar Ch 8",
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A6.L4",
+      "module_id": "track_a_a5p_public_key_pki",
+      "module_code": "A6",
+      "title": "Elliptic curves, conceptually",
+      "objective": "explain why ECC achieves similar security with shorter keys",
+      "competencies": [
+        {
+          "id": "CRYPTO.3",
+          "depth": "Aware"
+        }
+      ],
+      "built_from": "5.7",
+      "source": "Paar Ch 9",
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A6.L5",
+      "module_id": "track_a_a5p_public_key_pki",
+      "module_code": "A6",
+      "title": "Digital signatures",
+      "objective": "explain signing and verification and compare RSA and ECDSA signatures",
+      "competencies": [
+        {
+          "id": "CRYPTO.4",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "5.5",
+      "source": "Paar Ch 10",
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A6.L6",
+      "module_id": "track_a_a5p_public_key_pki",
+      "module_code": "A6",
+      "title": "Certificates and PKI",
+      "objective": "trace a certificate chain to a trusted root and explain revocation",
+      "competencies": [
+        {
+          "id": "CRYPTO.4",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "5.9",
+      "source": "Paar Ch 14.5",
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A6.L7",
+      "module_id": "track_a_a5p_public_key_pki",
+      "module_code": "A6",
+      "title": "TLS and key lifecycle overview",
+      "objective": "identify which primitive does which job in a TLS 1.3 handshake, and name key-lifecycle stages",
+      "competencies": [
+        {
+          "id": "NET.4",
+          "depth": "Aware"
+        },
+        {
+          "id": "CRYPTO.5",
+          "depth": "Aware"
+        }
+      ],
+      "built_from": "5.10, 5.11",
+      "source": "Paar Ch 14",
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A7.L1",
+      "module_id": "track_a_a6_quantum_foundations",
+      "module_code": "A7",
+      "title": "Bits, qubits and quantum states",
+      "objective": "write a single-qubit state as a vector and contrast it with a classical bit",
+      "competencies": [
+        {
+          "id": "QNT.1",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "6.1, 6.2",
+      "source": "BQS Ch 1",
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A7.L2",
+      "module_id": "track_a_a6_quantum_foundations",
+      "module_code": "A7",
+      "title": "Superposition, amplitudes and measurement",
+      "objective": "compute measurement probabilities from amplitudes",
+      "competencies": [
+        {
+          "id": "QNT.1",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "6.3, 6.4, 6.5",
+      "source": null,
+      "minutes": 25,
+      "optional": false
+    },
+    {
+      "lesson_id": "A7.L3",
+      "module_id": "track_a_a6_quantum_foundations",
+      "module_code": "A7",
+      "title": "The Bloch sphere",
+      "objective": "place basis and equal-superposition states on the Bloch sphere",
+      "competencies": [
+        {
+          "id": "QNT.1",
+          "depth": "Aware"
+        }
+      ],
+      "built_from": "6.6",
+      "source": null,
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A7.L4",
+      "module_id": "track_a_a6_quantum_foundations",
+      "module_code": "A7",
+      "title": "Single-qubit gates",
+      "objective": "apply X, Z and H to a state using matrices",
+      "competencies": [
+        {
+          "id": "QNT.2",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "6.7",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A7.L5",
+      "module_id": "track_a_a6_quantum_foundations",
+      "module_code": "A7",
+      "title": "Multi-qubit states and tensor products",
+      "objective": "form a two-qubit state from two single-qubit states",
+      "competencies": [
+        {
+          "id": "QNT.2",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "6.11",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A7.L6",
+      "module_id": "track_a_a6_quantum_foundations",
+      "module_code": "A7",
+      "title": "Circuits, CNOT and entanglement",
+      "objective": "build a Bell state on paper and explain why it cannot be written as a product",
+      "competencies": [
+        {
+          "id": "QNT.2",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "6.8, 6.9",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A7.L7",
+      "module_id": "track_a_a6_quantum_foundations",
+      "module_code": "A7",
+      "title": "Interference",
+      "objective": "explain how interference amplifies right answers, and why \"trying all answers at once\" is a misconception",
+      "competencies": [
+        {
+          "id": "QNT.2",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "6.10",
+      "source": "Stinson §1 (intro)",
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A8.L1",
+      "module_id": "track_a_a7_first_quantum_programming",
+      "module_code": "A8",
+      "title": "Qiskit concepts and setup",
+      "objective": "install the SDK and explain circuits, backends and jobs",
+      "competencies": [
+        {
+          "id": "PROG.4",
+          "depth": "Apply"
+        }
+      ],
+      "built_from": "7.1",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A8.L2",
+      "module_id": "track_a_a7_first_quantum_programming",
+      "module_code": "A8",
+      "title": "Building circuits with basic gates",
+      "objective": "build circuits with X, H, Z and CNOT in code",
+      "competencies": [
+        {
+          "id": "PROG.4",
+          "depth": "Apply"
+        }
+      ],
+      "built_from": "7.2, 7.5",
+      "source": null,
+      "minutes": 25,
+      "optional": false
+    },
+    {
+      "lesson_id": "A8.L3",
+      "module_id": "track_a_a7_first_quantum_programming",
+      "module_code": "A8",
+      "title": "Simulators, shots and measurement statistics",
+      "objective": "run a circuit on a simulator and interpret the histogram",
+      "competencies": [
+        {
+          "id": "PROG.4",
+          "depth": "Apply"
+        },
+        {
+          "id": "MATH.2",
+          "depth": "Apply"
+        }
+      ],
+      "built_from": "7.3, 7.4",
+      "source": null,
+      "minutes": 25,
+      "optional": false
+    },
+    {
+      "lesson_id": "A8.L4",
+      "module_id": "track_a_a7_first_quantum_programming",
+      "module_code": "A8",
+      "title": "Noise",
+      "objective": "compare ideal and noisy simulation results and explain the difference",
+      "competencies": [
+        {
+          "id": "QNT.2",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "7.6",
+      "source": null,
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A8.L5",
+      "module_id": "track_a_a7_first_quantum_programming",
+      "module_code": "A8",
+      "title": "Optional: real hardware",
+      "objective": "submit a circuit to a public quantum device and compare with simulation",
+      "competencies": [
+        {
+          "id": "PROG.4",
+          "depth": "Apply"
+        }
+      ],
+      "built_from": "7.7",
+      "source": null,
+      "minutes": 20,
+      "optional": true
+    },
+    {
+      "lesson_id": "A9.L1",
+      "module_id": "track_a_a8_pqc_mitigation",
+      "module_code": "A9",
+      "title": "What quantum computers threaten, and what they don't",
+      "objective": "state that Shor's algorithm breaks RSA, ECC and Diffie–Hellman while Grover only weakens symmetric keys and hashes",
+      "competencies": [
+        {
+          "id": "PQC.1",
+          "depth": "Explain"
+        },
+        {
+          "id": "QNT.4",
+          "depth": "Aware"
+        }
+      ],
+      "built_from": "3.1, 3.2",
+      "source": "Stinson §1; Paar Ch 12.1",
+      "minutes": 25,
+      "optional": false
+    },
+    {
+      "lesson_id": "A9.L2",
+      "module_id": "track_a_a8_pqc_mitigation",
+      "module_code": "A9",
+      "title": "Harvest now, decrypt later, and Mosca's inequality",
+      "objective": "decide whether data is at risk using shelf life + migration time vs time to a cryptographically relevant quantum computer",
+      "competencies": [
+        {
+          "id": "PQC.1",
+          "depth": "Explain"
+        }
+      ],
+      "built_from": "3.3 + new",
+      "source": "BQS Ch 1, 5",
+      "minutes": 20,
+      "optional": false
+    },
+    {
+      "lesson_id": "A9.L3",
+      "module_id": "track_a_a8_pqc_mitigation",
+      "module_code": "A9",
+      "title": "What PQC is — and how it differs from QKD",
+      "objective": "name the main PQC families and contrast PQC with quantum key distribution",
+      "competencies": [
+        {
+          "id": "PQC.2",
+          "depth": "Aware"
+        }
+      ],
+      "built_from": "3.4",
+      "source": "Stinson §2–5; BQS Ch 3",
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A9.L4",
+      "module_id": "track_a_a8_pqc_mitigation",
+      "module_code": "A9",
+      "title": "The standards landscape",
+      "objective": "match ML-KEM, ML-DSA and SLH-DSA to FIPS 203, 204 and 205, and note FN-DSA and HQC status (verified at publish time)",
+      "competencies": [
+        {
+          "id": "PQC.3",
+          "depth": "Aware"
+        }
+      ],
+      "built_from": "3.5",
+      "source": "FIPS 203; Stinson §1",
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A9.L5",
+      "module_id": "track_a_a8_pqc_mitigation",
+      "module_code": "A9",
+      "title": "Crypto-agility and hybrid deployment",
+      "objective": "explain why organisations combine classical and PQC algorithms during transition",
+      "competencies": [
+        {
+          "id": "PQC.6",
+          "depth": "Aware"
+        }
+      ],
+      "built_from": "3.6",
+      "source": "BQS Ch 8",
+      "minutes": 15,
+      "optional": false
+    },
+    {
+      "lesson_id": "A9.L6",
+      "module_id": "track_a_a8_pqc_mitigation",
+      "module_code": "A9",
+      "title": "Reading quantum claims critically",
+      "objective": "distinguish physical from logical qubits and question claims about imminent RSA breaks",
+      "competencies": [
+        {
+          "id": "QNT.5",
+          "depth": "Aware"
+        }
+      ],
+      "built_from": "new",
+      "source": "Stinson (Threat Timeline Report 2024)",
+      "minutes": 15,
+      "optional": false
+    }
+  ]
+}

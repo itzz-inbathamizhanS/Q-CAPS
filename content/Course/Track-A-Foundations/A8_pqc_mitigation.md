@@ -1,8 +1,8 @@
-# Module 3: PQC Mitigation
-**module_id:** `module_3_pqc_mitigation`
-**Display name:** `Module 3: PQC Mitigation` (matches the exact string used in `shared_data_schema.md`'s `recommended_next_module` example)
+# A8 — PQC Mitigation
+**module_id:** `track_a_a8_pqc_mitigation`
+**Display name:** `A8 — PQC Mitigation`
 **Track:** Q-CAPS Foundations | **Level:** Intermediate | **Estimated Time:** 110 minutes
-**Prerequisite:** `module_2_quantum` passed (≥70%)
+**Prerequisite:** `track_a_a5_cryptography_foundations` and `track_a_a6_quantum_foundations` passed (≥70%)
 
 ## Learning Objectives
 By the end of this module, a learner should be able to:
@@ -101,6 +101,4 @@ This directly connects to the organizational side of Q-CAPS — Crypto Inventory
 ## Module 3 Wrap-Up
 **Summary:** You've covered what Shor's and Grover's algorithms actually threaten and how the mitigations differ, why "Harvest Now, Decrypt Later" creates urgency today rather than someday, the two families of PQC and the three NIST-standardized algorithms built on them, and how crypto-agility and hybrid cryptography form the practical migration strategy organizations use in the real world.
 
-- CTA: "Take the Module 3 Quiz" → `module_3_pqc_mitigation_questions.json`.
-- Submission uses `"module_id": "module_3_pqc_mitigation"` in the shared Quiz Submission format.
-- Final CTA: **"You've completed PQC Foundations. Try your first Authorized Crypto Scan →"** — hands off directly to Inba's Scanner Engine.
+- Next step: you've completed PQC Foundations. Try your first authorized crypto scan in the Q-CAPS scanner.

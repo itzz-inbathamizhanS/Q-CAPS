@@ -1,0 +1,308 @@
+{
+  "version": 1,
+  "description": "Single source of truth for curriculum structure. Read by frontend/scripts/compile-content.cjs. Module order is the canonical track order; every prerequisite must appear earlier in it.",
+  "notes": [
+    "Prerequisites for the current 36-module set; they will change when Curriculum Architecture v1 restructures modules (A5 split, B5 move, C4/C5 merge).",
+    "E1 requires every Track B module (equivalent to holding CQSE).",
+    "domain values are the legacy 4-domain diagnostic tags and will be replaced by competency ids in Phase 3."
+  ],
+  "modules": {
+    "track_a_a1_computing_foundations": {
+      "code": "A1",
+      "domain": "Cybersecurity Fundamentals",
+      "recommendationTopic": "practical_security",
+      "prerequisites": []
+    },
+    "track_a_a2_mathematics_foundations": {
+      "code": "A2",
+      "domain": "Cybersecurity Fundamentals",
+      "recommendationTopic": "quantum_fundamentals",
+      "prerequisites": []
+    },
+    "track_a_a3_networking_foundations": {
+      "code": "A3",
+      "domain": "Cybersecurity Fundamentals",
+      "recommendationTopic": "practical_security",
+      "prerequisites": []
+    },
+    "track_a_a4_cybersecurity_foundations": {
+      "code": "A4",
+      "domain": "Cybersecurity Fundamentals",
+      "recommendationTopic": "practical_security",
+      "prerequisites": [
+        "track_a_a3_networking_foundations"
+      ]
+    },
+    "track_a_a5_cryptography_foundations": {
+      "code": "A5",
+      "domain": "Cryptography Fundamentals",
+      "recommendationTopic": "classical_crypto",
+      "prerequisites": [
+        "track_a_a2_mathematics_foundations"
+      ]
+    },
+    "track_a_a6_quantum_foundations": {
+      "code": "A6",
+      "domain": "PQC Fundamentals",
+      "recommendationTopic": "quantum_fundamentals",
+      "prerequisites": [
+        "track_a_a2_mathematics_foundations",
+        "track_a_a5_cryptography_foundations"
+      ]
+    },
+    "track_a_a7_first_quantum_programming": {
+      "code": "A7",
+      "domain": "PQC Fundamentals",
+      "recommendationTopic": "quantum_fundamentals",
+      "prerequisites": [
+        "track_a_a1_computing_foundations",
+        "track_a_a6_quantum_foundations"
+      ]
+    },
+    "track_a_a8_pqc_mitigation": {
+      "code": "A8",
+      "domain": "PQC Fundamentals",
+      "recommendationTopic": "pqc",
+      "prerequisites": [
+        "track_a_a5_cryptography_foundations",
+        "track_a_a6_quantum_foundations"
+      ]
+    },
+    "track_b_b1_advanced_math_for_quantum": {
+      "code": "B1",
+      "domain": "PQC Fundamentals",
+      "recommendationTopic": "quantum_fundamentals",
+      "prerequisites": [
+        "track_a_a2_mathematics_foundations"
+      ]
+    },
+    "track_b_b2_quantum_information": {
+      "code": "B2",
+      "domain": "PQC Fundamentals",
+      "recommendationTopic": "quantum_fundamentals",
+      "prerequisites": [
+        "track_b_b1_advanced_math_for_quantum"
+      ]
+    },
+    "track_b_b3_quantum_algorithms": {
+      "code": "B3",
+      "domain": "PQC Fundamentals",
+      "recommendationTopic": "quantum_fundamentals",
+      "prerequisites": [
+        "track_b_b1_advanced_math_for_quantum",
+        "track_b_b2_quantum_information"
+      ]
+    },
+    "track_b_b4_quantum_programming": {
+      "code": "B4",
+      "domain": "PQC Fundamentals",
+      "recommendationTopic": "quantum_fundamentals",
+      "prerequisites": [
+        "track_a_a7_first_quantum_programming",
+        "track_b_b3_quantum_algorithms"
+      ]
+    },
+    "track_b_b5_quantum_hardware": {
+      "code": "B5",
+      "domain": "PQC Fundamentals",
+      "recommendationTopic": "quantum_fundamentals",
+      "prerequisites": [
+        "track_b_b2_quantum_information"
+      ]
+    },
+    "track_b_b6_network_security_engineering": {
+      "code": "B6",
+      "domain": "Cybersecurity Fundamentals",
+      "recommendationTopic": "practical_security",
+      "prerequisites": [
+        "track_a_a3_networking_foundations",
+        "track_a_a4_cybersecurity_foundations"
+      ]
+    },
+    "track_b_b7_advanced_cryptography": {
+      "code": "B7",
+      "domain": "Cryptography Fundamentals",
+      "recommendationTopic": "classical_crypto",
+      "prerequisites": [
+        "track_a_a5_cryptography_foundations"
+      ]
+    },
+    "track_b_b8_quantum_threats": {
+      "code": "B8",
+      "domain": "PQC Fundamentals",
+      "recommendationTopic": "pqc",
+      "prerequisites": [
+        "track_b_b3_quantum_algorithms",
+        "track_b_b7_advanced_cryptography"
+      ]
+    },
+    "track_b_b9_pqc_fundamentals": {
+      "code": "B9",
+      "domain": "PQC Fundamentals",
+      "recommendationTopic": "pqc",
+      "prerequisites": [
+        "track_b_b8_quantum_threats"
+      ]
+    },
+    "track_b_b10_pqc_standards": {
+      "code": "B10",
+      "domain": "PQC Fundamentals",
+      "recommendationTopic": "pqc",
+      "prerequisites": [
+        "track_b_b9_pqc_fundamentals"
+      ]
+    },
+    "track_b_b11_intermediate_pqc_labs": {
+      "code": "B11",
+      "domain": "PQC Fundamentals",
+      "recommendationTopic": "pqc",
+      "prerequisites": [
+        "track_b_b10_pqc_standards"
+      ]
+    },
+    "track_c_c1_advanced_quantum_information": {
+      "code": "C1",
+      "domain": "Applied PQC",
+      "recommendationTopic": "quantum_fundamentals",
+      "prerequisites": [
+        "track_b_b2_quantum_information"
+      ]
+    },
+    "track_c_c2_advanced_quantum_algorithms": {
+      "code": "C2",
+      "domain": "Applied PQC",
+      "recommendationTopic": "quantum_fundamentals",
+      "prerequisites": [
+        "track_b_b3_quantum_algorithms",
+        "track_c_c1_advanced_quantum_information"
+      ]
+    },
+    "track_c_c3_quantum_error_correction": {
+      "code": "C3",
+      "domain": "Applied PQC",
+      "recommendationTopic": "quantum_fundamentals",
+      "prerequisites": [
+        "track_c_c1_advanced_quantum_information",
+        "track_b_b5_quantum_hardware"
+      ]
+    },
+    "track_c_c4_quantum_networking": {
+      "code": "C4",
+      "domain": "Applied PQC",
+      "recommendationTopic": "practical_security",
+      "prerequisites": [
+        "track_c_c1_advanced_quantum_information",
+        "track_b_b6_network_security_engineering"
+      ]
+    },
+    "track_c_c5_quantum_communications": {
+      "code": "C5",
+      "domain": "Applied PQC",
+      "recommendationTopic": "practical_security",
+      "prerequisites": [
+        "track_c_c4_quantum_networking"
+      ]
+    },
+    "track_c_c6_quantum_key_distribution": {
+      "code": "C6",
+      "domain": "Applied PQC",
+      "recommendationTopic": "pqc",
+      "prerequisites": [
+        "track_c_c5_quantum_communications"
+      ]
+    },
+    "track_c_c7_advanced_cryptography": {
+      "code": "C7",
+      "domain": "Applied PQC",
+      "recommendationTopic": "pqc",
+      "prerequisites": [
+        "track_b_b7_advanced_cryptography"
+      ]
+    },
+    "track_c_c8_pqc_mathematics": {
+      "code": "C8",
+      "domain": "Applied PQC",
+      "recommendationTopic": "pqc",
+      "prerequisites": [
+        "track_b_b9_pqc_fundamentals",
+        "track_c_c7_advanced_cryptography"
+      ]
+    },
+    "track_c_c9_pqc_implementation_engineering": {
+      "code": "C9",
+      "domain": "Applied PQC",
+      "recommendationTopic": "pqc",
+      "prerequisites": [
+        "track_c_c8_pqc_mathematics",
+        "track_b_b11_intermediate_pqc_labs"
+      ]
+    },
+    "track_c_c10_pqc_attack_surface": {
+      "code": "C10",
+      "domain": "Applied PQC",
+      "recommendationTopic": "pqc",
+      "prerequisites": [
+        "track_c_c9_pqc_implementation_engineering"
+      ]
+    },
+    "track_c_c11_pqc_defense_engineering": {
+      "code": "C11",
+      "domain": "Applied PQC",
+      "recommendationTopic": "pqc",
+      "prerequisites": [
+        "track_c_c10_pqc_attack_surface"
+      ]
+    },
+    "track_d_e1_quantum_risk_management": {
+      "code": "E1",
+      "domain": "Applied PQC",
+      "recommendationTopic": "practical_security",
+      "prerequisites": [
+        "track_b_b4_quantum_programming",
+        "track_b_b5_quantum_hardware",
+        "track_b_b6_network_security_engineering",
+        "track_b_b11_intermediate_pqc_labs"
+      ]
+    },
+    "track_d_e2_cryptographic_discovery": {
+      "code": "E2",
+      "domain": "Applied PQC",
+      "recommendationTopic": "practical_security",
+      "prerequisites": [
+        "track_d_e1_quantum_risk_management"
+      ]
+    },
+    "track_d_e3_quantum_readiness_assessment": {
+      "code": "E3",
+      "domain": "Applied PQC",
+      "recommendationTopic": "pqc",
+      "prerequisites": [
+        "track_d_e2_cryptographic_discovery"
+      ]
+    },
+    "track_d_e4_crypto_agility": {
+      "code": "E4",
+      "domain": "Applied PQC",
+      "recommendationTopic": "practical_security",
+      "prerequisites": [
+        "track_d_e3_quantum_readiness_assessment"
+      ]
+    },
+    "track_d_e5_enterprise_pqc_migration": {
+      "code": "E5",
+      "domain": "Applied PQC",
+      "recommendationTopic": "pqc",
+      "prerequisites": [
+        "track_d_e4_crypto_agility"
+      ]
+    },
+    "track_d_e6_governance": {
+      "code": "E6",
+      "domain": "Applied PQC",
+      "recommendationTopic": "practical_security",
+      "prerequisites": [
+        "track_d_e5_enterprise_pqc_migration"
+      ]
+    }
+  }
+}

@@ -32,7 +32,7 @@ The full lifecycle of a certificate: request, issuance, deployment, monitoring, 
 Deeper than B6.5's operational view: the exact byte-level structure of TLS records, the specific cryptographic computations at each handshake step, and how TLS 1.3 (the current version) simplified and hardened the handshake compared to earlier versions.
 
 ## 7.8 SSH
-**SSH (Secure Shell)** uses the same core cryptographic building blocks (asymmetric key exchange, symmetric encryption, MACs) as TLS but in a different protocol structure, primarily for secure remote system administration — directly relevant since Inba's scanner engine's Phase 3 scope includes SSH configuration analysis.
+**SSH (Secure Shell)** uses the same core cryptographic building blocks (asymmetric key exchange, symmetric encryption, MACs) as TLS but in a different protocol structure, primarily for secure remote system administration — directly relevant since the Q-CAPS scanner's planned scope includes SSH configuration analysis.
 
 ## 7.9 VPN Cryptography
 Building on B6.4, this section covers the specific cryptographic protocols used in common VPN implementations (e.g., IPsec's IKE key exchange, or a TLS-based VPN's handshake) — reinforcing that VPNs are, cryptographically, another application of the same primitives covered throughout this course.

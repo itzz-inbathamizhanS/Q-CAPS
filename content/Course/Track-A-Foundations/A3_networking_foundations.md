@@ -10,7 +10,7 @@
 ---
 
 ## 3.1 LAN/WAN
-A **LAN (Local Area Network)** connects devices within a limited area (a home, office, campus). A **WAN (Wide Area Network)** connects LANs across larger distances — the internet itself is the largest WAN. Every scan Inba's scanner engine performs travels across this exact LAN → WAN → target-server path.
+A **LAN (Local Area Network)** connects devices within a limited area (a home, office, campus). A **WAN (Wide Area Network)** connects LANs across larger distances — the internet itself is the largest WAN. Every scan the Q-CAPS scanner performs travels across this exact LAN → WAN → target-server path.
 
 ## 3.2 OSI and TCP/IP Models
 The **OSI model** (7 layers: Physical, Data Link, Network, Transport, Session, Presentation, Application) is the conceptual reference model for how network communication is layered. The **TCP/IP model** (4 layers: Link, Internet, Transport, Application) is the practical model the real internet actually runs on. Understanding these layers matters directly for this course: TLS/SSL — the exact thing being scanned for PQC readiness — operates at the boundary between the Transport and Application layers.
@@ -25,7 +25,7 @@ IPv4 uses 32-bit addresses (e.g., 192.168.1.1) and is running out of available a
 **TCP (Transmission Control Protocol)** is connection-oriented and guarantees delivery and order — used for web traffic, email, and virtually all TLS-protected connections. **UDP (User Datagram Protocol)** is connectionless and faster but doesn't guarantee delivery — used for video streaming, gaming, DNS lookups.
 
 ## 3.6 DNS and DHCP
-**DNS (Domain Name System)** translates human-readable domain names (google.com) into IP addresses. **DHCP (Dynamic Host Configuration Protocol)** automatically assigns IP addresses to devices joining a network. Both are common attack surfaces in real-world cybersecurity, and DNS resolution is the very first step Inba's scanner performs before it can even connect to a target.
+**DNS (Domain Name System)** translates human-readable domain names (google.com) into IP addresses. **DHCP (Dynamic Host Configuration Protocol)** automatically assigns IP addresses to devices joining a network. Both are common attack surfaces in real-world cybersecurity, and DNS resolution is the very first step the Q-CAPS scanner performs before it can even connect to a target.
 
 ## 3.7 HTTP/HTTPS
 **HTTP** is the protocol web browsers and servers use to communicate. **HTTPS** is HTTP secured by TLS — this is precisely the certificate and cryptographic handshake that the entire Q-CAPS platform is built to analyze for post-quantum readiness.

@@ -1,0 +1,463 @@
+{
+ "pack_version": 1,
+ "books": [
+  {
+   "id": "B01",
+   "title": "Understanding Cryptography: From Established Symmetric and Asymmetric Ciphers to Post-Quantum Algorithms",
+   "authors": "Christof Paar, Jan Pelzl, Tim Güneysu",
+   "edition": "2nd edition",
+   "year": 2024,
+   "publisher": "Springer",
+   "isbn": "978-3-662-69007-9"
+  }
+ ],
+ "modules": [
+  {
+   "slug": "track_a_a2_mathematics_foundations",
+   "action": "modify",
+   "sections": [
+    {
+     "slug": "sec-8",
+     "action": "replace",
+     "title": "Boolean logic and XOR",
+     "summary": "Bits, the AND/OR/XOR truth tables, and why XOR with a key is its own inverse.",
+     "estimated_minutes": 10,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "Computers store everything as **bits**, values that are 0 or 1. **Boolean operations** combine bits. AND gives 1 only when both inputs are 1. OR gives 1 when at least one input is 1. **XOR** (exclusive or, written ⊕ or `^`) gives 1 when the two inputs *differ*. XOR is also addition modulo 2: 1 + 1 = 2, which leaves remainder 0.\n\nXOR matters for cryptography because of three properties:\n\n- x ⊕ x = 0: XORing a value with itself cancels it.\n- x ⊕ 0 = x: XORing with zero changes nothing.\n- XOR is commutative and associative, so the order of XORs does not matter.\n\nTogether they give (message ⊕ key) ⊕ key = message. Encrypting with XOR and decrypting with XOR are the same operation with the same key. This is exactly how a stream cipher and the one-time pad encrypt: each ciphertext bit is the plaintext bit plus a key-stream bit modulo 2.\n\nNotice what XOR does *not* do. If the same key bits are used twice, XORing the two ciphertexts cancels the key and leaves the XOR of the two plaintexts. You saw that failure in the cryptography module, and its cause is the property above."
+      },
+      {
+       "type": "code",
+       "id": "c-xor",
+       "language": "python",
+       "code": "# XOR truth table and the property that makes it useful for encryption.\nprint(\"a b | AND OR XOR\")\nfor a in (0, 1):\n    for b in (0, 1):\n        print(f\"{a} {b} |  {a & b}   {a | b}   {a ^ b}\")\n\nmessage = 0b10110010\nkey     = 0b01101100\ncipher  = message ^ key             # encrypt: XOR with the key\nprint(f\"cipher  = {cipher:08b}\")\nprint(f\"decrypt = {cipher ^ key:08b}  (same operation, same key)\")\nprint(\"x ^ x == 0 and x ^ 0 == x:\", message ^ message == 0 and message ^ 0 == message)",
+       "caption": "The XOR truth table and a one-byte XOR cipher."
+      },
+      {
+       "type": "code",
+       "id": "o-xor",
+       "language": "text",
+       "code": "a b | AND OR XOR\n0 0 |  0   0   0\n0 1 |  0   1   1\n1 0 |  0   1   1\n1 1 |  1   1   0\ncipher  = 11011110\ndecrypt = 10110010  (same operation, same key)\nx ^ x == 0 and x ^ 0 == x: True",
+       "caption": "Expected output"
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "Which expression always returns the original message m when k is any bit pattern of the same length?",
+       "options": [
+        "(m AND k) AND k",
+        "(m OR k) OR k",
+        "(m XOR k) XOR k"
+       ],
+       "correct_index": 2,
+       "explanation": "XOR with the same value twice cancels out because k XOR k is all zeros and m XOR 0 is m. AND and OR lose information."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "What is 1 XOR 1, and why does that equal 1 + 1 modulo 2?",
+       "options": [
+        "1, because 1 + 1 = 2 and 2 is 1 modulo 2.",
+        "0, because 1 + 1 = 2 and 2 leaves remainder 0 modulo 2.",
+        "2, because XOR adds without wrapping."
+       ],
+       "correct_index": 1,
+       "explanation": "XOR is addition modulo 2: 1 + 1 = 2, and 2 divided by 2 leaves remainder 0."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Section 2.2.2 (the one-time pad: key stream bits added modulo 2) and Section 1.4.1 (modular arithmetic)"
+      }
+     ]
+    },
+    {
+     "slug": "pk-modular",
+     "action": "new",
+     "after": "sec-8",
+     "title": "Modular arithmetic",
+     "summary": "Arithmetic on a finite set of integers: the modulo operation, integer rings, and the Caesar cipher as modular addition.",
+     "estimated_minutes": 15,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "Almost every cryptographic algorithm, symmetric or public-key, computes inside a **finite set** of numbers. **Modular arithmetic** is the simplest way to do that. Think of the hours on a clock: however many hours you add, you stay within 1 to 12.\n\nThe rule is: do ordinary integer arithmetic, then keep only the **remainder** after dividing by the **modulus** m. For example, with m = 9, 8 + 4 = 12, and 12 = 1·9 + 3, so 8 + 4 ≡ 3 (mod 9). The formal definition: a ≡ r (mod m) if m divides a − r. Every integer a can be written a = q·m + r with 0 ≤ r < m, so every integer is equivalent to exactly one of 0, 1, …, m−1.\n\nThe set {0, 1, …, m−1} with addition and multiplication modulo m is the **integer ring** Zm. In a ring you can add, subtract and multiply and always stay inside the set. Every element has an additive inverse (for a it is −a mod m). **Multiplicative inverses**, the numbers that let you divide, exist only for some elements, and the next lesson shows which.\n\nA historical example shows how cryptography uses this. Number the letters A = 0 … Z = 25. The **Caesar cipher** shifts each letter by a fixed amount, which is addition modulo 26. Decrypting subtracts the shift. The cipher is trivially breakable (there are only 26 keys), but the same arithmetic, with enormous moduli, underlies RSA and Diffie-Hellman."
+      },
+      {
+       "type": "code",
+       "id": "c-modular",
+       "language": "python",
+       "code": "# Modular arithmetic: arithmetic on a finite set {0, 1, ..., m-1}.\nm = 9\nprint(\"8 + 4 mod 9 =\", (8 + 4) % m)            # 12 = 1*9 + 3\nprint(\"6 * 8 mod 9 =\", (6 * 8) % m)            # 48 = 5*9 + 3\nprint(\"42 mod 9    =\", 42 % m, \" (42 = 4*9 + 6)\")\nprint(\"-3 mod 9    =\", -3 % m, \" (Python gives a result in 0..m-1 for a positive modulus)\")\n\n# The Caesar cipher is addition modulo 26 on letter numbers (A=0 ... Z=25).\ndef caesar(text: str, shift: int) -> str:\n    return \"\".join(chr((ord(c) - 65 + shift) % 26 + 65) for c in text)\n\nsecret = caesar(\"ATTACK\", 3)\nprint(secret, \"->\", caesar(secret, -3))",
+       "caption": "Remainders, equivalence classes, and the Caesar cipher as addition modulo 26."
+      },
+      {
+       "type": "code",
+       "id": "o-modular",
+       "language": "text",
+       "code": "8 + 4 mod 9 = 3\n6 * 8 mod 9 = 3\n42 mod 9    = 6  (42 = 4*9 + 6)\n-3 mod 9    = 6  (Python gives a result in 0..m-1 for a positive modulus)\nDWWDFN -> ATTACK",
+       "caption": "Expected output"
+      },
+      {
+       "type": "callout",
+       "id": "k1",
+       "variant": "tip",
+       "title": "Negative numbers",
+       "text": "Languages differ in what -3 % 9 returns. Python returns 6, a value in 0 to m-1, which matches the mathematical definition. Some languages return -3. When you port modular code, test negative inputs."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "What is 8 + 4 modulo 9?",
+       "options": [
+        "3",
+        "12",
+        "1"
+       ],
+       "correct_index": 0,
+       "explanation": "8 + 4 = 12 and 12 = 1·9 + 3, so the remainder is 3."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "In the ring Z9, what is 6 · 8?",
+       "options": [
+        "48",
+        "3",
+        "5"
+       ],
+       "correct_index": 1,
+       "explanation": "6 · 8 = 48 and 48 = 5·9 + 3, so 6 · 8 ≡ 3 (mod 9)."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Section 1.4 (modular arithmetic and more historical ciphers: Sections 1.4.1 modular arithmetic and 1.4.2 integer rings)"
+      }
+     ]
+    },
+    {
+     "slug": "pk-gcd-inverse",
+     "action": "new",
+     "after": "pk-modular",
+     "title": "The Euclidean algorithm and modular inverses",
+     "summary": "Computing a greatest common divisor without factoring, and using the extended algorithm to find inverses.",
+     "estimated_minutes": 15,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "The **greatest common divisor** gcd(a, b) is the largest positive integer that divides both numbers. For small numbers you can factor them: 84 = 2·2·3·7 and 30 = 2·3·5, so gcd(84, 30) = 2·3 = 6. For the huge numbers in public-key cryptography, factoring is infeasible, and that is the whole point of RSA. You need a method that does not factor.\n\nThe **Euclidean algorithm** does it. Any common divisor of a and b also divides a − b, so gcd(a, b) = gcd(a − b, b). Repeating this with remainders, gcd(a, b) = gcd(b, a mod b), shrinks the numbers quickly until the remainder is 0. The last non-zero value is the gcd.\n\nThe **extended Euclidean algorithm (EEA)** does more: it finds integers s and t with gcd(a, b) = s·a + t·b. Why care? Recall that an element a of Zm has a multiplicative inverse **if and only if gcd(a, m) = 1** (a and m are *coprime*). If gcd(a, m) = 1, then s·a + t·m = 1, so s·a ≡ 1 (mod m): s is the inverse of a. The EEA is therefore how RSA computes the private exponent d, the inverse of the public exponent e modulo φ(n).\n\nThe listing implements both algorithms. It computes the inverse of 17 modulo 3120, which is the private exponent from the RSA example (n = 61·53, φ(n) = 3120). It also shows the failure case: 6 has no inverse modulo 9 because gcd(6, 9) = 3."
+      },
+      {
+       "type": "code",
+       "id": "c-euclid",
+       "language": "python",
+       "code": "def gcd(a: int, b: int) -> int:\n    while b:\n        a, b = b, a % b           # gcd(a, b) = gcd(b, a mod b)\n    return a\n\ndef egcd(a: int, b: int):\n    \"\"\"Return (g, s, t) with g = gcd(a, b) = s*a + t*b (extended Euclidean algorithm).\"\"\"\n    if b == 0:\n        return a, 1, 0\n    g, s, t = egcd(b, a % b)\n    return g, t, s - (a // b) * t\n\ndef inverse(a: int, m: int) -> int:\n    g, s, _ = egcd(a, m)\n    if g != 1:\n        raise ValueError(f\"{a} has no inverse modulo {m} (gcd is {g})\")\n    return s % m\n\nprint(\"gcd(84, 30) =\", gcd(84, 30))\nprint(\"egcd(84, 30) =\", egcd(84, 30), \" -> 6 = s*84 + t*30\")\nprint(\"inverse of 17 mod 3120 =\", inverse(17, 3120), \"| check:\", 17 * inverse(17, 3120) % 3120)\nprint(\"matches Python's pow(17, -1, 3120):\", inverse(17, 3120) == pow(17, -1, 3120))\ntry:\n    inverse(6, 9)\nexcept ValueError as err:\n    print(\"error:\", err)",
+       "caption": "gcd, extended gcd, and modular inverses."
+      },
+      {
+       "type": "code",
+       "id": "o-euclid",
+       "language": "text",
+       "code": "gcd(84, 30) = 6\negcd(84, 30) = (6, -1, 3)  -> 6 = s*84 + t*30\ninverse of 17 mod 3120 = 2753 | check: 1\nmatches Python's pow(17, -1, 3120): True\nerror: 6 has no inverse modulo 9 (gcd is 3)",
+       "caption": "Expected output"
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "Which element of Z9 has NO multiplicative inverse?",
+       "options": [
+        "2",
+        "4",
+        "6"
+       ],
+       "correct_index": 2,
+       "explanation": "An element a has an inverse modulo m only if gcd(a, m) = 1. gcd(6, 9) = 3, so 6 has no inverse. gcd(2, 9) = gcd(4, 9) = 1."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "The extended Euclidean algorithm returns gcd(a, m) = s·a + t·m. When gcd(a, m) = 1, which value is the inverse of a modulo m?",
+       "options": [
+        "s mod m",
+        "t mod m",
+        "a + m"
+       ],
+       "correct_index": 0,
+       "explanation": "Reducing s·a + t·m = 1 modulo m gives s·a ≡ 1 (mod m), so s is the inverse of a."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Section 1.4.2 (integer rings: when a multiplicative inverse exists) and Sections 6.3.1 and 6.3.2 (Euclidean algorithm, extended Euclidean algorithm)"
+      }
+     ]
+    },
+    {
+     "slug": "pk-euler",
+     "action": "new",
+     "after": "pk-gcd-inverse",
+     "title": "Euler's phi function and Fermat's little theorem",
+     "summary": "Counting coprime numbers, two powerful theorems about exponents, and why RSA decryption works.",
+     "estimated_minutes": 15,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "**Euler's phi function** φ(m) counts how many numbers in {0, 1, …, m−1} are relatively prime to m. For m = 6 the coprime numbers are 1 and 5, so φ(6) = 2. For a prime p, every number from 1 to p−1 is coprime to p, so φ(p) = p − 1. For a product of two distinct primes n = p·q, φ(n) = (p − 1)(q − 1). That last formula is the reason RSA's security rests on factoring: anyone who can factor n can compute φ(n), and anyone who cannot is stuck.\n\n**Fermat's little theorem** says that for a prime p and any integer a, a^p ≡ a (mod p). When a is not a multiple of p it can be written a^(p−1) ≡ 1 (mod p). Multiplying both sides by a^(−1) gives a quick inverse formula for a prime modulus: a^(−1) ≡ a^(p−2) (mod p). **Euler's theorem** generalizes it: if gcd(a, m) = 1, then a^φ(m) ≡ 1 (mod m).\n\nThese theorems explain RSA. Choose e and d with e·d ≡ 1 (mod φ(n)), so e·d = 1 + k·φ(n) for some integer k. Then (m^e)^d = m · (m^φ(n))^k ≡ m · 1^k = m (mod n) whenever m is coprime to n, so decryption returns the message. (The case where m shares a factor with n also works, but needs a separate argument.)\n\nThe listing checks Euler's theorem for every number coprime to 15, uses Fermat's theorem to invert 2 modulo 7, and finishes with an RSA round trip using the toy numbers from the cryptography module."
+      },
+      {
+       "type": "code",
+       "id": "c-euler",
+       "language": "python",
+       "code": "from math import gcd\n\ndef phi(m: int) -> int:\n    \"\"\"Euler's phi: how many numbers in 0..m-1 are relatively prime to m (counted directly).\"\"\"\n    return sum(1 for i in range(m) if gcd(i, m) == 1)\n\nprint(\"phi(6) =\", phi(6), \" phi(7) =\", phi(7), \" phi(15) =\", phi(15), \"= (3-1)*(5-1)\")\n\n# Euler's theorem: a^phi(m) = 1 (mod m) whenever gcd(a, m) = 1.\nm = 15\nprint(\"Euler holds for every a coprime to 15:\", all(pow(a, phi(m), m) == 1 for a in range(m) if gcd(a, m) == 1))\n\n# Fermat's little theorem gives an inverse modulo a prime p: a^-1 = a^(p-2) mod p.\np, a = 7, 2\nprint(\"inverse of 2 mod 7 via Fermat:\", pow(a, p - 2, p), \"| check:\", a * pow(a, p - 2, p) % p)\n\n# Why RSA decryption works: e*d = 1 (mod phi(n)), so (m^e)^d = m (mod n).\nn, e, d = 3233, 17, 2753\nprint(\"RSA round trip for m = 65:\", pow(pow(65, e, n), d, n))",
+       "caption": "Counting φ(m), checking Euler's and Fermat's theorems, and an RSA round trip."
+      },
+      {
+       "type": "code",
+       "id": "o-euler",
+       "language": "text",
+       "code": "phi(6) = 2  phi(7) = 6  phi(15) = 8 = (3-1)*(5-1)\nEuler holds for every a coprime to 15: True\ninverse of 2 mod 7 via Fermat: 4 | check: 1\nRSA round trip for m = 65: 65",
+       "caption": "Expected output"
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "What is φ(15), the count of numbers in 0 to 14 that are coprime to 15?",
+       "options": [
+        "14",
+        "8",
+        "4"
+       ],
+       "correct_index": 1,
+       "explanation": "15 = 3·5, so φ(15) = (3−1)(5−1) = 8. The coprime numbers are 1, 2, 4, 7, 8, 11, 13 and 14."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Using Fermat's little theorem, what is the inverse of 2 modulo the prime 7?",
+       "options": [
+        "3",
+        "4",
+        "5"
+       ],
+       "correct_index": 1,
+       "explanation": "a^(p−2) = 2^5 = 32 ≡ 4 (mod 7), and 2 · 4 = 8 ≡ 1 (mod 7)."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Sections 6.3.3 (Euler's phi function) and 6.3.4 (Fermat's little theorem and Euler's theorem)"
+      },
+      {
+       "book": "B01",
+       "locator": "Section 7.3 (RSA: key generation and proof of correctness)"
+      }
+     ]
+    },
+    {
+     "slug": "pk-fastexp",
+     "action": "new",
+     "after": "pk-euler",
+     "title": "Fast modular exponentiation",
+     "summary": "How square-and-multiply makes exponents of 2048 bits practical.",
+     "estimated_minutes": 12,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "RSA, Diffie-Hellman and DSA all compute powers such as x^e mod n where e has 2048 bits or more. Multiplying x by itself e times would need around 2^2048 multiplications, vastly more than there are atoms in the visible universe. Public-key cryptography would be impossible without a faster method.\n\n**Square-and-multiply** is that method. Write the exponent in binary. Start with 1. For each bit from the most significant to the least: *square* the running result, and if the bit is 1, also *multiply* by the base. Reduce modulo n after every step so numbers never grow beyond the size of n. An exponent with k bits needs k squarings plus one multiplication for each bit that is 1, so at most about 2k multiplications. For a 2048-bit exponent that is a few thousand multiplications, not 2^2048.\n\nFor example, 17 is 10001 in binary, so x^17 takes 5 squarings and 2 multiplications (the first squaring just squares 1) instead of 16 plain multiplications.\n\nThe listing implements the algorithm, counts its multiplications, and compares the result with Python's built-in three-argument `pow(base, exponent, modulus)`. In real code always use the built-in or your cryptography library's implementation, which are also hardened against timing leaks that a hand-written loop would have."
+      },
+      {
+       "type": "code",
+       "id": "c-fastexp",
+       "language": "python",
+       "code": "def square_and_multiply(base: int, exponent: int, modulus: int):\n    \"\"\"Left-to-right square-and-multiply. Returns (result, number of modular multiplications).\"\"\"\n    result, mults = 1, 0\n    for bit in bin(exponent)[2:]:\n        result = result * result % modulus; mults += 1          # square\n        if bit == \"1\":\n            result = result * base % modulus; mults += 1        # multiply\n    return result, mults\n\nr, n = square_and_multiply(65, 17, 3233)\nprint(\"65^17 mod 3233 =\", r, \"with\", n, \"multiplications (naive: 16)\")\n\n# With an exponent of about 2048 bits, naive repeated multiplication is impossible,\n# but square-and-multiply needs only a few thousand multiplications.\nmodulus = (1 << 2048) - 159            # a 2048-bit odd number; fine for timing, not a real RSA modulus\nexponent = (1 << 2047) + 12345         # about 2048 bits\nresult, mults = square_and_multiply(3, exponent, modulus)\nprint(\"exponent bits:\", exponent.bit_length(), \"| multiplications:\", mults, \"| matches pow():\", result == pow(3, exponent, modulus))",
+       "caption": "Square-and-multiply, with a multiplication count and a check against pow()."
+      },
+      {
+       "type": "code",
+       "id": "o-fastexp",
+       "language": "text",
+       "code": "65^17 mod 3233 = 2790 with 7 multiplications (naive: 16)\nexponent bits: 2048 | multiplications: 2055 | matches pow(): True",
+       "caption": "Expected output"
+      },
+      {
+       "type": "callout",
+       "id": "k1",
+       "variant": "warning",
+       "title": "Do not hand-roll this",
+       "text": "The listing is for understanding only. A loop whose running time depends on the secret exponent can leak that exponent through timing. Use pow() or a vetted library for any real key."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "Roughly how many modular multiplications does square-and-multiply need for a 2048-bit exponent?",
+       "options": [
+        "About 2^2048",
+        "About 2048 squarings plus one multiplication per 1 bit, at most about 4096",
+        "Exactly 2048 plus the base"
+       ],
+       "correct_index": 1,
+       "explanation": "It does one squaring per exponent bit and one extra multiplication for each 1 bit, so at most about twice the exponent length."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Why is naive repeated multiplication unusable for RSA?",
+       "options": [
+        "It gives wrong answers.",
+        "It needs a number of multiplications that grows as the value of the exponent, about 2^2048.",
+        "It can only handle odd exponents."
+       ],
+       "correct_index": 1,
+       "explanation": "The cost of naive exponentiation grows with the exponent's value, not its bit length. For 2048-bit exponents that is astronomically large."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Section 7.4 (encryption and decryption: fast exponentiation)"
+      }
+     ]
+    }
+   ],
+   "quiz": [
+    {
+     "id": "a2-pk01",
+     "lesson_id": "A2.L3",
+     "competency_id": "MATH.1",
+     "depth": "Apply",
+     "prompt": "Which property of XOR makes (message XOR key) XOR key equal the message?",
+     "options": [
+      "x XOR x = 0 and x XOR 0 = x",
+      "x XOR x = x",
+      "XOR is not associative"
+     ],
+     "correct_index": 0,
+     "explanation": "Applying the same key twice cancels it, because x XOR x is zero and XOR with zero changes nothing.",
+     "source": {
+      "book": "B01",
+      "locator": "Section 2.2.2"
+     }
+    },
+    {
+     "id": "a2-pk02",
+     "lesson_id": "A2.L4",
+     "competency_id": "MATH.4",
+     "depth": "Explain",
+     "prompt": "What is 7 · 5 modulo 12?",
+     "options": [
+      "35",
+      "11",
+      "2"
+     ],
+     "correct_index": 1,
+     "explanation": "35 = 2·12 + 11, so 7 · 5 ≡ 11 (mod 12).",
+     "source": {
+      "book": "B01",
+      "locator": "Section 1.4.1"
+     }
+    },
+    {
+     "id": "a2-pk03",
+     "lesson_id": "A2.L4",
+     "competency_id": "MATH.4",
+     "depth": "Explain",
+     "prompt": "Which statement decides whether a has a multiplicative inverse modulo m?",
+     "options": [
+      "a is smaller than m",
+      "gcd(a, m) = 1",
+      "m is even"
+     ],
+     "correct_index": 1,
+     "explanation": "An inverse exists if and only if a and m are coprime.",
+     "source": {
+      "book": "B01",
+      "locator": "Section 1.4.2"
+     }
+    },
+    {
+     "id": "a2-pk04",
+     "lesson_id": "A2.L4",
+     "competency_id": "MATH.4",
+     "depth": "Explain",
+     "prompt": "What does the extended Euclidean algorithm compute that the plain algorithm does not?",
+     "options": [
+      "Integers s and t with gcd(a, b) = s·a + t·b",
+      "The prime factors of a and b",
+      "A random prime near a"
+     ],
+     "correct_index": 0,
+     "explanation": "The coefficients s and t give modular inverses when the gcd is 1.",
+     "source": {
+      "book": "B01",
+      "locator": "Section 6.3.2"
+     }
+    },
+    {
+     "id": "a2-pk05",
+     "lesson_id": "A2.L4",
+     "competency_id": "MATH.4",
+     "depth": "Explain",
+     "prompt": "For a prime p, what is Euler's phi value φ(p)?",
+     "options": [
+      "p",
+      "p − 1",
+      "p − 2"
+     ],
+     "correct_index": 1,
+     "explanation": "Every number from 1 to p − 1 is coprime to the prime p.",
+     "source": {
+      "book": "B01",
+      "locator": "Section 6.3.3"
+     }
+    },
+    {
+     "id": "a2-pk06",
+     "lesson_id": "A2.L4",
+     "competency_id": "MATH.4",
+     "depth": "Apply",
+     "prompt": "Fermat's little theorem gives the inverse of a modulo a prime p as:",
+     "options": [
+      "a^(p−2) mod p",
+      "a^p mod p",
+      "p − a"
+     ],
+     "correct_index": 0,
+     "explanation": "From a^(p−1) ≡ 1 we get a · a^(p−2) ≡ 1 (mod p).",
+     "source": {
+      "book": "B01",
+      "locator": "Section 6.3.4"
+     }
+    },
+    {
+     "id": "a2-pk07",
+     "lesson_id": "A2.L4",
+     "competency_id": "MATH.4",
+     "depth": "Explain",
+     "prompt": "Why is square-and-multiply needed for RSA?",
+     "options": [
+      "It makes exponentiation with 2048-bit exponents practical",
+      "It finds prime numbers",
+      "It encrypts faster than AES"
+     ],
+     "correct_index": 0,
+     "explanation": "It needs about twice as many multiplications as the exponent has bits, instead of about 2^2048.",
+     "source": {
+      "book": "B01",
+      "locator": "Section 7.4"
+     }
+    }
+   ],
+   "notes": "Adds the number-theory lessons Architecture v1 asks for (modular arithmetic, gcd and inverses, Euler and Fermat, fast exponentiation) and replaces the Boolean outline with a real XOR lesson. The other A2 sections (algebra, probability, complex numbers, linear algebra) have no support in the supplied books and are unchanged."
+  }
+ ]
+}

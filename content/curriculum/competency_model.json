@@ -1,0 +1,296 @@
+{
+  "version": 1,
+  "status": "proposed-v1",
+  "description": "Skill model from Q-CAPS Curriculum Architecture v1 section 3. Every lesson objective, quiz item and practical carries exactly one primary competency id and one depth. Capability is estimated per competency from server-graded evidence only; XP plays no part.",
+  "source_document": "docs/Html/Q-CAPS Curriculum Architecture v1.md",
+  "depths": [
+    {
+      "id": "Aware",
+      "rank": 1,
+      "meaning": "recognise, name"
+    },
+    {
+      "id": "Explain",
+      "rank": 2,
+      "meaning": "describe why"
+    },
+    {
+      "id": "Apply",
+      "rank": 3,
+      "meaning": "use in a defined task"
+    },
+    {
+      "id": "Analyse",
+      "rank": 4,
+      "meaning": "evaluate, choose, critique"
+    }
+  ],
+  "capability_levels": {
+    "status": "pilot-hypothesis",
+    "note": "Thresholds are starting hypotheses to calibrate against pilot data, not validated cut scores (Architecture 3.3, O3).",
+    "levels": [
+      {
+        "id": "Unknown",
+        "rank": 0,
+        "evidence": "Fewer than 3 scored items on this competency"
+      },
+      {
+        "id": "Beginner",
+        "rank": 1,
+        "evidence": "At least 3 items; below 60% on Aware/Explain items"
+      },
+      {
+        "id": "Developing",
+        "rank": 2,
+        "evidence": "At least 60% on Aware/Explain items"
+      },
+      {
+        "id": "Proficient",
+        "rank": 3,
+        "evidence": "Developing, plus at least 70% on Apply items and one passed practical"
+      },
+      {
+        "id": "Advanced",
+        "rank": 4,
+        "evidence": "Proficient, plus at least 70% on Analyse items or a passed capstone component"
+      }
+    ],
+    "min_items_for_known": 3,
+    "stale_after_months": 12,
+    "min_coverage_for_domain_score": 0.5
+  },
+  "domains": [
+    {
+      "id": "MATH",
+      "name": "Mathematics",
+      "competencies": [
+        {
+          "id": "MATH.1",
+          "name": "algebra, functions, logarithms"
+        },
+        {
+          "id": "MATH.2",
+          "name": "probability and statistics"
+        },
+        {
+          "id": "MATH.3",
+          "name": "linear algebra and complex vector spaces"
+        },
+        {
+          "id": "MATH.4",
+          "name": "modular arithmetic, number theory, finite fields"
+        },
+        {
+          "id": "MATH.5",
+          "name": "lattices and coding theory"
+        }
+      ],
+      "library_source": "Paar Ch 1, 4.3, 6.3, 8.2; Stinson §3–4"
+    },
+    {
+      "id": "PROG",
+      "name": "Programming",
+      "competencies": [
+        {
+          "id": "PROG.1",
+          "name": "Python fundamentals"
+        },
+        {
+          "id": "PROG.2",
+          "name": "algorithms and complexity"
+        },
+        {
+          "id": "PROG.3",
+          "name": "version control and dev workflow"
+        },
+        {
+          "id": "PROG.4",
+          "name": "quantum SDK programming"
+        },
+        {
+          "id": "PROG.5",
+          "name": "crypto library and API use"
+        }
+      ],
+      "library_source": "None for PROG.4 (Gap §2)"
+    },
+    {
+      "id": "COMP",
+      "name": "Computing",
+      "competencies": [
+        {
+          "id": "COMP.1",
+          "name": "hardware, OS, processes"
+        },
+        {
+          "id": "COMP.2",
+          "name": "Linux and command line"
+        },
+        {
+          "id": "COMP.3",
+          "name": "quantum hardware and noise"
+        },
+        {
+          "id": "COMP.4",
+          "name": "error correction and fault tolerance"
+        }
+      ],
+      "library_source": "None for COMP.3–4"
+    },
+    {
+      "id": "NET",
+      "name": "Networking",
+      "competencies": [
+        {
+          "id": "NET.1",
+          "name": "TCP/IP and addressing"
+        },
+        {
+          "id": "NET.2",
+          "name": "DNS, HTTP and core services"
+        },
+        {
+          "id": "NET.3",
+          "name": "routing, segmentation, VPN, zero trust"
+        },
+        {
+          "id": "NET.4",
+          "name": "secure protocols (TLS, SSH, IPsec)"
+        },
+        {
+          "id": "NET.5",
+          "name": "quantum networks and QKD"
+        }
+      ],
+      "library_source": "Om Pal Ch 4 (partial); BQS Ch 3 for NET.5 contrast"
+    },
+    {
+      "id": "SEC",
+      "name": "Cybersecurity",
+      "competencies": [
+        {
+          "id": "SEC.1",
+          "name": "CIA, authentication, IAM"
+        },
+        {
+          "id": "SEC.2",
+          "name": "threats, vulnerabilities, threat modelling"
+        },
+        {
+          "id": "SEC.3",
+          "name": "monitoring and incident response"
+        },
+        {
+          "id": "SEC.4",
+          "name": "risk management"
+        },
+        {
+          "id": "SEC.5",
+          "name": "ethics, authorisation and legal scope"
+        },
+        {
+          "id": "SEC.6",
+          "name": "governance, policy, compliance"
+        }
+      ],
+      "library_source": "BQS Ch 4, 7; Om Pal Ch 9, 13"
+    },
+    {
+      "id": "CRYPTO",
+      "name": "Cryptography",
+      "competencies": [
+        {
+          "id": "CRYPTO.1",
+          "name": "symmetric ciphers, modes, AEAD"
+        },
+        {
+          "id": "CRYPTO.2",
+          "name": "hashes, MACs, KDFs, randomness"
+        },
+        {
+          "id": "CRYPTO.3",
+          "name": "public-key (RSA, DH, ECC)"
+        },
+        {
+          "id": "CRYPTO.4",
+          "name": "signatures, certificates, PKI"
+        },
+        {
+          "id": "CRYPTO.5",
+          "name": "key management and HSMs"
+        },
+        {
+          "id": "CRYPTO.6",
+          "name": "security notions and proofs"
+        }
+      ],
+      "library_source": "Paar Ch 2–11, 13–14"
+    },
+    {
+      "id": "QNT",
+      "name": "Quantum",
+      "competencies": [
+        {
+          "id": "QNT.1",
+          "name": "qubits, superposition, measurement"
+        },
+        {
+          "id": "QNT.2",
+          "name": "gates, circuits, entanglement"
+        },
+        {
+          "id": "QNT.3",
+          "name": "quantum information theory"
+        },
+        {
+          "id": "QNT.4",
+          "name": "quantum algorithms (Grover, QFT, Shor)"
+        },
+        {
+          "id": "QNT.5",
+          "name": "resource estimates and threat timelines"
+        }
+      ],
+      "library_source": "Stinson §1; BQS Ch 1"
+    },
+    {
+      "id": "PQC",
+      "name": "Post-quantum readiness",
+      "competencies": [
+        {
+          "id": "PQC.1",
+          "name": "quantum threat to crypto (HNDL, Mosca)"
+        },
+        {
+          "id": "PQC.2",
+          "name": "PQC families and assumptions"
+        },
+        {
+          "id": "PQC.3",
+          "name": "standards and algorithm selection"
+        },
+        {
+          "id": "PQC.4",
+          "name": "implementation and testing"
+        },
+        {
+          "id": "PQC.5",
+          "name": "implementation attacks and defence"
+        },
+        {
+          "id": "PQC.6",
+          "name": "hybrid modes and crypto-agility"
+        },
+        {
+          "id": "PQC.7",
+          "name": "discovery and inventory (CBOM)"
+        },
+        {
+          "id": "PQC.8",
+          "name": "migration planning and readiness"
+        }
+      ],
+      "library_source": "Stinson; FIPS 203; Paar Ch 12; BQS Ch 3–8"
+    }
+  ]
+}

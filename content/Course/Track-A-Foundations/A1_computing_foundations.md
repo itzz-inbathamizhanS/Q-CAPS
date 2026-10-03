@@ -25,10 +25,10 @@ An **operating system (OS)** manages hardware resources and runs **processes** �
 This distinction matters directly for cryptography: cryptographic keys held only in memory are more vulnerable to certain live-system attacks, while keys on disk are vulnerable to different threats (theft, unauthorized access) — informing key-management decisions covered in Track B.
 
 ## 1.4 Programming Concepts
-Variables, functions, loops, conditionals, and data types are the building blocks of every program you'll write in this course, including the Python scanning and scoring scripts your teammates are building.
+Variables, functions, loops, conditionals, and data types are the building blocks of every program you'll write in this course, including the Python scanning and scoring tools used throughout Q-CAPS.
 
 ## 1.5 Python Fundamentals
-Python is the primary language used across Q-CAPS — Inba's scanner engine and Vishnu Priya's backend both use it. Core skills to build here: variables and data types, control flow (`if`/`for`/`while`), functions, working with strings and JSON, and using libraries (`import`).
+Python is the primary language used across Q-CAPS — the scanner engine and the analytics backend both use it. Core skills to build here: variables and data types, control flow (`if`/`for`/`while`), functions, working with strings and JSON, and using libraries (`import`).
 
 **🎨 Interactive/Visual Requirement:**
 > In-browser Python code sandbox (e.g., embedded Pyodide) where learners can run small snippets directly and see output immediately, rather than just reading code blocks.

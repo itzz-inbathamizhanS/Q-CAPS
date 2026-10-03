@@ -23,7 +23,7 @@ Extending A3.8: dynamic routing protocols, redundancy, and how routing infrastru
 Building on A3.9's introduction, this section covers VPN architecture choices (site-to-site vs. remote-access), tunneling protocols, and — directly relevant to this entire program — how VPN cryptography (often IPsec or a TLS-based tunnel) is itself subject to the same PQC migration concerns as any other TLS deployment.
 
 ## 6.5 TLS (Engineering Depth)
-Building on A5.10's handshake walkthrough, this section covers TLS from an engineering/operations perspective: cipher suite configuration, certificate management at scale, and common misconfigurations that weaken an otherwise-correct TLS deployment — directly relevant to what Inba's scanner engine is built to detect.
+Building on A5.10's handshake walkthrough, this section covers TLS from an engineering/operations perspective: cipher suite configuration, certificate management at scale, and common misconfigurations that weaken an otherwise-correct TLS deployment — directly relevant to what the Q-CAPS scanner is built to detect.
 
 ## 6.6 PKI (Engineering Depth)
 Building on A5.9, this section covers operating a PKI at organizational scale: certificate lifecycle automation, internal vs. public CAs, and the practical challenges of certificate rotation — essential context for understanding why PQC certificate migration (covered in B11) is a genuinely difficult operational problem, not just a cryptographic one.

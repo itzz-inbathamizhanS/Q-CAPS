@@ -1,0 +1,1220 @@
+{
+ "pack_version": 1,
+ "books": [
+  {
+   "id": "B01",
+   "title": "Understanding Cryptography: From Established Symmetric and Asymmetric Ciphers to Post-Quantum Algorithms",
+   "authors": "Christof Paar, Jan Pelzl, Tim Güneysu",
+   "edition": "2nd edition",
+   "year": 2024,
+   "publisher": "Springer",
+   "isbn": "978-3-662-69007-9"
+  },
+  {
+   "id": "B02",
+   "title": "A Graduate Course in Applied Cryptography",
+   "authors": "Dan Boneh, Victor Shoup",
+   "edition": "Version 0.6",
+   "year": 2023
+  },
+  {
+   "id": "B08",
+   "title": "RFC 9846: The Transport Layer Security (TLS) Protocol Version 1.3",
+   "authors": "E. Rescorla",
+   "year": 2026,
+   "publisher": "RFC Editor"
+  }
+ ],
+ "modules": [
+  {
+   "slug": "track_a_a5_cryptography_foundations",
+   "action": "modify",
+   "sections": [
+    {
+     "slug": "sec-1",
+     "action": "replace",
+     "title": "Plaintext, ciphertext and keys",
+     "summary": "The vocabulary of encryption, Kerckhoffs' principle, and why the one-time pad is perfect but impractical.",
+     "estimated_minutes": 12,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "Encryption protects **confidentiality**. The sender turns **plaintext** into **ciphertext** with an algorithm and a **key**, and only someone who holds the right key can turn it back. Every later idea in this module is built from those three words.\n\nThe design rule that shapes modern cryptography is **Kerckhoffs' principle**: a system should stay secure even if an attacker knows every detail of it except the key. Keeping the algorithm secret (\"security by obscurity\") feels safer, but it fails as soon as the design leaks or is reverse-engineered, and an algorithm built into millions of devices cannot be replaced the way a key can. That is why AES, SHA-2 and TLS are public standards that anyone may study and attack.\n\nHow strong can a cipher be? The strongest notion is **unconditional** (information-theoretic) security: the cipher holds even against an attacker with unlimited computing power. The **one-time pad** achieves it when three conditions all hold: the key stream is truly random, only the two parties know it, and every key bit is used exactly once. The catch is practical. The key must be as long as the message and can never be reused, so it cannot protect web traffic. Real systems accept **computational** security instead: breaking the cipher is possible in principle but infeasible with realistic resources.\n\nThe listing shows why \"used once\" matters. If a pad is reused, XORing the two ciphertexts cancels the key and leaves the XOR of the two plaintexts. A guess at a word in one message then reveals the same position in the other.\n\nOver this module you will meet the tools that turn these ideas into working systems: ciphers for confidentiality, hashes and MACs for integrity, signatures and certificates for authenticity, and key exchange for agreeing on keys."
+      },
+      {
+       "type": "code",
+       "id": "c-otp",
+       "language": "python",
+       "code": "# Reusing a one-time-pad key leaks the XOR of the two plaintexts.\ndef xor(a: bytes, b: bytes) -> bytes:\n    return bytes(x ^ y for x, y in zip(a, b))\n\nkey = bytes.fromhex(\"5d3a91c07be24f18a6d93c05e8b1472f\")   # in real use: random, secret, used once\nm1 = b\"ATTACK AT DAWN!!\"\nm2 = b\"RETREAT AT NOON!\"\nc1, c2 = xor(m1, key), xor(m2, key)\n\nprint(\"c1 xor c2 == m1 xor m2:\", xor(c1, c2) == xor(m1, m2))\n# An attacker who guesses a word of m1 can now read the same position in m2:\nprint(xor(xor(c1, c2), b\"ATTACK AT DAWN!!\"))",
+       "caption": "Reusing a one-time-pad key leaks the XOR of the plaintexts."
+      },
+      {
+       "type": "code",
+       "id": "o-otp",
+       "language": "text",
+       "code": "c1 xor c2 == m1 xor m2: True\nb'RETREAT AT NOON!'",
+       "caption": "Expected output"
+      },
+      {
+       "type": "callout",
+       "id": "k1",
+       "variant": "warning",
+       "title": "Common mistake",
+       "text": "Reusing a key stream is the same failure as reusing a pad. It returns in this module as the nonce rules for stream ciphers, CTR mode and GCM."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "A vendor says its product is secure because its encryption algorithm is proprietary and secret. What does Kerckhoffs' principle say about that claim?",
+       "options": [
+        "It is sound: hiding the design adds a reliable extra layer of protection.",
+        "It is irrelevant: the principle only covers key length.",
+        "It is weak: security should rest on the key alone, so the system must stay secure even if the design becomes public."
+       ],
+       "correct_index": 2,
+       "explanation": "Kerckhoffs' principle says a system should remain secure when the attacker knows everything except the key. Secrecy of the design is fragile: once the algorithm leaks it cannot be changed the way a key can."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Which condition is NOT required for a cipher to be a one-time pad?",
+       "options": [
+        "The key stream is truly random.",
+        "The key is shorter than the message.",
+        "Each key bit is used only once."
+       ],
+       "correct_index": 1,
+       "explanation": "A one-time pad needs a truly random key stream, known only to the two parties, with every bit used once. That makes the key at least as long as the message, which is why the pad is rarely practical."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Section 1.3 (Kerckhoffs' principle, Definition 1.3.1) and Section 2.2.2 (the one-time pad)"
+      },
+      {
+       "book": "B02",
+       "locator": "Section 2.1 (Shannon ciphers and perfect security)"
+      }
+     ]
+    },
+    {
+     "slug": "sec-2",
+     "action": "replace",
+     "title": "Block ciphers and AES",
+     "summary": "How AES works at a high level, what its key lengths mean, and how quantum search changes the margin.",
+     "estimated_minutes": 10,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "A **block cipher** encrypts a fixed-size block of data under a key and can decrypt it again. **AES**, the Advanced Encryption Standard, works on 128-bit blocks and accepts keys of 128, 192 or 256 bits. It repeats a round of substitution and mixing steps, with a different **round key** in each round. A key schedule expands your key into one more round key than there are rounds.\n\n| Key length | Rounds |\n|---|---|\n| 128 bits | 10 |\n| 192 bits | 12 |\n| 256 bits | 14 |\n\nWhat does \"secure\" mean for AES? For a sound cipher the best known attack is **exhaustive key search**: try every key until one decrypts a known plaintext and ciphertext pair correctly. With a 128-bit key that is about 2^128 trials, far beyond any realistic attacker. A longer key buys more margin, not a different kind of security.\n\nA block cipher alone has two limits. It handles exactly one block, and the same block under the same key always gives the same output. Real messages are longer, and they must not reveal repetitions, so a block cipher is always used inside a **mode of operation**. That is the next lesson."
+      },
+      {
+       "type": "callout",
+       "id": "k1",
+       "variant": "tip",
+       "title": "Quantum note",
+       "text": "Grover's algorithm speeds up exhaustive search. Paar et al. estimate that it takes AES-128 from about 2^128 steps to about 2^64 quantum steps, and AES-256 to about 2^128. They also point out that quantum operations are far more expensive than classical ones, so 2^64 of them may stay out of reach for decades. The practical response is simple: choose AES-256 where protection must last a long time."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "How many rounds does AES-192 apply?",
+       "options": [
+        "10",
+        "12",
+        "14"
+       ],
+       "correct_index": 1,
+       "explanation": "AES uses 10 rounds for a 128-bit key, 12 for a 192-bit key and 14 for a 256-bit key."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Using the Grover estimate in the quantum note, roughly how many quantum steps would exhaustive search against AES-256 need?",
+       "options": [
+        "2^64",
+        "2^128",
+        "2^256"
+       ],
+       "correct_index": 1,
+       "explanation": "Grover's algorithm roughly takes the square root of the search size, so 2^256 classical trials become about 2^128 quantum steps. The same reasoning takes AES-128 down to 2^64, which is why larger keys are the usual response."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Section 4.1 and 4.2 (AES overview, Table 4.1 key lengths and rounds) and Section 12.1.1 (Grover's algorithm)"
+      },
+      {
+       "book": "B02",
+       "locator": "Section 4.1 (block ciphers: basic definitions)"
+      }
+     ]
+    },
+    {
+     "slug": "pk-modes",
+     "action": "new",
+     "after": "sec-2",
+     "title": "Modes of operation and authenticated encryption",
+     "summary": "Why ECB leaks patterns, how CTR needs a never-repeating nonce, and what AEAD ciphers such as AES-GCM add.",
+     "estimated_minutes": 15,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "A **mode of operation** says how to apply a block cipher to a message longer than one block.\n\n**ECB** (electronic codebook) encrypts each block independently. That makes it deterministic: identical plaintext blocks give identical ciphertext blocks. An observer sees repetition, can tell when the same message is sent twice, and can reorder or substitute blocks without breaking decryption. In a textbook example of a bank wire transfer, an attacker swaps the blocks that hold the receiving account number. Do not use ECB for messages.\n\n**CBC** chains blocks together and starts from a random **initialization vector (IV)**, so equal plaintext no longer gives equal ciphertext. **CTR** (counter mode) turns the block cipher into a stream cipher: it encrypts a counter that never repeats and XORs the result with the data. CTR needs a **nonce** (\"number used once\") combined with the counter. If a counter value is ever used twice under one key, the two ciphertexts leak the XOR of their plaintexts, just like a reused one-time pad.\n\nNone of these modes detect tampering. In CTR, flipping a ciphertext bit flips the same plaintext bit, and the receiver cannot tell. **Authenticated encryption with associated data (AEAD)** fixes this: it produces an authentication tag along with the ciphertext. **AES-GCM** is the common example. It combines counter-mode encryption with a Carter-Wegman style authentication tag, and it can authenticate a header that stays unencrypted. Decryption fails if the ciphertext, the header or the nonce was altered. Prefer an AEAD cipher whenever your library offers one.\n\nThe first listing shows ECB leaking a repeated block while CTR does not. The second shows GCM rejecting a modified ciphertext and a modified header."
+      },
+      {
+       "type": "code",
+       "id": "c-ecb",
+       "language": "python",
+       "code": "# pip install cryptography   (tested with cryptography 50.0.1, Python 3.14)\nfrom cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes\n\nkey = bytes(range(16))                       # demo key only\nplaintext = b\"SAME 16 BYTES!!!\" * 2 + b\"a different end!\"   # blocks 1 and 2 are identical\necb = Cipher(algorithms.AES(key), modes.ECB()).encryptor()\nct = ecb.update(plaintext) + ecb.finalize()\nblocks = [ct[i:i + 16] for i in range(0, len(ct), 16)]\nprint(\"blocks 1 and 2 equal in ECB:\", blocks[0] == blocks[1])\n\nctr = Cipher(algorithms.AES(key), modes.CTR(bytes(16))).encryptor()   # fixed nonce: demo only, never reuse\nct2 = ctr.update(plaintext) + ctr.finalize()\nblocks2 = [ct2[i:i + 16] for i in range(0, len(ct2), 16)]\nprint(\"blocks 1 and 2 equal in CTR:\", blocks2[0] == blocks2[1])",
+       "caption": "ECB repeats identical blocks; CTR does not (the fixed CTR nonce is for the demo only)."
+      },
+      {
+       "type": "code",
+       "id": "o-ecb",
+       "language": "text",
+       "code": "blocks 1 and 2 equal in ECB: True\nblocks 1 and 2 equal in CTR: False",
+       "caption": "Expected output"
+      },
+      {
+       "type": "code",
+       "id": "c-gcm",
+       "language": "python",
+       "code": "# pip install cryptography   (tested with cryptography 50.0.1)\nimport os\nfrom cryptography.exceptions import InvalidTag\nfrom cryptography.hazmat.primitives.ciphers.aead import AESGCM\n\nkey = AESGCM.generate_key(bit_length=256)\naead = AESGCM(key)\nnonce = os.urandom(12)                       # 96-bit nonce, new for every message under this key\nheader = b\"msg-id=42\"                        # authenticated but not encrypted\nct = aead.encrypt(nonce, b\"pay Alice 10\", header)\nprint(\"decrypts:\", aead.decrypt(nonce, ct, header))\n\ntampered = bytes([ct[0] ^ 1]) + ct[1:]       # flip one bit\ntry:\n    aead.decrypt(nonce, tampered, header)\nexcept InvalidTag:\n    print(\"tampered ciphertext rejected\")\ntry:\n    aead.decrypt(nonce, ct, b\"msg-id=43\")\nexcept InvalidTag:\n    print(\"changed header rejected\")",
+       "caption": "AES-256-GCM detects changes to the ciphertext and to the associated header."
+      },
+      {
+       "type": "code",
+       "id": "o-gcm",
+       "language": "text",
+       "code": "decrypts: b'pay Alice 10'\ntampered ciphertext rejected\nchanged header rejected",
+       "caption": "Expected output"
+      },
+      {
+       "type": "callout",
+       "id": "k1",
+       "variant": "warning",
+       "title": "Common mistake",
+       "text": "Reusing a nonce with the same key breaks CTR and GCM. Use a fresh random nonce for each message, or a counter you can prove never repeats, and store the nonce with the ciphertext. It is not secret."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "Two 16-byte blocks of an AES-ECB ciphertext are identical. What is the best-supported conclusion?",
+       "options": [
+        "The encryption key has leaked.",
+        "The match is a harmless coincidence.",
+        "The two plaintext blocks were identical."
+       ],
+       "correct_index": 2,
+       "explanation": "ECB is deterministic: under one key, equal plaintext blocks always give equal ciphertext blocks. A repeat in the ciphertext therefore reveals a repeat in the plaintext."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "What does AES-GCM provide that AES in plain CTR mode does not?",
+       "options": [
+        "A larger key space.",
+        "Detection of a modified ciphertext or header.",
+        "Faster encryption."
+       ],
+       "correct_index": 1,
+       "explanation": "GCM adds an authentication tag. If the ciphertext, the associated header or the nonce changes, decryption fails instead of returning altered data."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Sections 5.1.1 (ECB, Example 5.1), 5.1.2 (CBC and initialization vectors) and 5.1.5 (CTR)"
+      },
+      {
+       "book": "B02",
+       "locator": "Section 9.1 (authenticated encryption: definitions), Section 5.5 (nonce-based encryption) and Section 9.7 (Galois counter mode)"
+      }
+     ]
+    },
+    {
+     "slug": "pk-stream",
+     "action": "new",
+     "after": "pk-modes",
+     "title": "Stream ciphers and ChaCha20",
+     "summary": "Encrypting with a pseudorandom key stream, why a nonce is required, and how ChaCha20 builds its stream.",
+     "estimated_minutes": 10,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "A **stream cipher** encrypts by XORing the message with a **key stream**, a long pseudorandom sequence produced from a short key. Decrypting is the same XOR. It is the one-time pad with a pseudorandom pad instead of a truly random one, so security no longer comes from information theory. It comes from the key stream being computationally indistinguishable from random bits. A pseudorandom generator (PRG) seeded with the key produces the stream.\n\nThe rule from the one-time pad still applies: a key stream must **never be used for two messages**. Modern stream ciphers therefore take a **nonce** as well as a key, and a different nonce gives a different key stream under the same key.\n\n**Salsa20** and **ChaCha20**, designed by Daniel Bernstein, are widely deployed examples. As Boneh and Shoup describe them, they take a 256-bit key, a nonce and a block counter, and a fixed public permutation of 512 bits produces each 512-bit block of key stream. Block number j depends only on the key, the nonce and j. Blocks can therefore be computed in parallel, and any position in the stream can be reached directly. The ChaCha variants are used in protocols such as TLS and SSH, and Paar et al. report no attack better than brute force against the Salsa20 variants at the time of writing.\n\nNonce sizes differ between descriptions and libraries. The book's description uses a 64-bit nonce, while the library in the listing takes 12 bytes and pairs ChaCha20 with the Poly1305 authenticator, which turns the stream cipher into an AEAD cipher. Always follow the documented nonce size of the library you use."
+      },
+      {
+       "type": "code",
+       "id": "c-chacha",
+       "language": "python",
+       "code": "# pip install cryptography   (tested with cryptography 50.0.1)\nimport os\nfrom cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305\n\nkey = ChaCha20Poly1305.generate_key()        # 256-bit key\naead = ChaCha20Poly1305(key)\nnonce = os.urandom(12)                       # this library takes a 12-byte nonce\nct = aead.encrypt(nonce, b\"hello\", None)\nprint(len(ct), \"bytes = 5 bytes of message + 16-byte tag\")\nprint(aead.decrypt(nonce, ct, None))",
+       "caption": "ChaCha20-Poly1305: a stream cipher with built-in authentication."
+      },
+      {
+       "type": "code",
+       "id": "o-chacha",
+       "language": "text",
+       "code": "21 bytes = 5 bytes of message + 16-byte tag\nb'hello'",
+       "caption": "Expected output"
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "Why does a stream cipher take a nonce in addition to the key?",
+       "options": [
+        "So the ciphertext is shorter than the plaintext.",
+        "So the key can be shorter.",
+        "So two messages encrypted under one key never share a key stream."
+       ],
+       "correct_index": 2,
+       "explanation": "If two messages used the same key stream, XORing their ciphertexts would cancel it and leak the XOR of the plaintexts. A nonce that changes per message gives each message its own key stream."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Which property of the ChaCha20 design lets an implementation compute block 1000 of the key stream without first computing blocks 0 to 999?",
+       "options": [
+        "Each block is chained to the previous block.",
+        "Each block depends only on the key, the nonce and its own block number.",
+        "The key stream is stored in advance."
+       ],
+       "correct_index": 1,
+       "explanation": "Because block j is a function of the key, the nonce and j alone, blocks are independent. That allows parallel computation and random access to any position."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Sections 2.1 to 2.4 (stream ciphers, Salsa20 and ChaCha)"
+      },
+      {
+       "book": "B02",
+       "locator": "Section 3.2 (stream ciphers: encryption with a PRG) and Section 3.6 (case study: the Salsa and ChaCha PRGs)"
+      }
+     ]
+    },
+    {
+     "slug": "sec-3",
+     "action": "replace",
+     "after": "pk-stream",
+     "title": "Hash functions",
+     "summary": "One-way fingerprints: the three security properties, SHA-2 and SHA-3, and the birthday bound.",
+     "estimated_minutes": 15,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "A **hash function** maps a message of any length to a fixed-length **digest**; SHA-256 produces 256 bits. A cryptographic hash must provide three properties:\n\n1. **Preimage resistance** (one-wayness): given a digest, it is infeasible to find any message that produces it.\n2. **Second preimage resistance**: given a message, it is infeasible to find a different message with the same digest.\n3. **Collision resistance**: it is infeasible to find *any* two different messages with the same digest.\n\nCollision resistance is the hardest to keep, because the attacker chooses both messages. The **birthday paradox** shows how much easier collisions are than preimages: for an n-bit digest, a collision takes roughly 2^(n/2) tries, not 2^n. Paar et al. describe Yuval's birthday attack. The attacker prepares two versions of a payment message, one small and one large, and makes many invisible variations of each (extra spaces, tabs) until a pair collides. The victim signs the harmless version, and the attacker substitutes the other. This is why digests need to be at least 256 bits long to give 128-bit collision resistance.\n\nThe **SHA-2** family (SHA-256, SHA-384, SHA-512) is the most widely used. **SHA-3** is built differently, on a \"sponge\" construction, which matters in the next lesson.\n\nUse the demo below. Change one character and about half of the 256 output bits flip. This \"avalanche\" behaviour is what makes a digest useful as a fingerprint. The listing then shows the same effect, plus a birthday collision on a deliberately truncated 24-bit digest, which appears after only a few hundred hashes."
+      },
+      {
+       "type": "visual",
+       "id": "v1",
+       "kind": "hash-avalanche",
+       "title": "Change one character, change the whole hash",
+       "description": "Live SHA-256 digests computed in the browser. Edit two messages and compare the digests bit by bit."
+      },
+      {
+       "type": "code",
+       "id": "c-hashes",
+       "language": "python",
+       "code": "import hashlib\n\ndef sha256_hex(data: bytes) -> str:\n    return hashlib.sha256(data).hexdigest()\n\na = sha256_hex(b\"Transfer $10 into Oscar's account\")\nb = sha256_hex(b\"Transfer $11 into Oscar's account\")\ndiffering = bin(int(a, 16) ^ int(b, 16)).count(\"1\")\nprint(a); print(b)\nprint(f\"{differing} of 256 output bits differ\")\n\n# Birthday effect on a deliberately truncated hash: keep only 24 bits (6 hex digits).\nseen = {}\ni = 0\nwhile True:\n    d = sha256_hex(f\"message {i}\".encode())[:6]\n    if d in seen:\n        print(f\"24-bit collision after {i + 1} hashes: {seen[d]!r} and {f'message {i}'!r} -> {d}\")\n        break\n    seen[d] = f\"message {i}\"\n    i += 1",
+       "caption": "Avalanche effect and a birthday collision on a truncated hash."
+      },
+      {
+       "type": "code",
+       "id": "o-hashes",
+       "language": "text",
+       "code": "9f0f050a8b0c6207f8782f9ac8637e0c8009ce6d9d1b6e3791ef435ab5dce91c\ndee2f8998ad100abdd9a8977dab19c6a94b07ad3a0fa7dd4e8c990aea0d3f36e\n130 of 256 output bits differ\n24-bit collision after 765 hashes: 'message 547' and 'message 764' -> 048f28",
+       "caption": "Expected output"
+      },
+      {
+       "type": "callout",
+       "id": "k1",
+       "variant": "warning",
+       "title": "Common mistake",
+       "text": "A hash is not encryption and it is not a MAC. Anyone can compute SHA-256 of any message, so a bare hash says nothing about who sent it. Authenticity needs a key (a MAC) or a signature."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "An attacker finds two different documents with the same SHA-256 digest. Which property is broken?",
+       "options": [
+        "Preimage resistance",
+        "Second preimage resistance",
+        "Collision resistance"
+       ],
+       "correct_index": 2,
+       "explanation": "Finding any two different inputs with the same digest breaks collision resistance. Second preimage resistance would require matching a digest chosen in advance, which is harder."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Roughly how many hash evaluations does a generic birthday attack need to find a collision in a 256-bit hash?",
+       "options": [
+        "2^256",
+        "2^128",
+        "2^16"
+       ],
+       "correct_index": 1,
+       "explanation": "A collision in an n-bit hash takes about 2^(n/2) evaluations, so about 2^128 for 256 bits."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Section 11.2 (security requirements: preimage, second preimage, collision resistance and the birthday attack) and Sections 11.4 and 11.5 (SHA-2, SHA-3)"
+      },
+      {
+       "book": "B02",
+       "locator": "Section 8.1 (collision resistant hashing) and Section 8.3 (birthday attacks)"
+      }
+     ]
+    },
+    {
+     "slug": "sec-4",
+     "action": "replace",
+     "after": "sec-3",
+     "title": "MACs and HMAC",
+     "summary": "Authentication with a shared key, why hashing key and message together fails, and how HMAC fixes it.",
+     "estimated_minutes": 12,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "A **message authentication code (MAC)** is a short tag computed from a message and a **shared secret key**. The receiver recomputes the tag. If it matches, the message came from someone who knows the key and was not changed on the way. A MAC gives integrity and authenticity using only symmetric tools. It does not give **non-repudiation**, because either key holder could have produced the tag.\n\nHow would you build a MAC from a hash? The obvious idea, tag = h(key || message), is **broken when h is SHA-2**. SHA-2 processes the message block by block, so an attacker who sees a message and its tag can *extend* the message with extra blocks and compute a valid tag for the longer message without knowing the key. This is a **length extension attack**. SHA-3 uses a different internal construction and is not susceptible, but a design that is safe with any hash is better.\n\n**HMAC** is that design. It hashes twice: an inner hash over (key XOR ipad) followed by the message, then an outer hash over (key XOR opad) followed by the inner digest. It can be proven secure under reasonable assumptions about the hash, and it is used in TLS and IPsec.\n\nTwo habits matter in code. Use a vetted HMAC function and never concatenate key and message yourself. Compare tags with a **constant-time** comparison such as `hmac.compare_digest` instead of `==`, so the time a check takes does not reveal how many leading bytes matched."
+      },
+      {
+       "type": "code",
+       "id": "c-mac",
+       "language": "python",
+       "code": "import hashlib, hmac\n\nkey = bytes.fromhex(\"0b\" * 32)               # demo key only\nmsg = b\"amount=100&to=alice\"\ntag = hmac.new(key, msg, hashlib.sha256).digest()\nprint(tag.hex())\n\ndef verify(key, msg, tag):\n    expected = hmac.new(key, msg, hashlib.sha256).digest()\n    return hmac.compare_digest(expected, tag)   # constant-time comparison, not ==\n\nprint(verify(key, msg, tag))\nprint(verify(key, b\"amount=900&to=alice\", tag))",
+       "caption": "HMAC-SHA256 with a constant-time verification."
+      },
+      {
+       "type": "code",
+       "id": "o-mac",
+       "language": "text",
+       "code": "18289f8dd0c76bf140dbabb5a5c56bb848af95b13c73a8012854f63fa4ddd86d\nTrue\nFalse",
+       "caption": "Expected output"
+      },
+      {
+       "type": "callout",
+       "id": "k1",
+       "variant": "warning",
+       "title": "Common mistake",
+       "text": "Do not build a MAC as h(key || message) or h(message || key). Use HMAC, or an AEAD cipher, which includes authentication."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "Why is SHA-256(key || message) unsafe as a MAC?",
+       "options": [
+        "It is too slow for network traffic.",
+        "An attacker who sees one tag can compute a valid tag for a longer message without the key.",
+        "SHA-256 cannot hash secret data."
+       ],
+       "correct_index": 1,
+       "explanation": "SHA-256 processes the message in blocks, so its output can be used as the starting state to hash more blocks. That is a length extension attack. HMAC's nested hashing avoids it."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Which security service does a MAC NOT provide?",
+       "options": [
+        "Integrity of the message.",
+        "Authenticity toward the other key holder.",
+        "Proof to a third party of which party created the message."
+       ],
+       "correct_index": 2,
+       "explanation": "Both parties share the key, so either could have created a valid tag. Proving authorship to a third party needs a digital signature."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Sections 13.1 and 13.2 (MACs from hash functions: HMAC, length extension attack)"
+      },
+      {
+       "book": "B02",
+       "locator": "Section 6.1 (definition of a MAC), Section 8.7 (case study: HMAC) and Section 7.7 (timing attacks)"
+      }
+     ]
+    },
+    {
+     "slug": "pk-random-kdf",
+     "action": "new",
+     "after": "sec-4",
+     "title": "Randomness and key derivation",
+     "summary": "Where unpredictable bits come from, how KDFs turn one secret into many keys, and how to store passwords.",
+     "estimated_minutes": 12,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "Keys, nonces, IVs and salts all need **unpredictable** bits. Paar et al. describe three kinds of generator. A **true random number generator (TRNG)** draws on a physical process. A general **pseudorandom number generator (PRNG)** expands a seed deterministically, and simple ones such as linear congruential generators are predictable. A **cryptographically secure** PRNG also resists predicting future output from past output. In practice an operating system random number generator keeps an internal state and mixes in entropy from hardware and events, such as the timing of interrupts and keystrokes or a hardware generator, and applications read bytes from it.\n\nSo never derive keys from `random.random`, the clock, process IDs or anything a user chose. Use the operating system source: `secrets.token_bytes` or `os.urandom` in Python.\n\nA **key derivation function (KDF)** turns one secret into one or more keys. Given a shared secret from a key exchange, a KDF called with different labels (the `info` input of HKDF) yields independent encryption and MAC keys, so a flaw in one use cannot leak into the other.\n\n**Passwords** are different: they are short and guessable. Store only a KDF output, never the password. Defeat dictionary and rainbow-table attacks with a **random per-user salt**, and slow an attacker down by iterating the function, as PBKDF2 does. The salt is not secret and is stored beside the hash. The right iteration count depends on current hardware and guidance, so treat the number in the listing as a demo value."
+      },
+      {
+       "type": "code",
+       "id": "c-kdf",
+       "language": "python",
+       "code": "# pip install cryptography   (HKDF; tested with cryptography 50.0.1). PBKDF2 is in the standard library.\nimport hashlib, os, secrets\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.kdf.hkdf import HKDF\n\n# 1. Keys come from the operating system's CSPRNG, never from random or the clock.\nkey = secrets.token_bytes(32)\n\n# 2. Derive independent keys from one shared secret; \"info\" labels the purpose of each key.\nshared_secret = bytes.fromhex(\"aa\" * 32)                 # e.g. the output of a key exchange\ndef derive(label: bytes) -> bytes:\n    return HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=label).derive(shared_secret)\n\nk_enc, k_mac = derive(b\"encryption key\"), derive(b\"mac key\")\nprint(\"different keys for different labels:\", k_enc != k_mac)\n\n# 3. Passwords: a salted, deliberately slow derivation (PBKDF2). Never a single bare hash.\nITERATIONS = 200_000          # demo value: tune to your hardware and to current guidance\ndef password_hash(password: bytes, salt: bytes) -> bytes:\n    return hashlib.pbkdf2_hmac(\"sha256\", password, salt, ITERATIONS, dklen=32)\n\nsalt = os.urandom(16)         # random, stored next to the hash, different for every user\nstored = password_hash(b\"correct horse battery\", salt)\nprint(\"same password + salt -> same hash:\", stored == password_hash(b\"correct horse battery\", salt))\nprint(\"different salt -> different hash:\", stored != password_hash(b\"correct horse battery\", os.urandom(16)))",
+       "caption": "OS randomness, HKDF for key separation, and PBKDF2 for passwords."
+      },
+      {
+       "type": "code",
+       "id": "o-kdf",
+       "language": "text",
+       "code": "different keys for different labels: True\nsame password + salt -> same hash: True\ndifferent salt -> different hash: True",
+       "caption": "Expected output"
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "Why does a password system store a random per-user salt with each hash?",
+       "options": [
+        "So the password can be recovered if the user forgets it.",
+        "So identical passwords give different hashes and precomputed tables stop working.",
+        "So the hash is computed faster."
+       ],
+       "correct_index": 1,
+       "explanation": "A unique salt means two users with the same password get different stored values, and an attacker cannot reuse one precomputed table of hashes against everyone."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Which is an appropriate source of bytes for a new AES key in Python?",
+       "options": [
+        "random.getrandbits(256)",
+        "secrets.token_bytes(32)",
+        "hashlib.sha256(str(time.time()).encode()).digest()"
+       ],
+       "correct_index": 1,
+       "explanation": "secrets.token_bytes reads from the operating system's cryptographically secure generator. The random module is predictable and a hash of the clock has very little entropy."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Section 2.2.1 (random number generators) and Section 14.2 (key derivation, password-based key derivation, PBKDF2)"
+      },
+      {
+       "book": "B02",
+       "locator": "Section 3.10 (generating random bits in practice) and Section 8.10 (key derivation)"
+      }
+     ]
+    },
+    {
+     "slug": "pk-lab",
+     "action": "new",
+     "after": "pk-random-kdf",
+     "title": "Lab: encrypt, tamper and verify",
+     "summary": "A hands-on script that combines key derivation, AES-GCM, a MAC and a signature, then attacks its own output.",
+     "estimated_minutes": 25,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "**Objective.** Protect a short note with authenticated encryption, prove that tampering is detected, and attach a MAC and a digital signature. You apply the previous lessons in one script.\n\n**Prerequisites.** Python 3.9 or newer and the ability to install a package with pip. Nothing in this lab touches the network, and all keys are created in memory and discarded when the script ends.\n\n**Setup.** Create a virtual environment, install the one dependency, and save the script below as `lab_a5.py`. The commands are shown for a Unix shell; on Windows PowerShell activate with `.venv\\Scripts\\Activate.ps1`."
+      },
+      {
+       "type": "code",
+       "id": "c-lab_setup",
+       "language": "bash",
+       "code": "python -m venv .venv\nsource .venv/bin/activate          # Windows PowerShell: .venv\\Scripts\\Activate.ps1\npython -m pip install cryptography\n# save the script below as lab_a5.py, then run it:\npython lab_a5.py",
+       "caption": "Create an isolated environment and install the library."
+      },
+      {
+       "type": "code",
+       "id": "c-lab",
+       "language": "python",
+       "code": "# lab_a5.py: protect a note, then try to tamper with it.\n# Requires: Python 3.9+ and `pip install cryptography` (tested with Python 3.14, cryptography 50.0.1)\nimport hashlib, hmac, os\nfrom cryptography.exceptions import InvalidSignature, InvalidTag\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import ec\nfrom cryptography.hazmat.primitives.ciphers.aead import AESGCM\n\nNOTE = b\"Meeting moved to 15:00, room 4. Do not forward.\"\n\n# --- Step 1: derive a key from a passphrase (salted, slow) ---------------------------------\npassphrase = b\"lab passphrase - change me\"\nsalt = os.urandom(16)\nkey = hashlib.pbkdf2_hmac(\"sha256\", passphrase, salt, 200_000, dklen=32)\n\n# --- Step 2: encrypt with AES-256-GCM; the header is authenticated but not encrypted -------\naead = AESGCM(key)\nnonce = os.urandom(12)\nheader = b\"note-v1\"\nciphertext = aead.encrypt(nonce, NOTE, header)\nprint(\"[2] decrypted:\", aead.decrypt(nonce, ciphertext, header).decode())\n\n# --- Step 3: tamper with the ciphertext and with the header --------------------------------\nflipped = bytearray(ciphertext)\nflipped[3] ^= 0x01\nfor label, ct, hd in ((\"ciphertext bit flip\", bytes(flipped), header), (\"header change\", ciphertext, b\"note-v2\")):\n    try:\n        aead.decrypt(nonce, ct, hd)\n        print(f\"[3] {label}: ACCEPTED (this would be a bug)\")\n    except InvalidTag:\n        print(f\"[3] {label}: rejected\")\n\n# --- Step 4: a MAC over the same data, with a separate key ---------------------------------\nmac_key = hashlib.pbkdf2_hmac(\"sha256\", passphrase, salt + b\"mac\", 200_000, dklen=32)\ntag = hmac.new(mac_key, ciphertext, hashlib.sha256).digest()\nprint(\"[4] mac verifies:\", hmac.compare_digest(tag, hmac.new(mac_key, ciphertext, hashlib.sha256).digest()))\n\n# --- Step 5: a digital signature, so anyone with the public key can verify the author ------\nsigner = ec.generate_private_key(ec.SECP256R1())\nsignature = signer.sign(ciphertext, ec.ECDSA(hashes.SHA256()))\nsigner.public_key().verify(signature, ciphertext, ec.ECDSA(hashes.SHA256()))\nprint(\"[5] signature verifies for the original ciphertext\")\ntry:\n    signer.public_key().verify(signature, bytes(flipped), ec.ECDSA(hashes.SHA256()))\nexcept InvalidSignature:\n    print(\"[5] signature rejects the tampered ciphertext\")",
+       "caption": "lab_a5.py: encrypt a note, tamper with it, then authenticate it two more ways."
+      },
+      {
+       "type": "text",
+       "id": "t2",
+       "markdown": "**Expected output.** The script prints one line per step. The values it checks are deterministic, even though the keys, salt and nonce are random on every run."
+      },
+      {
+       "type": "code",
+       "id": "o-lab",
+       "language": "text",
+       "code": "[2] decrypted: Meeting moved to 15:00, room 4. Do not forward.\n[3] ciphertext bit flip: rejected\n[3] header change: rejected\n[4] mac verifies: True\n[5] signature verifies for the original ciphertext\n[5] signature rejects the tampered ciphertext",
+       "caption": "Expected output"
+      },
+      {
+       "type": "text",
+       "id": "t3",
+       "markdown": "**Your tasks.**\n\n1. In step 3, change which ciphertext byte is flipped (`flipped[3]`) and confirm the result is still rejected. Try flipping the last byte, which belongs to the authentication tag.\n2. In a scratch copy, deliberately encrypt a second note with the same key *and the same nonce*. XOR the first bytes of the two ciphertexts and compare the result with the XOR of the two plaintexts. This is the nonce-reuse failure from the modes lesson, shown on your own data. Never do this in real code.\n3. Replace `200_000` with a much smaller iteration count and time the script. Explain, in one sentence, why a fast password KDF helps an attacker.\n\n**Troubleshooting.** `ModuleNotFoundError: No module named 'cryptography'` means the virtual environment is not active or the install step was skipped. If `python` is not found, try `python3` or, on Windows, `py`. An `InvalidTag` error outside step 3 means a key, nonce or header differs between encryption and decryption.\n\n**Completion criteria.** All six result lines match the expected output, and you can explain what each of the three tampering results shows.\n\n**Cleanup.** Leave the virtual environment (`deactivate`) and delete the `.venv` folder and `lab_a5.py`. No keys or data were written to disk."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "In step 3 the header changed from note-v1 to note-v2 and decryption failed. What does this show?",
+       "options": [
+        "The nonce was reused.",
+        "The header was encrypted, so a different header produced different plaintext.",
+        "GCM authenticates the header even though it is not encrypted."
+       ],
+       "correct_index": 2,
+       "explanation": "The header travels in the clear but is covered by the authentication tag. Changing it makes the tag check fail, even though nothing about the encryption of the note itself changed."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Why does the lab derive a separate MAC key instead of reusing the AES key?",
+       "options": [
+        "Different keys for different purposes limit the damage if one use is flawed.",
+        "A MAC cannot use a 256-bit key.",
+        "AES-GCM forbids any other use of its key."
+       ],
+       "correct_index": 0,
+       "explanation": "Key separation is a basic design rule: a weakness or leak in one use of a key should not affect another. A KDF with a different label or salt produces independent keys."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Section 5.1 (modes of operation), Section 13.2 (HMAC) and Section 14.2 (key derivation)"
+      },
+      {
+       "book": "B02",
+       "locator": "Section 9.7 (case study: Galois counter mode)"
+      }
+     ]
+    },
+    {
+     "slug": "sec-6",
+     "action": "replace",
+     "after": "pk-lab",
+     "title": "RSA",
+     "summary": "Key generation and encryption with tiny numbers, why schoolbook RSA is malleable, and what padding and KEMs fix.",
+     "estimated_minutes": 15,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "**RSA**, published in 1977, is the best-known public-key cryptosystem. Each user has a **public key** (n, e) that anyone may know and a **private key** d that only they hold. The modulus n = p·q is the product of two large secret primes.\n\n**Key generation.** Choose primes p and q, set n = p·q, compute φ(n) = (p−1)(q−1), pick a public exponent e with no common factor with φ(n), and compute d as the modular inverse of e, so that e·d ≡ 1 (mod φ(n)). **Encryption** is c = m^e mod n and **decryption** is m = c^d mod n. The security rests on the difficulty of factoring n: anyone who factors n can compute φ(n) and then d. Real moduli are thousands of bits long, so implementations compute these powers with fast square-and-multiply exponentiation.\n\nThe listing uses tiny numbers so you can follow every step, and it shows why this \"schoolbook\" RSA must never be used as it stands. It is deterministic, and it is **malleable**: multiply the ciphertext by 2^e mod n and the receiver decrypts exactly twice the original plaintext, although the attacker never decrypted anything. Real RSA adds randomized padding, such as OAEP in PKCS #1. In practice RSA is often used only to carry a symmetric key through a **key encapsulation mechanism (KEM)**: a random value is encrypted with RSA, both sides derive the symmetric key from it with a KDF, and AES protects the data.\n\nFor key sizes, Paar et al. pair a 3072-bit RSA modulus with a 128-bit security level and state that a modulus should be at least 2048 bits. An elliptic-curve key needs only 256 bits for the same level, as the next lessons show."
+      },
+      {
+       "type": "code",
+       "id": "c-rsa_toy",
+       "language": "python",
+       "code": "# Schoolbook RSA with tiny numbers. For understanding only: never use these sizes or this construction.\nfrom math import gcd\n\np, q = 61, 53\nn = p * q                    # 3233, the public modulus\nphi = (p - 1) * (q - 1)      # 3120, needs the factors of n\ne = 17                       # public exponent, gcd(e, phi) must be 1\nassert gcd(e, phi) == 1\nd = pow(e, -1, phi)          # private exponent: modular inverse of e (Python 3.8+)\nprint(\"n =\", n, \" d =\", d)\n\nm = 65\nc = pow(m, e, n)             # encrypt: c = m^e mod n\nprint(\"ciphertext:\", c, \" decrypted:\", pow(c, d, n))\n\n# Schoolbook RSA is malleable: multiply the ciphertext by 2^e and the plaintext doubles.\ntampered = (c * pow(2, e, n)) % n\nprint(\"attacker-modified ciphertext decrypts to:\", pow(tampered, d, n), \"(= 2 * 65)\")\n\n# Why the modulus size matters: with tiny n, factoring is instant.\nprint(\"factors of n found by trial division:\",\n      next((f, n // f) for f in range(2, n) if n % f == 0))",
+       "caption": "Schoolbook RSA with tiny numbers, its malleability, and why small moduli fall."
+      },
+      {
+       "type": "code",
+       "id": "o-rsa_toy",
+       "language": "text",
+       "code": "n = 3233  d = 2753\nciphertext: 2790  decrypted: 65\nattacker-modified ciphertext decrypts to: 130 (= 2 * 65)\nfactors of n found by trial division: (53, 61)",
+       "caption": "Expected output"
+      },
+      {
+       "type": "callout",
+       "id": "k1",
+       "variant": "info",
+       "title": "Quantum note",
+       "text": "Shor's algorithm, run on a large quantum computer, solves the factoring and discrete-logarithm problems that RSA, Diffie-Hellman and elliptic-curve schemes rely on (Paar et al., Section 12.1.1). Longer keys do not fix this, which is why post-quantum algorithms exist. The symmetric tools in this module are affected far less: Grover's algorithm weakens them only by a square root, so doubling the key length restores the margin."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "In the toy example n = 3233 and e = 17. Which values must an attacker obtain to compute the private exponent d?",
+       "options": [
+        "The message m.",
+        "The factors p and q of n.",
+        "The ciphertext c."
+       ],
+       "correct_index": 1,
+       "explanation": "Knowing p and q gives φ(n) = (p−1)(q−1), and d is the inverse of e modulo φ(n). Without the factors, computing d is as hard as factoring n."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "An attacker multiplies an RSA ciphertext by 2^e mod n. What does the receiver get when decrypting with schoolbook RSA?",
+       "options": [
+        "An error.",
+        "Twice the original plaintext.",
+        "The original plaintext."
+       ],
+       "correct_index": 1,
+       "explanation": "RSA is malleable: (2^e · m^e)^d = 2·m (mod n). Padding schemes such as OAEP destroy this algebraic structure."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Sections 7.1 to 7.4 (RSA, key generation, fast exponentiation), 7.7 (padding), 7.8 (key encapsulation), 7.9 (attacks), Section 6.2 Table 6.1 (bit lengths) and Section 12.1.1"
+      },
+      {
+       "book": "B02",
+       "locator": "Section 10.3 (a trapdoor permutation scheme based on RSA)"
+      }
+     ],
+     "needs_verification": {
+      "reason": "Key-size figures come from a 2024 textbook. Confirm them against current NIST key-management guidance and NSA CNSA 2.0 requirements before using them in a design or policy."
+     }
+    },
+    {
+     "slug": "sec-8",
+     "action": "replace",
+     "after": "sec-6",
+     "title": "Diffie-Hellman key exchange",
+     "summary": "Agreeing on a secret over an open channel, the discrete logarithm problem, and the man-in-the-middle attack.",
+     "estimated_minutes": 12,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "RSA can carry a key, but **Diffie-Hellman (DH)**, proposed in 1976, solves the key distribution problem differently. Two parties who have never met derive a shared secret by exchanging only public values over an insecure channel. It is used in protocols such as SSH, TLS and IPsec.\n\n**Setup.** Choose a large prime p and a number g, and publish both as the domain parameters. Alice picks a private value a and sends A = g^a mod p. Bob picks b and sends B = g^b mod p. Alice computes B^a mod p and Bob computes A^b mod p. Both equal g^(ab) mod p, the shared secret, which is then fed to a KDF to produce session keys. An eavesdropper sees p, g, A and B. Recovering a from A is the **discrete logarithm problem**, believed to be hard for well-chosen parameters.\n\nOn its own, DH has a serious gap: **it does not authenticate anyone**. In a **man-in-the-middle** attack, Oscar replaces each public value with his own, so Alice and Bob each end up sharing a key with Oscar, who can read and forward everything. Paar et al. stress that this applies to any public-key scheme unless the public keys are authenticated, for example with certificates. The listing demonstrates the agreement and the attack with toy numbers.\n\n**ECDH** performs the same exchange with points on an elliptic curve instead of numbers modulo p, and it needs much smaller keys for the same security level."
+      },
+      {
+       "type": "code",
+       "id": "c-dh_toy",
+       "language": "python",
+       "code": "# Diffie-Hellman with toy numbers. Real deployments use 2048-bit+ groups or elliptic curves.\np, g = 467, 2                 # public domain parameters (467 is prime and 2 generates the whole group)\na, b = 153, 197               # Alice's and Bob's private values, never sent\nA, B = pow(g, a, p), pow(g, b, p)           # public values, sent in the clear\nprint(\"Alice sends\", A, \" Bob sends\", B)\nprint(\"shared secrets equal:\", pow(B, a, p) == pow(A, b, p), \"->\", pow(B, a, p))\n\n# Man in the middle: without authentication, Oscar replaces both public values with his own.\no = 211\nO = pow(g, o, p)\nk_alice, k_bob = pow(O, a, p), pow(O, b, p)         # what Alice and Bob each end up with\nprint(\"Alice and Bob now share a key with Oscar, not with each other:\", k_alice != k_bob,\n      \"| Oscar can compute both:\", pow(A, o, p) == k_alice and pow(B, o, p) == k_bob)",
+       "caption": "Diffie-Hellman with toy numbers, and an unauthenticated man-in-the-middle."
+      },
+      {
+       "type": "code",
+       "id": "o-dh_toy",
+       "language": "text",
+       "code": "Alice sends 224  Bob sends 87\nshared secrets equal: True -> 367\nAlice and Bob now share a key with Oscar, not with each other: True | Oscar can compute both: True",
+       "caption": "Expected output"
+      },
+      {
+       "type": "callout",
+       "id": "k1",
+       "variant": "info",
+       "title": "Quantum note",
+       "text": "Shor's algorithm, run on a large quantum computer, solves the factoring and discrete-logarithm problems that RSA, Diffie-Hellman and elliptic-curve schemes rely on (Paar et al., Section 12.1.1). Longer keys do not fix this, which is why post-quantum algorithms exist. The symmetric tools in this module are affected far less: Grover's algorithm weakens them only by a square root, so doubling the key length restores the margin."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "Why can Oscar break an unauthenticated Diffie-Hellman exchange by sitting in the middle?",
+       "options": [
+        "He solves the discrete logarithm problem quickly.",
+        "He replaces both public values with his own, so each side shares a key with him.",
+        "He guesses a and b from p and g."
+       ],
+       "correct_index": 1,
+       "explanation": "Nothing in plain DH proves whose public value is whose. Oscar runs one exchange with each party and relays traffic between them. Authenticating the public values, for example with certificates and signatures, stops this."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Which values does an eavesdropper NOT see during a Diffie-Hellman exchange?",
+       "options": [
+        "p and g.",
+        "A and B.",
+        "The private values a and b."
+       ],
+       "correct_index": 2,
+       "explanation": "The domain parameters and both public values travel in the clear. The private values never leave their owners, and recovering them from the public values is the discrete logarithm problem."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Sections 8.1 (Diffie-Hellman key exchange), 8.3 (the discrete logarithm problem) and 14.4.1 (man-in-the-middle attack)"
+      },
+      {
+       "book": "B02",
+       "locator": "Section 10.4 (Diffie-Hellman key exchange) and Section 10.7 (attacks on the anonymous Diffie-Hellman protocol)"
+      }
+     ]
+    },
+    {
+     "slug": "sec-7",
+     "action": "replace",
+     "after": "sec-8",
+     "title": "Elliptic curve cryptography",
+     "summary": "Points on a curve form a group; scalar multiplication is easy one way and hard to reverse.",
+     "estimated_minutes": 14,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "An **elliptic curve** over a prime field is the set of points (x, y) that satisfy an equation such as y² = x³ + ax + b (mod p), together with a special **point at infinity** that acts as the zero. These points form a **group**. Two points can be \"added\" by a fixed rule (a chord or tangent construction, computed with modular arithmetic), and adding a point G to itself k times is **point multiplication**, written k·G.\n\nComputing Q = k·G from k is fast, using double-and-add in the same way RSA uses square-and-multiply. Recovering k from G and Q is the **elliptic curve discrete logarithm problem**, believed to be much harder than factoring or classic discrete logarithms at the same key size. That is why a 256-bit elliptic-curve key is paired with 128-bit security, where RSA needs 3072 bits (Paar et al., Table 6.1). Smaller keys mean smaller certificates, less bandwidth and faster handshakes.\n\nThe listing works on a toy curve, y² = x³ + 2x + 2 over a field of 17 elements, which has exactly 19 points including infinity. Because 19 is prime, every point except infinity generates the whole group, and 19·G is the point at infinity. Real curves use primes of about 256 bits and are standardized (NIST P-256 is one), so you never choose your own curve parameters.\n\n**ECDH** replaces g^a mod p by a·G, and **ECDSA** is the signature scheme built on the same group. Shor's algorithm also solves the elliptic-curve discrete logarithm problem, so a 256-bit elliptic-curve key is no safer against a large quantum computer than a long RSA key."
+      },
+      {
+       "type": "code",
+       "id": "c-ec_toy",
+       "language": "python",
+       "code": "# Point addition on the toy curve y^2 = x^3 + 2x + 2 over GF(17). Real curves use ~256-bit primes.\nP_MOD, A, B = 17, 2, 2\nINF = None                                   # the point at infinity (identity element)\n\ndef add(p1, p2):\n    if p1 is INF: return p2\n    if p2 is INF: return p1\n    (x1, y1), (x2, y2) = p1, p2\n    if x1 == x2 and (y1 + y2) % P_MOD == 0:\n        return INF\n    if p1 == p2:\n        s = (3 * x1 * x1 + A) * pow(2 * y1, -1, P_MOD) % P_MOD     # tangent slope\n    else:\n        s = (y2 - y1) * pow(x2 - x1, -1, P_MOD) % P_MOD            # chord slope\n    x3 = (s * s - x1 - x2) % P_MOD\n    return (x3, (s * (x1 - x3) - y1) % P_MOD)\n\ndef mul(k, point):\n    result = INF\n    while k:                                  # double-and-add\n        if k & 1: result = add(result, point)\n        point = add(point, point)\n        k >>= 1\n    return result\n\npoints = [(x, y) for x in range(P_MOD) for y in range(P_MOD) if (y * y - (x**3 + A * x + B)) % P_MOD == 0]\nprint(\"points on the curve (plus infinity):\", len(points) + 1)\n\nG = (5, 1)\nprint(\"multiples of G:\", [mul(k, G) for k in range(1, 6)])\nprint(\"19 * G is the point at infinity:\", mul(19, G) is INF)",
+       "caption": "Point addition and multiplication on a toy curve with 19 points."
+      },
+      {
+       "type": "code",
+       "id": "o-ec_toy",
+       "language": "text",
+       "code": "points on the curve (plus infinity): 19\nmultiples of G: [(5, 1), (6, 3), (10, 6), (3, 1), (9, 16)]\n19 * G is the point at infinity: True",
+       "caption": "Expected output"
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "Why can a 256-bit elliptic-curve key give the same classical security level as a 3072-bit RSA key?",
+       "options": [
+        "Because 256 is a power of two.",
+        "Because elliptic curves use a faster hash.",
+        "Because the best known attacks on elliptic-curve discrete logarithms are far less efficient than factoring attacks."
+       ],
+       "correct_index": 2,
+       "explanation": "No subexponential attack is known for well-chosen curves, whereas factoring has faster-than-brute-force methods, so the elliptic-curve group needs far fewer bits for the same effort. Table 6.1 in Paar et al. pairs the two sizes."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "On the toy curve, 19 is the number of points including infinity. What is 19·G for a point G other than infinity?",
+       "options": [
+        "G itself.",
+        "The point at infinity.",
+        "A random point on the curve."
+       ],
+       "correct_index": 1,
+       "explanation": "The group has prime order 19, so multiplying any non-zero point by 19 returns to the identity element, the point at infinity."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Sections 9.1 and 9.2 (computing with elliptic curves, the elliptic curve discrete logarithm problem) and Section 6.2 Table 6.1"
+      },
+      {
+       "book": "B02",
+       "locator": "Sections 15.1 to 15.3 (the group of points of an elliptic curve, elliptic curves over finite fields, elliptic curve cryptography)"
+      }
+     ]
+    },
+    {
+     "slug": "sec-5",
+     "action": "replace",
+     "after": "sec-7",
+     "title": "Digital signatures",
+     "summary": "Signing a hash with a private key, why signing is not encrypting, and what a signature adds beyond a MAC.",
+     "estimated_minutes": 12,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "A **digital signature** lets a signer prove authorship of a message to anyone. The signer creates the signature with the **private key**, and anyone who holds the matching **public key** can verify it. A signature provides **message authentication**, **integrity** and **non-repudiation**. The last of these is what a MAC cannot give, because with a MAC either key holder could have made the tag.\n\nMessages are long, so the signer does not sign the message itself. The message is hashed first and the digest is signed (**hash-then-sign**). This is why hash collision resistance matters: if two messages share a digest, one signature covers both.\n\nSigning is *not* the same operation as encryption, even though textbooks sometimes describe RSA signing as \"encrypting with the private key\". Real RSA signatures add structured padding, such as the RSA-PSS scheme in PKCS #1, which includes a random salt, before the private-key operation, and the verifier checks that structure. Other schemes cannot be turned into encryption at all: DSA and ECDSA only sign. Paar et al. add that the current US standard, FIPS 186-5, lists ECDSA and RSA but disallows DSA.\n\nVerification fails if either the message or the signature was altered, as the listing shows. The signer's public key must itself be trustworthy, which is the job of certificates in the next lesson. RSA and ECDSA signatures rest on factoring and discrete logarithms, so a large quantum computer could forge them. Replacing them is a central goal of post-quantum cryptography."
+      },
+      {
+       "type": "code",
+       "id": "c-ecdsa",
+       "language": "python",
+       "code": "# pip install cryptography   (tested with cryptography 50.0.1)\nfrom cryptography.exceptions import InvalidSignature\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import ec\n\nprivate_key = ec.generate_private_key(ec.SECP256R1())\npublic_key = private_key.public_key()\nmessage = b\"release v1.4.2 sha256=9f0f050a\"\nsignature = private_key.sign(message, ec.ECDSA(hashes.SHA256()))   # hashes the message, then signs the digest\n\npublic_key.verify(signature, message, ec.ECDSA(hashes.SHA256()))   # raises InvalidSignature on failure\nprint(\"valid signature accepted\")\ntry:\n    public_key.verify(signature, b\"release v1.4.2 sha256=deadbeef\", ec.ECDSA(hashes.SHA256()))\nexcept InvalidSignature:\n    print(\"signature on a different message rejected\")",
+       "caption": "ECDSA over P-256: sign, verify, and reject a different message."
+      },
+      {
+       "type": "code",
+       "id": "o-ecdsa",
+       "language": "text",
+       "code": "valid signature accepted\nsignature on a different message rejected",
+       "caption": "Expected output"
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "Which key creates a digital signature, and what is normally signed?",
+       "options": [
+        "The public key; the full message.",
+        "The private key; a hash of the message.",
+        "A shared secret; the message."
+       ],
+       "correct_index": 1,
+       "explanation": "The signer uses the private key, and in practice signs a hash of the message. Anyone with the public key can verify the result."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Why can a MAC not provide non-repudiation while a signature can?",
+       "options": [
+        "A MAC tag can be created by anyone who holds the shared key, so it cannot prove which party made it.",
+        "MAC tags are shorter than signatures.",
+        "Signatures use hash functions and MACs do not."
+       ],
+       "correct_index": 0,
+       "explanation": "Both parties know the MAC key. A signature can only be produced with the signer's private key, which nobody else holds."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Section 10.1 (introduction to digital signatures), Section 10.2 (the RSA signature scheme and RSA-PSS encoding) and Section 10.4 (DSA)"
+      },
+      {
+       "book": "B02",
+       "locator": "Section 13.1 (definition of a digital signature) and Section 13.2 (extending the message space with collision resistant hashing)"
+      }
+     ]
+    },
+    {
+     "slug": "sec-9",
+     "action": "replace",
+     "after": "sec-5",
+     "title": "PKI and certificates",
+     "summary": "How certificates bind keys to identities, how chains of trust are verified, and how revocation works.",
+     "estimated_minutes": 13,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "Public-key schemes only work if you know that a public key really belongs to the person or server you think it does. Without that, the man-in-the-middle attack from the Diffie-Hellman lesson succeeds. A **certificate** binds a public key to an identity and carries the signature of a **certificate authority (CA)** that vouches for the binding. The CA's own public key is already installed on the client (browsers ship with many), so the client can verify the signature and trust the binding. The whole system of CAs, certificates and supporting procedures is a **public-key infrastructure (PKI)**.\n\nNo single CA serves the world, so trust works through **certificate chains**. A server's certificate is signed by an issuing or intermediate CA, whose certificate is signed by another, up to a **root CA** that the client already trusts. Validating a chain means checking each signature and each certificate's validity in turn. CAs can also certify each other (cross-certification).\n\nSometimes a certificate must be withdrawn early, for example after a lost smart card, when an employee leaves, or when a key is compromised. Two mechanisms exist. A **certificate revocation list (CRL)** is a signed list of revoked serial numbers published by the CA. Its weakness is distribution and freshness: a client may not have the latest list, and shortening the update period makes lists larger (delta CRLs send only the changes). The **Online Certificate Status Protocol (OCSP)** lets a client ask a responder about one certificate's current status, at the cost of an extra request.\n\nA certificate is only as trustworthy as the CA that issued it and the checks the client performs: identity, validity dates, the signature chain and revocation status. Certificates rely on digital signatures, so quantum computers that can forge RSA and ECDSA signatures threaten the chain of trust as well."
+      },
+      {
+       "type": "callout",
+       "id": "k1",
+       "variant": "info",
+       "title": "Where to see this",
+       "text": "Open any HTTPS site in your browser and inspect its certificate. You should find the subject name, validity dates, the issuing CA, and a path up to a root certificate."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "A client trusts a root CA. How does it come to trust a server certificate signed by an intermediate CA?",
+       "options": [
+        "It trusts any certificate that uses a strong algorithm.",
+        "It verifies each signature along the chain up to the trusted root.",
+        "It asks the server to confirm its own identity."
+       ],
+       "correct_index": 1,
+       "explanation": "Each certificate in the chain is signed by the next one up. If every signature and validity period checks out and the chain ends at a trusted root, the server's public key is accepted."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "What is the main drawback of relying only on certificate revocation lists?",
+       "options": [
+        "A client may not yet have the latest list, so a revoked certificate can still be accepted.",
+        "CRLs are not signed.",
+        "CRLs can only revoke root certificates."
+       ],
+       "correct_index": 0,
+       "explanation": "Between list updates a client works with stale information. Shorter update intervals help but make lists larger, which is why delta CRLs and OCSP exist."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Section 14.4.2 (certificates) and Section 14.5 (public-key infrastructures and CAs: certificate chains, certificate revocation, CRLs and OCSP)"
+      },
+      {
+       "book": "B02",
+       "locator": "Section 13.8 (certificates and the public-key infrastructure)"
+      }
+     ],
+     "needs_verification": {
+      "reason": "Deployed revocation practice changes over time. This lesson describes the mechanisms in the book, not what any particular browser or CA does today."
+     }
+    },
+    {
+     "slug": "sec-10",
+     "action": "replace",
+     "after": "sec-9",
+     "title": "TLS: putting the pieces together",
+     "summary": "How TLS 1.3 combines key exchange, certificates, signatures, key derivation, a MAC and an AEAD cipher.",
+     "estimated_minutes": 14,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "**TLS** (Transport Layer Security) protects most web traffic. TLS 1.3 is specified in RFC 9846, published in July 2026, which replaces RFC 8446. It makes a good summary of this module because it uses nearly every tool you have met. You stepped through its message flow in the networking module; here we name the cryptography inside it.\n\nA TLS 1.3 connection has two phases.\n\n1. **Handshake** (an authenticated key exchange). Client and server each send a fresh **ephemeral Diffie-Hellman** public value in their hello messages and agree on algorithms from the options offered; negotiation exists so that deployments are not tied to one fixed choice. Both sides compute the DH shared secret and derive keys from it with a **KDF** (HKDF). After the server hello, what the server sends is encrypted. The server presents its **certificate** and a **signature over the handshake transcript** made with the private key that matches the certificate. That signature proves the server holds the key and defeats the man-in-the-middle attack. Both sides finish with a **Finished** message, a MAC over the transcript, confirming that they saw the same conversation.\n2. **Record protocol.** Application data is protected by an **AEAD** cipher such as AES-GCM under the traffic keys derived in the handshake.\n\nBecause the DH values are ephemeral and discarded, stealing a server's long-term key later does not reveal past sessions. This property is called **forward secrecy**.\n\nMap the pieces: key exchange is DH or ECDH; authentication is certificates plus signatures; key separation is HKDF; protection of the data is an AEAD cipher; confirmation of the handshake is a MAC. Which of these does Shor's algorithm threaten? The **public-key parts**: the key exchange and the signatures. The symmetric parts survive with adequate key sizes. That split is exactly what post-quantum migration targets, and later modules return to it with hybrid key exchange."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "Why does using ephemeral Diffie-Hellman values give TLS forward secrecy?",
+       "options": [
+        "The server certificate is renewed every day.",
+        "Session keys come from fresh DH values that are discarded, so a later theft of the long-term key does not expose past sessions.",
+        "AES-GCM is stronger than older cipher modes."
+       ],
+       "correct_index": 1,
+       "explanation": "If the session keys depended on the server's long-term key, stealing it would decrypt recorded traffic. With ephemeral values, the long-term key is used only to sign, not to protect session keys."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Which parts of a TLS 1.3 connection are directly threatened by Shor's algorithm?",
+       "options": [
+        "The AES-256 record encryption.",
+        "The key exchange and the certificate signatures.",
+        "The HKDF key derivation."
+       ],
+       "correct_index": 1,
+       "explanation": "Shor's algorithm breaks factoring and discrete logarithms, which underlie Diffie-Hellman key exchange and RSA or ECDSA signatures. Symmetric encryption and hash-based derivation are only weakened by Grover's square-root speed-up."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B02",
+       "locator": "Section 9.8 (case study: the TLS 1.3 record protocol), Section 21.3 (perfect forward secrecy) and Section 21.10 (case study: TLS session setup)"
+      },
+      {
+       "book": "B08",
+       "locator": "Section 2 (protocol overview)"
+      },
+      {
+       "book": "B01",
+       "locator": "Section 12.1.1 (quantum computers and cryptography)"
+      }
+     ],
+     "needs_verification": {
+      "reason": "Boneh and Shoup describe the TLS 1.3 key exchange from a draft of their book that predates RFC 9846. Where details differ, the RFC is authoritative.",
+      "checked_on": "2026-10-03"
+     }
+    },
+    {
+     "slug": "sec-11",
+     "action": "replace",
+     "after": "sec-10",
+     "title": "Key management",
+     "summary": "The key lifecycle, why one global key is dangerous, and why inventories matter for post-quantum migration.",
+     "estimated_minutes": 10,
+     "blocks": [
+      {
+       "type": "text",
+       "id": "t1",
+       "markdown": "Strong algorithms do not help if keys are mishandled. Paar et al. note that many real breaches trace back to weak key management. Think in terms of a **key lifecycle** and ask, for every key in a system:\n\n- **Generation:** is it created from a proper random source (see the randomness lesson), on a trustworthy device?\n- **Distribution:** how does it reach its users, for example through an authenticated key exchange or a trusted party, and not through email or chat?\n- **Storage and use:** is it protected at rest and in use, ideally in a hardware module, with access limited to who needs it? Are different purposes served by different keys, derived with a KDF?\n- **Refresh:** how often is it replaced, and how quickly after a suspected compromise?\n- **Backup:** is a copy needed at all? Every copy is another place to steal it.\n- **Destruction:** is a retired key deleted securely?\n\nTwo further ideas lead into the next modules. **Key diversity** means unique keys per device or user, so extracting one key does not expose everything, unlike a single global key. **Crypto-agility** means knowing where every algorithm and key is used so it can be replaced. Post-quantum migration requires finding every use of RSA, Diffie-Hellman and elliptic-curve keys, which is only possible if keys and algorithms are inventoried. Later modules return to this as cryptographic discovery and migration planning."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp1",
+       "question": "A product encrypts every device's data with one global AES key stored in its firmware. What is the main risk?",
+       "options": [
+        "AES cannot use a global key.",
+        "Extracting the key from a single device exposes every device.",
+        "The key is too short."
+       ],
+       "correct_index": 1,
+       "explanation": "One shared key is a single point of failure. Device-specific keys (key diversity) limit the damage when one device is attacked."
+      },
+      {
+       "type": "checkpoint",
+       "id": "cp2",
+       "question": "Why is an inventory of keys and algorithms a prerequisite for post-quantum migration?",
+       "options": [
+        "Inventories make AES faster.",
+        "Regulators forbid encryption without an inventory.",
+        "You cannot replace RSA, Diffie-Hellman and elliptic-curve use that you do not know about."
+       ],
+       "correct_index": 2,
+       "explanation": "Migration means replacing quantum-vulnerable public-key algorithms wherever they are used. Unknown uses stay vulnerable."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Section 14.1 (key management: introduction), Section 14.3 (key establishment using symmetric-key techniques) and Section 14.6 (practical aspects of key management)"
+      }
+     ]
+    }
+   ],
+   "quiz": [
+    {
+     "id": "a5-pk01",
+     "lesson_id": "A5.L1",
+     "competency_id": "CRYPTO.1",
+     "depth": "Explain",
+     "prompt": "Which design approach follows Kerckhoffs' principle?",
+     "options": [
+      "Keep the algorithm secret so attackers cannot study it.",
+      "Assume attackers know the algorithm and rely only on the secrecy of the key.",
+      "Change the algorithm every month."
+     ],
+     "correct_index": 1,
+     "explanation": "Kerckhoffs' principle asks that a system stay secure even when everything except the key is public.",
+     "source": {
+      "book": "B01",
+      "locator": "Section 1.3, Definition 1.3.1"
+     }
+    },
+    {
+     "id": "a5-pk02",
+     "lesson_id": "A5.L3",
+     "competency_id": "CRYPTO.1",
+     "depth": "Explain",
+     "prompt": "A ciphertext encrypted in ECB mode contains two identical blocks. What does an observer learn?",
+     "options": [
+      "The two plaintext blocks were identical.",
+      "The key was reused with the same nonce.",
+      "Nothing, because the match is random."
+     ],
+     "correct_index": 0,
+     "explanation": "ECB is deterministic under one key, so equal ciphertext blocks come from equal plaintext blocks.",
+     "source": {
+      "book": "B01",
+      "locator": "Section 5.1.1"
+     }
+    },
+    {
+     "id": "a5-pk03",
+     "lesson_id": "A5.L3",
+     "competency_id": "CRYPTO.1",
+     "depth": "Explain",
+     "prompt": "What does AES-GCM provide that AES-CTR alone does not?",
+     "options": [
+      "Detection of modified ciphertext or associated data.",
+      "A longer key.",
+      "Resistance to Grover's algorithm."
+     ],
+     "correct_index": 0,
+     "explanation": "GCM adds an authentication tag over the ciphertext and the associated data; decryption fails if either is altered.",
+     "source": {
+      "book": "B02",
+      "locator": "Section 9.7"
+     }
+    },
+    {
+     "id": "a5-pk04",
+     "lesson_id": "A5.L5",
+     "competency_id": "CRYPTO.2",
+     "depth": "Explain",
+     "prompt": "Why does an attacker who can find two messages with the same hash threaten digital signatures?",
+     "options": [
+      "A signature on one message is also valid for the other, so the signed message can be swapped.",
+      "The signature key is revealed.",
+      "The hash becomes reversible."
+     ],
+     "correct_index": 0,
+     "explanation": "Signatures are made over the digest. If two messages share a digest, one signature covers both.",
+     "source": {
+      "book": "B01",
+      "locator": "Section 11.2.3"
+     }
+    },
+    {
+     "id": "a5-pk05",
+     "lesson_id": "A5.L6",
+     "competency_id": "CRYPTO.2",
+     "depth": "Explain",
+     "prompt": "Why is h(key || message) with SHA-256 a poor MAC?",
+     "options": [
+      "Length extension lets an attacker forge a tag for a longer message.",
+      "SHA-256 is too slow.",
+      "SHA-256 outputs are not fixed length."
+     ],
+     "correct_index": 0,
+     "explanation": "SHA-2 hashes blocks sequentially, so a known digest can be extended with more data without the key. HMAC avoids this.",
+     "source": {
+      "book": "B01",
+      "locator": "Section 13.2"
+     }
+    },
+    {
+     "id": "a5-pk06",
+     "lesson_id": "A5.L7",
+     "competency_id": "CRYPTO.2",
+     "depth": "Explain",
+     "prompt": "What does a random per-user salt protect against when storing password hashes?",
+     "options": [
+      "Precomputed tables, and identical passwords producing identical hashes.",
+      "Quantum attacks.",
+      "Network eavesdropping."
+     ],
+     "correct_index": 0,
+     "explanation": "A unique salt forces an attacker to attack each hash separately and makes rainbow tables useless.",
+     "source": {
+      "book": "B01",
+      "locator": "Section 14.2"
+     }
+    },
+    {
+     "id": "a5-pk07",
+     "lesson_id": "A6.L2",
+     "competency_id": "CRYPTO.3",
+     "depth": "Explain",
+     "prompt": "What does multiplying a schoolbook RSA ciphertext by 2^e mod n do to the decrypted plaintext?",
+     "options": [
+      "It doubles the plaintext.",
+      "It makes decryption fail.",
+      "It leaves the plaintext unchanged."
+     ],
+     "correct_index": 0,
+     "explanation": "RSA is malleable: (2^e · m^e)^d = 2m mod n. Padding such as OAEP prevents this.",
+     "source": {
+      "book": "B01",
+      "locator": "Section 7.7"
+     }
+    },
+    {
+     "id": "a5-pk08",
+     "lesson_id": "A6.L3",
+     "competency_id": "CRYPTO.3",
+     "depth": "Explain",
+     "prompt": "What defeats a man-in-the-middle attack on Diffie-Hellman?",
+     "options": [
+      "Using a larger prime only.",
+      "Authenticating the public values, for example with certificates and signatures.",
+      "Encrypting the public values with AES."
+     ],
+     "correct_index": 1,
+     "explanation": "The attack works whenever public keys are not authenticated; certificates bind keys to identities.",
+     "source": {
+      "book": "B01",
+      "locator": "Section 14.4.1"
+     }
+    },
+    {
+     "id": "a5-pk09",
+     "lesson_id": "A6.L5",
+     "competency_id": "CRYPTO.4",
+     "depth": "Explain",
+     "prompt": "In a hash-then-sign scheme such as ECDSA, which key signs and what is signed?",
+     "options": [
+      "The private key signs a hash of the message.",
+      "The public key signs the message.",
+      "A shared key signs the hash."
+     ],
+     "correct_index": 0,
+     "explanation": "Only the private key can produce a valid signature; the digest is signed so long messages are handled efficiently.",
+     "source": {
+      "book": "B01",
+      "locator": "Section 10.1"
+     }
+    },
+    {
+     "id": "a5-pk10",
+     "lesson_id": "A6.L7",
+     "competency_id": "NET.4",
+     "depth": "Aware",
+     "prompt": "Which parts of a TLS 1.3 connection are directly threatened by Shor's algorithm?",
+     "options": [
+      "The key exchange and the signatures in certificates.",
+      "The AES-GCM record encryption only.",
+      "The HKDF key derivation only."
+     ],
+     "correct_index": 0,
+     "explanation": "Shor's algorithm breaks factoring and discrete logarithms, the basis of Diffie-Hellman and RSA or ECDSA signatures.",
+     "source": {
+      "book": "B01",
+      "locator": "Section 12.1.1"
+     }
+    }
+   ],
+   "estimated_minutes": 201,
+   "learning_objectives": [
+    "Explain Kerckhoffs' principle and the difference between unconditional and computational security.",
+    "Use authenticated encryption correctly: block cipher modes, nonces, AES-GCM and ChaCha20-Poly1305.",
+    "Explain hash functions, MACs and HMAC, including collision resistance and the length extension attack.",
+    "Derive keys and store passwords safely with HKDF and a salted, slow KDF, using OS randomness.",
+    "Explain RSA, Diffie-Hellman and elliptic-curve cryptography with small worked examples, and why each is breakable by a large quantum computer.",
+    "Describe how signatures, certificates and PKI authenticate public keys, and how TLS 1.3 combines these tools.",
+    "Describe the key lifecycle and why an inventory of keys and algorithms is needed before post-quantum migration."
+   ],
+   "notes": "Rewrites all 11 outline sections as full lessons, adds 4 sections (modes and AEAD, stream ciphers, randomness and KDFs, a lab) and reorders the module so public-key topics follow the symmetric ones."
+  }
+ ]
+}

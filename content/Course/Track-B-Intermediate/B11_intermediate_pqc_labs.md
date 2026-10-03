@@ -32,7 +32,7 @@ Building on core Module 3.6's conceptual introduction, this lab configures and t
 Extending 11.4 to full protocol-level performance: measuring the real-world latency and throughput impact of switching a test service from classical to hybrid or pure-PQC cryptography — the kind of data an organization would need before committing to a production migration.
 
 ## 11.8 Cryptographic Inventory (Hands-On)
-Hands-on exercise: given a small set of simulated/test systems, perform manual and tool-assisted discovery of what cryptographic algorithms and key sizes are in use — a smaller-scale, individual rehearsal of the Cryptographic Discovery process that Track D's Enterprise track covers at organizational scale, and directly related to what Inba's scanner engine automates for Q-CAPS.
+Hands-on exercise: given a small set of simulated/test systems, perform manual and tool-assisted discovery of what cryptographic algorithms and key sizes are in use — a smaller-scale, individual rehearsal of the Cryptographic Discovery process that Track D's Enterprise track covers at organizational scale, and directly related to what the Q-CAPS scanner automates for Q-CAPS.
 
 ## 11.9 PQC Migration Planning (Hands-On)
 Synthesizing the entire module: using the benchmark data (11.4, 11.7) and cryptographic inventory (11.8) produced in this module, draft a basic migration plan for the lab environment — prioritizing which systems to migrate first, and whether hybrid or pure-PQC is appropriate for each. This exercise is the direct rehearsal for the Intermediate Capstone.

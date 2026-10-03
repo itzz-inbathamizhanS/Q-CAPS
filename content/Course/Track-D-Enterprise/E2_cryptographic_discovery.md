@@ -3,7 +3,7 @@
 **Level:** Enterprise | **Estimated Time:** 140 minutes | **Track:** D — Architect
 **Prerequisite:** `E1`
 
-> This module describes, at the organizational-process level, exactly what Inba's Scanner Engine automates technically for Q-CAPS — worth reading alongside their scanner documentation for the clearest picture of theory-meets-implementation.
+> This module describes, at the organizational-process level, exactly what the Q-CAPS scanner automates technically — worth reading alongside the scanner documentation for the clearest picture of theory-meets-implementation.
 
 ## Learning Objectives
 - Build a complete cryptographic inventory covering assets, algorithms, certificates, protocols, and applications.
@@ -19,7 +19,7 @@ The foundational artifact of this entire track: a **cryptographic inventory** is
 The first practical step: identifying what systems, servers, applications, and devices exist across the organization in the first place — a surprisingly difficult problem at enterprise scale due to "shadow IT" (unofficial, unregistered systems) and forgotten legacy infrastructure.
 
 ## 2.3 Algorithm Discovery
-Building on B7's TLS/PKI engineering depth, this section covers systematically identifying which cryptographic algorithms (RSA, ECC, AES, and their specific parameters) are actually in use across discovered assets — exactly the technical operation Inba's scanner performs when it connects to a target and reports its detected encryption algorithm.
+Building on B7's TLS/PKI engineering depth, this section covers systematically identifying which cryptographic algorithms (RSA, ECC, AES, and their specific parameters) are actually in use across discovered assets — exactly the technical operation the Q-CAPS scanner performs when it connects to a target and reports its detected encryption algorithm.
 
 ## 2.4 Certificate Discovery
 Specifically cataloguing certificates in use: their issuing CA, key algorithm/size, expiration date, and where they're deployed — building directly on B7.6's certificate lifecycle coverage, now applied as a discovery exercise across the whole organization rather than a single system.
@@ -43,5 +43,5 @@ Complementing dependency mapping: tracing how sensitive data actually moves thro
 
 ## Module Wrap-Up
 - Knowledge check quiz covering sections 2.1–2.8.
-- Practical assessment: given a small set of simulated scan results (structured similarly to Inba's Scanner Mission JSON output), compile them into a structured cryptographic inventory with dependency notes.
+- Practical assessment: given a small set of simulated scan results (structured similarly to the Q-CAPS scanner's JSON output), compile them into a structured cryptographic inventory with dependency notes.
 - Unlocks: `E3 — Quantum Readiness Assessment`.
