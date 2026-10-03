@@ -1,0 +1,1212 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B140",
+      "title": "Charge insensitive qubit design derived from the Cooper pair box (arXiv:cond-mat/0703002; Phys. Rev. A 76, 042319)",
+      "authors": "Jens Koch et al.",
+      "edition": "2007",
+      "year": 2007
+    },
+    {
+      "id": "B141",
+      "title": "A Quantum Engineer's Guide to Superconducting Qubits (arXiv:1904.06560)",
+      "authors": "Philip Krantz, Morten Kjaergaard, Fei Yan, Terry P. Orlando, Simon Gustavsson, William D. Oliver",
+      "edition": "2019",
+      "year": 2019
+    },
+    {
+      "id": "B142",
+      "title": "Superconducting Qubits: Current State of Play (arXiv:1905.13641)",
+      "authors": "Morten Kjaergaard et al.",
+      "edition": "2019",
+      "year": 2019
+    },
+    {
+      "id": "B143",
+      "title": "Trapped-Ion Quantum Computing: Progress and Challenges (arXiv:1904.04178)",
+      "authors": "Colin D. Bruzewicz, John Chiaverini, Robert McConnell, Jeremy M. Sage",
+      "edition": "2019",
+      "year": 2019
+    },
+    {
+      "id": "B144",
+      "title": "Quantum dynamics of cold trapped ions, with application to quantum computation (arXiv:quant-ph/9702053)",
+      "authors": "Daniel F. V. James",
+      "edition": "1997",
+      "year": 1997
+    },
+    {
+      "id": "B145",
+      "title": "High-fidelity quantum logic gates using trapped-ion hyperfine qubits (arXiv:1512.04600)",
+      "authors": "C. J. Ballance et al.",
+      "edition": "2016",
+      "year": 2016
+    },
+    {
+      "id": "B146",
+      "title": "High-Fidelity Universal Gate Set for 9Be+ Ion Qubits (arXiv:1604.00032)",
+      "authors": "J. P. Gaebler et al.",
+      "edition": "2016",
+      "year": 2016
+    },
+    {
+      "id": "B147",
+      "title": "Quantum information with Rydberg atoms (arXiv:0909.4777)",
+      "authors": "M. Saffman, T. G. Walker, K. Molmer",
+      "edition": "2010",
+      "year": 2010
+    },
+    {
+      "id": "B148",
+      "title": "Quantum computing with neutral atoms (arXiv:2006.12326)",
+      "authors": "Loic Henriet et al.",
+      "edition": "2020",
+      "year": 2020
+    },
+    {
+      "id": "B149",
+      "title": "Logical quantum processor based on reconfigurable atom arrays (arXiv:2312.03982)",
+      "authors": "Dolev Bluvstein et al.",
+      "edition": "2023",
+      "year": 2023
+    },
+    {
+      "id": "B150",
+      "title": "Review article: Linear optical quantum computing (arXiv:quant-ph/0512071)",
+      "authors": "Pieter Kok et al.",
+      "edition": "2005",
+      "year": 2005
+    },
+    {
+      "id": "B151",
+      "title": "The Computational Complexity of Linear Optics (arXiv:1011.3245)",
+      "authors": "Scott Aaronson, Alex Arkhipov",
+      "edition": "2010",
+      "year": 2010
+    },
+    {
+      "id": "B152",
+      "title": "Quantum Computation with Quantum Dots (arXiv:cond-mat/9701055)",
+      "authors": "Daniel Loss, David P. DiVincenzo",
+      "edition": "1997",
+      "year": 1997
+    },
+    {
+      "id": "B153",
+      "title": "Semiconductor Spin Qubits (arXiv:2112.08863)",
+      "authors": "Guido Burkard et al.",
+      "edition": "2021",
+      "year": 2021
+    },
+    {
+      "id": "B154",
+      "title": "Simple pulses for elimination of leakage in weakly nonlinear qubits (arXiv:0901.0534)",
+      "authors": "F. Motzoi, J. M. Gambetta, P. Rebentrost, F. K. Wilhelm",
+      "edition": "2009",
+      "year": 2009
+    },
+    {
+      "id": "B155",
+      "title": "The Physical Implementation of Quantum Computation (arXiv:quant-ph/0002077)",
+      "authors": "David P. DiVincenzo",
+      "edition": "2000",
+      "year": 2000
+    },
+    {
+      "id": "B156",
+      "title": "Realizing Rapid, High-Fidelity, Single-Shot Dispersive Readout of Superconducting Qubits (arXiv:1701.06933)",
+      "authors": "T. Walter et al.",
+      "edition": "2017",
+      "year": 2017
+    },
+    {
+      "id": "B157",
+      "title": "Experimental Comparison of Two Quantum Computing Architectures (arXiv:1702.01852)",
+      "authors": "N. M. Linke et al.",
+      "edition": "2017",
+      "year": 2017
+    },
+    {
+      "id": "B158",
+      "title": "Quantum error correction below the surface code threshold (arXiv:2408.13687)",
+      "authors": "Rajeev Acharya et al. (Google Quantum AI)",
+      "edition": "2024",
+      "year": 2024
+    },
+    {
+      "id": "B159",
+      "title": "Surface codes: Towards practical large-scale quantum computation (arXiv:1208.0928)",
+      "authors": "Austin G. Fowler, Matteo Mariantoni, John M. Martinis, Andrew N. Cleland",
+      "edition": "2012",
+      "year": 2012
+    },
+    {
+      "id": "B111",
+      "title": "Qiskit SDK documentation and guides (quantum.cloud.ibm.com/docs), accessed 2026-10-04",
+      "authors": "IBM Quantum",
+      "edition": "accessed 2026-10-04",
+      "year": 2026,
+      "publisher": "IBM"
+    },
+    {
+      "id": "B131",
+      "title": "qiskit-ibm-runtime 0.50.0: fake backends and primitives (package behaviour exercised in the labs)",
+      "authors": "IBM Quantum",
+      "edition": "0.50.0",
+      "year": 2026,
+      "publisher": "IBM"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_b_b5_quantum_hardware",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "5.1 Superconducting Qubits",
+          "summary": "The transmon from first principles: diagonalising its Hamiltonian, charge-noise suppression with EJ/EC, anharmonicity, and a typical operating point.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **superconducting qubit** is an electrical circuit cooled in a dilution refrigerator so that it behaves quantum-mechanically. Its key element is the **Josephson junction**, a non-linear, lossless inductor. Without non-linearity a circuit is a harmonic oscillator whose levels are equally spaced and cannot be addressed one pair at a time; the junction makes the level spacing **anharmonic**, so the two lowest levels form a qubit. The **transmon** (Koch and colleagues, 2007) is the design behind most of today's devices. It is a Josephson junction in parallel with a large capacitor, described by the Hamiltonian H = 4E_C(n − n_g)² − E_J cos φ, where n counts Cooper pairs on the island, n_g is an offset charge from the environment, E_C is the charging energy and E_J the Josephson energy. The charge qubit that preceded it (E_J/E_C ≈ 1) suffered from short dephasing times because its frequency depended on the offset charge n_g. Koch et al. showed that in the regime of **large E_J/E_C** the **charge dispersion decreases exponentially** with E_J/E_C while the loss of anharmonicity follows only a weak power law, so the transmon trades a modest anharmonicity for large insensitivity to charge noise.\n\nEverything here can be checked numerically. In the charge basis |n⟩, the Hamiltonian is a tridiagonal matrix: 4E_C(n − n_g)² on the diagonal and −E_J/2 on the off-diagonals. The listing diagonalises it for several E_J/E_C, extracts the qubit frequency f01 and the **anharmonicity** α = f12 − f01, measures the **charge dispersion** of f01 (its variation as n_g sweeps from 0 to ½), and fits the exponential suppression. The listings use NumPy only (plus `qiskit` where stated): `pip install numpy`. They are **physical models**, small enough to run in seconds, that reproduce known results from the literature so you can check them. Numbers marked ASSUMED are illustrative inputs, not data for any specific device."
+            },
+            {
+              "type": "code",
+              "id": "c-transmon",
+              "language": "python",
+              "code": "import numpy as np\n\ndef levels(EJ, EC, ng, cutoff=25):\n    n = np.arange(-cutoff, cutoff + 1)\n    H = np.diag(4 * EC * (n - ng) ** 2) - EJ / 2 * (np.eye(len(n), k=1) + np.eye(len(n), k=-1))\n    return np.linalg.eigvalsh(H)[:4]\n\nEC = 0.25                                                          # GHz: ASSUMED, a typical transmon charging energy\nprint(f\"EC/h = {EC} GHz (assumed)\")\nprint(f\"{'EJ/EC':>6} {'f01 (GHz)':>10} {'sqrt(8 EJ EC) - EC':>19} {'anharmonicity (GHz)':>20} {'charge dispersion of f01 (MHz)':>31}\")\nratios, dispersions = [], []\nfor ratio in (1, 5, 10, 20, 30, 40, 50):\n    EJ = ratio * EC\n    e0, e1, e2, _ = levels(EJ, EC, 0.0)\n    f01, f12 = e1 - e0, e2 - e1\n    a = levels(EJ, EC, 0.0); b = levels(EJ, EC, 0.5)\n    dispersion = abs((b[1] - b[0]) - (a[1] - a[0]))\n    ratios.append(ratio); dispersions.append(dispersion)\n    print(f\"{ratio:>6} {f01:>10.4f} {np.sqrt(8 * EJ * EC) - EC:>19.4f} {f12 - f01:>20.4f} {dispersion * 1000:>31.3e}\")\nx = np.sqrt(8 * np.array(ratios[2:])); y = np.log(np.array(dispersions[2:]))\nslope = np.polyfit(x, y, 1)[0]\nprint(f\"slope of ln(dispersion) against sqrt(8 EJ/EC): {slope:.2f} (exponential suppression, exponent close to -1)\")\nprint(f\"at EJ/EC = 50 the anharmonicity is {levels(50 * EC, EC, 0)[2] - 2 * levels(50 * EC, EC, 0)[1] + levels(50 * EC, EC, 0)[0]:.3f} GHz, close to -EC = {-EC} GHz\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-transmon",
+              "language": "text",
+              "code": "EC/h = 0.25 GHz (assumed)\n EJ/EC  f01 (GHz)  sqrt(8 EJ EC) - EC  anharmonicity (GHz)  charge dispersion of f01 (MHz)\n     1     1.0252              0.4571              -0.9948                       7.762e+02\n     5     1.4114              1.3311              -0.8812                       2.683e+02\n    10     1.9749              1.9861              -0.6375                       6.281e+01\n    20     2.8887              2.9123              -0.3638                       4.353e+00\n    30     3.6034              3.6230              -0.3091                       4.481e-01\n    40     4.2056              4.2221              -0.2942                       6.052e-02\n    50     4.7355              4.7500              -0.2873                       9.908e-03\nslope of ln(dispersion) against sqrt(8 EJ/EC): -0.79 (exponential suppression, exponent close to -1)\nat EJ/EC = 50 the anharmonicity is -0.287 GHz, close to -EC = -0.25 GHz",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The table shows the transmon design logic. At E_J/E_C = 1 (a charge qubit) the transition frequency changes by about 780 MHz as n_g sweeps, so charge noise dephases it; at E_J/E_C = 50 the charge dispersion is about 0.01 MHz, some five orders of magnitude smaller, and it keeps falling exponentially (the fit of ln dispersion against √(8E_J/E_C) gives a slope of −0.79 over this range, close to the asymptotic exponent −1 of Koch et al.; a power-law prefactor in E_J/E_C makes the effective slope in a finite range slightly smaller). The price is paid in anharmonicity, which shrinks toward about −E_C (−0.29 GHz at E_J/E_C = 50 against −E_C = −0.25 GHz, about 6% of the 4.74 GHz qubit frequency), and the qubit frequency follows the approximation √(8E_JE_C) − E_C. That small anharmonicity is why microwave pulses must be shaped carefully to avoid exciting the third level (lesson 5.6).\n\n**What the engineering guide adds.** Krantz et al. review the other foundations that this lesson does not model: qubit design, noise properties, qubit control and readout, and the circuit-QED framework. Kjaergaard et al. survey the state of the field, noting multiple high-fidelity two-qubit gates and operations on logical qubits in extensible superconducting systems, and that continued work remains necessary. **Caution:** the operating point E_C = 0.25 GHz is an illustrative assumption; real devices differ in E_C, E_J, frequency and anharmonicity from qubit to qubit."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What advantage does the transmon have over the earlier charge qubit?",
+              "options": [
+                "Exponentially suppressed sensitivity to charge noise at large EJ/EC",
+                "A much larger anharmonicity",
+                "It needs no cooling"
+              ],
+              "correct_index": 0,
+              "explanation": "Koch et al.: charge dispersion decreases exponentially with EJ/EC while anharmonicity falls only as a weak power law."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why must a qubit circuit be anharmonic?",
+              "options": [
+                "So that only the two lowest levels can be addressed selectively",
+                "To reduce the qubit frequency",
+                "To increase the charging energy"
+              ],
+              "correct_index": 0,
+              "explanation": "In a harmonic oscillator all level spacings are equal, so a drive resonant with 0-1 also drives 1-2 and higher."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the approximate anharmonicity of a transmon at large EJ/EC?",
+              "options": [
+                "About -EC",
+                "About +EJ",
+                "Zero"
+              ],
+              "correct_index": 0,
+              "explanation": "The numerical diagonalisation approaches -EC (about -0.25 GHz for EC = 0.25 GHz)."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B140",
+              "locator": "Abstract: the transmon operates at increased EJ/EC; charge dispersion decreases exponentially with EJ/EC while the loss of anharmonicity follows a weak power law"
+            },
+            {
+              "book": "B141",
+              "locator": "Abstract: qubit design, noise properties, qubit control and readout techniques in superconducting circuits"
+            },
+            {
+              "book": "B142",
+              "locator": "Abstract: multiple high-fidelity two-qubit gates and logical-qubit operations in extensible superconducting systems"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The qubit-frequency approximation sqrt(8 EJ EC) - EC and the exponent -1 are the standard transmon results, confirmed by the listing's numerical diagonalisation; they are not quoted from the abstracts. E_C = 0.25 GHz is an illustrative assumption."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "5.2 Trapped Ions",
+          "summary": "Ion crystals and their vibrational modes computed from first principles, the Moelmer-Soerensen gate, and the published fidelities.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Trapped-ion qubits** use two internal electronic levels of an atom held in free space by electric fields. Because every ion of one species is identical, the qubits are identical, and their coherence can be extremely long. Bruzewicz and colleagues review the field and note that the basic requirements for universal quantum computing have all been demonstrated with ions. Gaebler et al. report a memory coherence time of more than one second in magnetic-field-insensitive hyperfine states of beryllium ions. Operations are done with lasers or microwaves, and two-qubit gates exploit the ions' shared **vibrational modes**: the ions repel each other and form a chain in the trap, and they move together like masses connected by springs. A laser can couple an ion's internal state to that collective motion, and through it, to any other ion in the chain, which gives ions their hallmark **all-to-all connectivity** within a chain.\n\nThe vibrational modes can be computed. Scale lengths so that the single-ion trap frequency is ω_z; the ions then sit at the minimum of V = Σ u_i²/2 + Σ_(i<j) 1/|u_i − u_j|, and the normal-mode frequencies are √μ·ω_z where μ are the eigenvalues of the Hessian of V (the method of James, 1997). Known results to check: for two ions the modes are ω_z (centre of mass) and √3·ω_z (stretch), and for three ions ω_z, √3·ω_z and √(29/5)·ω_z. The standard two-qubit gate is the **Mølmer-Sørensen gate**, an entangling operation equal to exp(−iπ/4·XX); applied to |00⟩ it gives a Bell state, and with single-qubit rotations it makes a CNOT. The listing computes the chain, verifies the known values, and finds by exhaustive search the single-qubit rotations that turn the MS gate into a CNOT. The listings use NumPy only (plus `qiskit` where stated): `pip install numpy`. They are **physical models**, small enough to run in seconds, that reproduce known results from the literature so you can check them. Numbers marked ASSUMED are illustrative inputs, not data for any specific device."
+            },
+            {
+              "type": "code",
+              "id": "c-ions",
+              "language": "python",
+              "code": "import itertools\nimport numpy as np\n\ndef equilibrium(N):\n    u = np.linspace(-1, 1, N) * (N / 2)                             # starting guess\n    for _ in range(200):\n        grad = u.copy()\n        hess = np.eye(N)\n        for i in range(N):\n            for j in range(N):\n                if i != j:\n                    d = u[i] - u[j]\n                    grad[i] -= np.sign(d) / d ** 2\n                    hess[i, i] += 2 / abs(d) ** 3\n                    hess[i, j] = -2 / abs(d) ** 3\n        step = np.linalg.solve(hess, grad)\n        u -= step\n        if np.max(np.abs(step)) < 1e-13:\n            break\n    return u, np.linalg.eigvalsh(hess)\n\nu2, mu2 = equilibrium(2)\nu3, mu3 = equilibrium(3)\nprint(\"two ions:   positions\", np.round(u2, 5).tolist(), \"(exact +/-(1/2)^(2/3) =\", round(0.5 ** (2 / 3), 5), \")\")\nprint(\"            mode frequencies / omega_z:\", np.round(np.sqrt(mu2), 5).tolist(), \"(exact 1 and sqrt(3) =\", round(np.sqrt(3), 5), \")\")\nprint(\"three ions: positions\", np.round(u3, 5).tolist(), \"(exact 0 and +/-(5/4)^(1/3) =\", round(1.25 ** (1 / 3), 5), \")\")\nprint(\"            mode frequencies / omega_z:\", np.round(np.sqrt(mu3), 5).tolist(), \"(exact 1, sqrt(3), sqrt(29/5) =\", round(np.sqrt(29 / 5), 5), \")\")\nfor N in (5, 10):\n    u, mu = equilibrium(N)\n    print(f\"{N} ions: lowest mode {np.sqrt(mu[0]):.4f} (centre of mass), highest {np.sqrt(mu[-1]):.4f}; end spacing {u[1] - u[0]:.3f}, central spacing {u[N // 2] - u[N // 2 - 1]:.3f} (ions are closest in the middle)\")\n\n# Moelmer-Soerensen gate exp(-i pi/4 XX) and a CNOT from it\nX = np.array([[0, 1], [1, 0]], dtype=complex); I2 = np.eye(2)\nMS = np.cos(np.pi / 4) * np.eye(4) - 1j * np.sin(np.pi / 4) * np.kron(X, X)\nbell = MS @ np.array([1, 0, 0, 0])\nprint(\"MS|00> =\", np.round(bell, 4).tolist(), \"-> maximally entangled\")\ndef rx(t): return np.cos(t / 2) * I2 - 1j * np.sin(t / 2) * X\ndef ry(t): return np.cos(t / 2) * I2 - 1j * np.sin(t / 2) * np.array([[0, -1j], [1j, 0]])\n\ndef normalised(U):                                                    # remove the global phase so equal rotations compare equal\n    first = U.flatten()[np.argmax(np.abs(U.flatten()) > 1e-9)]\n    return U / (first / abs(first))\ngroup = {tuple(np.round(normalised(I2), 6).flatten()): I2}\nfrontier = [I2]\nwhile frontier:                                                       # the 24 single-qubit Cliffords generated by Rx(pi/2) and Ry(pi/2)\n    new = []\n    for U in frontier:\n        for G in (rx(np.pi / 2), ry(np.pi / 2)):\n            V = normalised(G @ U)\n            key = tuple(np.round(V, 6).flatten())\n            if key not in group:\n                group[key] = V; new.append(V)\n    frontier = new\ncliffords = list(group.values())\nprint(\"single-qubit Clifford rotations generated from Rx(pi/2) and Ry(pi/2):\", len(cliffords))\n\nCNOT = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]], dtype=complex)    # control = left qubit\nlayers = np.array([np.kron(a, b) for a in cliffords for b in cliffords])                      # all 576 two-qubit local layers\nafter_ms_before = np.einsum(\"ij,bjk->bik\", MS, layers)                                        # MS applied after each 'before' layer\ncandidates = np.einsum(\"aij,bjk->abik\", layers, after_ms_before)                              # 'after' layer applied last\noverlaps = np.abs(np.einsum(\"ij,abij->ab\", CNOT.conj(), candidates))                          # |tr(CNOT^dagger U)| = 4 only for equality up to a phase\nsolutions = np.argwhere(overlaps > 4 - 1e-8)\nprint(f\"local rotation layers (before, after) turning the MS gate into a CNOT: {len(solutions)} solutions among {overlaps.size:,} combinations\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-ions",
+              "language": "text",
+              "code": "two ions:   positions [-0.62996, 0.62996] (exact +/-(1/2)^(2/3) = 0.62996 )\n            mode frequencies / omega_z: [1.0, 1.73205] (exact 1 and sqrt(3) = 1.73205 )\nthree ions: positions [-1.07722, 0.0, 1.07722] (exact 0 and +/-(5/4)^(1/3) = 1.07722 )\n            mode frequencies / omega_z: [1.0, 1.73205, 2.40832] (exact 1, sqrt(3), sqrt(29/5) = 2.40832 )\n5 ions: lowest mode 1.0000 (centre of mass), highest 3.6708; end spacing 0.921, central spacing 0.822 (ions are closest in the middle)\n10 ions: lowest mode 1.0000 (centre of mass), highest 6.5758; end spacing 0.771, central spacing 0.564 (ions are closest in the middle)\nMS|00> = [(0.7071+0j), 0j, 0j, -0.7071j] -> maximally entangled\nsingle-qubit Clifford rotations generated from Rx(pi/2) and Ry(pi/2): 24\nlocal rotation layers (before, after) turning the MS gate into a CNOT: 64 solutions among 331,776 combinations",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The numbers match the exact values: two ions at ±0.62996 with modes 1 and √3, three ions with modes 1, √3 and √(29/5) ≈ 2.4083. Longer chains show the practical limits: the mode spectrum becomes crowded as the chain grows (the highest mode frequency rises, but all the modes lie between ω_z and a few ω_z), so an entangling gate must avoid exciting unwanted modes, and long chains are harder to control. The exhaustive search over all 24 single-qubit Clifford rotations before and after the gate (331,776 combinations) finds 64 layers that convert the MS gate into a CNOT, so the MS gate together with single-qubit rotations is a universal two-qubit resource, consistent with the review's statement that the basic requirements for universal quantum computing have been demonstrated with ions.\n\n**Published performance.** Ballance et al. demonstrated two-qubit gates with 99.9(1)% fidelity and single-qubit gates with 99.9934(3)% in calcium-43 hyperfine qubits (the gate-time/fidelity trade-off was measured for times between 3.8 µs and 520 µs), above the roughly 99% threshold they cite for fault-tolerant computing. Gaebler et al. report single-qubit error 3.8×10⁻⁵ and a two-qubit gate error of 8(4)×10⁻⁴. **Trade-off to remember:** ion gates are **slow** (microseconds to hundreds of microseconds, against tens to hundreds of nanoseconds for superconducting qubits) but very accurate and well connected."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why do ions in one chain have all-to-all connectivity?",
+              "options": [
+                "Their shared vibrational modes let a laser couple any pair",
+                "Every ion touches every other",
+                "They are all in one electronic state"
+              ],
+              "correct_index": 0,
+              "explanation": "The collective motion acts as a communication bus between the ions."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What are the mode frequencies of two trapped ions in units of the single-ion axial frequency?",
+              "options": [
+                "1 and sqrt(3)",
+                "1 and 2",
+                "sqrt(2) and sqrt(3)"
+              ],
+              "correct_index": 0,
+              "explanation": "The centre-of-mass mode is at omega_z and the stretch mode at sqrt(3) omega_z."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How do ion-trap gate speeds compare with superconducting-qubit gates?",
+              "options": [
+                "Ion gates are much slower but very accurate",
+                "Ion gates are faster",
+                "They are identical"
+              ],
+              "correct_index": 0,
+              "explanation": "Ballance et al. studied times from 3.8 microseconds to 520 microseconds; superconducting gates take tens of nanoseconds."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B143",
+              "locator": "Abstract: the basic requirements for universal quantum computing have been demonstrated with trapped ions; strengths, limitations and scaling"
+            },
+            {
+              "book": "B144",
+              "locator": "Abstract: the mean positions of the trapped ions and the eigenvalues and eigenmodes of the ions' oscillations"
+            },
+            {
+              "book": "B145",
+              "locator": "Abstract: two-qubit gate fidelity 99.9(1)% and single-qubit 99.9934(3)% with calcium-43 hyperfine qubits; gate times between 3.8 and 520 microseconds"
+            },
+            {
+              "book": "B146",
+              "locator": "Abstract: memory coherence time of more than 1 s; single-qubit error 3.8(1) x 10^-5; two-qubit gate error 8(4) x 10^-4"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement that superconducting gates take tens to hundreds of nanoseconds is a general figure not taken from the cited abstracts; the exact mode values for 2 and 3 ions are the standard results of James's analysis and are confirmed numerically."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "5.3 Neutral Atoms",
+          "summary": "The Rydberg blockade simulated for two atoms: the sqrt(2) collective Rabi frequency and the suppression of double excitation.",
+          "estimated_minutes": 42,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Neutral-atom** processors trap individual atoms (for example rubidium or cesium) in arrays of focused laser beams called **optical tweezers**. The atoms are identical, held in place in a vacuum, and can be rearranged. A qubit is stored in two long-lived ground states. Entanglement uses the **Rydberg blockade**: exciting an atom to a highly excited **Rydberg state** (principal quantum number n much greater than 1) gives it exaggerated properties. Saffman, Walker and Mølmer note that dipole-dipole interactions between Rydberg atoms scale as n⁴ and radiative lifetimes as n³, so there is a strong, long-range interaction that can be turned on and off. If one atom is in the Rydberg state, the interaction shifts the Rydberg level of a nearby atom out of resonance with the laser, so the second atom **cannot also be excited**: it is blockaded.\n\nThe blockade has a clean quantitative signature. Two atoms driven resonantly with Rabi frequency Ω and an interaction V between the Rydberg states have the Hamiltonian H = (Ω/2)(σx⊗I + I⊗σx) + V|rr⟩⟨rr|. For V = 0 each atom oscillates independently. For V much larger than Ω the doubly excited state is out of reach and the pair oscillates between |gg⟩ and the symmetric single-excitation state |W⟩ = (|gr⟩ + |rg⟩)/√2 at the **enhanced frequency √2·Ω** (collective enhancement). The listing integrates the dynamics exactly and measures the oscillation frequency and the leftover double-excitation probability for increasing V. The blockade radius at the end uses illustrative ASSUMED numbers. The listings use NumPy only (plus `qiskit` where stated): `pip install numpy`. They are **physical models**, small enough to run in seconds, that reproduce known results from the literature so you can check them. Numbers marked ASSUMED are illustrative inputs, not data for any specific device."
+            },
+            {
+              "type": "code",
+              "id": "c-rydberg",
+              "language": "python",
+              "code": "import numpy as np\n\ng, r = np.array([1, 0]), np.array([0, 1])\nX = np.array([[0, 1], [1, 0]]); I2 = np.eye(2)\ndef hamiltonian(omega, V):\n    drive = omega / 2 * (np.kron(X, I2) + np.kron(I2, X))\n    interaction = V * np.outer(np.kron(r, r), np.kron(r, r))\n    return drive + interaction\n\nomega = 1.0                                                       # Rabi frequency (arbitrary units); times are in 1/omega\nstart = np.kron(g, g)\ntimes = np.linspace(0, 8, 8001)\nprint(f\"{'V / omega':>10} {'P_gg first minimum time (pi/omega)':>36} {'max P_rr':>10}\")\nfor V in (0, 2, 10, 50, 200):\n    values, vectors = np.linalg.eigh(hamiltonian(omega, V))\n    coeffs = vectors.T @ start\n    psi = (vectors * coeffs) @ np.exp(-1j * np.outer(values, times))\n    p_gg = np.abs(psi[0]) ** 2\n    p_rr = np.abs(psi[3]) ** 2\n    first_min = times[1 + np.argmax(np.diff(p_gg) > 0)]                  # the first time P_gg stops decreasing\n    print(f\"{V:>10} {first_min / np.pi:>36.3f} {p_rr.max():>10.4f}\")\nprint(\"expected for V = 0: pi/omega -> 1.000 (each atom flips at t = pi/omega, so P_gg = 0 only at the first minimum, shared by both atoms)\")\nprint(\"expected for V >> omega: pi / (sqrt(2) omega) ->\", round(1 / np.sqrt(2), 3), \"(collective enhancement of the Rabi frequency by sqrt(2))\")\n\n# Blockade radius with ASSUMED illustrative numbers\nC6_over_h = 500e3                                                 # MHz um^6: ASSUMED, of the order of values quoted for Rydberg states\nrabi_over_2pi = 2.0                                               # MHz: ASSUMED\nradius = (C6_over_h / rabi_over_2pi) ** (1 / 6)\nprint(f\"blockade radius R_b = (C6 / (hbar Omega))^(1/6) = {radius:.1f} micrometres for the assumed numbers (atoms closer than this are blockaded)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-rydberg",
+              "language": "text",
+              "code": " V / omega   P_gg first minimum time (pi/omega)   max P_rr\n         0                                1.000     1.0000\n         2                                0.739     0.1841\n        10                                0.709     0.0057\n        50                                0.708     0.0002\n       200                                0.707     0.0000\nexpected for V = 0: pi/omega -> 1.000 (each atom flips at t = pi/omega, so P_gg = 0 only at the first minimum, shared by both atoms)\nexpected for V >> omega: pi / (sqrt(2) omega) -> 0.707 (collective enhancement of the Rabi frequency by sqrt(2))\nblockade radius R_b = (C6 / (hbar Omega))^(1/6) = 7.9 micrometres for the assumed numbers (atoms closer than this are blockaded)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "For V = 0 the pair is two independent two-level systems: P_gg first reaches zero at t = π/Ω. As V grows the first minimum moves to π/(√2·Ω) = 0.707·π/Ω, the collective enhancement, and the double-excitation probability falls toward zero (about (Ω/V)² level), which is the blockade. The listing's last lines show the scale of the effect: with illustrative numbers the blockade radius is of order ten micrometres, which is comparable to the spacing of atoms in a tweezer array, so neighbouring atoms are blockaded while distant ones are not. That is why the geometry of the array is part of the gate design.\n\n**What the literature says about the platform.** Henriet et al. review neutral-atom devices and argue for intrinsic scalability in the 100 to 1,000 qubit range, with both digital (gate-based) and analog (Hamiltonian) programming. Bluvstein et al. report a programmable processor with logical qubits using up to 280 physical qubits, with a zoned architecture, arbitrary connectivity, mid-circuit readout and a two-qubit logical gate improved by scaling the surface-code distance from 3 to 7. **Trade-offs:** atoms can be rearranged (flexible connectivity) but loss of atoms from the traps and slower cycles are practical limits; the numbers above are a model, not a device specification."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the Rydberg blockade do?",
+              "options": [
+                "A Rydberg-excited atom shifts the Rydberg level of a neighbour so it cannot also be excited",
+                "It increases the atom's lifetime",
+                "It cools the atoms"
+              ],
+              "correct_index": 0,
+              "explanation": "The strong interaction takes the second atom out of resonance with the laser."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "By what factor does the collective Rabi frequency of two blockaded atoms exceed a single atom's?",
+              "options": [
+                "sqrt(2)",
+                "2",
+                "1"
+              ],
+              "correct_index": 0,
+              "explanation": "The pair oscillates between |gg⟩ and the symmetric state |W⟩ with frequency sqrt(2) times Omega."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is the geometry of the atom array part of the gate design?",
+              "options": [
+                "Blockade only acts within a limited radius set by the interaction strength",
+                "Atoms must be in a line",
+                "Geometry has no effect"
+              ],
+              "correct_index": 0,
+              "explanation": "The blockade radius sets which atoms interact; it is of the order of the array spacing."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B147",
+              "locator": "Abstract: dipole-dipole interactions scaling as n^4 and radiative lifetimes as n^3; a strong long-range interaction that can be turned on and off"
+            },
+            {
+              "book": "B148",
+              "locator": "Abstract: arrays of optical traps; digital and analog programming; scalability in the 100 to 1,000 qubit range"
+            },
+            {
+              "book": "B149",
+              "locator": "Abstract: programmable logical processor with up to 280 physical qubits, zoned architecture, arbitrary connectivity, surface code distance from d=3 to d=7"
+            }
+          ],
+          "needs_verification": {
+            "reason": "C6/h = 500 GHz um^6 and Omega/2pi = 2 MHz are illustrative assumptions for the blockade-radius example. The sqrt(2) enhancement and the blockade suppression of the double excitation are confirmed by the simulation."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "5.4 Photonic Approaches",
+          "summary": "Photons as qubits, the Hong-Ou-Mandel effect computed with permanents, boson sampling probabilities, and why the permanent is hard.",
+          "estimated_minutes": 42,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Photonic quantum computing** encodes information in photons: for example in which of two paths a single photon takes, or in its polarization. Photons barely interact with the environment, so they stay coherent and travel through optical fibre at room temperature, which also makes them natural carriers for quantum communication (C4, C5). The difficulty is that photons do not interact with *each other*, so two-qubit gates are hard. The protocol of Knill, Laflamme and Milburn, reviewed by Kok and colleagues, showed that efficient scalable quantum computing is possible with single photons, **linear optical elements** (beam splitters and phase shifters) and **projective measurements**, with the interaction supplied by measurement.\n\nLinear optics already shows a purely quantum effect. When two identical photons enter the two input ports of a 50:50 beam splitter, they **always exit together** from the same port; the output with one photon in each port never occurs. This is the **Hong-Ou-Mandel effect**, a destructive interference between two indistinguishable ways to get one photon in each output. The amplitude for a detection pattern is given by the **permanent** of a submatrix of the optical network's unitary matrix U (a determinant without the minus signs), normalised by the factorials of the photon numbers. The listing computes the HOM probabilities exactly, checks that the probabilities of **all** output patterns of three photons in six modes sum to 1, and tabulates the cost of computing a permanent with Ryser's formula. Aaronson and Arkhipov proved that if a polynomial-time classical algorithm could sample from the same distribution as a linear-optical network, an unlikely collapse of the polynomial hierarchy would follow, which is why **boson sampling** is a candidate task for showing a quantum advantage. The listings use NumPy only (plus `qiskit` where stated): `pip install numpy`. They are **physical models**, small enough to run in seconds, that reproduce known results from the literature so you can check them. Numbers marked ASSUMED are illustrative inputs, not data for any specific device."
+            },
+            {
+              "type": "code",
+              "id": "c-photonic",
+              "language": "python",
+              "code": "import itertools\nfrom math import factorial\nimport numpy as np\n\ndef permanent(M):\n    n = M.shape[0]\n    return sum(np.prod([M[i, p[i]] for i in range(n)]) for p in itertools.permutations(range(n)))\n\ndef amplitude(U, inputs, outputs):\n    # inputs / outputs: occupation numbers per mode; the amplitude is perm of the matrix with repeated rows and columns\n    rows = [m for m, k in enumerate(outputs) for _ in range(k)]\n    cols = [m for m, k in enumerate(inputs) for _ in range(k)]\n    sub = U[np.ix_(rows, cols)]\n    norm = np.sqrt(np.prod([factorial(k) for k in inputs]) * np.prod([factorial(k) for k in outputs]))\n    return permanent(sub) / norm\n\nBS = np.array([[1, 1j], [1j, 1]]) / np.sqrt(2)                      # a 50:50 beam splitter\nprint(\"Hong-Ou-Mandel: two identical photons, one in each input port\")\nfor out in ((2, 0), (1, 1), (0, 2)):\n    print(f\"  output {out}: probability {abs(amplitude(BS, (1, 1), out)) ** 2:.4f}\")\nprint(\"one photon in a single input port, for comparison:\")\nfor out in ((1, 0), (0, 1)):\n    print(f\"  output {out}: probability {abs(amplitude(BS, (1, 0), out)) ** 2:.4f}\")\n\nrng = np.random.default_rng(3)\nQ, _ = np.linalg.qr(rng.normal(size=(6, 6)) + 1j * rng.normal(size=(6, 6)))     # a random 6-mode optical network (unitary)\ninputs = (1, 1, 1, 0, 0, 0)\npatterns = [p for p in itertools.product(range(4), repeat=6) if sum(p) == 3]\nprobabilities = [abs(amplitude(Q, inputs, p)) ** 2 for p in patterns]\nprint(f\"3 photons in 6 modes: {len(patterns)} output patterns, probabilities sum to {sum(probabilities):.10f}\")\nprint(\"most likely pattern:\", patterns[int(np.argmax(probabilities))], f\"with probability {max(probabilities):.4f}\")\n\nprint(f\"{'photons n':>10} {'Ryser operations ~ n 2^n':>26} {'time at 1e9 ops/s (assumed)':>30}\")\nfor n in (10, 20, 30, 50):\n    ops = n * 2 ** n\n    seconds = ops / 1e9\n    shown = f\"{seconds:.3g} s\" if seconds < 3600 else f\"{seconds / 86400 / 365:.3g} years\" if seconds > 86400 * 365 else f\"{seconds / 3600:.3g} hours\"\n    print(f\"{n:>10} {ops:>26.3e} {shown:>30}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-photonic",
+              "language": "text",
+              "code": "Hong-Ou-Mandel: two identical photons, one in each input port\n  output (2, 0): probability 0.5000\n  output (1, 1): probability 0.0000\n  output (0, 2): probability 0.5000\none photon in a single input port, for comparison:\n  output (1, 0): probability 0.5000\n  output (0, 1): probability 0.5000\n3 photons in 6 modes: 56 output patterns, probabilities sum to 1.0000000000\nmost likely pattern: (2, 0, 0, 0, 0, 1) with probability 0.0845\n photons n   Ryser operations ~ n 2^n    time at 1e9 ops/s (assumed)\n        10                  1.024e+04                     1.02e-05 s\n        20                  2.097e+07                        0.021 s\n        30                  3.221e+10                         32.2 s\n        50                  5.629e+16                     1.79 years",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The HOM result is exact: with one photon in each input port the (1,1) output has probability **0.0000** and the two bunched outputs each have probability ½, while a single photon splits ½ and ½ as expected. The six-mode example shows the machinery works on a general network (the 56 output patterns sum to 1, which also validates the permanent-based amplitude formula). The last table is the point of boson sampling: the best exact classical methods scale like n·2^n, so for 50 photons the permanent alone would take years at an assumed 10⁹ operations per second; but a photonic device produces samples *directly*, with no permanent computed.\n\n**Honest caveats.** Boson sampling is **not** a universal quantum computer, and the Aaronson-Arkhipov hardness result is for exact sampling under complexity assumptions; real experiments face photon loss and distinguishability, which can allow efficient classical approximation, so \"advantage\" claims must be evaluated against the best classical algorithms. Universal photonic computing needs more than this passive network (for example the KLM scheme with measurements, or other architectures), and sources and detectors with high efficiency remain the main engineering challenges."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the Hong-Ou-Mandel effect?",
+              "options": [
+                "Two identical photons entering a 50:50 beam splitter exit together from the same port",
+                "Photons never interfere",
+                "A single photon splits into two"
+              ],
+              "correct_index": 0,
+              "explanation": "The two ways to get one photon in each output interfere destructively."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which mathematical object gives the amplitudes in boson sampling?",
+              "options": [
+                "The permanent of submatrices of the network's unitary",
+                "The determinant",
+                "The trace"
+              ],
+              "correct_index": 0,
+              "explanation": "Photons are bosons, so the sign changes of the determinant are replaced by plus signs."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is boson sampling not a universal quantum computer?",
+              "options": [
+                "It samples from linear-optical networks only, a model not believed to be universal",
+                "It needs too many qubits",
+                "It uses no photons"
+              ],
+              "correct_index": 0,
+              "explanation": "Aaronson and Arkhipov state that the model is not known or believed to be universal."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B150",
+              "locator": "Abstract: the Knill-Laflamme-Milburn protocol, linear optics with photon counting, realistic components and errors"
+            },
+            {
+              "book": "B151",
+              "locator": "Abstract: a model with identical photons through a linear-optical network and photon counting; not known or believed to be universal; classical sampling would collapse the polynomial hierarchy"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement that the permanent of a 2x2 submatrix gives the HOM amplitudes is standard and confirmed by the listing; the remark that photon loss and distinguishability can enable classical approximation is a general caution not tied to the cited abstracts."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "5.5 Spin Qubits",
+          "summary": "Zeeman splitting and polarisation, the exchange interaction as a SWAP-root gate, and a CZ built from two square-root-of-SWAP gates.",
+          "estimated_minutes": 42,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **spin qubit** stores a bit in the spin of an electron (or a nucleus) in a semiconductor such as silicon or germanium. Burkard and colleagues explain why this is attractive: spin is a natural two-level system that is insensitive to electric fields, which gives long coherence times, and the devices are made with semiconductor fabrication. Loss and DiVincenzo proposed (1997) a universal set of one- and two-qubit gates using the spin states of coupled single-electron quantum dots, with operations effected by gating the tunnel barrier between neighbouring dots.\n\nThree calculations show the physics. **Zeeman splitting:** in a magnetic field B an electron spin has two energy levels separated by hf = g·μ_B·B; for g = 2 that is 28.02 GHz per tesla, so the qubit frequency is set by the field and is in the microwave range. **Thermal polarisation:** at temperature T the spin is initialised by cooling, with polarisation tanh(hf/2k_BT). **Exchange gates:** when two neighbouring dots are connected by lowering the barrier, the electrons interact through the exchange coupling J, H = J S₁·S₂, and a pulse of duration t implements U = exp(−iJt S₁·S₂/ħ). A pulse with Jt/ħ = π is a SWAP and half that is **√SWAP**, which is entangling. Loss and DiVincenzo showed that √SWAP plus single-qubit operations is universal. The last listing searches over simple Z rotations and finds a **controlled-Z** made from two √SWAP gates, confirming that universality numerically. The listings use NumPy only (plus `qiskit` where stated): `pip install numpy`. They are **physical models**, small enough to run in seconds, that reproduce known results from the literature so you can check them. Numbers marked ASSUMED are illustrative inputs, not data for any specific device."
+            },
+            {
+              "type": "code",
+              "id": "c-spin",
+              "language": "python",
+              "code": "import itertools\nimport numpy as np\n\nh, k_B, mu_B = 6.62607015e-34, 1.380649e-23, 9.2740100783e-24            # SI constants (exact or CODATA 2018)\ng = 2.0\nprint(f\"{'B (T)':>6} {'qubit frequency (GHz)':>22} {'polarisation at 100 mK':>24} {'polarisation at 1 K':>20}\")\nfor B in (0.1, 0.5, 1.0):\n    f = g * mu_B * B / h\n    pol = lambda T: np.tanh(h * f / (2 * k_B * T))\n    print(f\"{B:>6} {f / 1e9:>22.3f} {pol(0.1):>24.4f} {pol(1.0):>20.4f}\")\n\nX = np.array([[0, 1], [1, 0]], dtype=complex); Y = np.array([[0, -1j], [1j, 0]]); Z = np.diag([1, -1]).astype(complex)\nS_dot_S = sum(np.kron(P, P) for P in (X, Y, Z)) / 4                      # S1 . S2 with S = sigma / 2\ndef exchange(angle):\n    values, vectors = np.linalg.eigh(S_dot_S)\n    return vectors @ np.diag(np.exp(-1j * angle * values)) @ vectors.conj().T       # exp(-i * (J t / hbar) * S1.S2)\nSWAP = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]], dtype=complex)\nsame_up_to_phase = lambda A, B: abs(np.trace(A.conj().T @ B)) > 4 - 1e-9\nprint(\"exchange pulse with J t / hbar = pi equals SWAP up to a phase:\", same_up_to_phase(exchange(np.pi), SWAP))\nrootswap = exchange(np.pi / 2)\nprint(\"two half-pulses make a SWAP:\", same_up_to_phase(rootswap @ rootswap, SWAP))\nprint(\"sqrt(SWAP) |01> =\", np.round(rootswap @ np.array([0, 1, 0, 0]), 3).tolist(), \"-> an entangled superposition of |01> and |10>\")\n\ndef rz(t): return np.diag([np.exp(-1j * t / 2), np.exp(1j * t / 2)])\nCZ = np.diag([1, 1, 1, -1]).astype(complex)\nangles = [i * np.pi / 2 for i in range(4)]\nsolutions = []\nfor a, b, c, d, e, f in itertools.product(angles, repeat=6):\n    U = np.kron(rz(a), rz(b)) @ rootswap @ np.kron(rz(c), rz(d)) @ rootswap @ np.kron(rz(e), rz(f))\n    if same_up_to_phase(U, CZ):\n        solutions.append((a, b, c, d, e, f))\nprint(f\"CZ from sqrt(SWAP), single-qubit Z rotations, sqrt(SWAP), single-qubit Z rotations: {len(solutions)} solutions among {4 ** 6} combinations\")\nprint(\"one solution, in units of pi/2:\", [round(x / (np.pi / 2)) for x in solutions[0]])"
+            },
+            {
+              "type": "code",
+              "id": "o-c-spin",
+              "language": "text",
+              "code": " B (T)  qubit frequency (GHz)   polarisation at 100 mK  polarisation at 1 K\n   0.1                  2.799                   0.5861               0.0671\n   0.5                 13.996                   0.9976               0.3238\n   1.0                 27.992                   1.0000               0.5861\nexchange pulse with J t / hbar = pi equals SWAP up to a phase: True\ntwo half-pulses make a SWAP: True\nsqrt(SWAP) |01> = [0j, (0.653+0.271j), (0.271-0.653j), 0j] -> an entangled superposition of |01> and |10>\nCZ from sqrt(SWAP), single-qubit Z rotations, sqrt(SWAP), single-qubit Z rotations: 64 solutions among 4096 combinations\none solution, in units of pi/2: [0, 0, 0, 2, 3, 1]",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "At 0.5 T the qubit frequency is 14 GHz and the spins are polarised to 99.8% at 100 mK but only 32% at 1 K, which is why spin-qubit experiments run in dilution refrigerators (and why operating at higher temperatures is an active research aim). The exchange pulse behaves as the theory says: Jt/ħ = π gives a SWAP, half of it gives √SWAP, and the search finds many combinations of two √SWAP pulses with Z rotations that equal a controlled-Z, the entangling gate needed for universality.\n\n**Where the field stands.** Burkard et al. review progress from GaAs dots to silicon and germanium, including improved charge control and readout, coupling to other quantum degrees of freedom, and scaling. The long-term promise is **manufacturability**: silicon spin qubits are close to the devices built in the semiconductor industry. The challenges are uniformity from device to device, wiring and control of many dense qubits, and connectivity. **Caution:** the polarisation and frequency figures are textbook arithmetic for g = 2; real devices (for example in silicon) have their own g-factors and field gradients, and the coherence figures depend strongly on isotopic purification, which is not modelled here."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What sets the frequency of an electron spin qubit?",
+              "options": [
+                "The applied magnetic field (Zeeman splitting, 28 GHz per tesla for g = 2)",
+                "The size of the chip",
+                "The laser wavelength"
+              ],
+              "correct_index": 0,
+              "explanation": "The two spin states are split by g mu_B B."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does a half-length exchange pulse implement?",
+              "options": [
+                "The square root of SWAP, an entangling gate",
+                "A single-qubit rotation",
+                "A measurement"
+              ],
+              "correct_index": 0,
+              "explanation": "A full pulse gives SWAP; half a pulse gives sqrt(SWAP), which is entangling."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why are spin qubits considered promising for manufacturing?",
+              "options": [
+                "They are built with semiconductor fabrication similar to existing chips",
+                "They need no cooling",
+                "They are always identical"
+              ],
+              "correct_index": 0,
+              "explanation": "Burkard et al. emphasise silicon and germanium devices and scaling to larger systems."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B152",
+              "locator": "Abstract: universal one- and two-qubit gates using the spin states of coupled single-electron quantum dots, with operations effected by gating the tunnelling barrier"
+            },
+            {
+              "book": "B153",
+              "locator": "Abstract: spin as a natural two-level system insensitive to electric fields with long coherence times; GaAs, Si and Ge; charge control, readout and scaling"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The exchange-gate identities and the CZ decomposition are confirmed numerically in the listing; that a SWAP-root plus single-qubit gates is universal is the Loss-DiVincenzo result, quoted here from its general claim rather than a passage of the abstract."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "5.6 Control Electronics",
+          "summary": "Microwave pulses on a transmon: how a short Gaussian pulse leaks into the third level and how the DRAG correction removes it, simulated.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A quantum processor needs a classical control system around it: waveform generators, microwave sources, amplifiers, filters and digitisers that create precisely shaped pulses, deliver them to the qubits through cables that cross the cryostat's temperature stages, and read back faint signals (lesson 5.9). The pulses are the instructions. For a superconducting qubit, a microwave pulse at the qubit frequency rotates the qubit by an angle equal to the integrated pulse amplitude: a π rotation (an X gate) needs ∫Ω(t)dt = π.\n\nThe difficulty is the transmon's **weak anharmonicity** (lesson 5.1): the drive that excites 0 → 1 is only about a few hundred MHz away from the 1 → 2 transition, so a **short** pulse, whose spectrum is broad, also excites the third level |2⟩, a **leakage error** that takes the qubit out of the computational subspace. Motzoi and colleagues proposed the **DRAG** pulse: add a second control, proportional to the time derivative of the first, that cancels the leakage to first order, and show that for realistic superconducting-qubit parameters this reduces the error by an order of magnitude with smooth, feasible pulse shapes.\n\nThe listing simulates a three-level transmon in the rotating frame, H = α|2⟩⟨2| + (Ω_x(t)/2)(a + a†) + (Ω_y(t)/2)·i(a† − a), with anharmonicity α = −250 MHz (ASSUMED) and a Gaussian X pulse calibrated to a π rotation, for several pulse lengths. It reports the leakage to |2⟩ and the population error of the |0⟩ → |1⟩ transfer without a correction, then scans the DRAG coefficient and reports the best value. The listings use NumPy only (plus `qiskit` where stated): `pip install numpy`. They are **physical models**, small enough to run in seconds, that reproduce known results from the literature so you can check them. Numbers marked ASSUMED are illustrative inputs, not data for any specific device."
+            },
+            {
+              "type": "code",
+              "id": "c-drag",
+              "language": "python",
+              "code": "import numpy as np\n\nalpha = -2 * np.pi * 0.25                                         # rad/ns: anharmonicity -250 MHz (ASSUMED)\na = np.diag([1.0, np.sqrt(2.0)], k=1)                              # annihilation operator on 3 levels\nx_op = a + a.T\ny_op = 1j * (a.T - a)\nprojector2 = np.diag([0, 0, 1.0])\n\ndef evolve(duration, beta, scale=1.0, dt=0.01):\n    sigma = duration / 6\n    steps = int(round(duration / dt))\n    t = (np.arange(steps) + 0.5) * dt\n    edge = np.exp(-(duration / 2) ** 2 / (2 * sigma ** 2))\n    envelope = (np.exp(-((t - duration / 2) ** 2) / (2 * sigma ** 2)) - edge) / (1 - edge)      # Gaussian that starts and ends at zero\n    omega_x = scale * np.pi / (envelope.sum() * dt) * envelope                                  # area pi: a pi rotation of the 0-1 pair\n    omega_y = beta * np.gradient(omega_x, dt) / alpha                                           # DRAG: a quadrature proportional to the derivative\n    psi = np.array([1, 0, 0], dtype=complex)\n    for ox, oy in zip(omega_x, omega_y):\n        H = alpha * projector2 + 0.5 * ox * x_op + 0.5 * oy * y_op\n        w, v = np.linalg.eigh(H)\n        psi = v @ (np.exp(-1j * w * dt) * (v.conj().T @ psi))\n    p = np.abs(psi) ** 2\n    return p[2], 1 - p[1]                                           # leakage to |2>, population error of the 0 -> 1 transfer\n\nprint(\"leakage to |2> at 10 ns against the DRAG coefficient beta (beta = 0 is no correction):\")\nfor beta in (-1.5, -1.0, -0.5, 0.0, 0.5, 1.0):\n    print(f\"  beta = {beta:>4}: leakage {evolve(10, beta)[0]:.2e}\")\n\nscales = np.linspace(0.85, 1.15, 31)\ndef calibrated(duration, beta):\n    # a real calibration tunes the pulse amplitude; pick the amplitude with the smallest population error\n    results = [(evolve(duration, beta, s)[1], s) for s in scales]\n    error, scale = min(results)\n    return evolve(duration, beta, scale)[0], error\n\nprint()\nprint(f\"{'pulse length (ns)':>18} {'leakage, no DRAG':>17} {'leakage, beta = -1':>19} {'reduction':>10} {'calibrated population error: no DRAG':>38} {'with DRAG':>10}\")\nfor duration in (6, 10, 20):\n    leak_plain, error_plain = calibrated(duration, 0.0)\n    leak_drag, error_drag = calibrated(duration, -1.0)\n    print(f\"{duration:>18} {leak_plain:>17.2e} {leak_drag:>19.2e} {leak_plain / leak_drag:>9.0f}x {error_plain:>38.2e} {error_drag:>10.2e}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-drag",
+              "language": "text",
+              "code": "leakage to |2> at 10 ns against the DRAG coefficient beta (beta = 0 is no correction):\n  beta = -1.5: leakage 5.20e-04\n  beta = -1.0: leakage 4.41e-05\n  beta = -0.5: leakage 1.16e-03\n  beta =  0.0: leakage 5.96e-03\n  beta =  0.5: leakage 1.63e-02\n  beta =  1.0: leakage 3.33e-02\n\n pulse length (ns)  leakage, no DRAG  leakage, beta = -1  reduction   calibrated population error: no DRAG  with DRAG\n                 6          1.47e-01            4.90e-03        30x                               2.27e-01   1.45e-01\n                10          5.96e-03            4.44e-05       134x                               4.58e-02   4.75e-02\n                20          1.10e-06            2.76e-08        40x                               1.05e-02   1.10e-02",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The first table shows the DRAG coefficient doing its job: at 10 ns the leakage is 6×10⁻³ with no correction, and is smallest near β = −1 (a correction pulse equal to minus the pulse's derivative divided by the anharmonicity), where it is about a hundred times smaller; on the wrong side (β > 0) it gets worse. The second table scans the pulse amplitude by ±15% (as an amplitude calibration would; the best amplitude turns out to be the nominal one) for three pulse lengths and compares leakage with and without DRAG: the leakage falls by a factor of tens to hundreds, and it also falls steeply with pulse length (a longer pulse has less spectral weight at the 1-2 transition), so **speed and accuracy pull in opposite directions**: faster gates mean less decoherence (lesson 5.8) but more leakage. Leakage is not the only error: the remaining population error is not an amplitude error (the amplitude scan did not help) and DRAG at this setting does not reduce it; it comes mainly from the third level shifting the 0-1 transition frequency (a phase error that a real calibration removes with a frequency or phase correction, which this model does not include), which is why the population error improves much less than the leakage does. **The optimal DRAG coefficient depends on the model and convention** (the sign and scale depend on how the derivative is normalised and which quadrature is used), so on a device it is **calibrated**, not computed.\n\n**The rest of the control stack, briefly.** Pulses are generated at room temperature or by cryogenic electronics and attenuated and filtered along the cable path so that thermal noise does not reach the qubits; each additional qubit adds control and readout lines, which is a principal scaling challenge (a single wire to a qubit is a heat load and a physical constraint at the thousand-qubit scale), so research includes multiplexing and cryogenic control chips. Krantz et al. review qubit control and readout in superconducting circuits. **Caution:** the 250 MHz anharmonicity and the pulse shapes are assumed; accuracy numbers from this model are indicators of trends, not predictions for a particular chip."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is leakage?",
+              "options": [
+                "Population escaping from the two computational levels into higher levels such as |2⟩",
+                "Loss of cooling power",
+                "A wiring fault"
+              ],
+              "correct_index": 0,
+              "explanation": "In a weakly anharmonic qubit a short pulse also drives the 1-2 transition."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does the DRAG correction add to the pulse?",
+              "options": [
+                "A second quadrature proportional to the time derivative of the first",
+                "Extra amplitude",
+                "A longer duration"
+              ],
+              "correct_index": 0,
+              "explanation": "Motzoi et al.: adding a second control proportional to the derivative of the first inhibits leakage."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why do faster gates leak more?",
+              "options": [
+                "A shorter pulse has a broader spectrum that overlaps the 1-2 transition",
+                "Faster gates use more power",
+                "They heat the fridge"
+              ],
+              "correct_index": 0,
+              "explanation": "The leakage amplitude depends on the pulse's spectral weight at the anharmonic detuning."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B154",
+              "locator": "Abstract: leakage inhibition by adding a second control proportional to the time derivative of the first; error reduced by an order of magnitude for realistic superconducting-qubit parameters"
+            },
+            {
+              "book": "B141",
+              "locator": "Abstract: qubit control and readout techniques in superconducting circuits"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The simulation is a simple three-level rotating-frame model with an assumed anharmonicity and Gaussian envelope; the best DRAG coefficient depends on conventions and was found numerically, not taken from the paper. The remarks about wiring and cryogenic control are general and not tied to the cited abstracts."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "5.7 Noise and Coherence",
+          "summary": "Ramsey and echo experiments simulated: static noise limits T2*, an echo recovers the part that is slow, and fast noise sets T2.",
+          "estimated_minutes": 42,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "B2 introduced T1 and T2 as numbers. This lesson shows how they are *measured* and why there are several of them. In a **Ramsey experiment** you prepare |+⟩, wait a time t, and measure along x. If the qubit frequency were exactly known the state would return to the same place; if the frequency fluctuates, the phase it accumulates is random and the signal decays. Noise that is **static** over one run but different from run to run (a slowly drifting field, a slowly varying charge) produces a Gaussian decay exp(−σ²t²/2), with a time constant T2* = √2/σ called the **inhomogeneous** dephasing time. A **Hahn echo** inserts a π pulse in the middle of the wait so that the phase picked up in the second half cancels the phase from the first half; any noise that is the same in both halves is **refocused**. What an echo cannot fix is noise that changes *within* the experiment, **fast noise**, which gives an exponential decay at rate γφ and sets the **echo coherence time**. Krantz et al. and Burkard et al. describe the noise sources for superconducting and spin qubits (for example 1/f charge and flux noise).\n\nThe listing simulates both experiments by Monte Carlo (seeded) with a static Gaussian detuning (σ = 2π × 50 kHz, ASSUMED) and fast Markovian phase noise (γφ = 1/(60 µs), ASSUMED). It compares the simulated signals with exp(−σ²t²/2 − γφ t) for Ramsey and exp(−γφ t) for the echo, and computes the relation between T1, T2 and the pure-dephasing time from B2. The listings use NumPy only (plus `qiskit` where stated): `pip install numpy`. They are **physical models**, small enough to run in seconds, that reproduce known results from the literature so you can check them. Numbers marked ASSUMED are illustrative inputs, not data for any specific device."
+            },
+            {
+              "type": "code",
+              "id": "c-ramsey",
+              "language": "python",
+              "code": "import numpy as np\n\nrng = np.random.default_rng(2026)\nsigma = 2 * np.pi * 0.05                                           # rad/us: static detuning spread 50 kHz (ASSUMED)\ngamma_phi = 1 / 60.0                                               # 1/us: fast phase-noise rate (ASSUMED)\nshots = 200_000\n\ndef ramsey(t):\n    detuning = rng.normal(0, sigma, shots)                          # fixed during a run, different between runs\n    fast = rng.normal(0, np.sqrt(2 * gamma_phi * t), shots)         # Wiener phase noise accumulated over time t\n    return np.mean(np.cos(detuning * t + fast))\n\ndef echo(t):\n    detuning = rng.normal(0, sigma, shots)\n    first = rng.normal(0, np.sqrt(gamma_phi * t), shots)            # independent fast noise in each half of the sequence\n    second = rng.normal(0, np.sqrt(gamma_phi * t), shots)\n    phase = (detuning * t / 2 + first) - (detuning * t / 2 + second)   # the pi pulse flips the sign of the second half\n    return np.mean(np.cos(phase))\n\nprint(f\"static-noise T2* = sqrt(2)/sigma = {np.sqrt(2) / sigma:.2f} us | fast-noise time 1/gamma_phi = {1 / gamma_phi:.0f} us\")\nprint(f\"{'t (us)':>7} {'Ramsey (simulated)':>19} {'Ramsey (formula)':>17} {'echo (simulated)':>17} {'echo (formula)':>15}\")\nfor t in (2, 5, 10, 20, 40, 80):\n    print(f\"{t:>7} {ramsey(t):>19.3f} {np.exp(-sigma ** 2 * t ** 2 / 2 - gamma_phi * t):>17.3f} {echo(t):>17.3f} {np.exp(-gamma_phi * t):>15.3f}\")\n\nT1 = 100.0                                                          # us (ASSUMED, as in B2)\nT2 = 1 / (1 / (2 * T1) + gamma_phi)\nprint(f\"with T1 = {T1:.0f} us and pure dephasing time {1 / gamma_phi:.0f} us: 1/T2 = 1/(2 T1) + 1/T_phi gives T2 = {T2:.1f} us, below the limit 2 T1 = {2 * T1:.0f} us\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-ramsey",
+              "language": "text",
+              "code": "static-noise T2* = sqrt(2)/sigma = 4.50 us | fast-noise time 1/gamma_phi = 60 us\n t (us)  Ramsey (simulated)  Ramsey (formula)  echo (simulated)  echo (formula)\n      2               0.794             0.794             0.967           0.967\n      5               0.268             0.268             0.920           0.920\n     10               0.009             0.006             0.846           0.846\n     20              -0.002             0.000             0.715           0.717\n     40              -0.002             0.000             0.514           0.513\n     80               0.001             0.000             0.264           0.264\nwith T1 = 100 us and pure dephasing time 60 us: 1/T2 = 1/(2 T1) + 1/T_phi gives T2 = 46.2 us, below the limit 2 T1 = 200 us",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The simulated Ramsey signal follows the formula (agreement to within the statistical error of about 0.003 for 200,000 shots) and decays within a few microseconds because of the static detuning, so **T2\\* is about 4.5 µs**. The echo signal decays much more slowly, following exp(−γφ t) with a time constant of 60 µs: the refocusing removed the static part. The gap between T2* and the echo time is the experimental signature of slow noise, and it is exactly what techniques such as **dynamical decoupling** (many echo pulses, used on IBM devices on idle qubits) exploit.\n\n**Practical consequences.** (1) Which coherence time you quote matters: T1, T2*, T2 (echo) and T2 with decoupling can differ by large factors for the same qubit, so a figure without the measurement protocol is ambiguous. (2) Noise spectra are not white: the noise is often 1/f, so longer experiments sample lower frequencies and see more dephasing. (3) Coherence times drift as defects in the materials come and go, which is why calibrations are repeated and why backends publish a date with their numbers. The two noise parameters here are assumed values chosen to give clean separation between the two effects."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does a Hahn echo refocus?",
+              "options": [
+                "Noise that is the same in both halves of the sequence (slow or static noise)",
+                "All noise",
+                "Energy relaxation"
+              ],
+              "correct_index": 0,
+              "explanation": "The pi pulse flips the sign of the accumulated phase, cancelling static detunings; fast noise remains."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why can T2* be much shorter than the echo T2?",
+              "options": [
+                "Slow noise dephases a Ramsey experiment but is refocused by the echo",
+                "T2* includes energy loss only",
+                "They are always equal"
+              ],
+              "correct_index": 0,
+              "explanation": "The Ramsey decay includes static inhomogeneity; the echo removes it."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why must a coherence time be quoted with its measurement protocol?",
+              "options": [
+                "T1, T2*, T2 echo and decoupled T2 can differ substantially for the same qubit",
+                "Protocols are standardised so no need",
+                "Only T1 matters"
+              ],
+              "correct_index": 0,
+              "explanation": "Different protocols are sensitive to different noise frequencies."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B141",
+              "locator": "Sections on noise properties and qubit control: dephasing, 1/f noise and echo techniques"
+            },
+            {
+              "book": "B153",
+              "locator": "Review of decoherence in semiconductor spin qubits and the benefit of long coherence times"
+            },
+            {
+              "book": "B111",
+              "locator": "Guide 'Error mitigation and suppression techniques': dynamical decoupling inserts pulse sequences on idle qubits"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The Gaussian and exponential decay formulas follow from the stated noise model and are confirmed by the Monte Carlo; the claim that real noise is often 1/f is general knowledge reviewed in the cited reviews but not quoted from their abstracts. The noise parameters are assumed."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "5.8 Gate Fidelity",
+          "summary": "Fidelity measures and how they relate, the coherence limit on gate fidelity derived and checked, and what published fidelities mean for circuit size.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The quality of a gate is summarised by its **fidelity**. Three related numbers appear. The **process fidelity** (entanglement fidelity) F_pro compares the noisy operation with the ideal one on half of a maximally entangled state. The **average gate fidelity** F_avg averages the output fidelity over all input states; for dimension d the two are related by F_avg = (d·F_pro + 1)/(d + 1). The **error per gate** is 1 − F_avg. Randomised benchmarking (B4) estimates an average error per Clifford. A gate's fidelity cannot exceed what decoherence allows during the gate: a gate of duration t on a qubit with T1 and T2 has a **coherence-limited** average fidelity F = (3 + e^(−t/T1) + 2·e^(−t/T2))/6, derived from the amplitude-damping and dephasing channels of B2.\n\nThe listing checks both relations numerically: it computes the process and average fidelities of a depolarizing channel and confirms the (d·F_pro + 1)/(d + 1) relation, then verifies the coherence-limit formula by applying the T1/T2 channel to the six cardinal states (an exact 2-design for this average), and tabulates the limit for assumed gate durations. It closes with a table of what an error rate means: roughly 1/error gates before a typical failure. The listings use NumPy only (plus `qiskit` where stated): `pip install numpy`. They are **physical models**, small enough to run in seconds, that reproduce known results from the literature so you can check them. Numbers marked ASSUMED are illustrative inputs, not data for any specific device."
+            },
+            {
+              "type": "code",
+              "id": "c-fidelity",
+              "language": "python",
+              "code": "import numpy as np\n\nX = np.array([[0, 1], [1, 0]], dtype=complex); Y = np.array([[0, -1j], [1j, 0]]); Z = np.diag([1, -1]).astype(complex); I2 = np.eye(2, dtype=complex)\n\ndef apply(kraus, rho):\n    return sum(K @ rho @ K.conj().T for K in kraus)\n\ncardinal = [np.array(v, dtype=complex) / np.linalg.norm(v) for v in ([1, 0], [0, 1], [1, 1], [1, -1], [1, 1j], [1, -1j])]\ndef average_fidelity(kraus):\n    return np.mean([np.real(np.conj(psi) @ apply(kraus, np.outer(psi, psi.conj())) @ psi) for psi in cardinal])\ndef process_fidelity(kraus):\n    phi = np.array([1, 0, 0, 1], dtype=complex) / np.sqrt(2)                        # maximally entangled state\n    out = sum(np.kron(I2, K) @ np.outer(phi, phi.conj()) @ np.kron(I2, K).conj().T for K in kraus)\n    return np.real(phi.conj() @ out @ phi)\n\nlam = 0.03\ndepolarizing = [np.sqrt(1 - 3 * lam / 4) * I2] + [np.sqrt(lam / 4) * P for P in (X, Y, Z)]\nFpro, Favg = process_fidelity(depolarizing), average_fidelity(depolarizing)\nprint(f\"depolarizing channel (lambda = {lam}): process fidelity {Fpro:.5f}, average fidelity {Favg:.5f}, (2 Fpro + 1)/3 = {(2 * Fpro + 1) / 3:.5f}:\", np.isclose(Favg, (2 * Fpro + 1) / 3))\n\ndef relaxation(t, T1, T2):\n    gamma = 1 - np.exp(-t / T1)\n    extra = np.exp(-t / T2) / np.sqrt(1 - gamma)\n    p = (1 - extra) / 2\n    K = [np.array([[1, 0], [0, np.sqrt(1 - gamma)]]), np.array([[0, np.sqrt(gamma)], [0, 0]])]\n    D = [np.sqrt(1 - p) * I2, np.sqrt(p) * Z]\n    return [d @ k for d in D for k in K]\n\nT1, T2 = 100.0, 80.0                                                 # us: ASSUMED\nprint(\"coherence-limit formula (3 + e^-t/T1 + 2 e^-t/T2)/6 equals the numerical average fidelity:\",\n      all(np.isclose(average_fidelity(relaxation(t, T1, T2)), (3 + np.exp(-t / T1) + 2 * np.exp(-t / T2)) / 6) for t in (0.025, 0.3, 5.0)))\nprint(f\"{'gate':<26} {'duration':>9} {'coherence-limited error':>24} {'small-t estimate t/(6 T1) + t/(3 T2)':>38}\")\nfor name, t in ((\"single-qubit gate\", 0.025), (\"two-qubit gate\", 0.3), (\"slow gate, same T1 and T2\", 100.0)):\n    error = 1 - (3 + np.exp(-t / T1) + 2 * np.exp(-t / T2)) / 6\n    print(f\"{name:<26} {t * 1000:>6.0f} ns {error:>24.2e} {t / (6 * T1) + t / (3 * T2):>38.2e}\")\n\nprint()\nprint(f\"{'error per gate':>15} {'about 1/error gates before a typical failure':>46}   source of the number\")\nfor error, label in ((1e-2, \"about the threshold figure quoted by Ballance et al. (99%)\"), (1e-3, \"two-qubit gate 99.9(1)% (Ballance et al.)\"),\n                     (8e-4, \"two-qubit error 8(4)e-4 (Gaebler et al.)\"), (3.8e-5, \"single-qubit error 3.8(1)e-5 (Gaebler et al.)\")):\n    print(f\"{error:>15.1e} {1 / error:>46,.0f}   {label}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-fidelity",
+              "language": "text",
+              "code": "depolarizing channel (lambda = 0.03): process fidelity 0.97750, average fidelity 0.98500, (2 Fpro + 1)/3 = 0.98500: True\ncoherence-limit formula (3 + e^-t/T1 + 2 e^-t/T2)/6 equals the numerical average fidelity: True\ngate                        duration  coherence-limited error   small-t estimate t/(6 T1) + t/(3 T2)\nsingle-qubit gate              25 ns                 1.46e-04                               1.46e-04\ntwo-qubit gate                300 ns                 1.75e-03                               1.75e-03\nslow gate, same T1 and T2  100000 ns                 3.43e-01                               5.83e-01\n\n error per gate   about 1/error gates before a typical failure   source of the number\n        1.0e-02                                            100   about the threshold figure quoted by Ballance et al. (99%)\n        1.0e-03                                          1,000   two-qubit gate 99.9(1)% (Ballance et al.)\n        8.0e-04                                          1,250   two-qubit error 8(4)e-4 (Gaebler et al.)\n        3.8e-05                                         26,316   single-qubit error 3.8(1)e-5 (Gaebler et al.)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The two relations hold numerically, so the formulas can be used with confidence. The coherence limit shows why gate speed matters: with T1 = 100 µs and T2 = 80 µs, a 25 ns single-qubit gate is limited to an error near 1.5×10⁻⁴ and a 300 ns gate to about 1.8×10⁻³ (the table counts one qubit's decoherence; a real two-qubit gate involves two qubits and has additional error sources, so its true limit is larger), while a 100 µs gate on the same coherence would be hopeless (34% error), which is why slow gates need long-coherence platforms such as ions (memory coherence over a second).\n\nThe last table converts error rates into circuit scale: 1/error is a rough count of gates before a failure, so a 10⁻³ gate allows about a thousand gates, and a 4×10⁻⁵ gate allows about 26,000. **That is not enough for the algorithms in this track**: Shor-type computations need billions of gates (B8), which is why error correction (C3) is required, and why reported fidelities must be read with the question \"above or below the threshold, and for which operation?\". Ballance et al. cite about 99% as the minimum threshold level for fault-tolerant computation; Google's below-threshold surface-code memory (lesson 5.10) is the first demonstration that exceeding it brings the promised exponential suppression."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the relation between average gate fidelity and process fidelity for a qubit (d = 2)?",
+              "options": [
+                "F_avg = (2 F_pro + 1)/3",
+                "F_avg = F_pro",
+                "F_avg = F_pro squared"
+              ],
+              "correct_index": 0,
+              "explanation": "In general F_avg = (d F_pro + 1)/(d + 1)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does a short gate have a lower coherence-limited error?",
+              "options": [
+                "Less time for T1 and T2 processes to act during the gate",
+                "Short gates are more accurate by definition",
+                "T1 is shorter for short gates"
+              ],
+              "correct_index": 0,
+              "explanation": "The decoherence-induced error grows roughly as t/T1 and t/T2."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is a gate error of 1e-3 not sufficient for large algorithms without error correction?",
+              "options": [
+                "It allows only about a thousand gates before a typical failure",
+                "It is below the threshold",
+                "Fidelity does not matter"
+              ],
+              "correct_index": 0,
+              "explanation": "Algorithms like Shor's need billions of gates."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B145",
+              "locator": "Abstract: fidelities 99.9(1)% (two-qubit) and 99.9934(3)% (single-qubit), above the approximately 99% minimum threshold level required for fault-tolerant quantum computation"
+            },
+            {
+              "book": "B146",
+              "locator": "Abstract: single-qubit error 3.8(1) x 10^-5; two-qubit gate error 8(4) x 10^-4"
+            },
+            {
+              "book": "B155",
+              "locator": "Abstract: the five requirements for physical implementation of quantum computation (including long coherence times relative to gate times)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The formula F_avg = (d F_pro + 1)/(d + 1) and the coherence-limited fidelity (3 + e^(-t/T1) + 2 e^(-t/T2))/6 are standard and confirmed numerically; the coherence times and gate durations in the table are assumptions. The DiVincenzo abstract lists the five requirements without naming the coherence criterion, which is known from the paper's body and was not re-read."
+          },
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "5.9 Readout",
+          "summary": "The trade-off in measuring a qubit: signal-to-noise against decay during the measurement, modelled, optimised and compared with a published result.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Reading out a qubit means turning a quantum state into a classical record. For superconducting qubits the standard method is **dispersive readout**: the qubit is coupled to a microwave resonator whose frequency depends slightly on the qubit state, a probe tone reflects off the resonator, and the phase or amplitude of the returning signal, amplified by a (ideally quantum-limited) amplifier and digitised, reveals the state. Each shot gives a point in the I-Q plane drawn from one of two overlapping Gaussian clouds, one per state, and a threshold assigns the outcome. Two effects compete. **Integrating longer** improves the signal-to-noise ratio (the separation of the clouds grows ∝ t while the noise grows ∝ √t), reducing the overlap error. But while you integrate, an excited qubit can **decay** (T1), so |1⟩ is misread as |0⟩, and this error grows ∝ t. There is an optimal integration time.\n\nWalter and colleagues pushed this trade-off by increasing the dispersive coupling, optimising the resonator linewidth, using a Purcell filter and phase-sensitive parametric amplification. They report 98.25% readout fidelity in only 48 ns and 99.2% in 88 ns, limited predominantly by a qubit lifetime of 7.6 µs. The listing builds the simple two-effect model, calibrates its single free parameter (the signal-to-noise ratio) to the **88 ns** result with T1 = 7.6 µs, and then **predicts the 48 ns** result. It also confirms the formula by Monte Carlo simulation of shots with exponentially distributed decay times. The comparison is honest about how far a simple model gets. The listings use NumPy only (plus `qiskit` where stated): `pip install numpy`. They are **physical models**, small enough to run in seconds, that reproduce known results from the literature so you can check them. Numbers marked ASSUMED are illustrative inputs, not data for any specific device."
+            },
+            {
+              "type": "code",
+              "id": "c-readout-model",
+              "language": "python",
+              "code": "import numpy as np\nfrom math import erfc, sqrt\n\nT1 = 7600.0                                                        # ns: the qubit lifetime reported by Walter et al.\n\ndef assignment_fidelity(t, snr_per_sqrt_ns):\n    snr = snr_per_sqrt_ns * np.sqrt(t)                               # separation / noise grows as sqrt(integration time)\n    overlap = 0.5 * erfc(snr / (2 * sqrt(2)))                        # probability a Gaussian shot lands on the wrong side of the threshold\n    return 1 - overlap - t / (4 * T1)                                # the decay error: |1> decays within the window with probability ~ t/(2 T1), half of which flips the outcome\n\n# Calibrate the single parameter to the 88 ns / 99.2% result\nlo, hi = 0.1, 2.0\nfor _ in range(80):\n    mid = (lo + hi) / 2\n    lo, hi = (mid, hi) if assignment_fidelity(88, mid) < 0.992 else (lo, mid)\nk = (lo + hi) / 2\nprint(f\"calibrated signal-to-noise: {k * np.sqrt(88):.2f} at 88 ns (parameter {k:.4f} per sqrt(ns))\")\nprint(f\"model prediction at 48 ns: {assignment_fidelity(48, k):.4f} | reported by Walter et al.: 0.9825\")\n\nprint(f\"{'integration time (ns)':>22} {'model fidelity':>15} {'overlap error':>14} {'decay error':>12}\")\nbest = max(range(10, 600, 2), key=lambda t: assignment_fidelity(t, k))\nfor t in (24, 48, 88, 150, best, 300, 500):\n    snr = k * np.sqrt(t)\n    print(f\"{t:>22} {assignment_fidelity(t, k):>15.4f} {0.5 * erfc(snr / (2 * sqrt(2))):>14.4f} {t / (4 * T1):>12.4f}\" + (\"   <- model optimum\" if t == best else \"\"))\n\n# Monte Carlo check of the formula at 88 ns\nrng = np.random.default_rng(5)\nshots, t = 400_000, 88.0\nsnr = k * np.sqrt(t)\nsigma = 1.0\n# state |0>: Gaussian around 0; state |1>: Gaussian around snr (the separation), but with decay at a random time during the window\nzero_signal = rng.normal(0, sigma, shots)\ndecay_time = rng.exponential(T1, shots)\nfraction_excited = np.clip(decay_time / t, 0, 1)                      # fraction of the window spent in |1> before decaying\none_signal = rng.normal(0, sigma, shots) + snr * fraction_excited       # the signal builds up only while the qubit is still excited\nthreshold = snr / 2\nfidelity = 1 - 0.5 * (np.mean(zero_signal > threshold) + np.mean(one_signal < threshold))\nprint(f\"Monte Carlo with continuous decay: fidelity {fidelity:.4f} (the simple formula gave {assignment_fidelity(t, k):.4f})\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-readout-model",
+              "language": "text",
+              "code": "calibrated signal-to-noise: 5.14 at 88 ns (parameter 0.5476 per sqrt(ns))\nmodel prediction at 48 ns: 0.9695 | reported by Walter et al.: 0.9825\n integration time (ns)  model fidelity  overlap error  decay error\n                    24          0.9093         0.0899       0.0008\n                    48          0.9695         0.0289       0.0016\n                    88          0.9920         0.0051       0.0029\n                   150          0.9947         0.0004       0.0049\n                   132          0.9948         0.0008       0.0043   <- model optimum\n                   300          0.9901         0.0000       0.0099\n                   500          0.9836         0.0000       0.0164\nMonte Carlo with continuous decay: fidelity 0.9921 (the simple formula gave 0.9920)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The model calibrated on the 88 ns point predicts about 0.969 at 48 ns, against the 0.9825 reported: it **underestimates by roughly one percentage point**, so the two-effect model captures the trend (the fidelity falls as the readout is shortened) but not the details. That is the real lesson: a simple model explains *why* there is an optimum and which parameters matter, but real systems have further structure (the ring-up time of the resonator, amplifier bandwidth, non-Gaussian tails, the exact Purcell filtering), and published numbers come from measurement, not from formulas. The model's optimum integration time is about 130 ns (fidelity 0.995 under this model), so the reported 88 ns point lies on the short side of the optimum; real systems also trade readout time for other constraints such as the speed of the surrounding feedback loop.\n\nThe Monte Carlo, in which the signal builds up only while the qubit is still excited, agrees with the closed form to within 0.0001 at this operating point (0.9921 against 0.9920), which supports the closed form's treatment of decay as a flip of half of the early-decay events. **Why readout matters for the rest of the stack:** readout error adds to every measurement in a circuit, mid-circuit measurements in error correction (C3) are repeated every cycle (Google's surface code runs a 1.1 µs cycle, lesson 5.10), and fast readout is what makes real-time feedback possible. Readout errors can be partly corrected by mitigation (B4) and are measured by the calibration circuits of IBM's TREX method."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is there an optimal integration time for dispersive readout?",
+              "options": [
+                "Longer integration improves signal-to-noise but allows more decay of the excited state",
+                "Shorter integration is always better",
+                "Longer integration is always better"
+              ],
+              "correct_index": 0,
+              "explanation": "The overlap error falls with time while the T1 decay error grows."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What limited the readout fidelity in Walter et al.'s experiment?",
+              "options": [
+                "Predominantly the qubit lifetime (7.6 microseconds)",
+                "The room-temperature electronics only",
+                "Cosmic rays"
+              ],
+              "correct_index": 0,
+              "explanation": "The abstract states 99.2% in 88 ns, limited predominantly by the qubit lifetime of 7.6 us."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How good was the simple two-effect model's prediction at 48 ns?",
+              "options": [
+                "About one percentage point too low, so right in trend but not in detail",
+                "Exactly right",
+                "Far too high"
+              ],
+              "correct_index": 0,
+              "explanation": "The prediction was about 0.969 against the reported 0.9825."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B156",
+              "locator": "Abstract: 98.25% readout fidelity in 48 ns and 99.2% in 88 ns, limited predominantly by the qubit lifetime of 7.6 microseconds; dispersive readout with a Purcell filter and parametric amplification"
+            },
+            {
+              "book": "B141",
+              "locator": "Section on readout: dispersive readout, the readout resonator and amplification"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The model's assignment-error formula and the Gaussian-cloud picture are standard but were written for this lesson; the 48 ns prediction versus the reported value is computed in the listing. The description of the dispersive readout chain follows the reviews and was not quoted from a specific passage."
+          },
+          "after": "sec-8"
+        },
+        {
+          "slug": "sec-10",
+          "action": "replace",
+          "title": "5.10 Connectivity and Scaling",
+          "summary": "How connectivity changes the cost of a circuit, measured on a real coupling map, and what error correction implies for the number of physical qubits.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Two questions decide whether a platform can scale: **how well connected are the qubits**, and **how many physical qubits does a useful computation need**.\n\n**Connectivity.** Linke and colleagues ran the same algorithms on a 5-qubit superconducting transmon device with limited connectivity and on a fully connected trapped-ion system, and showed that algorithms and circuits that use more connectivity clearly benefit from a better-connected qubit system. Superconducting chips typically couple each qubit to a few neighbours (IBM's heavy-hex layout has at most three); a two-qubit gate between non-neighbours costs extra SWAPs, each of which is three two-qubit gates (B4). Ions in a chain and reconfigurable neutral-atom arrays offer much higher connectivity. The listing measures the effect on a real layout: it takes the 127-qubit heavy-hex coupling map of `FakeSherbrooke`, computes the shortest-path distance between all pairs, and estimates the SWAP overhead of a random two-qubit gate compared with a square grid of similar size and with all-to-all connectivity.\n\n**Scale.** Fault-tolerant computation uses error correction (C3). The surface code protects one logical qubit with about 2d² physical qubits at code distance d (d² data qubits and about d² measurement qubits). Google's below-threshold experiment found that the logical error rate falls by a factor Λ = 2.14 each time the distance increases by two, reaching 0.143% error per cycle with a 101-qubit distance-7 code and a 1.1 µs cycle. The second part of the listing **extrapolates** that measured Λ to ask how many physical qubits per logical qubit are needed for a target logical error rate; this is an **optimistic extrapolation of a single measurement** (it assumes Λ stays constant and ignores correlated errors, which Google reports limit the repetition-code performance at about one event per 3×10⁹ cycles). The listings use NumPy only (plus `qiskit` where stated): `pip install numpy`. They are **physical models**, small enough to run in seconds, that reproduce known results from the literature so you can check them. Numbers marked ASSUMED are illustrative inputs, not data for any specific device."
+            },
+            {
+              "type": "code",
+              "id": "c-scaling",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit.transpiler import CouplingMap\nfrom qiskit_ibm_runtime.fake_provider import FakeSherbrooke\n\ndef summary(name, coupling_map):\n    n = coupling_map.size()\n    distances = np.array(coupling_map.distance_matrix)\n    pairs = distances[np.triu_indices(n, k=1)]\n    degree = np.zeros(n)\n    for a, b in {tuple(sorted(edge)) for edge in coupling_map.get_edges()}:      # count each undirected coupling once\n        degree[a] += 1\n        degree[b] += 1\n    print(f\"{name:<24} {n:>6} {degree.max():>11.0f} {pairs.mean():>13.2f} {pairs.max():>9.0f} {3 * (pairs.mean() - 1):>26.2f}\")\n\nprint(f\"{'topology':<24} {'qubits':>6} {'max degree':>11} {'mean distance':>13} {'diameter':>9} {'extra 2q gates per random 2q gate':>34}\")\nsummary(\"IBM heavy-hex (Sherbrooke)\", FakeSherbrooke().coupling_map)\ngrid = CouplingMap.from_grid(11, 12)\nsummary(\"square grid 11 x 12\", grid)\nsummary(\"all-to-all, 127 qubits\", CouplingMap.from_full(127))\n\n# Surface-code extrapolation (optimistic: assumes the measured suppression factor stays constant)\nlam = 2.14                                                          # suppression per +2 in distance, Google (arXiv:2408.13687)\nerror_d7 = 0.00143                                                  # logical error per cycle at distance 7\nprint()\nprint(f\"{'target logical error per cycle':>31} {'distance needed':>16} {'physical qubits per logical (2 d^2)':>37} {'for 1,000 logical qubits':>26}\")\nfor target in (1e-6, 1e-9, 1e-12):\n    steps = np.ceil(np.log(error_d7 / target) / np.log(lam))\n    d = int(7 + 2 * steps)\n    print(f\"{target:>31.0e} {d:>16} {2 * d * d:>37,} {1000 * 2 * d * d:>26,}\")\nprint(f\"check: the extrapolation reproduces the measurement at d = 7: {error_d7:.5f}; at d = 5 it would give {error_d7 * lam:.5f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-scaling",
+              "language": "text",
+              "code": "topology                 qubits  max degree mean distance  diameter  extra 2q gates per random 2q gate\nIBM heavy-hex (Sherbrooke)    127           3         11.13        26                      30.40\nsquare grid 11 x 12         132           4          7.67        21                      20.00\nall-to-all, 127 qubits      127         126          1.00         1                       0.00\n\n target logical error per cycle  distance needed   physical qubits per logical (2 d^2)   for 1,000 logical qubits\n                          1e-06               27                                 1,458                  1,458,000\n                          1e-09               45                                 4,050                  4,050,000\n                          1e-12               63                                 7,938                  7,938,000\ncheck: the extrapolation reproduces the measurement at d = 7: 0.00143; at d = 5 it would give 0.00306",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The connectivity table makes the cost concrete. On the heavy-hex layout the mean distance between two qubits is about 11 hops (diameter 26), so a random two-qubit gate needs about 30 extra two-qubit gates for SWAPs on average (each SWAP is three gates), against about 20 on a square grid of similar size and none with all-to-all connectivity. Real circuits are not random and the transpiler places qubits intelligently (B4), but the gap explains why well-connected platforms need far fewer gates for algorithms that use arbitrary interactions, as Linke et al. observed at small scale, and why the choice of platform is a trade-off between connectivity, gate speed and manufacturability.\n\nThe extrapolation shows what error correction costs in qubits: with Google's measured suppression factor, a logical error of 10⁻¹² per cycle needs a distance near 63, about 8,000 physical qubits per logical qubit, so a 1,000-logical-qubit machine needs several million physical qubits. This is consistent with the order of magnitude of the resource estimates for breaking RSA that you met in B8 (about a million physical qubits in the most optimistic published estimate, under assumptions). **Reading it honestly:** it is a one-parameter extrapolation, better codes, decoders and hardware can change it either way, and the fact that scaling is *possible in principle* (Λ > 1, below threshold) is the achievement; the engineering distance to millions of qubits is still very large."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does limited connectivity increase the cost of a circuit?",
+              "options": [
+                "Gates between non-neighbouring qubits need SWAPs, each of which costs three two-qubit gates",
+                "Fewer qubits are available",
+                "Gates become slower"
+              ],
+              "correct_index": 0,
+              "explanation": "Routing moves quantum states next to each other with SWAP operations."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does Lambda = 2.14 mean in Google's below-threshold experiment?",
+              "options": [
+                "The logical error rate falls by a factor of 2.14 each time the code distance increases by 2",
+                "The code has 2.14 qubits",
+                "The cycle takes 2.14 microseconds"
+              ],
+              "correct_index": 0,
+              "explanation": "Below threshold, adding qubits suppresses logical errors exponentially."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is the extrapolation of physical qubit needs optimistic?",
+              "options": [
+                "It assumes the measured suppression factor stays constant and ignores correlated errors",
+                "It counts too many qubits",
+                "It uses the wrong code"
+              ],
+              "correct_index": 0,
+              "explanation": "Correlated rare events were found to limit performance in the experiment."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B157",
+              "locator": "Abstract: algorithms that use more connectivity clearly benefit from a better connected system (superconducting 5-qubit device versus fully connected trapped-ion system)"
+            },
+            {
+              "book": "B158",
+              "locator": "Abstract: below-threshold surface code memories; Lambda = 2.14; 101-qubit distance-7 code with 0.143% error per cycle; cycle time 1.1 microseconds; rare correlated error events about once every 3 x 10^9 cycles"
+            },
+            {
+              "book": "B159",
+              "locator": "Surface-code introduction and the size and speed of a surface-code quantum computer"
+            },
+            {
+              "book": "B131",
+              "locator": "FakeSherbrooke.coupling_map (127-qubit heavy-hex layout)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The estimate of about 2 d^2 physical qubits per surface-code logical qubit is the standard counting (d^2 data plus about d^2 measurement qubits); the Google experiment's 101 qubits at d = 7 is close to 2 d^2 = 98. The extrapolation to d about 63 is the lesson's own and rests on a single measured factor."
+          },
+          "after": "sec-9"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "b5-n01",
+          "prompt": "What advantage does the transmon have over the charge qubit?",
+          "options": [
+            "Exponentially suppressed charge dispersion at large EJ/EC",
+            "Larger anharmonicity",
+            "No cooling needed"
+          ],
+          "correct_index": 0,
+          "explanation": "Koch et al.: charge dispersion decreases exponentially with EJ/EC.",
+          "source": {
+            "book": "B140",
+            "locator": "Abstract"
+          }
+        },
+        {
+          "id": "b5-n02",
+          "prompt": "Why do ions in a single chain have all-to-all connectivity?",
+          "options": [
+            "Shared vibrational modes couple any pair of ions",
+            "They touch each other",
+            "They share one laser"
+          ],
+          "correct_index": 0,
+          "explanation": "The collective motion acts as a bus between ions.",
+          "source": {
+            "book": "B143",
+            "locator": "Abstract and review"
+          }
+        },
+        {
+          "id": "b5-n03",
+          "prompt": "What is the Rydberg blockade?",
+          "options": [
+            "A Rydberg-excited atom prevents a nearby atom from being excited",
+            "Atoms losing their electrons",
+            "A magnetic effect"
+          ],
+          "correct_index": 0,
+          "explanation": "The interaction shifts the neighbour's Rydberg level out of resonance.",
+          "source": {
+            "book": "B147",
+            "locator": "Abstract"
+          }
+        },
+        {
+          "id": "b5-n04",
+          "prompt": "What does the Hong-Ou-Mandel effect show?",
+          "options": [
+            "Two identical photons on a 50:50 beam splitter bunch into one output",
+            "Photons repel",
+            "Photons have mass"
+          ],
+          "correct_index": 0,
+          "explanation": "The (1,1) output amplitude is a permanent that vanishes.",
+          "source": {
+            "book": "B150",
+            "locator": "Linear optics review"
+          }
+        },
+        {
+          "id": "b5-n05",
+          "prompt": "What sets the frequency of an electron spin qubit?",
+          "options": [
+            "The magnetic field, through the Zeeman splitting",
+            "The chip temperature",
+            "The laser power"
+          ],
+          "correct_index": 0,
+          "explanation": "The splitting is g mu_B B.",
+          "source": {
+            "book": "B153",
+            "locator": "Abstract"
+          }
+        },
+        {
+          "id": "b5-n06",
+          "prompt": "What does DRAG do?",
+          "options": [
+            "Adds a derivative quadrature to suppress leakage to higher levels",
+            "Increases pulse amplitude",
+            "Reduces readout noise"
+          ],
+          "correct_index": 0,
+          "explanation": "Motzoi et al. propose a second control proportional to the time derivative of the first.",
+          "source": {
+            "book": "B154",
+            "locator": "Abstract"
+          }
+        },
+        {
+          "id": "b5-n07",
+          "prompt": "What does a Hahn echo refocus?",
+          "options": [
+            "Slow (static) frequency noise",
+            "Fast noise",
+            "Energy loss"
+          ],
+          "correct_index": 0,
+          "explanation": "The pi pulse cancels the phase accumulated in the first half by noise that is the same in the second half.",
+          "source": {
+            "book": "B141",
+            "locator": "Noise properties"
+          }
+        },
+        {
+          "id": "b5-n08",
+          "prompt": "Which relation holds between average and process fidelity for a qubit?",
+          "options": [
+            "F_avg = (2 F_pro + 1)/3",
+            "F_avg = F_pro",
+            "F_avg = 1 - F_pro"
+          ],
+          "correct_index": 0,
+          "explanation": "General formula (d F_pro + 1)/(d + 1) with d = 2.",
+          "source": {
+            "book": "B155",
+            "locator": "Fidelity measures (standard definition)"
+          }
+        },
+        {
+          "id": "b5-n09",
+          "prompt": "What limited the 99.2% readout in Walter et al.?",
+          "options": [
+            "Predominantly the qubit lifetime of 7.6 microseconds",
+            "The amplifier only",
+            "Thermal noise only"
+          ],
+          "correct_index": 0,
+          "explanation": "The abstract states this directly.",
+          "source": {
+            "book": "B156",
+            "locator": "Abstract"
+          }
+        },
+        {
+          "id": "b5-n10",
+          "prompt": "What does Lambda = 2.14 mean?",
+          "options": [
+            "The logical error rate drops 2.14-fold per distance increase of 2",
+            "The code uses 2.14 qubits per logical qubit",
+            "The cycle time is 2.14 microseconds"
+          ],
+          "correct_index": 0,
+          "explanation": "Google reports below-threshold suppression with this factor.",
+          "source": {
+            "book": "B158",
+            "locator": "Abstract"
+          }
+        },
+        {
+          "id": "b5-n11",
+          "prompt": "What did Linke et al. conclude about connectivity?",
+          "options": [
+            "Circuits using more connectivity clearly benefit from a better connected qubit system",
+            "Connectivity is irrelevant",
+            "Only qubit count matters"
+          ],
+          "correct_index": 0,
+          "explanation": "They compared a superconducting device and a fully connected ion system.",
+          "source": {
+            "book": "B157",
+            "locator": "Abstract"
+          }
+        },
+        {
+          "id": "b5-n12",
+          "prompt": "Roughly how many gates can a 1e-3 gate error allow before a typical failure?",
+          "options": [
+            "About 1,000",
+            "About 1 million",
+            "About 10"
+          ],
+          "correct_index": 0,
+          "explanation": "The number of gates is of the order of 1/error.",
+          "source": {
+            "book": "B145",
+            "locator": "Fidelity discussion"
+          }
+        }
+      ],
+      "estimated_minutes": 448,
+      "notes": "Rewrites ten outline sections as lessons grounded in verified primary-source abstracts (transmon, ion, Rydberg, photonic, spin, DRAG, readout, fidelity, Google surface code) with executed physical models: transmon diagonalisation, ion-chain normal modes and MS-to-CNOT search, Rydberg blockade dynamics, HOM and boson-sampling amplitudes, SWAP-root CZ search, three-level DRAG simulation, Ramsey and echo Monte Carlo, coherence-limited fidelity, a readout model compared with a published result, and connectivity and error-correction overhead.",
+      "learning_objectives": [
+        "Explain how transmon, trapped-ion, neutral-atom, photonic and spin qubits work and compute a defining property of each.",
+        "Simulate a Rydberg blockade and Hong-Ou-Mandel interference and explain the Moelmer-Soerensen and exchange gates.",
+        "Explain how control pulses cause leakage and how DRAG corrects it.",
+        "Distinguish T1, T2*, echo and decoupled coherence times and relate coherence to gate fidelity.",
+        "Model the readout trade-off and compare a simple model with a published result.",
+        "Quantify the cost of limited connectivity and extrapolate error-correction overheads with their caveats."
+      ]
+    }
+  ]
+}
