@@ -76,6 +76,226 @@
       ],
       "correct_index": 1,
       "explanation": "The Beginner Capstone combines networking, cryptography, and quantum programming into one project."
+    },
+    {
+      "id": "a7-n01",
+      "lesson_id": "A8.L1",
+      "competency_id": "PROG.4",
+      "depth": "Apply",
+      "prompt": "In Qiskit, what is the role of transpiling a circuit?",
+      "options": [
+        "Rewrite it for the gates and connections of a chosen backend",
+        "Measure all qubits",
+        "Draw the circuit"
+      ],
+      "correct_index": 0,
+      "explanation": "Transpiling adapts the circuit to what the backend supports.",
+      "source": {
+        "book_id": "B61",
+        "title": "Qiskit SDK documentation (Qiskit 2.5.2) and the Qiskit Aer documentation (qiskit-aer 0.17.2)",
+        "authors": "Qiskit contributors",
+        "edition": "2.5.2 and 0.17.2, accessed 2026-10-04",
+        "publisher": "IBM Quantum; qiskit.github.io",
+        "locator": "transpile"
+      }
+    },
+    {
+      "id": "a7-n02",
+      "lesson_id": "A8.L2",
+      "competency_id": "PROG.4",
+      "depth": "Apply",
+      "prompt": "Which Qiskit call applies a Hadamard gate to qubit 0 of circuit qc?",
+      "options": [
+        "qc.h(0)",
+        "qc.x(0)",
+        "qc.measure(0, 0)"
+      ],
+      "correct_index": 0,
+      "explanation": "h is the Hadamard gate method.",
+      "source": {
+        "book_id": "B61",
+        "title": "Qiskit SDK documentation (Qiskit 2.5.2) and the Qiskit Aer documentation (qiskit-aer 0.17.2)",
+        "authors": "Qiskit contributors",
+        "edition": "2.5.2 and 0.17.2, accessed 2026-10-04",
+        "publisher": "IBM Quantum; qiskit.github.io",
+        "locator": "QuantumCircuit.h"
+      }
+    },
+    {
+      "id": "a7-n03",
+      "lesson_id": "A8.L2",
+      "competency_id": "PROG.4",
+      "depth": "Apply",
+      "prompt": "Qc.cx(0, 1) applies X to qubit 1 when:",
+      "options": [
+        "qubit 0 is 1",
+        "qubit 1 is 1",
+        "both qubits are 0"
+      ],
+      "correct_index": 0,
+      "explanation": "The first argument is the control and the second the target.",
+      "source": {
+        "book_id": "B61",
+        "title": "Qiskit SDK documentation (Qiskit 2.5.2) and the Qiskit Aer documentation (qiskit-aer 0.17.2)",
+        "authors": "Qiskit contributors",
+        "edition": "2.5.2 and 0.17.2, accessed 2026-10-04",
+        "publisher": "IBM Quantum; qiskit.github.io",
+        "locator": "QuantumCircuit.cx"
+      }
+    },
+    {
+      "id": "a7-n04",
+      "lesson_id": "A8.L2",
+      "competency_id": "PROG.4",
+      "depth": "Apply",
+      "prompt": "In Qiskit's ordering, which basis state is at position 1 of a two-qubit state vector?",
+      "options": [
+        "|01>",
+        "|10>",
+        "|11>"
+      ],
+      "correct_index": 0,
+      "explanation": "Qubit 0 is the rightmost bit, so 01 means qubit 0 is 1.",
+      "source": {
+        "book_id": "B61",
+        "title": "Qiskit SDK documentation (Qiskit 2.5.2) and the Qiskit Aer documentation (qiskit-aer 0.17.2)",
+        "authors": "Qiskit contributors",
+        "edition": "2.5.2 and 0.17.2, accessed 2026-10-04",
+        "publisher": "IBM Quantum; qiskit.github.io",
+        "locator": "Statevector"
+      }
+    },
+    {
+      "id": "a7-n05",
+      "lesson_id": "A8.L3",
+      "competency_id": "PROG.4",
+      "depth": "Apply",
+      "prompt": "What does the shots parameter control?",
+      "options": [
+        "How many times the circuit is run and measured",
+        "The number of qubits",
+        "The noise level"
+      ],
+      "correct_index": 0,
+      "explanation": "Each shot is one run ending in a measurement.",
+      "source": {
+        "book_id": "B61",
+        "title": "Qiskit SDK documentation (Qiskit 2.5.2) and the Qiskit Aer documentation (qiskit-aer 0.17.2)",
+        "authors": "Qiskit contributors",
+        "edition": "2.5.2 and 0.17.2, accessed 2026-10-04",
+        "publisher": "IBM Quantum; qiskit.github.io",
+        "locator": "AerSimulator.run"
+      }
+    },
+    {
+      "id": "a7-n06",
+      "lesson_id": "A8.L3",
+      "competency_id": "MATH.2",
+      "depth": "Apply",
+      "prompt": "To halve the statistical error of an estimated probability you need about:",
+      "options": [
+        "4 times as many shots",
+        "2 times as many shots",
+        "the same shots with a different seed"
+      ],
+      "correct_index": 0,
+      "explanation": "Standard error falls as 1/√N.",
+      "source": {
+        "book_id": "B34",
+        "title": "The Python Standard Library (Python 3.14 documentation)",
+        "authors": "Python Software Foundation",
+        "edition": "3.14, accessed 2026-10-04",
+        "publisher": "docs.python.org",
+        "locator": "statistics background"
+      }
+    },
+    {
+      "id": "a7-n07",
+      "lesson_id": "A8.L3",
+      "competency_id": "PROG.4",
+      "depth": "Apply",
+      "prompt": "Why test a circuit on a simulator before using real hardware?",
+      "options": [
+        "It is free, fast and shows the ideal behaviour to compare with",
+        "Simulators are more accurate than hardware for all circuits",
+        "Hardware cannot run circuits with measurements"
+      ],
+      "correct_index": 0,
+      "explanation": "Simulators let you check logic cheaply; hardware adds noise and queues.",
+      "source": {
+        "book_id": "B62",
+        "title": "Qiskit Runtime and primitives guides (IBM Quantum Platform documentation)",
+        "authors": "IBM Quantum",
+        "edition": "online, accessed 2026-10-04",
+        "publisher": "IBM Quantum",
+        "locator": "Runtime guides"
+      }
+    },
+    {
+      "id": "a7-n08",
+      "lesson_id": "A8.L4",
+      "competency_id": "QNT.2",
+      "depth": "Explain",
+      "prompt": "A noisy Bell-state experiment shows counts for 01 and 10. What does that indicate?",
+      "options": [
+        "Gate or readout errors",
+        "A correct entangled state",
+        "A bug in the plotting"
+      ],
+      "correct_index": 0,
+      "explanation": "An ideal Bell state gives only 00 and 11.",
+      "source": {
+        "book_id": "B61",
+        "title": "Qiskit SDK documentation (Qiskit 2.5.2) and the Qiskit Aer documentation (qiskit-aer 0.17.2)",
+        "authors": "Qiskit contributors",
+        "edition": "2.5.2 and 0.17.2, accessed 2026-10-04",
+        "publisher": "IBM Quantum; qiskit.github.io",
+        "locator": "qiskit_aer.noise"
+      }
+    },
+    {
+      "id": "a7-n09",
+      "lesson_id": "A8.L5",
+      "competency_id": "PROG.4",
+      "depth": "Apply",
+      "prompt": "Where should an IBM Quantum API key be kept?",
+      "options": [
+        "In a protected credentials store, never in code or Git",
+        "In the notebook",
+        "In the README"
+      ],
+      "correct_index": 0,
+      "explanation": "API keys are secrets and must not be committed.",
+      "source": {
+        "book_id": "B62",
+        "title": "Qiskit Runtime and primitives guides (IBM Quantum Platform documentation)",
+        "authors": "IBM Quantum",
+        "edition": "online, accessed 2026-10-04",
+        "publisher": "IBM Quantum",
+        "locator": "Runtime guides"
+      }
+    },
+    {
+      "id": "a7-n10",
+      "lesson_id": "A8.L3",
+      "competency_id": "PROG.4",
+      "depth": "Apply",
+      "prompt": "Why must bits generated by a simulator never be used as a key?",
+      "options": [
+        "They are pseudo-random and repeat for the same seed",
+        "They are too short",
+        "Simulators cannot produce bits"
+      ],
+      "correct_index": 0,
+      "explanation": "A simulator's randomness is deterministic given the seed.",
+      "source": {
+        "book_id": "B61",
+        "title": "Qiskit SDK documentation (Qiskit 2.5.2) and the Qiskit Aer documentation (qiskit-aer 0.17.2)",
+        "authors": "Qiskit contributors",
+        "edition": "2.5.2 and 0.17.2, accessed 2026-10-04",
+        "publisher": "IBM Quantum; qiskit.github.io",
+        "locator": "AerSimulator seed_simulator"
+      }
     }
   ]
 }

@@ -1,0 +1,816 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B60",
+      "title": "Basics of quantum information (IBM Quantum Learning course)",
+      "authors": "John Watrous",
+      "edition": "online course, accessed 2026-10-04",
+      "publisher": "IBM Quantum"
+    },
+    {
+      "id": "B61",
+      "title": "Qiskit SDK documentation (Qiskit 2.5.2) and the Qiskit Aer documentation (qiskit-aer 0.17.2)",
+      "authors": "Qiskit contributors",
+      "edition": "2.5.2 and 0.17.2, accessed 2026-10-04",
+      "publisher": "IBM Quantum; qiskit.github.io"
+    },
+    {
+      "id": "B62",
+      "title": "Qiskit Runtime and primitives guides (IBM Quantum Platform documentation)",
+      "authors": "IBM Quantum",
+      "edition": "online, accessed 2026-10-04",
+      "publisher": "IBM Quantum"
+    },
+    {
+      "id": "B34",
+      "title": "The Python Standard Library (Python 3.14 documentation)",
+      "authors": "Python Software Foundation",
+      "edition": "3.14, accessed 2026-10-04",
+      "publisher": "docs.python.org"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_a_a7_first_quantum_programming",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "Qiskit concepts and setup",
+          "summary": "What Qiskit is, the circuit, backend and job workflow, and checking your installation.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Qiskit** is IBM's open-source Python software development kit for quantum computing. Because it is ordinary Python, everything you learned in the computing module applies: you import it, write functions, run scripts and keep your project in Git. Learning to program quantum circuits does not require any quantum hardware.\n\nFour ideas organise every Qiskit program. A **circuit** (`QuantumCircuit`) describes the gates and measurements you want. A **backend** is whatever executes a circuit: a simulator on your own computer or a real quantum device in the cloud. **Transpiling** rewrites a circuit into the gates and connections that a particular backend supports. Running it creates a **job**, which returns **results**. In current versions you will often run circuits through **primitives**: the **Sampler** returns measurement samples (counts), and the **Estimator** returns expectation values of observables.\n\nQiskit changes between major versions, so state the version whenever you share code. The examples in this module were run with Qiskit 2.5.2 and Qiskit Aer 0.17.2 on Python 3.14. Install with pip inside a virtual environment, as described in the development-environment lesson, and check what you have before you start."
+            },
+            {
+              "type": "code",
+              "id": "c-install",
+              "language": "bash",
+              "code": "python -m pip install qiskit qiskit-aer",
+              "caption": "Commands only: not run here (installs packages from the internet; do it in a virtual environment)"
+            },
+            {
+              "type": "code",
+              "id": "c-version",
+              "language": "python",
+              "code": "import qiskit, qiskit_aer\nfrom qiskit import QuantumCircuit\n\nprint(\"Qiskit\", qiskit.__version__, \"| Aer\", qiskit_aer.__version__)\nqc = QuantumCircuit(2, 2)\nqc.h(0)\nqc.cx(0, 1)\nqc.measure([0, 1], [0, 1])\nprint(\"qubits:\", qc.num_qubits, \"| classical bits:\", qc.num_clbits, \"| depth:\", qc.depth())\nprint(\"operations:\", dict(sorted(qc.count_ops().items())))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-version",
+              "language": "text",
+              "code": "Qiskit 2.5.2 | Aer 0.17.2\nqubits: 2 | classical bits: 2 | depth: 3\noperations: {'cx': 1, 'h': 1, 'measure': 2}",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "tip",
+              "title": "Keep versions in a file",
+              "text": "Record exact versions with `python -m pip freeze > requirements.txt` so that you, or a reviewer, can recreate the environment. A circuit that works in one major version may need small changes in the next."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In Qiskit, what is a backend?",
+              "options": [
+                "Whatever executes a circuit: a simulator or a real quantum device",
+                "The drawing of a circuit",
+                "A type of quantum gate"
+              ],
+              "correct_index": 0,
+              "explanation": "A backend runs circuits. It can be a simulator on your computer or hardware in the cloud; the circuit itself only describes the operations."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does transpiling a circuit do?",
+              "options": [
+                "Rewrites it into the gates and qubit connections a chosen backend supports.",
+                "Measures every qubit.",
+                "Converts the circuit into classical Python code."
+              ],
+              "correct_index": 0,
+              "explanation": "Each backend supports a limited gate set and connectivity. Transpiling translates your circuit to fit them."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B61",
+              "locator": "Qiskit SDK documentation: QuantumCircuit (qubits, classical bits, depth, count_ops)"
+            },
+            {
+              "book": "B62",
+              "locator": "Primitives guide: Sampler and Estimator"
+            },
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Quantum circuits"
+            }
+          ]
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "Creating a circuit",
+          "summary": "Building a one-qubit circuit, measuring it, and reading the text diagram.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "You create a circuit with `QuantumCircuit(n_qubits, n_classical_bits)`. Qubits start in |0⟩. You add gates by calling methods such as `qc.h(0)` (Hadamard on qubit 0), and you record a result with `qc.measure(qubit, classical_bit)`, which copies the measurement outcome into a classical bit. The circuit is just a list of instructions; nothing runs yet.\n\nThe simplest useful circuit puts one qubit in an equal superposition and measures it. In the diagram, each horizontal line is a wire, boxes are gates, and the meter symbol is the measurement; the double line at the bottom is the classical register, labelled with its size (`1/` means one bit). `qc.draw(\"text\")` prints this picture in the terminal and works anywhere, so it is the best habit when learning: always look at the circuit you built before you run it."
+            },
+            {
+              "type": "code",
+              "id": "c-onequbit",
+              "language": "python",
+              "code": "from qiskit import QuantumCircuit\n\nqc = QuantumCircuit(1, 1)     # 1 qubit, 1 classical bit for the measurement result\nqc.h(0)                       # Hadamard: equal superposition of 0 and 1\nqc.measure(0, 0)              # measure qubit 0 into classical bit 0\nprint(qc.draw(\"text\"))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-onequbit",
+              "language": "text",
+              "code": "     ┌───┐┌─┐\n  q: ┤ H ├┤M├\n     └───┘└╥┘\nc: 1/══════╩═\n           0 ",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "A few things to notice. Qubit and bit numbering start at 0. Gates are added in the order you call them, and the diagram shows them in that order from left to right. If you forget the measurement, a simulator can still tell you the exact state, but a real device and a sampler return no counts, because counts come from measurement results. Always create a classical bit for every qubit you want to read."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does qc.measure(0, 0) do?",
+              "options": [
+                "Measures qubit 0 and stores the outcome in classical bit 0.",
+                "Applies a Hadamard gate to qubit 0.",
+                "Resets qubit 0 to |0>."
+              ],
+              "correct_index": 0,
+              "explanation": "measure(qubit, classical_bit) records the measurement result of the qubit in the named classical bit."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "You build a circuit with no measurement and ask a sampler for counts. What happens?",
+              "options": [
+                "There are no measured bits, so there are no counts to return.",
+                "It measures all qubits automatically.",
+                "It returns the exact amplitudes."
+              ],
+              "correct_index": 0,
+              "explanation": "Counts are statistics of measurement outcomes. Without a measurement instruction there is nothing to count."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B61",
+              "locator": "Qiskit SDK documentation: QuantumCircuit.h, QuantumCircuit.measure and QuantumCircuit.draw"
+            },
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Quantum circuits"
+            }
+          ],
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "Basic gates in code",
+          "summary": "X, H, Z and CNOT in Qiskit, and reading the state vector of a two-qubit circuit.",
+          "estimated_minutes": 25,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The gates from the foundations module are one method call each: `qc.x(q)` (bit flip), `qc.h(q)` (Hadamard), `qc.z(q)` (phase flip) and `qc.cx(control, target)` (the controlled-NOT, which flips the target qubit if the control is 1). Chained together they create entanglement.\n\nTo check what a circuit does without sampling, ask for its **state vector** with `Statevector(qc)`. The vector lists amplitudes in a fixed order, and here Qiskit's convention matters: **qubit 0 is the rightmost bit of the label**. For two qubits, position 0 is |00⟩, position 1 is |01⟩ (qubit 0 is 1), position 2 is |10⟩ (qubit 1 is 1) and position 3 is |11⟩. So `X` on qubit 0 gives the vector with its 1 in position 1."
+            },
+            {
+              "type": "code",
+              "id": "c-gates",
+              "language": "python",
+              "code": "from qiskit import QuantumCircuit\nfrom qiskit.quantum_info import Statevector\n\ndef state_of(build):\n    qc = QuantumCircuit(2)\n    build(qc)\n    return [complex(round(a.real, 3) + 0.0, round(a.imag, 3) + 0.0) for a in Statevector(qc).data]\n\nprint(\"X on qubit 0:       \", state_of(lambda qc: qc.x(0)))\nprint(\"H on qubit 0:       \", state_of(lambda qc: qc.h(0)))\nprint(\"H, then CNOT (Bell):\", state_of(lambda qc: (qc.h(0), qc.cx(0, 1))))\nprint(\"X, then CNOT:       \", state_of(lambda qc: (qc.x(0), qc.cx(0, 1))))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-gates",
+              "language": "text",
+              "code": "X on qubit 0:        [0j, (1+0j), 0j, 0j]\nH on qubit 0:        [(0.707+0j), (0.707+0j), 0j, 0j]\nH, then CNOT (Bell): [(0.707+0j), 0j, 0j, (0.707+0j)]\nX, then CNOT:        [0j, 0j, 0j, (1+0j)]",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Read the four lines with the ordering rule in mind. X on qubit 0 gives |01⟩. H on qubit 0 gives an equal superposition of |00⟩ and |01⟩. H then CNOT gives the Bell state (|00⟩ + |11⟩)/√2, the entangled pair from the foundations module. X then CNOT first sets qubit 0 to 1 and then, because the control is 1, flips qubit 1 too, giving |11⟩. A reliable way to learn is to predict each vector before running the code."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In Qiskit's ordering, which basis state sits at position 1 of a two-qubit state vector?",
+              "options": [
+                "|01> (qubit 0 is 1)",
+                "|10> (qubit 1 is 1)",
+                "|11>"
+              ],
+              "correct_index": 0,
+              "explanation": "Qubit 0 is the rightmost bit, so position 1 (binary 01) means qubit 0 is 1 and qubit 1 is 0."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does qc.cx(0, 1) do?",
+              "options": [
+                "Flips qubit 1 if qubit 0 is 1.",
+                "Flips qubit 0 if qubit 1 is 1.",
+                "Swaps the two qubits."
+              ],
+              "correct_index": 0,
+              "explanation": "cx(control, target) applies X to the target when the control is 1. The first argument is the control."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B61",
+              "locator": "Qiskit SDK documentation: QuantumCircuit gate methods (x, h, z, cx) and quantum_info.Statevector"
+            },
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Multiple systems (controlled operations)"
+            }
+          ],
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "Simulators and primitives",
+          "summary": "Exact simulation versus sampling, and running a circuit on a simulator and on the reference Sampler.",
+          "estimated_minutes": 25,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Simulators are classical programs that compute what a quantum circuit would do. They are the main learning and testing environment: free, fast for small circuits, and available offline, which is why you should test a circuit on a simulator before you spend time on real hardware. There are two ways to use them.\n\n**Exact** simulation computes the full state, so you see the true probabilities (`Statevector`). **Sampling** simulation imitates an experiment: it runs the circuit for a number of **shots**, each ending in a measurement, and returns **counts**. Counts fluctuate from run to run, like real data. **Qiskit Aer** (`AerSimulator`) is a fast high-performance simulator; the `StatevectorSampler` in Qiskit itself is a small reference implementation of the Sampler primitive. A `seed` makes the pseudo-random choices repeatable, which is why the numbers below are the same every time you run the script. A different seed would give slightly different counts."
+            },
+            {
+              "type": "code",
+              "id": "c-simulators",
+              "language": "python",
+              "code": "from qiskit import QuantumCircuit, transpile\nfrom qiskit.primitives import StatevectorSampler\nfrom qiskit.quantum_info import Statevector\nfrom qiskit_aer import AerSimulator\n\nbell = QuantumCircuit(2, 2)\nbell.h(0)\nbell.cx(0, 1)\nexact = {str(k): round(float(v), 3) for k, v in Statevector(bell).probabilities_dict().items()}\nprint(\"exact probabilities:\", exact)\n\nbell.measure([0, 1], [0, 1])                                   # add measurement for the sampling runs\nsim = AerSimulator(seed_simulator=42)\ncounts = sim.run(transpile(bell, sim), shots=1000).result().get_counts()\nprint(\"Aer, 1000 shots:      \", dict(sorted(counts.items())))\n\nsampler = StatevectorSampler(seed=42, default_shots=1000)\ncounts = sampler.run([bell]).result()[0].data.c.get_counts()\nprint(\"Sampler, 1000 shots:  \", dict(sorted(counts.items())))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-simulators",
+              "language": "text",
+              "code": "exact probabilities: {'00': 0.5, '11': 0.5}\nAer, 1000 shots:       {'00': 510, '11': 490}\nSampler, 1000 shots:   {'00': 503, '11': 497}",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Compare the three lines. The exact result is 0.5 for `00` and 0.5 for `11` and nothing else, as the Bell state predicts. Both sampling runs return only `00` and `11`, in numbers close to 500 each but not equal to 500, because each shot is a random draw. In the counts, the bit string is written with qubit 1 on the left and qubit 0 on the right. Note also that the two sampling tools use different random generators, so their counts differ even with the same seed."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the difference between an exact state-vector simulation and a sampling simulation with shots?",
+              "options": [
+                "Exact gives the true probabilities; sampling returns random counts that approximate them.",
+                "Exact simulation is for hardware only.",
+                "Sampling gives exact amplitudes."
+              ],
+              "correct_index": 0,
+              "explanation": "Statevector computes probabilities exactly. Sampling mimics repeated measurements, so its counts scatter around the probabilities."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why would a seed be set on a simulator?",
+              "options": [
+                "To make the pseudo-random results repeatable.",
+                "To make the simulator faster.",
+                "To add noise."
+              ],
+              "correct_index": 0,
+              "explanation": "A fixed seed reproduces the same sequence of random choices, which makes examples and tests repeatable."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B61",
+              "locator": "Qiskit Aer documentation: AerSimulator; Qiskit SDK documentation: primitives.StatevectorSampler, transpile, Statevector"
+            },
+            {
+              "book": "B62",
+              "locator": "Primitives guide: Sampler"
+            },
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Quantum circuits (simulation and measurement)"
+            }
+          ],
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "Measurement statistics and shots",
+          "summary": "Counts as estimates, how error shrinks with more shots, and what the error bar means.",
+          "estimated_minutes": 25,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Every measurement result is random, so a single run tells you very little. A set of shots gives an **estimate** of each probability: if 489 of 1,000 shots return `1`, the estimate of P(1) is 0.489. The estimate is close to the true value but rarely exact, and the gap is **statistical error**, not a fault in the simulator.\n\nStatistics tells you how big that scatter should be. For a probability p estimated from N independent shots, the typical error (the **standard error**) is √(p(1 − p)/N). For an equal superposition, p = 0.5, so the typical error is √(0.25/N). It shrinks like 1/√N: **to halve the error you need four times as many shots**. The listing estimates P(1) for the equal superposition with 10 up to 100,000 shots and prints the expected scatter beside the observed error. Because the seed is fixed, the numbers are reproducible. About two-thirds of runs should land within one standard error of the truth, so an observed error somewhat larger than the printed scatter is normal."
+            },
+            {
+              "type": "code",
+              "id": "c-shots",
+              "language": "python",
+              "code": "import math\nfrom qiskit import QuantumCircuit, transpile\nfrom qiskit_aer import AerSimulator\n\nqc = QuantumCircuit(1, 1)\nqc.h(0)\nqc.measure(0, 0)\nsim = AerSimulator(seed_simulator=7)\ncompiled = transpile(qc, sim)\n\nprint(\" shots  estimate P(1)  error vs 0.5  expected scatter\")\nfor shots in (10, 100, 1000, 10000, 100000):\n    counts = sim.run(compiled, shots=shots).result().get_counts()\n    p1 = counts.get(\"1\", 0) / shots\n    print(f\"{shots:>6}  {p1:>12.4f}  {abs(p1 - 0.5):>12.4f}  {math.sqrt(0.25 / shots):>15.4f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-shots",
+              "language": "text",
+              "code": " shots  estimate P(1)  error vs 0.5  expected scatter\n    10        0.6000        0.1000           0.1581\n   100        0.4600        0.0400           0.0500\n  1000        0.4860        0.0140           0.0158\n 10000        0.4988        0.0012           0.0050\n100000        0.4966        0.0034           0.0016",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "Link to the probability lesson",
+              "text": "This is the same independence and averaging you used in the mathematics module. It also explains why a claim based on a handful of shots on real hardware means little: the error bars are as large as the effect."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "You want to halve the statistical error of a probability estimate. Roughly how many more shots do you need?",
+              "options": [
+                "Twice as many",
+                "Four times as many",
+                "Ten times as many"
+              ],
+              "correct_index": 1,
+              "explanation": "The standard error falls like 1/√N, so halving it needs N to grow by a factor of four."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "With 1000 shots of an equal superposition you see 489 ones. What is the best conclusion?",
+              "options": [
+                "This is consistent with a true probability of 0.5; the difference is normal statistical scatter.",
+                "The simulator is broken.",
+                "The true probability is exactly 0.489."
+              ],
+              "correct_index": 0,
+              "explanation": "The expected scatter for 1000 shots is about 0.016, and 0.011 is within it, so the result is entirely normal."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, math module and statistics background"
+            },
+            {
+              "book": "B61",
+              "locator": "Qiskit Aer documentation: AerSimulator.run (shots) and Result.get_counts"
+            },
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Single systems (measurement probabilities)"
+            }
+          ],
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "Noise simulation",
+          "summary": "Comparing ideal and noisy results, and what the invented error rates do and do not show.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Real quantum devices are **noisy**: gates are imperfect, qubits lose their state over time, and the final measurement sometimes reports the wrong bit. Today's devices are often described as **NISQ** (noisy intermediate-scale quantum) machines because of this. A simulator can imitate noise, which lets you see how errors degrade a circuit before you ever touch hardware.\n\nIn Qiskit Aer you build a **noise model** and attach it to the simulator. The listing adds two kinds of error: a **depolarizing error** after each X gate (with some probability the qubit's state is scrambled) and a **readout error** (the measured bit is flipped with a given probability). The error probabilities are **made-up values chosen to be visible in a short demonstration**. They are not taken from any real device, and the output must not be read as a statement about what real hardware does.\n\nThe circuit simply flips a qubit with X and measures it. Ideally the answer is always `1`. With noise some shots return `0`. In the second experiment a Bell-state circuit that should only ever give `00` or `11` starts producing `01` and `10`, which are signs of errors."
+            },
+            {
+              "type": "code",
+              "id": "c-noise",
+              "language": "python",
+              "code": "from qiskit import QuantumCircuit, transpile\nfrom qiskit_aer import AerSimulator\nfrom qiskit_aer.noise import NoiseModel, ReadoutError, depolarizing_error\n\n# Experiment 1: flip a qubit and measure it (ideal answer: always 1)\nflip = QuantumCircuit(1, 1)\nflip.x(0)\nflip.measure(0, 0)\n\nnoise = NoiseModel()\nnoise.add_all_qubit_quantum_error(depolarizing_error(0.05, 1), [\"x\"])           # invented error rate\nnoise.add_all_qubit_readout_error(ReadoutError([[0.97, 0.03], [0.05, 0.95]]))    # invented readout error\nfor name, sim in ((\"ideal\", AerSimulator(seed_simulator=3)), (\"noisy\", AerSimulator(noise_model=noise, seed_simulator=3))):\n    counts = sim.run(transpile(flip, sim), shots=2000).result().get_counts()\n    print(f\"flip, {name}:\", dict(sorted(counts.items())))\n\n# Experiment 2: a Bell state should only give 00 or 11\nbell = QuantumCircuit(2, 2)\nbell.h(0)\nbell.cx(0, 1)\nbell.measure([0, 1], [0, 1])\nnoise2 = NoiseModel()\nnoise2.add_all_qubit_quantum_error(depolarizing_error(0.02, 1), [\"h\"])           # invented\nnoise2.add_all_qubit_quantum_error(depolarizing_error(0.08, 2), [\"cx\"])          # invented\nsim = AerSimulator(noise_model=noise2, seed_simulator=3)\nprint(\"bell, noisy:\", dict(sorted(sim.run(transpile(bell, sim), shots=2000).result().get_counts().items())))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-noise",
+              "language": "text",
+              "code": "flip, ideal: {'1': 2000}\nflip, noisy: {'0': 133, '1': 1867}\nbell, noisy: {'00': 959, '01': 34, '10': 36, '11': 971}",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "Simulated noise is a model",
+              "text": "A noise model is only as good as its numbers. Researchers measure real error rates by running calibration circuits on the device itself. For learning, an invented model is fine, as long as nobody mistakes it for a measurement."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In the noisy Bell-state experiment, which outcomes show that errors occurred?",
+              "options": [
+                "00 and 11",
+                "01 and 10",
+                "Only 00"
+              ],
+              "correct_index": 1,
+              "explanation": "An ideal Bell state never gives 01 or 10. Seeing those outcomes means gate or readout errors changed the result."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why must the error rates in this lesson not be used to predict a real device?",
+              "options": [
+                "They are invented for the demonstration, not measured from any device.",
+                "Noise cannot be simulated.",
+                "Real devices have no noise."
+              ],
+              "correct_index": 0,
+              "explanation": "A noise model reproduces the effect of chosen error probabilities. Real device behaviour has to be measured on that device."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B61",
+              "locator": "Qiskit Aer documentation: qiskit_aer.noise (NoiseModel, depolarizing_error, ReadoutError)"
+            },
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Quantum circuits",
+              "note": "Background on measurement errors."
+            }
+          ],
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "Optional: running on real quantum hardware",
+          "summary": "How a circuit is prepared and submitted to a cloud device, and how to compare it with simulation honestly.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Real quantum hardware is available through cloud services such as the **IBM Quantum Platform**. The steps are always the same: create an account and save your **API key** locally using the provider's instructions; connect to the service from Python; choose a device; **transpile** the circuit to that device's native gates and qubit layout; submit it through a primitive such as the Sampler; wait in the queue; and read the results.\n\nTwo safety points. Your API key is a **secret**: never write it into code, a notebook or a Git repository, and rotate it if it leaks. And plans, limits and the exact Python interfaces change over time, so follow the provider's current guide rather than a course. The listing shows the general shape of a submission. It is **not run here**, because it needs an account and a live device, so there is no output from it and none of its details have been executed in this course.\n\nWhen your results arrive, compare them with your simulation. Expect differences: real devices add noise, so a Bell-state experiment will show some `01` and `10` counts, as in the noise lesson. Report the number of shots and the device name with every result. Never present simulated numbers as if they had come from hardware."
+            },
+            {
+              "type": "code",
+              "id": "c-hardware",
+              "language": "python",
+              "code": "from qiskit import QuantumCircuit\nfrom qiskit.transpiler.preset_passmanagers import generate_preset_pass_manager\nfrom qiskit_ibm_runtime import QiskitRuntimeService, SamplerV2\n\nservice = QiskitRuntimeService()                # reads credentials you saved earlier; never put a key in code\nbackend = service.least_busy(operational=True, simulator=False)\n\nbell = QuantumCircuit(2, 2)\nbell.h(0)\nbell.cx(0, 1)\nbell.measure([0, 1], [0, 1])\n\npass_manager = generate_preset_pass_manager(backend=backend, optimization_level=1)\nisa_circuit = pass_manager.run(bell)            # rewrite for this device\nsampler = SamplerV2(mode=backend)\njob = sampler.run([isa_circuit], shots=1000)\ncounts = job.result()[0].data.c.get_counts()\nprint(backend.name, dict(sorted(counts.items())))",
+              "caption": "Not run here: needs an IBM Quantum account and a live device, so no output is shown"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Where should an IBM Quantum API key be stored?",
+              "options": [
+                "In a protected local credentials store, never in code or a repository.",
+                "In the notebook, so it is easy to find.",
+                "In a public Git repository, so teammates can use it."
+              ],
+              "correct_index": 0,
+              "explanation": "API keys are secrets. Keep them out of source code and version control, and rotate any key that is exposed."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Real hardware returns 1000 shots of a Bell-state circuit with some 01 and 10 counts. What is the most likely explanation?",
+              "options": [
+                "Device noise (gate and readout errors).",
+                "The Bell state can produce 01 and 10 ideally.",
+                "The simulator was used by mistake."
+              ],
+              "correct_index": 0,
+              "explanation": "An ideal Bell state gives only 00 and 11. On hardware, noise causes the other outcomes."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B62",
+              "locator": "Qiskit Runtime guides: connecting to the service, choosing a backend, transpiling circuits and running the Sampler primitive"
+            },
+            {
+              "book": "B61",
+              "locator": "Qiskit SDK documentation: transpiler.preset_passmanagers.generate_preset_pass_manager"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The qiskit-ibm-runtime calls in the listing (QiskitRuntimeService, least_busy, SamplerV2, generate_preset_pass_manager) follow the documented usage pattern but were not executed because they need an account; check them against the current IBM Quantum guide before release."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "Beginner capstone project",
+          "summary": "Combine networking, cryptography and a quantum circuit into one small, honest project, with a rubric.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Problem.** Build a small project that shows you can join the main skills of the Beginner track: a networked program, a correct use of cryptography, and a quantum circuit that you can explain. Keep it small. The aim is correctness and honest explanation, not size.\n\n**Tasks.** (1) **Network:** write a TCP client and server on the loopback address (`127.0.0.1`) that exchange one message, as in the networking module. Use only your own machine. (2) **Cryptography:** encrypt the message with an authenticated cipher before sending it and decrypt it on the other side, using AES-GCM from the `cryptography` library as in the cryptography module. (3) **Quantum:** build and run a Qiskit circuit that demonstrates superposition and entanglement (a Bell-state circuit) and explain the counts you obtain, including why they are not exactly 50/50.\n\n**Deliverables.** A repository (committed on a branch, with a `requirements.txt` that records versions), a short README that says how to run it and what each part shows, the printed output of a run, and a one-page explanation answering the questions in the rubric."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Reference snippets.** The first snippet shows part 2 in isolation. The key and nonce are **fixed only so that the printed output is reproducible**: a real program takes the key from `AESGCM.generate_key` or `os.urandom` and uses a **new random nonce for every message**, because repeating a nonce under one key destroys the security of GCM. The snippet also shows that changing one byte of the ciphertext is detected."
+            },
+            {
+              "type": "code",
+              "id": "c-aes",
+              "language": "python",
+              "code": "from cryptography.exceptions import InvalidTag\nfrom cryptography.hazmat.primitives.ciphers.aead import AESGCM\n\nkey = bytes(range(16))        # DEMO ONLY: fixed so the output is reproducible; use AESGCM.generate_key(128) in real code\nnonce = bytes(range(12))      # DEMO ONLY: a nonce must NEVER repeat under the same key\naes = AESGCM(key)\n\nciphertext = aes.encrypt(nonce, b\"quantum-ready\", b\"header\")\nprint(\"ciphertext + tag:\", ciphertext.hex())\nprint(\"decrypted:\", aes.decrypt(nonce, ciphertext, b\"header\"))\n\ntampered = bytes([ciphertext[0] ^ 1]) + ciphertext[1:]\ntry:\n    aes.decrypt(nonce, tampered, b\"header\")\nexcept InvalidTag:\n    print(\"tampering detected: InvalidTag\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-aes",
+              "language": "text",
+              "code": "ciphertext + tag: e219c6a0126e9a7939b700ee4f314ec06cc4460ba2c95664e6a551bf41\ndecrypted: b'quantum-ready'\ntampering detected: InvalidTag",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "Part 3 can also produce random bits, and this is a good place to learn an important limit. The next listing measures a qubit in an equal superposition sixteen times on a simulator. The result looks random, but it is **simulated randomness**: it comes from a pseudo-random generator, and with the same seed it repeats exactly. It must **never** be used for keys, nonces or any security purpose. Real keys come from the operating system's secure random source (`secrets` or `os.urandom`) or from a certified hardware random number generator."
+            },
+            {
+              "type": "code",
+              "id": "c-qbits",
+              "language": "python",
+              "code": "from qiskit import QuantumCircuit, transpile\nfrom qiskit_aer import AerSimulator\n\nqc = QuantumCircuit(1, 1)\nqc.h(0)\nqc.measure(0, 0)\nsim = AerSimulator(seed_simulator=5)\nresult = sim.run(transpile(qc, sim), shots=16, memory=True).result()\nbits = \"\".join(result.get_memory())\nprint(\"simulated 'random' bits:\", bits, \"| length:\", len(bits))\nprint(\"same seed, same bits:\", bits == \"\".join(AerSimulator(seed_simulator=5).run(transpile(qc, sim), shots=16, memory=True).result().get_memory()))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-qbits",
+              "language": "text",
+              "code": "simulated 'random' bits: 0010100110001001 | length: 16\nsame seed, same bits: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t4",
+              "markdown": "**Rubric.** Your project is assessed on these points. *Correct operation* (the three parts run and the output matches your README). *Security hygiene* (no keys or tokens in the repository, nonce handling explained, key source explained). *Quantum understanding* (you can state the exact probabilities for your circuit, explain why counts vary, and say what would change on real hardware). *Honesty* (every simulated or invented number is labelled as such, and versions are recorded). *Process* (commits on a branch with clear messages, and a reproducible environment).\n\n**Troubleshooting.** If decryption fails with `InvalidTag`, the key, nonce or associated data on the two sides differ. If a socket call hangs, set a timeout and check that the server is listening before the client connects. If Qiskit imports fail, activate the virtual environment where you installed it.\n\n**Stretch.** Add a second Bell-state run with a simple noise model and explain the new counts, labelling the error rates as invented."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why must the 16 simulated 'random' bits above never be used as an encryption key?",
+              "options": [
+                "They come from a pseudo-random generator and repeat exactly for the same seed.",
+                "Sixteen bits is too many.",
+                "Qiskit does not allow it."
+              ],
+              "correct_index": 0,
+              "explanation": "Simulated measurement results are pseudo-random and reproducible, so an attacker who guesses the seed gets the key. Keys need a cryptographically secure source."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is wrong with using the same nonce for two different messages under one AES-GCM key?",
+              "options": [
+                "It breaks the security of GCM, revealing information and allowing forgery.",
+                "Nothing, nonces can be reused freely.",
+                "It makes the ciphertext longer."
+              ],
+              "correct_index": 0,
+              "explanation": "GCM requires a unique nonce for every message under a key. Reuse leaks the XOR of plaintexts and can expose the authentication key."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B61",
+              "locator": "Qiskit Aer documentation: AerSimulator.run with memory=True; Qiskit SDK documentation: QuantumCircuit"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, secrets module and socket module"
+            },
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lessons Multiple systems and Quantum circuits"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The AES-GCM listing uses the cryptography package that Q-CAPS already depends on; its nonce rules follow the standard guidance covered in the cryptography module."
+          },
+          "after": "sec-7"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "a7-n01",
+          "prompt": "In Qiskit, what is the role of transpiling a circuit?",
+          "options": [
+            "Rewrite it for the gates and connections of a chosen backend",
+            "Measure all qubits",
+            "Draw the circuit"
+          ],
+          "correct_index": 0,
+          "explanation": "Transpiling adapts the circuit to what the backend supports.",
+          "source": {
+            "book": "B61",
+            "locator": "transpile"
+          },
+          "competency_id": "PROG.4",
+          "depth": "Apply",
+          "lesson_id": "A8.L1"
+        },
+        {
+          "id": "a7-n02",
+          "prompt": "Which Qiskit call applies a Hadamard gate to qubit 0 of circuit qc?",
+          "options": [
+            "qc.h(0)",
+            "qc.x(0)",
+            "qc.measure(0, 0)"
+          ],
+          "correct_index": 0,
+          "explanation": "h is the Hadamard gate method.",
+          "source": {
+            "book": "B61",
+            "locator": "QuantumCircuit.h"
+          },
+          "competency_id": "PROG.4",
+          "depth": "Apply",
+          "lesson_id": "A8.L2"
+        },
+        {
+          "id": "a7-n03",
+          "prompt": "Qc.cx(0, 1) applies X to qubit 1 when:",
+          "options": [
+            "qubit 0 is 1",
+            "qubit 1 is 1",
+            "both qubits are 0"
+          ],
+          "correct_index": 0,
+          "explanation": "The first argument is the control and the second the target.",
+          "source": {
+            "book": "B61",
+            "locator": "QuantumCircuit.cx"
+          },
+          "competency_id": "PROG.4",
+          "depth": "Apply",
+          "lesson_id": "A8.L2"
+        },
+        {
+          "id": "a7-n04",
+          "prompt": "In Qiskit's ordering, which basis state is at position 1 of a two-qubit state vector?",
+          "options": [
+            "|01>",
+            "|10>",
+            "|11>"
+          ],
+          "correct_index": 0,
+          "explanation": "Qubit 0 is the rightmost bit, so 01 means qubit 0 is 1.",
+          "source": {
+            "book": "B61",
+            "locator": "Statevector"
+          },
+          "competency_id": "PROG.4",
+          "depth": "Apply",
+          "lesson_id": "A8.L2"
+        },
+        {
+          "id": "a7-n05",
+          "prompt": "What does the shots parameter control?",
+          "options": [
+            "How many times the circuit is run and measured",
+            "The number of qubits",
+            "The noise level"
+          ],
+          "correct_index": 0,
+          "explanation": "Each shot is one run ending in a measurement.",
+          "source": {
+            "book": "B61",
+            "locator": "AerSimulator.run"
+          },
+          "competency_id": "PROG.4",
+          "depth": "Apply",
+          "lesson_id": "A8.L3"
+        },
+        {
+          "id": "a7-n06",
+          "prompt": "To halve the statistical error of an estimated probability you need about:",
+          "options": [
+            "4 times as many shots",
+            "2 times as many shots",
+            "the same shots with a different seed"
+          ],
+          "correct_index": 0,
+          "explanation": "Standard error falls as 1/√N.",
+          "source": {
+            "book": "B34",
+            "locator": "statistics background"
+          },
+          "competency_id": "MATH.2",
+          "depth": "Apply",
+          "lesson_id": "A8.L3"
+        },
+        {
+          "id": "a7-n07",
+          "prompt": "Why test a circuit on a simulator before using real hardware?",
+          "options": [
+            "It is free, fast and shows the ideal behaviour to compare with",
+            "Simulators are more accurate than hardware for all circuits",
+            "Hardware cannot run circuits with measurements"
+          ],
+          "correct_index": 0,
+          "explanation": "Simulators let you check logic cheaply; hardware adds noise and queues.",
+          "source": {
+            "book": "B62",
+            "locator": "Runtime guides"
+          },
+          "competency_id": "PROG.4",
+          "depth": "Apply",
+          "lesson_id": "A8.L3"
+        },
+        {
+          "id": "a7-n08",
+          "prompt": "A noisy Bell-state experiment shows counts for 01 and 10. What does that indicate?",
+          "options": [
+            "Gate or readout errors",
+            "A correct entangled state",
+            "A bug in the plotting"
+          ],
+          "correct_index": 0,
+          "explanation": "An ideal Bell state gives only 00 and 11.",
+          "source": {
+            "book": "B61",
+            "locator": "qiskit_aer.noise"
+          },
+          "competency_id": "QNT.2",
+          "depth": "Explain",
+          "lesson_id": "A8.L4"
+        },
+        {
+          "id": "a7-n09",
+          "prompt": "Where should an IBM Quantum API key be kept?",
+          "options": [
+            "In a protected credentials store, never in code or Git",
+            "In the notebook",
+            "In the README"
+          ],
+          "correct_index": 0,
+          "explanation": "API keys are secrets and must not be committed.",
+          "source": {
+            "book": "B62",
+            "locator": "Runtime guides"
+          },
+          "competency_id": "PROG.4",
+          "depth": "Apply",
+          "lesson_id": "A8.L5"
+        },
+        {
+          "id": "a7-n10",
+          "prompt": "Why must bits generated by a simulator never be used as a key?",
+          "options": [
+            "They are pseudo-random and repeat for the same seed",
+            "They are too short",
+            "Simulators cannot produce bits"
+          ],
+          "correct_index": 0,
+          "explanation": "A simulator's randomness is deterministic given the seed.",
+          "source": {
+            "book": "B61",
+            "locator": "AerSimulator seed_simulator"
+          },
+          "competency_id": "PROG.4",
+          "depth": "Apply",
+          "lesson_id": "A8.L3"
+        }
+      ],
+      "estimated_minutes": 219,
+      "notes": "Rewrites the eight outline sections as lessons executed with Qiskit 2.5.2 and Aer 0.17.2, labels the hardware example as not run, and turns the capstone into a project with a rubric.",
+      "learning_objectives": [
+        "Explain circuits, backends, transpiling, jobs and primitives, and record the Qiskit version you use.",
+        "Build circuits with X, H, Z and CNOT, read their diagrams and state vectors, and apply Qiskit's qubit ordering correctly.",
+        "Run circuits on exact and sampling simulators and interpret counts and shot statistics.",
+        "Add a noise model, explain the difference between ideal and noisy results, and label invented error rates as such.",
+        "Describe how a circuit is submitted to real hardware without exposing an API key, and report results honestly.",
+        "Combine a network program, authenticated encryption and a quantum circuit in a small, documented project."
+      ]
+    }
+  ]
+}
