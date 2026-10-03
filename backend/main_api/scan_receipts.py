@@ -78,11 +78,43 @@ def verify_receipt(token: str, secret: str, user_id: int, result: Any) -> dict:
     return claims
 
 
+def is_v2(result: Any) -> bool:
+    return isinstance(result, dict) and result.get("schema_version") == 2
+
+
 def count_findings(result: Any) -> int:
-    """Number of findings in a verified result (dict from the scanner, or the legacy list form)."""
+    """Number of findings in a verified result.
+
+    Schema v2: findings of medium or high severity (low and info items are advice, not exposure).
+    Older results: the legacy list form, or crypto.vulnerabilities_found.
+    """
+    if is_v2(result):
+        return sum(1 for f in (result.get("findings") or []) if isinstance(f, dict) and f.get("severity") in ("high", "medium"))
     if isinstance(result, list):
         return len(result)
     if isinstance(result, dict):
         found = (result.get("crypto") or {}).get("vulnerabilities_found") or []
         return len(found) if isinstance(found, list) else 0
     return 0
+
+
+def xp_for(result: Any) -> int:
+    """XP for one scan: a flat amount, more for a scan of a domain the user proved they control.
+
+    Deliberately not proportional to the number of findings, so scanning weak third-party sites earns nothing extra.
+    """
+    auth = result.get("authorization") if is_v2(result) else None
+    return 20 if isinstance(auth, dict) and auth.get("mode") == "full" and auth.get("ownership_verified") is True else 10
+
+
+def summarize(result: Any) -> dict:
+    """Small, display-ready summary of a stored result."""
+    counts = {"high": 0, "medium": 0, "low": 0, "info": 0}
+    if not is_v2(result):
+        return {"schema_version": None, "mode": None, "counts": counts, "key_exchange": None, "findings": count_findings(result)}
+    for f in result.get("findings") or []:
+        if isinstance(f, dict) and f.get("severity") in counts:
+            counts[f["severity"]] += 1
+    posture = result.get("pqc_posture") or {}
+    return {"schema_version": 2, "mode": (result.get("authorization") or {}).get("mode", "standard"), "counts": counts,
+            "key_exchange": posture.get("key_exchange"), "findings": sum(counts.values())}

@@ -105,10 +105,10 @@ def test_scan_log_derives_findings_and_xp_from_the_verified_result(client, learn
     r = _log(client, user, h, vulnerabilities_found=100000)
     assert r.status_code == 200, r.text
     assert r.json()["vulnerabilities_found"] == 2
-    assert r.json()["xp_awarded"] == 20
+    assert r.json()["xp_awarded"] == 10  # flat per scan, not per finding
     assert r.json()["endpoint"] == "example.com"
     db.refresh(user)
-    assert user.xp == 20
+    assert user.xp == 10
 
 
 def test_scan_log_without_receipt_is_rejected(client, learner, db):
@@ -150,7 +150,7 @@ def test_scan_log_replay_is_rejected(client, learner, db):
         "receipt": scan_receipts.issue_receipt(main.SECRET_KEY, user.id, SCAN)})
     assert r.status_code == 409
     db.refresh(user)
-    assert user.xp == 20
+    assert user.xp == 10
 
 
 def test_receipt_hash_survives_a_javascript_round_trip():

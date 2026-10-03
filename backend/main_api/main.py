@@ -8,12 +8,13 @@ import models
 import schemas
 import quiz_service
 import scan_receipts
+import scan_report
 from database import engine, Base, get_db, ensure_schema
 from recommendation import get_user_recommendation
 from leaderboard import get_leaderboard_data, get_user_rank
 import os
 import json
-from datetime import datetime, timedelta
+from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
 import jwt
 from fastapi.security import OAuth2PasswordBearer
@@ -338,8 +339,15 @@ def log_scanner_result(log_in: schemas.ScannerLogCreate, background_tasks: Backg
         details=details
     )
     db.add(db_log)
+    db.flush()
 
-    xp_awarded = 10 + (findings * 5)
+    target = db_log.endpoint
+    day_start = datetime.now(timezone.utc).replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+    already_today = db.query(models.ScannerLog.id).filter(
+        models.ScannerLog.user_id == user.id, models.ScannerLog.endpoint == target,
+        models.ScannerLog.created_at >= day_start, models.ScannerLog.id != db_log.id).first() is not None
+    # The first scan of a target each UTC day earns XP; repeats are recorded but earn none.
+    xp_awarded = 0 if already_today else scan_receipts.xp_for(result)
     user.xp += xp_awarded
 
     db.commit()
@@ -352,152 +360,36 @@ def log_scanner_result(log_in: schemas.ScannerLogCreate, background_tasks: Backg
     out.xp_awarded = xp_awarded
     return out
 
+@app.get("/api/scanner/logs", response_model=List[schemas.ScannerLogSummary])
+def list_scanner_logs(limit: int = 20, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """The current user's recent scans, newest first, as display summaries."""
+    limit = max(1, min(limit, 50))
+    logs = db.query(models.ScannerLog).filter(models.ScannerLog.user_id == current_user.id)         .order_by(models.ScannerLog.created_at.desc(), models.ScannerLog.id.desc()).limit(limit).all()
+    out = []
+    for log in logs:
+        try:
+            result = json.loads(log.details or "")
+        except ValueError:
+            result = None
+        out.append(schemas.ScannerLogSummary(id=log.id, target=log.endpoint, created_at=log.created_at, **scan_receipts.summarize(result)))
+    return out
+
+
+@app.get("/api/scanner/logs/{log_id}", response_model=schemas.ScannerLogOut)
+def get_scanner_log(log_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    log = db.query(models.ScannerLog).filter(models.ScannerLog.id == log_id, models.ScannerLog.user_id == current_user.id).first()
+    if not log:
+        raise HTTPException(status_code=404, detail="Log not found")
+    return log
+
+
 @app.get("/api/scanner/logs/{log_id}/report")
 def download_scan_report(log_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     log = db.query(models.ScannerLog).filter(models.ScannerLog.id == log_id, models.ScannerLog.user_id == current_user.id).first()
     if not log:
         raise HTTPException(status_code=404, detail="Log not found")
-
-    from reportlab.lib.pagesizes import letter
-    from reportlab.pdfgen import canvas
-    import io
-    import json
-    import textwrap
-
-    buffer = io.BytesIO()
-    p = canvas.Canvas(buffer, pagesize=letter)
-    
-    # Header
-    p.setFont("Helvetica-Bold", 18)
-    p.drawString(50, 750, "Q-CAPS Threat Analysis Report")
-    
-    p.setFont("Helvetica", 12)
-    p.drawString(50, 720, f"Target Endpoint: {log.endpoint}")
-    p.drawString(50, 700, f"Scan Status: {log.status.upper()}")
-    p.drawString(50, 680, f"Timestamp: {log.created_at.strftime('%Y-%m-%d %H:%M:%S')} UTC")
-    
-    y = 640
-    
-    try:
-        details_data = json.loads(log.details)
-        
-        # OSINT Section
-        p.setFont("Helvetica-Bold", 14)
-        p.drawString(50, y, "1. Domain Reconnaissance (OSINT)")
-        y -= 20
-        p.setFont("Helvetica", 10)
-        
-        osint = details_data.get("osint", {})
-        if osint:
-            p.drawString(60, y, f"Owner/Org: {osint.get('owner_organization', 'Unknown')}")
-            y -= 15
-            p.drawString(60, y, f"Registrar: {osint.get('registrar', 'Unknown')}")
-            y -= 15
-            p.drawString(60, y, f"Created: {osint.get('creation_date', 'Unknown')}")
-            y -= 15
-            p.drawString(60, y, f"Risk Level: {osint.get('risk_level', 'Unknown')}")
-            y -= 25
-            
-            p.drawString(60, y, "Breach / dark-web exposure: No verified result available")
-            y -= 25
-        else:
-            p.drawString(60, y, "No OSINT data available.")
-            y -= 25
-
-        # Infrastructure
-        p.setFont("Helvetica-Bold", 14)
-        p.drawString(50, y, "2. Infrastructure Analysis")
-        y -= 20
-        p.setFont("Helvetica", 10)
-        infra = details_data.get("infrastructure", {})
-        if infra:
-            geo = infra.get("geo", {})
-            p.drawString(60, y, f"IP Address: {geo.get('ip', 'Unknown')}")
-            y -= 15
-            p.drawString(60, y, f"Location: {geo.get('country', 'Unknown')}")
-            y -= 15
-            p.drawString(60, y, f"ISP: {geo.get('isp', 'Unknown')}")
-            y -= 20
-            
-            p.setFont("Helvetica-Bold", 10)
-            p.drawString(60, y, "Security Headers:")
-            p.setFont("Helvetica", 10)
-            y -= 15
-            headers = infra.get("security_headers", {})
-            p.drawString(70, y, f"HSTS Active: {headers.get('hsts', False)}")
-            y -= 15
-            p.drawString(70, y, f"Content-Security-Policy: {headers.get('content_security_policy', False)}")
-            y -= 25
-        else:
-            p.drawString(60, y, "No infrastructure data available.")
-            y -= 25
-
-        # Cryptography
-        p.setFont("Helvetica-Bold", 14)
-        p.drawString(50, y, "3. Quantum Cryptography Threat Analysis")
-        y -= 20
-        p.setFont("Helvetica", 10)
-        crypto = details_data.get("crypto", {})
-        if crypto:
-            p.drawString(60, y, f"Encryption Detected: {crypto.get('encryption_detected', 'Unknown')}")
-            y -= 15
-            q_status = crypto.get('quantum_status', 'Unknown')
-            p.drawString(60, y, f"Quantum Readiness: {q_status.upper()}")
-            y -= 25
-            
-            p.setFont("Helvetica-Bold", 10)
-            p.drawString(60, y, "Identified Vulnerabilities:")
-            p.setFont("Helvetica", 10)
-            y -= 15
-            vulns = crypto.get("vulnerabilities_found", [])
-            if vulns:
-                for v in vulns:
-                    for line in textwrap.wrap(f"- {v}", width=80):
-                        if y < 50:
-                            p.showPage()
-                            p.setFont("Helvetica", 10)
-                            y = 750
-                        p.drawString(70, y, line)
-                        y -= 15
-            else:
-                # Only meaningful when the check actually ran; notes below say when it did not.
-                p.drawString(70, y, "None detected." if not crypto.get("notes") else "None detected (see assessment notes).")
-                y -= 15
-            notes = crypto.get("notes") or []
-            if notes:
-                y -= 10
-                p.setFont("Helvetica-Bold", 10)
-                p.drawString(60, y, "Assessment notes (limitations, not findings):")
-                p.setFont("Helvetica", 10)
-                y -= 15
-                for n in notes:
-                    for line in textwrap.wrap(f"- {n}", width=80):
-                        if y < 50:
-                            p.showPage()
-                            p.setFont("Helvetica", 10)
-                            y = 750
-                        p.drawString(70, y, line)
-                        y -= 15
-        else:
-            p.drawString(60, y, "No cryptographic data available.")
-            y -= 25
-
-    except Exception:
-        # Fallback if not valid JSON
-        p.setFont("Helvetica-Bold", 14)
-        p.drawString(50, y, "Scan Details")
-        p.setFont("Helvetica", 10)
-        y -= 20
-        for line in textwrap.wrap(log.details or "No details provided.", width=90):
-            p.drawString(50, y, line)
-            y -= 15
-
-    p.showPage()
-    p.save()
-    buffer.seek(0)
-    
     return Response(
-        content=buffer.getvalue(),
+        content=scan_report.render_report(log),
         media_type="application/pdf",
         headers={"Content-Disposition": f"attachment; filename=threat_report_{log.id}.pdf"}
     )

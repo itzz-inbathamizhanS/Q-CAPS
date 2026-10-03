@@ -7,6 +7,7 @@ without this layer a learner failing every quiz would be told there is no skill 
 from sqlalchemy.orm import Session
 from models import QuizScore, ScannerLog
 import json
+from datetime import datetime, timedelta, timezone
 
 # ---------------------------------------------------------------------------
 # Available courses (mapped from trainingService.js)
@@ -44,6 +45,11 @@ SCANNER_TOPIC_MAP = {
     "ECDHE": {"topics": ["pqc", "practical_security"], "quantum_vulnerable": True},
     "ECDSA": {"topics": ["pqc", "practical_security"], "quantum_vulnerable": True},
     "ECC":   {"topics": ["pqc", "practical_security"], "quantum_vulnerable": True},
+    "X25519": {"topics": ["pqc", "practical_security"], "quantum_vulnerable": True},
+    "X448":  {"topics": ["pqc", "practical_security"], "quantum_vulnerable": True},
+    "SECP":  {"topics": ["pqc", "practical_security"], "quantum_vulnerable": True},
+    "DHE":   {"topics": ["pqc", "practical_security"], "quantum_vulnerable": True},
+    "FFDHE": {"topics": ["pqc", "practical_security"], "quantum_vulnerable": True},
     "AES":   {"topics": [],                            "quantum_vulnerable": False},
 }
 
@@ -68,6 +74,24 @@ def get_priority(score: float) -> str:
         return "Moderate"
     else:
         return "Strong"
+
+
+SCAN_EVIDENCE_DAYS = 90
+_V2_SEVERITY = {"high": "High", "medium": "Medium"}
+
+
+def findings_from_v2(result: dict) -> list:
+    """Recommender input from a schema v2 scan: medium/high findings that name a classical algorithm.
+
+    Info and low items (advice, hybrid PQC in use) are not exposures and must not raise urgency.
+    """
+    out = []
+    for f in result.get("findings") or []:
+        severity = _V2_SEVERITY.get(f.get("severity"))
+        algorithm = f.get("algorithm")
+        if severity and algorithm:
+            out.append({"algorithm": str(algorithm), "severity": severity, "threat": f.get("title", "")})
+    return out
 
 
 def _scanner_boost_for_topic(topic: str, scanner_findings: list) -> int:
@@ -293,11 +317,20 @@ def get_score_based_recommendation(
             ScannerLog.user_id == user_id
         ).order_by(ScannerLog.created_at.desc()).all()
 
+        # Schema v2 results: only the latest scan of each target within 90 days counts, so a fixed
+        # exposure stops driving recommendations and repeated scans do not stack.
+        cutoff = datetime.now(timezone.utc).replace(tzinfo=None) - timedelta(days=SCAN_EVIDENCE_DAYS)
+        seen_targets = set()
         for log in scan_logs:
             if log.details:
                 try:
                     details_list = json.loads(log.details)
-                    if isinstance(details_list, list):
+                    if isinstance(details_list, dict) and details_list.get("schema_version") == 2:
+                        if log.endpoint in seen_targets or (log.created_at and log.created_at < cutoff):
+                            continue
+                        seen_targets.add(log.endpoint)
+                        scanner_findings.extend(findings_from_v2(details_list))
+                    elif isinstance(details_list, list):
                         for detail in details_list:
                             # Convert ScannerLog detail format to
                             # recommendation engine format:

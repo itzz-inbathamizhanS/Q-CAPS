@@ -89,6 +89,16 @@ class ScannerLogCreate(BaseModel):
     # Signed by the scanner over `details` (see scan_receipts.py).
     receipt: Optional[str] = Field(default=None, max_length=2048)
 
+class ScannerLogSummary(BaseModel):
+    id: int
+    target: str
+    created_at: datetime
+    schema_version: Optional[int] = None
+    mode: Optional[str] = None
+    counts: Dict[str, int]
+    key_exchange: Optional[str] = None
+    findings: int
+
 class ScannerLogOut(BaseModel):
     id: int
     user_id: int
