@@ -1,0 +1,1170 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B20",
+      "title": "Operating Systems: Three Easy Pieces",
+      "authors": "Remzi H. Arpaci-Dusseau, Andrea C. Arpaci-Dusseau",
+      "edition": "free online edition, accessed 2026-10-03",
+      "publisher": "Arpaci-Dusseau Books",
+      "year": 2018
+    },
+    {
+      "id": "B21",
+      "title": "Pro Git",
+      "authors": "Scott Chacon, Ben Straub",
+      "edition": "2nd edition, online version, accessed 2026-10-03",
+      "publisher": "Apress",
+      "year": 2014
+    },
+    {
+      "id": "B22",
+      "title": "The Python Tutorial and The Python Standard Library (Python 3.14 documentation)",
+      "authors": "Python Software Foundation",
+      "edition": "3.14, accessed 2026-10-03",
+      "publisher": "docs.python.org"
+    },
+    {
+      "id": "B23",
+      "title": "Linux manual pages (man7.org) and the GNU Coreutils manual",
+      "authors": "Michael Kerrisk (man-pages project); GNU Project",
+      "edition": "online, accessed 2026-10-03",
+      "publisher": "man7.org; gnu.org"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_a_a1_computing_foundations",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "How a computer runs a program",
+          "summary": "The fetch, decode, execute cycle, shown on a toy machine you can read in full.",
+          "estimated_minutes": 15,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A computer does one thing, over and over: it takes the next **instruction**, works out what it means, and carries it out. Opening a browser, scanning a domain and encrypting a file all reduce to enormous numbers of these tiny steps, performed by the **CPU** (central processing unit).\n\nThree parts cooperate. The **CPU** executes instructions. **Memory** (RAM) holds the program being run and the data it works on, as a long row of numbered bytes. **Storage** (a disk or SSD) keeps programs and files when the power is off. Before a program runs, the operating system copies it from storage into memory.\n\nInside the CPU, a **program counter** holds the memory address of the next instruction. Each cycle the CPU **fetches** that instruction, **decodes** it (which operation, which operands) and **executes** it, then moves the program counter on. Small, very fast storage locations called **registers** hold the values the CPU is working on right now. A modern CPU performs billions of cycles per second and has several **cores**, each able to run its own stream of instructions."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The programs you write in Python are not run directly by the CPU. The Python interpreter is itself a program: it turns your source code into an internal form (bytecode) and executes that, one step at a time, using machine instructions underneath. The idea is the same at every level: a list of simple instructions, a pointer to the current one, and data in memory.\n\nThe listing below is a **toy model**, not real hardware. It has one register (the accumulator) and four instructions. Memory holds both the instructions and the numbers they use, which is how general-purpose computers work (the *von Neumann model*). Run it in your head first, then compare with the trace."
+            },
+            {
+              "type": "code",
+              "id": "c-toy",
+              "language": "python",
+              "code": "# A toy computer: memory holds instructions AND data; the CPU repeats fetch, decode, execute.\nmemory = [\n    (\"LOAD\", 8),     # 0: copy memory[8] into the accumulator\n    (\"ADD\", 9),      # 1: add memory[9] to the accumulator\n    (\"STORE\", 10),   # 2: write the accumulator to memory[10]\n    (\"HALT\", None),  # 3: stop\n    None, None, None, None,   # 4-7: unused\n    20,              # 8: data\n    22,              # 9: data\n    0,               # 10: the result will be written here\n]\npc, acc = 0, 0        # program counter and accumulator register\nwhile True:\n    op, arg = memory[pc]                  # fetch\n    print(f\"pc={pc} {op:<5} acc={acc}\")\n    pc += 1\n    if op == \"LOAD\":                      # decode and execute\n        acc = memory[arg]\n    elif op == \"ADD\":\n        acc += memory[arg]\n    elif op == \"STORE\":\n        memory[arg] = acc\n    elif op == \"HALT\":\n        break\nprint(\"result in memory[10] =\", memory[10])"
+            },
+            {
+              "type": "code",
+              "id": "o-c-toy",
+              "language": "text",
+              "code": "pc=0 LOAD  acc=0\npc=1 ADD   acc=20\npc=2 STORE acc=42\npc=3 HALT  acc=42\nresult in memory[10] = 42",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "Why security cares",
+              "text": "Because instructions and data share one memory, a bug that lets an attacker write the wrong bytes to the wrong place can turn data into code. Many classic attacks are variations of that idea, and it is why later modules treat memory safety and input validation seriously."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In the fetch, decode, execute cycle, what does the program counter hold?",
+              "options": [
+                "The result of the last calculation.",
+                "The memory address of the next instruction to fetch.",
+                "The number of cycles the CPU has completed."
+              ],
+              "correct_index": 1,
+              "explanation": "The program counter points at the next instruction. After each fetch it moves on (or jumps, for a loop or a function call). The result of a calculation sits in a register such as the accumulator."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "In the toy machine, what does the instruction (\"ADD\", 9) do?",
+              "options": [
+                "Adds the number 9 to the accumulator.",
+                "Adds the value stored in memory[9] to the accumulator.",
+                "Writes the accumulator into memory[9]."
+              ],
+              "correct_index": 1,
+              "explanation": "The operand is an address, not a value: ADD 9 reads memory[9] (the number 22 in the listing) and adds it to the accumulator. STORE is the instruction that writes to memory."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B20",
+              "locator": "Chapter 2 (Introduction): a running program fetches, decodes and executes instructions; the von Neumann model"
+            },
+            {
+              "book": "B20",
+              "locator": "Chapter 4 (Processes): a program is loaded from disk into memory before it runs"
+            },
+            {
+              "book": "B22",
+              "locator": "The Python Standard Library, section on the dis module (CPython bytecode)",
+              "note": "Used only for the statement that CPython executes bytecode."
+            }
+          ]
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "CPU, memory and storage",
+          "summary": "What each part is for, why memory is volatile, and what that means for secrets and for deleted files.",
+          "estimated_minutes": 15,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The three parts differ in **speed**, **size**, **cost** and whether they **keep data without power**. The pattern is the same across all machines: the closer storage is to the CPU, the faster, smaller and more expensive it is.\n\n- **Registers and cache** sit on the CPU. Access takes well under a microsecond (nanoseconds), but there are only kilobytes to a few megabytes of it.\n- **Memory (RAM)** holds what is running now. It is roughly a thousand times slower than a register, holds gigabytes, and is **volatile**: when the power goes off, its contents are lost.\n- **Storage** (SSD or hard disk) holds files for years. An SSD read takes microseconds and a spinning disk takes milliseconds, so storage is thousands to millions of times slower than memory, but it is **persistent** and far larger.\n\nThe figures are orders of magnitude, not measurements of your machine; exact numbers differ by hardware and change over time. What matters is the ratios, and that a program is slow whenever it waits for storage."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Memory is simply numbered bytes. A value larger than one byte, such as a 32-bit integer, occupies several neighbouring bytes, and the machine must agree on their **order**. **Little-endian** machines (x86 and most ARM systems in normal use) store the least significant byte first; **big-endian** order, used in network protocols, stores the most significant byte first. The listing shows the same number stored both ways."
+            },
+            {
+              "type": "code",
+              "id": "c-endian",
+              "language": "python",
+              "code": "memory = bytearray(8)                               # eight numbered bytes, all zero\nmemory[0:4] = (0x01020304).to_bytes(4, \"little\")    # least significant byte first\nmemory[4:8] = (0x01020304).to_bytes(4, \"big\")       # most significant byte first\nprint(list(memory))\nprint(hex(int.from_bytes(memory[0:4], \"little\")), hex(int.from_bytes(memory[4:8], \"big\")))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-endian",
+              "language": "text",
+              "code": "[4, 3, 2, 1, 1, 2, 3, 4]\n0x1020304 0x1020304",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "Secrets in memory and deleted files",
+              "text": "Volatile does not mean instantly erased: research on cold-boot attacks has shown that the contents of RAM can survive briefly after power is cut, so encryption keys held in memory can be at risk on a stolen machine. In the other direction, persistent does not mean permanent: deleting a file normally removes its directory entry, not the stored bytes, which can remain until they are overwritten. Both facts come back in the cryptography and key-management modules."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "A program is running and holds data in RAM when the power fails. What happens to that data?",
+              "options": [
+                "It is saved automatically to the SSD.",
+                "It is lost, because RAM is volatile.",
+                "It stays in the CPU registers until the next boot."
+              ],
+              "correct_index": 1,
+              "explanation": "RAM needs power to hold its contents, so unsaved data is lost. Only data written to persistent storage (disk or SSD) survives a power failure."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does a program that keeps waiting for the disk run slowly even on a fast CPU?",
+              "options": [
+                "Storage is orders of magnitude slower than the CPU and RAM, so the CPU spends the time waiting.",
+                "The CPU cannot read from storage at all.",
+                "Disks always use big-endian byte order."
+              ],
+              "correct_index": 0,
+              "explanation": "Memory-hierarchy speed differences are large: registers and cache are fastest, RAM is slower, storage is far slower. Waiting for storage dominates the run time of many programs."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B20",
+              "locator": "Chapter 36 (I/O Devices): devices are far slower than CPU and memory; hard disks and SSDs"
+            },
+            {
+              "book": "B20",
+              "locator": "Chapter 39 (Files and Directories): removing a file unlinks its name from the directory"
+            },
+            {
+              "book": "B22",
+              "locator": "The Python Standard Library, built-in types: int.to_bytes and int.from_bytes; bytearray"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement about cold-boot attacks summarises published research (Halderman et al., 2008) from memory of the literature and should be checked against the paper before wide release."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "Operating systems, processes and permissions",
+          "summary": "What the kernel does, why processes are isolated, how file permissions are written, and least privilege.",
+          "estimated_minutes": 18,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **operating system (OS)** manages the hardware so programs do not have to. Its core, the **kernel**, runs with full control of the machine. Ordinary programs run in a restricted **user mode**: when they need something privileged, such as reading a file or opening a network connection, they make a **system call** and the kernel performs the action on their behalf, after checking that it is allowed.\n\nA **process** is a running program. Each process has an identifier (its PID), its own **address space** (its private view of memory), and the identity of the **user** who started it. Because each process sees only its own memory, one browser tab crashing does not corrupt another program, and one user's process cannot simply read another's data. This isolation is a foundation of everything in security."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "On Linux and similar systems every file has an **owner**, a **group**, and a set of permission bits for three classes of user: the owner, the group, and everyone else (**others**). Each class may have **read** (r, value 4), **write** (w, value 2) and **execute** (x, value 1). Adding the values for a class gives one octal digit, so `640` means owner 6 = read + write, group 4 = read, others 0 = nothing. The two listings turn a mode into the familiar string and back into words."
+            },
+            {
+              "type": "code",
+              "id": "c-modes",
+              "language": "python",
+              "code": "import stat\nfor mode in (0o644, 0o755, 0o600, 0o777):\n    print(f\"{mode:o}\", stat.filemode(stat.S_IFREG | mode))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-modes",
+              "language": "text",
+              "code": "644 -rw-r--r--\n755 -rwxr-xr-x\n600 -rw-------\n777 -rwxrwxrwx",
+              "caption": "Expected output"
+            },
+            {
+              "type": "code",
+              "id": "c-explain",
+              "language": "python",
+              "code": "def explain(mode):\n    for i, who in enumerate((\"owner\", \"group\", \"others\")):\n        bits = (mode >> (6 - 3 * i)) & 7\n        allowed = [name for name, bit in ((\"read\", 4), (\"write\", 2), (\"execute\", 1)) if bits & bit]\n        print(f\"{who}: {', '.join(allowed) or 'nothing'}\")\n\nexplain(0o640)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-explain",
+              "language": "text",
+              "code": "owner: read, write\ngroup: read\nothers: nothing",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "The principle that ties these ideas to security is **least privilege**: give each user and each process only the rights it needs to do its job, and no more. A web server needs to read its own site files and listen on a port; it does not need to modify the operating system. If it runs as an unprivileged user and an attacker takes it over, the attacker inherits only those small rights. If it runs as the administrator account (**root** on Linux), the attacker inherits everything."
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "Isolation is a design goal, not a guarantee",
+              "text": "Process isolation is enforced by the kernel and the hardware, so a flaw in either, or a misconfigured permission such as a world-writable file, can break it. Later modules on threat modelling and defence build on the idea that no single boundary is trusted completely."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "A file has mode 640. Which statement is true?",
+              "options": [
+                "Everyone can read it, only the owner can write it.",
+                "The owner can read and write it, the group can read it, and others have no access.",
+                "The owner can execute it, the group can write it, and others can read it."
+              ],
+              "correct_index": 1,
+              "explanation": "6 = 4 + 2 (read and write) for the owner, 4 (read) for the group, 0 (nothing) for others. The explain() listing shows the same decoding."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why should a web server process run as an unprivileged user rather than as root?",
+              "options": [
+                "Unprivileged processes run faster.",
+                "If the server is compromised, the attacker only gains the limited rights of that user (least privilege).",
+                "Root cannot open network ports."
+              ],
+              "correct_index": 1,
+              "explanation": "Least privilege limits the damage of a compromise. Speed is unaffected, and root can open any port; the point is to avoid handing an attacker full control."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B20",
+              "locator": "Chapter 4 (Processes) and Chapter 13 (Address Spaces): the process abstraction and private address spaces"
+            },
+            {
+              "book": "B20",
+              "locator": "Chapter 6 (Direct Execution): user mode, kernel mode and system calls"
+            },
+            {
+              "book": "B20",
+              "locator": "Chapter 53 (Intro Security) and Chapter 55 (Access Control): least privilege and file permissions"
+            },
+            {
+              "book": "B23",
+              "locator": "man7.org credentials(7) (user and group identity of a process) and chmod(1) (octal modes)"
+            },
+            {
+              "book": "B22",
+              "locator": "The Python Standard Library, stat module: stat.filemode"
+            }
+          ],
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "The Linux command line",
+          "summary": "Navigating, creating, copying, permissions, pipes and processes, with real sessions to compare against.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **shell** reads a line you type, runs the program it names, and shows the result. Most servers, security tools and cloud machines are managed this way, so being comfortable here pays off in every later module.\n\nCommands follow the pattern `command [options] [arguments]`. Always know your **current directory** (`pwd` prints it) and use `cd` to move. A path starting with `/` is **absolute** (from the root of the file system); anything else is **relative** to where you are. The commands you will use constantly are `ls` (list), `mkdir` (make a directory), `cat` (show a file), `cp` (copy), `mv` (move or rename), `rm` (remove, with no recycle bin) and `man NAME` (read the manual page for a command).\n\nTwo operators change where output goes. `>` writes a command's output to a file, replacing its contents; `>>` appends to it. The pipe `|` feeds one command's output into the next. The first session below creates a directory tree and a small file and checks it."
+            },
+            {
+              "type": "code",
+              "id": "sh-files",
+              "language": "bash",
+              "code": "mkdir -p project/notes\ncd project\necho \"first line\" > notes/todo.txt\necho \"second line\" >> notes/todo.txt\nls notes\ncat notes/todo.txt\nwc -l notes/todo.txt"
+            },
+            {
+              "type": "code",
+              "id": "o-sh-files",
+              "language": "text",
+              "code": "todo.txt\nfirst line\nsecond line\n2 notes/todo.txt",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Permissions from the previous lesson are changed with `chmod`, and shown compactly with `stat`. A new file's starting mode depends on the user's `umask` setting; a common default gives `rw-r--r--` (everyone can read). A file that holds a secret should not be readable by others, so tighten it. In the session, `cp` makes a copy, `mv` renames it, and `rm` deletes the original."
+            },
+            {
+              "type": "code",
+              "id": "sh-perms",
+              "language": "bash",
+              "code": "echo \"secret\" > key.txt\nstat -c '%A %n' key.txt\nchmod 600 key.txt\nstat -c '%A %n' key.txt\ncp key.txt backup.txt\nmv backup.txt old.txt\nrm key.txt\nls"
+            },
+            {
+              "type": "code",
+              "id": "o-sh-perms",
+              "language": "text",
+              "code": "-rw-r--r-- key.txt\n-rw------- key.txt\nold.txt",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "Pipes let you combine small tools. Here `sort` orders lines, `uniq -c` counts runs of identical lines (which is why the input must be sorted first), and `sort -rn` puts the biggest count on top. `grep -c` counts matching lines."
+            },
+            {
+              "type": "code",
+              "id": "sh-pipe",
+              "language": "bash",
+              "code": "printf 'apple\\nbanana\\napple\\ncherry\\napple\\nbanana\\n' > fruit.txt\nsort fruit.txt | uniq -c | sort -rn\ngrep -c apple fruit.txt"
+            },
+            {
+              "type": "code",
+              "id": "o-sh-pipe",
+              "language": "text",
+              "code": "      3 apple\n      2 banana\n      1 cherry\n3",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t4",
+              "markdown": "Running programs are **processes**. `ps` lists them and `kill PID` asks one to stop by sending it a **signal**. By default `kill` sends SIGTERM, a polite request the program can handle (for example by saving its work). A process killed by a signal exits with status 128 plus the signal number, which is 143 for SIGTERM. A command followed by `&` runs in the background, and `$!` holds the PID of the most recent background job."
+            },
+            {
+              "type": "code",
+              "id": "sh-proc",
+              "language": "bash",
+              "code": "sleep 300 &\npid=$!\nps -o comm= -p \"$pid\"\nkill \"$pid\"\nwait \"$pid\" || echo \"exit status $?\""
+            },
+            {
+              "type": "code",
+              "id": "o-sh-proc",
+              "language": "text",
+              "code": "sleep\nexit status 143",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "danger",
+              "title": "rm has no undo",
+              "text": "`rm` removes the file immediately; there is no trash folder to recover it from. Be especially careful with `rm -r` (which deletes whole directory trees) and never run a command you do not understand, particularly one that starts with `sudo`, which runs it with administrator rights."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "A file named log.txt already contains data. Which command adds a new line to the end without erasing the existing data?",
+              "options": [
+                "echo \"new line\" > log.txt",
+                "echo \"new line\" >> log.txt",
+                "echo \"new line\" | log.txt"
+              ],
+              "correct_index": 1,
+              "explanation": "`>>` appends. `>` replaces the file's contents, and a pipe would try to run log.txt as a command."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does `chmod 600 key.txt` do?",
+              "options": [
+                "Lets everyone read and write key.txt.",
+                "Lets only the owner read and write key.txt; the group and others get no access.",
+                "Makes key.txt executable by the owner."
+              ],
+              "correct_index": 1,
+              "explanation": "6 = read + write for the owner, 0 for the group and 0 for others. This is the usual mode for a private key or other secret."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does a plain `kill 4242` do?",
+              "options": [
+                "Sends SIGTERM, a request to terminate, to process 4242.",
+                "Deletes the program file of process 4242.",
+                "Pauses process 4242 until it is resumed."
+              ],
+              "correct_index": 0,
+              "explanation": "Without a signal option, kill sends SIGTERM. The process can catch it and shut down cleanly; a stronger signal (SIGKILL) cannot be caught."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B23",
+              "locator": "GNU Coreutils manual: ls, mkdir, cat, cp, mv, rm, wc, sort, uniq, chmod, stat"
+            },
+            {
+              "book": "B23",
+              "locator": "man7.org signal(7) (SIGTERM, exit status of a signalled process) and kill(2)"
+            },
+            {
+              "book": "B20",
+              "locator": "Chapter 5 (Process API): fork, exec, wait and the shell"
+            }
+          ],
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "Programming concepts",
+          "summary": "Variables, types, conditions, loops and functions, shown in Python.",
+          "estimated_minutes": 18,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Every program is built from the same few ideas, whatever the language. A **variable** is a name for a value. Values have a **type**: whole numbers (`int`), decimals (`float`), text (`str`), true or false (`bool`), and collections such as lists. A **conditional** (`if`, `elif`, `else`) chooses between actions. A **loop** (`for` to go through a collection, `while` to repeat until a condition fails) repeats an action. A **function** packages steps under a name, takes **parameters** and **returns** a result, so you can reuse and test them.\n\nPython marks blocks of code by **indentation**, not braces, so the spacing is part of the program. The function below classifies a TCP port number using the ranges that IANA defines (0 to 1023 well-known, 1024 to 49151 registered, 49152 to 65535 dynamic). Notice the early check that rejects invalid input; validating input is a habit that matters a great deal in security work."
+            },
+            {
+              "type": "code",
+              "id": "c-port",
+              "language": "python",
+              "code": "def classify(port):\n    \"\"\"Return the IANA range of a TCP or UDP port number.\"\"\"\n    if port < 0 or port > 65535:\n        raise ValueError(\"not a valid port number\")\n    if port < 1024:\n        return \"well-known\"\n    elif port < 49152:\n        return \"registered\"\n    return \"dynamic\"\n\nfor p in (22, 443, 8080, 50000):\n    print(p, classify(p))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-port",
+              "language": "text",
+              "code": "22 well-known\n443 well-known\n8080 registered\n50000 dynamic",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Loops often **accumulate** a result. A `for` loop visits each item of a collection; a `while` loop checks its condition before every pass, so it must change something that eventually makes the condition false, or it never stops. The next listing sums a list with a `for` loop, then uses a `while` loop to count how many times a number can be halved before it drops below 1."
+            },
+            {
+              "type": "code",
+              "id": "c-loops",
+              "language": "python",
+              "code": "total = 0\nfor n in [3, 5, 7]:\n    total += n\nprint(\"sum:\", total)\n\nvalue, halvings = 1000, 0\nwhile value >= 1:\n    value /= 2\n    halvings += 1\nprint(\"halvings:\", halvings)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-loops",
+              "language": "text",
+              "code": "sum: 15\nhalvings: 10",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "tip",
+              "title": "Read errors from the bottom",
+              "text": "When Python stops with a traceback, the last line names the error and the lines above show where it happened. Most beginner problems are an off-by-one in a loop, a wrong indentation, or using a variable before it has a value."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does this code print?  total = 0;  for n in range(1, 4): total += n;  print(total)",
+              "options": [
+                "3",
+                "6",
+                "10"
+              ],
+              "correct_index": 1,
+              "explanation": "range(1, 4) produces 1, 2 and 3 (the end value is excluded), so the total is 1 + 2 + 3 = 6."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "A while loop never ends. What is the most likely cause?",
+              "options": [
+                "Nothing inside the loop ever makes the condition false.",
+                "The loop body is indented.",
+                "The variable is an int."
+              ],
+              "correct_index": 0,
+              "explanation": "A while loop repeats as long as its condition is true. If the body never changes the values the condition depends on, the condition stays true forever."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B22",
+              "locator": "The Python Tutorial, Chapter 3 (An Informal Introduction to Python) and Chapter 4 (More Control Flow Tools: if, for, while, defining functions)"
+            },
+            {
+              "book": "B22",
+              "locator": "The Python Standard Library, built-in functions: range()"
+            },
+            {
+              "book": "B22",
+              "locator": "Port ranges: IANA Service Name and Transport Protocol Port Number Registry",
+              "note": "Ranges are stated from the registry's published categories; see needs-verification note."
+            }
+          ],
+          "needs_verification": {
+            "reason": "The IANA port ranges (system 0-1023, user 1024-49151, dynamic 49152-65535) were not re-fetched from the registry in this authoring session; confirm against iana.org before wide release."
+          },
+          "after": "sec-8"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "Python fundamentals",
+          "summary": "Strings, lists, dictionaries, JSON, errors and imports: the parts the Q-CAPS tools rely on.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Python is the main language of the Q-CAPS scanner and backend, and of most security tooling. Five features cover most of what you will read and write.\n\n**Strings** hold text; f-strings (`f\"port {p}\"`) insert values. **Lists** are ordered collections you can change; **dictionaries** map keys to values and are the natural shape for records. **Modules** are code you load with `import`; the standard library ships with Python, and other libraries are installed separately. **Exceptions** report errors, and `try`/`except` lets you handle one on purpose instead of crashing. **JSON** is the text format that most tools use to exchange structured data, and Python's `json` module converts between JSON text and dictionaries and lists.\n\nThe sample below is a hand-written record shaped like scan output, to practise reading structured data. It is **illustrative data, not the result of any real scan.**"
+            },
+            {
+              "type": "code",
+              "id": "c-json",
+              "language": "python",
+              "code": "import json\n\nraw = '{\"host\": \"example.org\", \"tls_version\": \"TLSv1.3\", \"findings\": [\"no HSTS\", \"no CSP\"]}'\nscan = json.loads(raw)                      # text -> dictionary\nprint(scan[\"host\"], \"uses\", scan[\"tls_version\"])\nfor number, finding in enumerate(scan[\"findings\"], start=1):\n    print(f\"{number}. {finding}\")\nprint(json.dumps({\"count\": len(scan[\"findings\"])}))   # dictionary -> text"
+            },
+            {
+              "type": "code",
+              "id": "o-c-json",
+              "language": "text",
+              "code": "example.org uses TLSv1.3\n1. no HSTS\n2. no CSP\n{\"count\": 2}",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Real input is untidy, so expect failure and decide what should happen. Converting text that is not a number raises a `ValueError`. Catching a **specific** exception handles the case you expect without hiding bugs you do not; a bare `except:` that swallows everything is a common source of silent errors, including in security code."
+            },
+            {
+              "type": "code",
+              "id": "c-errors",
+              "language": "python",
+              "code": "def parse_port(text):\n    try:\n        port = int(text)\n    except ValueError:\n        return None, f\"not a number: {text!r}\"\n    if not 0 <= port <= 65535:\n        return None, f\"out of range: {port}\"\n    return port, None\n\nfor entry in (\"443\", \"12a\", \"70000\"):\n    print(parse_port(entry))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-errors",
+              "language": "text",
+              "code": "(443, None)\n(None, \"not a number: '12a'\")\n(None, 'out of range: 70000')",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "Never trust input",
+              "text": "Anything that comes from a user, a file or the network can be malformed or hostile. Check type and range, handle the failure explicitly, and report what went wrong. The same habit prevents bugs and many vulnerabilities."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which Python structure is the natural choice for one record with named fields, such as host, port and TLS version?",
+              "options": [
+                "A dictionary",
+                "A string",
+                "A while loop"
+              ],
+              "correct_index": 0,
+              "explanation": "A dictionary maps field names to values, and it converts directly to and from a JSON object."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why catch `ValueError` specifically rather than using a bare `except:`?",
+              "options": [
+                "A specific handler deals with the expected problem and still lets unexpected bugs show up.",
+                "A bare except is faster.",
+                "Python requires exactly one except clause per try."
+              ],
+              "correct_index": 0,
+              "explanation": "Catching only what you expect keeps real bugs visible. A bare except hides every error, including ones you never meant to ignore."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B22",
+              "locator": "The Python Tutorial, Chapter 5 (Data Structures: lists and dictionaries), Chapter 6 (Modules), Chapter 8 (Errors and Exceptions)"
+            },
+            {
+              "book": "B22",
+              "locator": "The Python Standard Library, json module: json.loads, json.dumps"
+            }
+          ],
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-9",
+          "action": "new",
+          "title": "Working with data and bytes in Python",
+          "summary": "Text versus bytes, UTF-8, hexadecimal, and reading binary files, the groundwork for cryptography.",
+          "estimated_minutes": 18,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Cryptography works on **bytes**, not on text, so the difference matters from now on. A Python `str` is a sequence of characters (Unicode text). A `bytes` object is a sequence of numbers from 0 to 255. Converting between them needs an **encoding**; for the web and most modern files that is **UTF-8**, which uses one byte for basic Latin letters and two to four bytes for other characters. That is why the length of a string and the length of its encoding can differ.\n\nBytes are usually shown as **hexadecimal**: two hex digits per byte (`ff` is 255). Hashes, keys and ciphertexts in later modules are all displayed this way. Python converts with `.hex()` and `bytes.fromhex()`."
+            },
+            {
+              "type": "code",
+              "id": "c-utf8",
+              "language": "python",
+              "code": "text = \"Café\"\ndata = text.encode(\"utf-8\")          # str -> bytes\nprint(len(text), len(data))\nprint(data)\nprint(data.hex())\nprint(bytes.fromhex(\"436166c3a9\").decode(\"utf-8\"))   # hex -> bytes -> str"
+            },
+            {
+              "type": "code",
+              "id": "o-c-utf8",
+              "language": "text",
+              "code": "4 5\nb'Caf\\xc3\\xa9'\n436166c3a9\nCafé",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Files are bytes too. Open binary files in `rb` mode (or use `Path.read_bytes()`) so Python does not try to decode them as text. The listing writes six bytes, reads them back, and prints the first 16 hex digits of their SHA-256 hash. A **hash** is a fixed-size fingerprint of data: the same bytes always give the same fingerprint, and any change gives a completely different one. You will study hashes properly in the cryptography module."
+            },
+            {
+              "type": "code",
+              "id": "c-file",
+              "language": "python",
+              "code": "import hashlib, pathlib, tempfile\n\npath = pathlib.Path(tempfile.mkdtemp()) / \"sample.bin\"\npath.write_bytes(bytes([0, 1, 2, 253, 254, 255]))\ndata = path.read_bytes()\nprint(list(data), len(data))\nprint(hashlib.sha256(data).hexdigest()[:16])"
+            },
+            {
+              "type": "code",
+              "id": "o-c-file",
+              "language": "text",
+              "code": "[0, 1, 2, 253, 254, 255] 6\n3f2d1552cdc7483f",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "Common mistake: mixing text and bytes",
+              "text": "Python will not silently combine `str` and `bytes`; `\"abc\" + b\"def\"` raises a `TypeError`. Decide which one you have at each step, convert at the boundary (when reading input, or when sending data), and never encode or decode more than once."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How many bytes does the one-character string \"é\" occupy when encoded as UTF-8?",
+              "options": [
+                "1",
+                "2",
+                "4"
+              ],
+              "correct_index": 1,
+              "explanation": "Characters outside basic ASCII need more than one byte in UTF-8; é is encoded as the two bytes c3 a9, as the listing shows for the last letter of \"Café\"."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does `bytes.fromhex(\"ff00\")` return?",
+              "options": [
+                "The two bytes with values 255 and 0.",
+                "The text \"ff00\".",
+                "The number 65280 as a string."
+              ],
+              "correct_index": 0,
+              "explanation": "Each pair of hex digits is one byte: ff is 255 and 00 is 0."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B22",
+              "locator": "The Python Standard Library, built-in types: bytes.hex, bytes.fromhex, str.encode, bytes.decode; and the pathlib, hashlib and tempfile modules"
+            },
+            {
+              "book": "B22",
+              "locator": "The Python Tutorial, Chapter 7 (Input and Output: reading and writing files)"
+            }
+          ],
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "Algorithms and growth rates",
+          "summary": "Why some searches finish and others never do: counting steps, binary search, and exponential growth.",
+          "estimated_minutes": 18,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "An **algorithm** is a precise procedure for solving a problem. Two correct algorithms can differ enormously in how much work they do as the input grows, and that difference decides what is practical. We describe it by how the number of steps **grows with the input size n**, ignoring constant factors. This is the idea behind \"Big-O\" notation.\n\nTo find an item in an unsorted list you must check items one by one: about *n* steps (**linear** growth). If the list is **sorted** you can do much better with **binary search**: look at the middle, discard the half that cannot contain the target, and repeat. Each step halves the remaining items, so even a million items need at most about 20 steps (**logarithmic** growth). The listing counts the steps for the worst case."
+            },
+            {
+              "type": "code",
+              "id": "c-search",
+              "language": "python",
+              "code": "def linear_steps(items, target):\n    steps = 0\n    for x in items:\n        steps += 1\n        if x == target:\n            break\n    return steps\n\ndef binary_steps(items, target):\n    lo, hi, steps = 0, len(items) - 1, 0\n    while lo <= hi:\n        steps += 1\n        mid = (lo + hi) // 2\n        if items[mid] == target:\n            return steps\n        if items[mid] < target:\n            lo = mid + 1\n        else:\n            hi = mid - 1\n    return steps\n\nfor n in (10, 1_000, 1_000_000):\n    items = list(range(n))\n    print(f\"n={n:>9,}  linear={linear_steps(items, n - 1):>9,}  binary={binary_steps(items, n - 1):>3}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-search",
+              "language": "text",
+              "code": "n=       10  linear=       10  binary=  4\nn=    1,000  linear=    1,000  binary= 10\nn=1,000,000  linear=1,000,000  binary= 20",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Choosing the right **data structure** is part of choosing the algorithm. In Python, checking whether an item is in a **list** means scanning it (linear), while checking a **set** or a **dictionary key** takes roughly constant time on average. For large collections that is the difference between instant and unusable.\n\nSome problems grow far faster than any polynomial. Trying every possible key of a *b*-bit cipher takes up to 2^b guesses, and the work **doubles with every extra bit**. That is **exponential** growth, and it is the reason a long key makes brute force impossible. The next listing divides 2^b by an assumed (and generous) rate of one trillion guesses per second. The rate is an assumption for illustration, not a measurement of any real machine."
+            },
+            {
+              "type": "code",
+              "id": "c-brute",
+              "language": "python",
+              "code": "guesses_per_second = 10**12              # assumed rate, for illustration only\nseconds_per_year = 365 * 24 * 3600\nfor bits in (40, 56, 64, 80, 128):\n    years = 2**bits / guesses_per_second / seconds_per_year\n    print(f\"{bits:>3}-bit key: {years:.3g} years\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-brute",
+              "language": "text",
+              "code": " 40-bit key: 3.49e-08 years\n 56-bit key: 0.00228 years\n 64-bit key: 0.585 years\n 80-bit key: 3.83e+04 years\n128-bit key: 1.08e+19 years",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "Looking ahead",
+              "text": "Quantum computers change some of these growth rates, which is the subject of Tracks A and B. Grover's algorithm, for example, reduces a 2^b search to about 2^(b/2) steps, and Shor's algorithm breaks the maths behind RSA and elliptic curves outright. You need the classical picture first to see exactly what changes."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "A sorted list has about one million items. Roughly how many comparisons does binary search need at most?",
+              "options": [
+                "About 20",
+                "About 1,000",
+                "About 500,000"
+              ],
+              "correct_index": 0,
+              "explanation": "Each comparison halves the remaining range, and 2^20 is about a million, so around 20 comparisons suffice. The listing shows 20 for n = 1,000,000."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Adding one bit to a symmetric key length makes exhaustive key search:",
+              "options": [
+                "Slightly harder, by a fixed number of guesses.",
+                "Twice as hard.",
+                "No harder, because the attacker uses a faster computer."
+              ],
+              "correct_index": 1,
+              "explanation": "A b-bit key has 2^b possibilities, so every extra bit doubles the search space. That exponential growth is why 128-bit keys are out of reach of brute force."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B22",
+              "locator": "Python Wiki, TimeComplexity (average and worst-case costs of list, set and dict operations); docs.python.org tutorial Chapter 5 (sets, dictionaries)"
+            },
+            {
+              "book": "B22",
+              "locator": "The Python Standard Library, built-in types: set and mapping types"
+            }
+          ],
+          "after": "sec-9"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "Git and development environments",
+          "summary": "Recording changes, branching and merging, and how a pull request fits in.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Version control** records every change to a project so you can see what changed, undo mistakes and work in parallel with other people. **Git** is the standard tool. A Git **repository** holds your files and their full history. A **commit** is a saved snapshot with a message and an author. A **branch** is an independent line of commits, so you can try a change without disturbing the main line, and **merging** brings it back.\n\nThe basic cycle is: edit files, choose what goes in the next snapshot with `git add` (the *staging area*), then record it with `git commit`. The session below does this in a throwaway repository, makes a branch for a change, and merges it. It uses `git log --format='%s'` to print only the commit messages, because the commit identifiers differ every time."
+            },
+            {
+              "type": "code",
+              "id": "sh-git",
+              "language": "bash",
+              "code": "git init -q -b main demo\ncd demo\ngit config user.name \"Ada Learner\"\ngit config user.email \"ada@example.com\"\necho \"print('hello')\" > hello.py\ngit add hello.py\ngit commit -q -m \"Add hello script\"\ngit switch -q -c feature/greeting\necho \"print('hello, Q-CAPS')\" > hello.py\ngit commit -q -am \"Change greeting\"\necho \"on the feature branch:\"\ngit log --format='%s'\ngit switch -q main\ngit merge -q feature/greeting\necho \"after merging into main:\"\ngit log --format='%s'\ngit branch --show-current\ngit status --short"
+            },
+            {
+              "type": "code",
+              "id": "o-sh-git",
+              "language": "text",
+              "code": "on the feature branch:\nChange greeting\nAdd hello script\nafter merging into main:\nChange greeting\nAdd hello script\nmain",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Your own repository lives on your machine. To work with others you use a **remote** copy on a hosting service. The team workflow used for Q-CAPS is the same one used almost everywhere: **clone** the repository, create a **branch** for your change, **commit** to it, **push** the branch to the remote, and open a **pull request** (PR) so others can review before it is merged. A pull request is a feature of the hosting platform, not of Git itself. These commands need a real remote, so they are shown here without output."
+            },
+            {
+              "type": "code",
+              "id": "c-remote",
+              "language": "bash",
+              "code": "git clone https://example.com/your-team/project.git\ncd project\ngit switch -c fix/readme-typo\n# edit files, then:\ngit add README.md\ngit commit -m \"Fix typo in README\"\ngit push -u origin fix/readme-typo\n# then open a pull request on the hosting service",
+              "caption": "Commands only: not run here, because it needs a remote repository"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "Keep project dependencies separate from the rest of your system with a **virtual environment**: a private folder holding its own Python interpreter and installed packages, so two projects can use different versions. Create one with `python -m venv .venv`, activate it, install packages with `pip`, and leave it with `deactivate`. Record exact versions in a `requirements.txt` file so others can reproduce your setup."
+            },
+            {
+              "type": "code",
+              "id": "c-venv",
+              "language": "bash",
+              "code": "python3 -m venv .venv\nsource .venv/bin/activate        # Windows: .venv\\Scripts\\activate\npython -m pip install requests\npython -m pip freeze > requirements.txt\ndeactivate",
+              "caption": "Commands only: not run here (on Debian and Ubuntu the venv module comes from the python3-venv package)"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "danger",
+              "title": "Never commit secrets",
+              "text": "Passwords, API keys and private keys must not go into a repository. Deleting the file in a later commit does not remove it: Git keeps the full history, so anyone with a copy can still read it. If a secret is committed, treat it as exposed and **rotate it** (replace it with a new one) immediately. Add files that must stay local, such as `.env`, to `.gitignore` before the first commit."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the usual order of steps to contribute a change to a shared project?",
+              "options": [
+                "Push, clone, commit, branch.",
+                "Clone, branch, commit, push, then open a pull request.",
+                "Branch, push, clone, merge."
+              ],
+              "correct_index": 1,
+              "explanation": "Clone gets a copy, a branch isolates your work, commits record it, push uploads the branch, and a pull request asks for review before merging."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "You committed an API key and deleted the file in the next commit. Is the key now safe?",
+              "options": [
+                "Yes, the file no longer exists.",
+                "No: it remains in the history, so rotate the key.",
+                "Yes, as long as the repository is private."
+              ],
+              "correct_index": 1,
+              "explanation": "Git keeps every earlier commit. Anyone with access to the history can read the key, so it must be revoked and replaced regardless of whether the repository is private."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B21",
+              "locator": "Section 1.1 (About Version Control), Section 1.3 (What is Git?)"
+            },
+            {
+              "book": "B21",
+              "locator": "Section 2.1 (Getting a Git Repository), 2.2 (Recording Changes), 2.3 (Viewing the Commit History)"
+            },
+            {
+              "book": "B21",
+              "locator": "Section 3.1 (Branches in a Nutshell), 3.2 (Basic Branching and Merging)"
+            },
+            {
+              "book": "B21",
+              "locator": "Section 6.2 (Contributing to a Project): the fork and pull request workflow on a hosting service"
+            },
+            {
+              "book": "B22",
+              "locator": "The Python Tutorial, Chapter 12 (Virtual Environments and Packages) and the venv module documentation"
+            }
+          ],
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-10",
+          "action": "new",
+          "title": "Task: build, test and commit a small tool",
+          "summary": "A guided practical: write a word-frequency script, check it, and commit it on a branch.",
+          "estimated_minutes": 30,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Objective.** Combine the skills of this module: write a short Python program, test it, and record it with Git on its own branch.\n\n**Prerequisites.** Python 3 and Git installed, and a terminal. Everything below works on Linux, macOS and Windows (use Git Bash or PowerShell for the commands).\n\n**The task.** Write `wordfreq.py`, which prints the three most common words in a piece of text, most common first. Your sample text is: `alpha beta alpha gamma beta alpha gamma gamma gamma`. Try it yourself before you read the solution, then compare.\n\n**Starter.** Create a function `top_words(text, n)` that returns a list of `(word, count)` pairs. Hints: `text.split()` splits on whitespace, a dictionary can hold the counts, and `sorted(..., key=..., reverse=True)` orders them. Handle upper and lower case as the same word by calling `.lower()`."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**A solution.** This version uses a dictionary for counting. Because the counts in the sample are all different, the order is unambiguous. (When counts tie, the order depends on your sorting rule, so a real tool should also sort by word to be repeatable.) The asserts at the end are tiny **tests**: if any claim is false, the program stops with an error, which is how you catch mistakes early."
+            },
+            {
+              "type": "code",
+              "id": "c-solution",
+              "language": "python",
+              "code": "def top_words(text, n):\n    counts = {}\n    for word in text.lower().split():\n        counts[word] = counts.get(word, 0) + 1\n    ranked = sorted(counts.items(), key=lambda pair: (-pair[1], pair[0]))\n    return ranked[:n]\n\nsample = \"alpha beta alpha gamma beta alpha gamma gamma gamma\"\nfor word, count in top_words(sample, 3):\n    print(word, count)\n\nassert top_words(\"b a b\", 1) == [(\"b\", 2)]\nassert top_words(\"A a\", 1) == [(\"a\", 2)]\nprint(\"tests passed\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-solution",
+              "language": "text",
+              "code": "gamma 4\nalpha 3\nbeta 2\ntests passed",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "**Record it with Git.** Save the program as `wordfreq.py`, then commit it on a branch. The session below recreates the whole exercise in a clean repository so you can compare your results with a real run."
+            },
+            {
+              "type": "code",
+              "id": "sh-task",
+              "language": "bash",
+              "code": "git init -q -b main wordfreq\ncd wordfreq\ngit config user.name \"Ada Learner\"\ngit config user.email \"ada@example.com\"\ncat > wordfreq.py <<'EOF'\ndef top_words(text, n):\n    counts = {}\n    for word in text.lower().split():\n        counts[word] = counts.get(word, 0) + 1\n    ranked = sorted(counts.items(), key=lambda pair: (-pair[1], pair[0]))\n    return ranked[:n]\n\nif __name__ == \"__main__\":\n    for word, count in top_words(\"alpha beta alpha gamma beta alpha gamma gamma gamma\", 3):\n        print(word, count)\nEOF\ngit switch -q -c feature/wordfreq\ngit add wordfreq.py\ngit commit -q -m \"Add word frequency tool\"\npython3 wordfreq.py\ngit log --format='%s'\ngit branch --show-current"
+            },
+            {
+              "type": "code",
+              "id": "o-sh-task",
+              "language": "text",
+              "code": "gamma 4\nalpha 3\nbeta 2\nAdd word frequency tool\nfeature/wordfreq",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t4",
+              "markdown": "**Verify.** Your program should print the three lines shown above (`gamma 4`, `alpha 3`, `beta 2`) and your branch should contain one commit with your message.\n\n**Troubleshooting.** If you see `command not found: python3` on Windows, use `python` or `py` instead. An `IndentationError` means a line is not indented to match its block. A `NameError` usually means a misspelled variable. If Git says `Please tell me who you are`, set `user.name` and `user.email` as shown. If your counts look wrong for mixed-case text, check that you called `.lower()` before counting.\n\n**Cleanup.** The practice repository can simply be deleted when you are done. Never put real credentials in it.\n\n**Stretch.** Add a second function that ignores punctuation, add a test for it, and make a second commit."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "For the sample text, which word does the tool report as the most common, and how many times does it appear?",
+              "options": [
+                "alpha, 3 times",
+                "gamma, 4 times",
+                "beta, 2 times"
+              ],
+              "correct_index": 1,
+              "explanation": "Counting the sample gives gamma 4, alpha 3, beta 2, in that order. If your tool reports something different, check the counting and the sort order."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does the solution sort by (-count, word) rather than by count alone?",
+              "options": [
+                "So that words with equal counts always appear in the same, repeatable order.",
+                "Because Python cannot sort numbers without a second key.",
+                "To make the program slower on purpose."
+              ],
+              "correct_index": 0,
+              "explanation": "Sorting by count alone leaves ties in an arbitrary order. Adding the word as a second key makes the output deterministic, which also makes it testable."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B22",
+              "locator": "The Python Tutorial, Chapter 4 (defining functions, lambda expressions), Chapter 5 (dictionaries, sorting)"
+            },
+            {
+              "book": "B21",
+              "locator": "Section 2.2 (Recording Changes to the Repository) and Section 3.1 (Branches in a Nutshell)"
+            }
+          ],
+          "after": "sec-7"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "a1-n01",
+          "prompt": "In the fetch, decode, execute cycle, what does the program counter hold?",
+          "options": [
+            "The result of the last calculation.",
+            "The memory address of the next instruction.",
+            "The number of programs running."
+          ],
+          "correct_index": 1,
+          "explanation": "The program counter points to the next instruction to fetch; results are held in registers such as the accumulator.",
+          "source": {
+            "book": "B20",
+            "locator": "Chapter 2 (Introduction)"
+          },
+          "competency_id": "COMP.1",
+          "depth": "Explain",
+          "lesson_id": "A1.L1"
+        },
+        {
+          "id": "a1-n02",
+          "prompt": "In the von Neumann model, where are a running program's instructions and its data kept?",
+          "options": [
+            "In the same addressable memory.",
+            "Instructions in the CPU and data on disk.",
+            "In two separate memories the CPU cannot access together."
+          ],
+          "correct_index": 0,
+          "explanation": "General-purpose computers keep instructions and data in the same memory, which is why corrupting data can sometimes change what code runs.",
+          "source": {
+            "book": "B20",
+            "locator": "Chapter 2 (Introduction)"
+          },
+          "competency_id": "COMP.1",
+          "depth": "Explain",
+          "lesson_id": "A1.L1"
+        },
+        {
+          "id": "a1-n03",
+          "prompt": "A file has mode 640. Which statement is true?",
+          "options": [
+            "Everyone can read and write it.",
+            "The owner can read and write it, the group can read it, and others have no access.",
+            "Only the group can write it and the owner has no access."
+          ],
+          "correct_index": 1,
+          "explanation": "6 = read + write (owner), 4 = read (group), 0 = nothing (others).",
+          "source": {
+            "book": "B23",
+            "locator": "chmod(1): octal modes; credentials(7)"
+          },
+          "competency_id": "COMP.1",
+          "depth": "Explain",
+          "lesson_id": "A1.L2"
+        },
+        {
+          "id": "a1-n04",
+          "prompt": "Why should a network service run as an unprivileged user instead of root?",
+          "options": [
+            "It limits what an attacker can do if the service is compromised (least privilege).",
+            "Unprivileged users can open more network ports.",
+            "It makes the service start faster."
+          ],
+          "correct_index": 0,
+          "explanation": "Least privilege limits the damage of a compromise to the rights of the account the process runs as.",
+          "source": {
+            "book": "B20",
+            "locator": "Chapter 53 (Intro Security) and Chapter 55 (Access Control)"
+          },
+          "competency_id": "COMP.1",
+          "depth": "Explain",
+          "lesson_id": "A1.L2"
+        },
+        {
+          "id": "a1-n05",
+          "prompt": "Which command appends a line to notes.txt without erasing what is already there?",
+          "options": [
+            "echo \"hello\" > notes.txt",
+            "echo \"hello\" >> notes.txt",
+            "echo \"hello\" | notes.txt"
+          ],
+          "correct_index": 1,
+          "explanation": "The >> operator appends; > replaces the file's contents.",
+          "source": {
+            "book": "B23",
+            "locator": "GNU Coreutils manual; shell redirection"
+          },
+          "competency_id": "COMP.2",
+          "depth": "Apply",
+          "lesson_id": "A1.L3"
+        },
+        {
+          "id": "a1-n06",
+          "prompt": "What does this print?  total = 0;  for n in range(1, 4): total += n;  print(total)",
+          "options": [
+            "3",
+            "6",
+            "10"
+          ],
+          "correct_index": 1,
+          "explanation": "range(1, 4) gives 1, 2, 3, so the sum is 6.",
+          "source": {
+            "book": "B22",
+            "locator": "The Python Tutorial, Chapter 4 (for statements, range)"
+          },
+          "competency_id": "PROG.1",
+          "depth": "Apply",
+          "lesson_id": "A1.L4"
+        },
+        {
+          "id": "a1-n07",
+          "prompt": "How many bytes is the UTF-8 encoding of the single character \"é\"?",
+          "options": [
+            "1",
+            "2",
+            "4"
+          ],
+          "correct_index": 1,
+          "explanation": "Characters beyond basic ASCII use two or more bytes in UTF-8; é is c3 a9.",
+          "source": {
+            "book": "B22",
+            "locator": "The Python Standard Library, str.encode"
+          },
+          "competency_id": "PROG.1",
+          "depth": "Apply",
+          "lesson_id": "A1.L5"
+        },
+        {
+          "id": "a1-n08",
+          "prompt": "Roughly how many comparisons does binary search need at most for a sorted list of one million items?",
+          "options": [
+            "About 20",
+            "About 1,000",
+            "About 500,000"
+          ],
+          "correct_index": 0,
+          "explanation": "Each step halves the range and 2^20 is about one million.",
+          "source": {
+            "book": "B22",
+            "locator": "Python Wiki TimeComplexity; tutorial Chapter 5"
+          },
+          "competency_id": "PROG.2",
+          "depth": "Explain",
+          "lesson_id": "A1.L6"
+        },
+        {
+          "id": "a1-n09",
+          "prompt": "You committed an API key, then deleted the file in a later commit. What should you do?",
+          "options": [
+            "Nothing: the file is gone.",
+            "Rotate the key, because it is still in the repository history.",
+            "Make the repository private and keep using the key."
+          ],
+          "correct_index": 1,
+          "explanation": "Git keeps history, so a committed secret must be treated as exposed and replaced.",
+          "source": {
+            "book": "B21",
+            "locator": "Section 1.3 (What is Git?)"
+          },
+          "competency_id": "PROG.3",
+          "depth": "Apply",
+          "lesson_id": "A1.L7"
+        }
+      ],
+      "estimated_minutes": 196,
+      "notes": "Rewrites the eight outline sections as full lessons, adds a bytes lesson and a hands-on task, and runs every listing for real. Sources are official documentation and open textbooks (no book chapters invented).",
+      "learning_objectives": [
+        "Explain how a computer runs a program: the CPU's fetch, decode and execute cycle, and the roles of memory and storage.",
+        "Explain what an operating system and a process are, read Unix permissions, and apply least privilege.",
+        "Navigate a Linux command line, work with files, pipes and processes, and change permissions.",
+        "Write and test basic Python programs with functions, loops, structured data, errors, text and bytes.",
+        "Explain how running time grows with input size and why exponential search spaces are infeasible.",
+        "Use Git to record changes, branch and merge, and describe a pull request workflow without committing secrets."
+      ]
+    }
+  ]
+}
