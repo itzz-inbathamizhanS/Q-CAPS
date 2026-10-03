@@ -1,0 +1,1101 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B01",
+      "title": "Understanding Cryptography: From Established Symmetric and Asymmetric Ciphers to Post-Quantum Algorithms",
+      "authors": "Christof Paar, Jan Pelzl, Tim Güneysu",
+      "edition": "2nd edition",
+      "year": 2024,
+      "publisher": "Springer"
+    },
+    {
+      "id": "B04",
+      "title": "FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B05",
+      "title": "Becoming Quantum Safe: Protect Your Business and Mitigate Risks with Post-Quantum Cryptography and Crypto-Agility",
+      "authors": "Jai Singh Arun, Ray Harishankar, Walid Rjaibi",
+      "edition": "1st edition",
+      "year": 2025,
+      "publisher": "Wiley"
+    },
+    {
+      "id": "B85",
+      "title": "IR 8547 (initial public draft), Transition to Post-Quantum Cryptography Standards",
+      "authors": "Dustin Moody, Ray Perlner, Andrew Regenscheid, Angela Robinson, David Cooper",
+      "edition": "November 2024, accessed 2026-10-04",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B92",
+      "title": "FIPS 204: Module-Lattice-Based Digital Signature Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B93",
+      "title": "FIPS 205: Stateless Hash-Based Digital Signature Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B95",
+      "title": "NIST SP 800-227: Recommendations for Key-Encapsulation Mechanisms",
+      "authors": "Alagic, Barker, Chen, Moody, Robinson, Silberg, Waller",
+      "edition": "September 2025",
+      "year": 2025,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B97",
+      "title": "NIST SP 800-57 Part 1 Revision 5: Recommendation for Key Management: Part 1 - General",
+      "authors": "Elaine Barker",
+      "edition": "Revision 5",
+      "year": 2020,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B98",
+      "title": "RFC 10024: Post-Quantum Traditional (PQ/T) Hybrid Key Agreement Mechanisms for TLS 1.3",
+      "authors": "K. Kwiatkowski, P. Kampanakis, B. E. Westerbaan, D. Stebila",
+      "edition": "August 2026 (Proposed Standard)",
+      "year": 2026,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B99",
+      "title": "CycloneDX Bill of Materials specification, version 1.6 (JSON schema with the Cryptography Bill of Materials extension)",
+      "authors": "OWASP CycloneDX",
+      "edition": "1.6",
+      "year": 2024,
+      "publisher": "OWASP Foundation"
+    },
+    {
+      "id": "B100",
+      "title": "cryptography (Python package) version 50.0.1, with ML-KEM and ML-DSA backed by OpenSSL",
+      "authors": "Python Cryptographic Authority",
+      "edition": "50.0.1",
+      "year": 2026
+    },
+    {
+      "id": "B90",
+      "title": "kyber-py: a pure Python implementation of ML-KEM (FIPS 203), version 1.2.0 (PyPI package metadata)",
+      "authors": "Package authors",
+      "edition": "1.2.0",
+      "year": 2025
+    },
+    {
+      "id": "B91",
+      "title": "dilithium-py: a pure Python implementation of ML-DSA (FIPS 204), version 1.4.0 (PyPI package metadata)",
+      "authors": "Package authors",
+      "edition": "1.4.0",
+      "year": 2025
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_b_b11_intermediate_pqc_labs",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "11.1 RSA vs. PQC Comparison",
+          "summary": "Compare RSA-2048 with ML-KEM-768 and ML-DSA-65 on security basis, strength and measured sizes, using real OpenSSL-backed implementations.",
+          "estimated_minutes": 30,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Replacing RSA is the most common migration question, so compare them on four axes. **Security basis:** RSA rests on factoring, which Shor's algorithm solves in polynomial time (B8); ML-KEM and ML-DSA rest on module lattice problems for which no efficient quantum attack is known. **Strength:** NIST SP 800-57 Table 2 rates a 2048-bit RSA modulus at 112 bits of classical security strength and 3072 bits at 128; that estimate is explicitly \"significantly affected when quantum computing becomes a practical consideration\", and against a large quantum computer no RSA size helps. **Function shape:** RSA key transport lets the sender *choose* a key and encrypt it; a KEM *generates* the secret inside Encaps. **Size:** PQC objects are larger.\n\nThese labs use three Python packages: `cryptography` 50.0.1 (OpenSSL-backed X25519, ECDSA, RSA, ML-KEM and ML-DSA), `kyber-py` 1.2.0 and `dilithium-py` 1.4.0 (independent pure-Python ML-KEM and ML-DSA). Install them in a virtual environment with `pip install cryptography==50.0.1 kyber-py==1.2.0 dilithium-py==1.4.0`. The listing below creates real keys and measures every size. Encodings are stated because they matter: the RSA public key is shown as a DER SubjectPublicKeyInfo structure and the ML-KEM and ML-DSA keys as their raw FIPS encodings."
+            },
+            {
+              "type": "code",
+              "id": "c-rsa",
+              "language": "python",
+              "code": "from cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import padding, rsa\nfrom cryptography.hazmat.primitives.asymmetric.mlkem import MLKEM768PrivateKey\nfrom cryptography.hazmat.primitives.asymmetric.mldsa import MLDSA65PrivateKey\n\n# SP 800-57 Part 1 Rev. 5, Table 2: classical security strength of an RSA modulus\nRSA_STRENGTH = {1024: 80, 2048: 112, 3072: 128, 7680: 192, 15360: 256}\n\nrsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)\nrsa_public = rsa_key.public_key().public_bytes(serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)\noaep = padding.OAEP(mgf=padding.MGF1(hashes.SHA256()), algorithm=hashes.SHA256(), label=None)\nrsa_ciphertext = rsa_key.public_key().encrypt(b\"k\" * 32, oaep)                      # sender chooses the key\npss = padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=32)\nrsa_signature = rsa_key.sign(b\"message\", pss, hashes.SHA256())\n\nkem_key = MLKEM768PrivateKey.generate()\nkem_public = kem_key.public_key().public_bytes_raw()\nkem_secret, kem_ciphertext = kem_key.public_key().encapsulate()                    # Encaps generates the key\ndsa_key = MLDSA65PrivateKey.generate()\ndsa_public = dsa_key.public_key().public_bytes_raw()\ndsa_signature = dsa_key.sign(b\"message\")\n\nprint(f\"RSA-2048 classical strength per SP 800-57: {RSA_STRENGTH[2048]} bits (and broken by Shor's algorithm at any size)\")\nprint(f\"{'object':32} {'RSA-2048':>9} {'ML-KEM-768 / ML-DSA-65':>24} {'ratio':>6}\")\nprint(f\"{'public key (KEM / signature)':32} {len(rsa_public):>9} {str(len(kem_public)) + ' / ' + str(len(dsa_public)):>24} {len(kem_public) / len(rsa_public):.1f}x / {len(dsa_public) / len(rsa_public):.1f}x\")\nprint(f\"{'ciphertext (RSA-OAEP vs ML-KEM)':32} {len(rsa_ciphertext):>9} {len(kem_ciphertext):>24} {len(kem_ciphertext) / len(rsa_ciphertext):>5.1f}x\")\nprint(f\"{'signature (RSA-PSS vs ML-DSA)':32} {len(rsa_signature):>9} {len(dsa_signature):>24} {len(dsa_signature) / len(rsa_signature):>5.1f}x\")\nprint(\"shared secret from Encaps:\", len(kem_secret), \"bytes, chosen by the algorithm, not by the sender\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-rsa",
+              "language": "text",
+              "code": "RSA-2048 classical strength per SP 800-57: 112 bits (and broken by Shor's algorithm at any size)\nobject                            RSA-2048   ML-KEM-768 / ML-DSA-65  ratio\npublic key (KEM / signature)           294              1184 / 1952 4.0x / 6.6x\nciphertext (RSA-OAEP vs ML-KEM)        256                     1088   4.2x\nsignature (RSA-PSS vs ML-DSA)          256                     3309  12.9x\nshared secret from Encaps: 32 bytes, chosen by the algorithm, not by the sender",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Three things stand out. A single ML-KEM-768 ciphertext is about four times a 2048-bit RSA ciphertext, and an ML-DSA-65 signature is nearly thirteen times an RSA-2048 signature, so anything that carries many signatures (certificate chains, signed logs, firmware images with several signatures) feels the change most. The shared secret from Encaps is generated by the algorithm, so protocol designs that let the application pick the key need adjusting. And the comparison of classical security strength (112 bits) with the NIST **category** of a PQC parameter set (category 3 for ML-KEM-768 and ML-DSA-65) is not a like-for-like number: categories are defined relative to AES key search and SHA collision search, not as bits."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does increasing an RSA key to 15360 bits not protect against a large quantum computer?",
+              "options": [
+                "Shor's algorithm factors any RSA modulus in polynomial time, so a larger key only costs the quantum attacker slightly more.",
+                "15360-bit keys are not allowed.",
+                "Quantum computers cannot handle large numbers."
+              ],
+              "correct_index": 0,
+              "explanation": "The quantum speed-up is polynomial versus sub-exponential classical attacks; key size is not a fix, a different hard problem is."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is a structural difference between RSA key transport and a KEM?",
+              "options": [
+                "In a KEM the shared secret is generated by Encaps instead of being chosen by the sender.",
+                "A KEM needs no public key.",
+                "RSA key transport produces no ciphertext."
+              ],
+              "correct_index": 0,
+              "explanation": "KEM interfaces return both the secret and the ciphertext; protocols must derive their keys from that secret."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B97",
+              "locator": "Table 2 (comparable security strengths of symmetric and asymmetric algorithms), including the footnote on quantum computing"
+            },
+            {
+              "book": "B04",
+              "locator": "Table 3 (ML-KEM-768 sizes)"
+            },
+            {
+              "book": "B92",
+              "locator": "Table 2 (ML-DSA-65 sizes)"
+            },
+            {
+              "book": "B100",
+              "locator": "Package: OpenSSL-backed RSA, ML-KEM and ML-DSA",
+              "note": "Used to generate real keys and measure sizes."
+            },
+            {
+              "book": "B01",
+              "locator": "Section 12.1 (Introduction) and 12.2.5 (LWE in practice)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The row labels for the ratios in the listing are computed from measured sizes; the 112-bit figure is SP 800-57's estimate and not a statement about PQC strength."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "11.2 ECDH vs. ML-KEM",
+          "summary": "How a symmetric Diffie-Hellman exchange differs from an asymmetric KEM exchange, bytes on the wire, and an interoperability test between two independent ML-KEM implementations.",
+          "estimated_minutes": 35,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**ECDH** is symmetric: both sides generate an ephemeral key pair, exchange public keys in either order, and each computes the same shared secret from its private key and the peer's public key. A **KEM** is asymmetric: the initiator generates a key pair and sends the encapsulation key; the responder runs Encaps against it and sends back the ciphertext; the initiator runs Decaps. So in a protocol the roles cannot be swapped freely, the initiator's public key must travel first (a TLS client must send its encapsulation key in the ClientHello), and the responder must **check** the received encapsulation key (FIPS 203) before using it. SP 800-227 adds that an ephemeral KEM key pair is used for one key establishment only.\n\nThe first listing runs both exchanges with OpenSSL-backed implementations and prints the bytes sent in each direction. The second is an **interoperability test**: it encapsulates with the pure-Python `kyber-py` to a key generated by OpenSSL and decapsulates with OpenSSL, then does the reverse. Two independent implementations of FIPS 203 agreeing on the shared secret is much stronger evidence of correctness than a round trip inside one library."
+            },
+            {
+              "type": "code",
+              "id": "c-ecdh-kem",
+              "language": "python",
+              "code": "from cryptography.hazmat.primitives.asymmetric.mlkem import MLKEM768PrivateKey\nfrom cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey\nfrom cryptography.hazmat.primitives import serialization\n\nraw = dict(encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw)\n\n# ECDH (X25519): symmetric, both sides send a public key\nalice, bob = X25519PrivateKey.generate(), X25519PrivateKey.generate()\nalice_public, bob_public = alice.public_key().public_bytes(**raw), bob.public_key().public_bytes(**raw)\necdh_same = alice.exchange(bob.public_key()) == bob.exchange(alice.public_key())\nprint(f\"X25519: initiator sends {len(alice_public)} bytes, responder sends {len(bob_public)} bytes, same secret: {ecdh_same}\")\n\n# KEM (ML-KEM-768): asymmetric, the initiator sends an encapsulation key, the responder returns a ciphertext\ninitiator = MLKEM768PrivateKey.generate()\nencapsulation_key = initiator.public_key().public_bytes_raw()\nresponder_secret, ciphertext = initiator.public_key().encapsulate()\ninitiator_secret = initiator.decapsulate(ciphertext)\nprint(f\"ML-KEM-768: initiator sends {len(encapsulation_key)} bytes, responder sends {len(ciphertext)} bytes, same secret: {initiator_secret == responder_secret}\")\nprint(f\"total on the wire: {len(alice_public) + len(bob_public)} bytes (X25519) vs {len(encapsulation_key) + len(ciphertext)} bytes (ML-KEM-768)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-ecdh-kem",
+              "language": "text",
+              "code": "X25519: initiator sends 32 bytes, responder sends 32 bytes, same secret: True\nML-KEM-768: initiator sends 1184 bytes, responder sends 1088 bytes, same secret: True\ntotal on the wire: 64 bytes (X25519) vs 2272 bytes (ML-KEM-768)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "code",
+              "id": "c-interop",
+              "language": "python",
+              "code": "from cryptography.hazmat.primitives.asymmetric.mlkem import MLKEM768PrivateKey, MLKEM768PublicKey\nfrom kyber_py.ml_kem import ML_KEM_768\n\n# kyber-py (pure Python) encapsulates to a key generated by OpenSSL\nopenssl_key = MLKEM768PrivateKey.generate()\nsecret, ciphertext = ML_KEM_768.encaps(openssl_key.public_key().public_bytes_raw())\nprint(\"OpenSSL decapsulates a kyber-py ciphertext to the same secret:\", openssl_key.decapsulate(ciphertext) == secret)\n\n# OpenSSL encapsulates to a key generated by kyber-py\nek, dk = ML_KEM_768.keygen()\nsecret, ciphertext = MLKEM768PublicKey.from_public_bytes(ek).encapsulate()\nprint(\"kyber-py decapsulates an OpenSSL ciphertext to the same secret:\", ML_KEM_768.decaps(dk, ciphertext) == secret)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-interop",
+              "language": "text",
+              "code": "OpenSSL decapsulates a kyber-py ciphertext to the same secret: True\nkyber-py decapsulates an OpenSSL ciphertext to the same secret: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "What interoperability testing proves",
+              "text": "Agreement between independent implementations on random inputs strongly suggests both follow the specification, which is how many real implementation bugs are found. It still does not prove either is constant-time, resists faults, or handles malformed input, and it is not a substitute for a validated module."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why must a TLS client send its ML-KEM encapsulation key before the server can finish key establishment?",
+              "options": [
+                "Encaps needs the initiator's public key; the responder then returns the ciphertext.",
+                "Because the server cannot generate randomness.",
+                "Because ECDH requires it too, in the same way."
+              ],
+              "correct_index": 0,
+              "explanation": "A KEM exchange is asymmetric: the initiator generates the key pair and its public key must reach the responder first."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does a successful cross-implementation test (kyber-py with OpenSSL) show?",
+              "options": [
+                "That both implementations agree on the specification for the inputs tested.",
+                "That the code is side-channel resistant.",
+                "That ML-KEM is secure."
+              ],
+              "correct_index": 0,
+              "explanation": "Interoperability checks correctness against the standard, not security properties such as constant-time behaviour."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B95",
+              "locator": "Sections 1.3 (RS5, RS6: intermediate values and ephemeral key pairs) and 3 (KEM interface)"
+            },
+            {
+              "book": "B04",
+              "locator": "Section 7.2 (encapsulation key check) and Section 3.1 (Key-Encapsulation Mechanisms)"
+            },
+            {
+              "book": "B100",
+              "locator": "Package: OpenSSL-backed X25519 and ML-KEM",
+              "note": "Reference implementation for the interoperability test."
+            },
+            {
+              "book": "B90",
+              "locator": "Package metadata, version 1.2.0",
+              "note": "Independent pure-Python implementation."
+            }
+          ],
+          "needs_verification": {
+            "reason": "Only ML-KEM-768 and ML-KEM-1024 are exposed by the cryptography package; ML-KEM-512 could not be cross-tested with it."
+          }
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "11.3 ECDSA vs. ML-DSA",
+          "summary": "Measured signature and key sizes of classical and post-quantum signatures, and a two-way interoperability check of ML-DSA including context strings.",
+          "estimated_minutes": 33,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "ECDSA and EdDSA signatures are tiny: 64 bytes for P-256 ECDSA (two 32-byte numbers, 70 to 72 bytes when DER-encoded) and for Ed25519, with 32 to 65 byte public keys. ML-DSA signatures run from 2,420 to 4,627 bytes with public keys from 1,312 to 2,592 bytes. The listing generates real keys with OpenSSL-backed code and prints the sizes of every parameter set next to the classical ones. It also repeats the cross-implementation test for signatures: a signature made by `dilithium-py` must verify under OpenSSL and the reverse, and a **context string** that differs between signer and verifier must make verification fail in both."
+            },
+            {
+              "type": "code",
+              "id": "c-sigsizes",
+              "language": "python",
+              "code": "from cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import ec, ed25519, padding, rsa, utils\nfrom cryptography.hazmat.primitives.asymmetric.mldsa import MLDSA44PrivateKey, MLDSA65PrivateKey, MLDSA87PrivateKey\n\nrows = []\necdsa_key = ec.generate_private_key(ec.SECP256R1())\nr, s = utils.decode_dss_signature(ecdsa_key.sign(b\"m\", ec.ECDSA(hashes.SHA256())))       # r and s are each one field element\nrows.append((\"ECDSA P-256\", len(ecdsa_key.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)), 2 * ((ecdsa_key.curve.key_size + 7) // 8)))\ned_key = ed25519.Ed25519PrivateKey.generate()\nrows.append((\"Ed25519\", len(ed_key.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)), len(ed_key.sign(b\"m\"))))\nrsa_key = rsa.generate_private_key(65537, 2048)\nrows.append((\"RSA-2048 PSS\", 256 + 3, len(rsa_key.sign(b\"m\", padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=32), hashes.SHA256()))))\nfor name, cls in ((\"ML-DSA-44\", MLDSA44PrivateKey), (\"ML-DSA-65\", MLDSA65PrivateKey), (\"ML-DSA-87\", MLDSA87PrivateKey)):\n    key = cls.generate()\n    rows.append((name, len(key.public_key().public_bytes_raw()), len(key.sign(b\"m\"))))\nprint(f\"{'scheme':14} {'public key':>10} {'signature':>10}\")\nfor name, public_key, signature in rows:\n    print(f\"{name:14} {public_key:>10} {signature:>10}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-sigsizes",
+              "language": "text",
+              "code": "scheme         public key  signature\nECDSA P-256            65         64\nEd25519                32         64\nRSA-2048 PSS          259        256\nML-DSA-44            1312       2420\nML-DSA-65            1952       3309\nML-DSA-87            2592       4627",
+              "caption": "Expected output"
+            },
+            {
+              "type": "code",
+              "id": "c-sig-interop",
+              "language": "python",
+              "code": "from cryptography.exceptions import InvalidSignature\nfrom cryptography.hazmat.primitives.asymmetric.mldsa import MLDSA65PrivateKey, MLDSA65PublicKey\nfrom dilithium_py.ml_dsa import ML_DSA_65\n\ndef openssl_verifies(public_bytes, message, signature, ctx=None):\n    try:\n        MLDSA65PublicKey.from_public_bytes(public_bytes).verify(signature, message, ctx)\n        return True\n    except InvalidSignature:\n        return False\n\nmessage = b\"release 4.2 manifest\"\npk, sk = ML_DSA_65.keygen()\nprint(\"OpenSSL verifies a dilithium-py signature:\", openssl_verifies(pk, message, ML_DSA_65.sign(sk, message)))\nprint(\"OpenSSL rejects it under a different context:\", not openssl_verifies(pk, message, ML_DSA_65.sign(sk, message, ctx=b\"signer\"), b\"verifier\"))\nprint(\"OpenSSL accepts it under the matching context:\", openssl_verifies(pk, message, ML_DSA_65.sign(sk, message, ctx=b\"signer\"), b\"signer\"))\n\nopenssl_key = MLDSA65PrivateKey.generate()\nopenssl_public = openssl_key.public_key().public_bytes_raw()\nprint(\"dilithium-py verifies an OpenSSL signature:\", ML_DSA_65.verify(openssl_public, message, openssl_key.sign(message)))\nprint(\"dilithium-py rejects it under a different context:\", not ML_DSA_65.verify(openssl_public, message, openssl_key.sign(message, b\"signer\"), ctx=b\"verifier\"))\nprint(\"dilithium-py rejects a changed message:\", not ML_DSA_65.verify(openssl_public, b\"release 4.2 manifest!\", openssl_key.sign(message)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-sig-interop",
+              "language": "text",
+              "code": "OpenSSL verifies a dilithium-py signature: True\nOpenSSL rejects it under a different context: True\nOpenSSL accepts it under the matching context: True\ndilithium-py verifies an OpenSSL signature: True\ndilithium-py rejects it under a different context: True\ndilithium-py rejects a changed message: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Two things to carry forward. The size jump is largest for signatures, and an X.509 chain carries several of them (the next lesson counts them). And the context string is a real interoperability point: both sides must agree on it, so a protocol that adopts ML-DSA must specify the context exactly, including the empty string."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why must a protocol specify the ML-DSA context string exactly?",
+              "options": [
+                "A signature made under one context does not verify under another, so signer and verifier must agree.",
+                "The context is secret.",
+                "It selects the parameter set."
+              ],
+              "correct_index": 0,
+              "explanation": "Both implementations reject a signature when the contexts differ, which is useful for domain separation but breaks interoperability if unspecified."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Roughly how much larger is an ML-DSA-65 signature than a P-256 ECDSA signature?",
+              "options": [
+                "About 50 times",
+                "About the same",
+                "About 2 times"
+              ],
+              "correct_index": 0,
+              "explanation": "3,309 bytes against 64 bytes is about 52 times."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B92",
+              "locator": "Table 2 (ML-DSA sizes) and Section 5.2 (context string)"
+            },
+            {
+              "book": "B100",
+              "locator": "Package: OpenSSL-backed ECDSA, Ed25519, RSA and ML-DSA",
+              "note": "Reference implementation."
+            },
+            {
+              "book": "B91",
+              "locator": "Package metadata, version 1.4.0",
+              "note": "Independent pure-Python implementation."
+            },
+            {
+              "book": "B01",
+              "locator": "Section 12.1.2 and Section 12.2.6 (Dilithium and Falcon among the lattice signatures)"
+            }
+          ]
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "11.4 Key/Signature Size Benchmarking",
+          "summary": "A transparent byte-count model of a TLS handshake: what changes with hybrid key exchange and with post-quantum certificates, with every assumption stated.",
+          "estimated_minutes": 30,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Sizes drive real costs: more bytes mean more packets, more loss exposure and more time on slow links. A **byte-count model** makes the effect visible if its assumptions are explicit. This one counts only the cryptographic material that changes:\n\n- **Key exchange.** X25519 key shares are 32 bytes each way. The hybrid **X25519MLKEM768** group of RFC 10024 sends a 1,216-byte client share (1,184-byte ML-KEM-768 encapsulation key plus 32 bytes of X25519) and a 1,120-byte server share (1,088-byte ciphertext plus 32 bytes).\n- **Authentication.** The server sends a certificate chain of a leaf and one intermediate (the root is already known to the client). That is **two public keys and two certificate signatures**, plus the **CertificateVerify** signature made with the leaf key: 2 public keys and 3 signatures in total.\n- **Everything else is ignored:** certificate names, validity, extensions, SCTs and OCSP responses. The totals are therefore **lower bounds**, not predictions of a real handshake.\n\nThe packet count assumes a TCP segment payload of 1,460 bytes. Sizes come from the earlier measurements and from FIPS 205 Table 2 (SLH-DSA-128s: 32-byte public key, 7,856-byte signature)."
+            },
+            {
+              "type": "code",
+              "id": "c-model",
+              "language": "python",
+              "code": "import math\n\nMSS = 1460                                              # assumed TCP payload bytes per segment\n\n# (public key bytes, signature bytes)\nSIGNATURES = {\n    \"ECDSA P-256\":    (65, 64),\n    \"ML-DSA-44\":      (1312, 2420),\n    \"ML-DSA-65\":      (1952, 3309),\n    \"ML-DSA-87\":      (2592, 4627),\n    \"SLH-DSA-128s\":   (32, 7856),\n}\nKEY_SHARES = {\"X25519\": (32, 32), \"X25519MLKEM768\": (1216, 1120)}      # (client share, server share)\n\ndef authentication_bytes(scheme):\n    public_key, signature = SIGNATURES[scheme]\n    return 2 * public_key + 3 * signature                # leaf and intermediate keys; two chain signatures + CertificateVerify\n\nconfigurations = [\n    (\"classical\",                     \"X25519\",         \"ECDSA P-256\"),\n    (\"hybrid key exchange only\",      \"X25519MLKEM768\", \"ECDSA P-256\"),\n    (\"hybrid + ML-DSA-44 chain\",      \"X25519MLKEM768\", \"ML-DSA-44\"),\n    (\"hybrid + ML-DSA-65 chain\",      \"X25519MLKEM768\", \"ML-DSA-65\"),\n    (\"hybrid + ML-DSA-87 chain\",      \"X25519MLKEM768\", \"ML-DSA-87\"),\n    (\"hybrid + SLH-DSA-128s chain\",   \"X25519MLKEM768\", \"SLH-DSA-128s\"),\n]\nprint(f\"{'configuration':30} {'client key share':>16} {'server flight (key share + auth)':>33} {'server segments':>16}\")\nfor name, kex, scheme in configurations:\n    client, server_share = KEY_SHARES[kex]\n    server = server_share + authentication_bytes(scheme)\n    print(f\"{name:30} {client:>16,} {server:>33,} {math.ceil(server / MSS):>16}\")\nprint(\"lower bounds: certificate names, validity, extensions, SCTs and OCSP responses are not counted\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-model",
+              "language": "text",
+              "code": "configuration                  client key share  server flight (key share + auth)  server segments\nclassical                                    32                               354                1\nhybrid key exchange only                  1,216                             1,442                1\nhybrid + ML-DSA-44 chain                  1,216                            11,004                8\nhybrid + ML-DSA-65 chain                  1,216                            14,951               11\nhybrid + ML-DSA-87 chain                  1,216                            20,185               14\nhybrid + SLH-DSA-128s chain               1,216                            24,752               17\nlower bounds: certificate names, validity, extensions, SCTs and OCSP responses are not counted",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Read the table in two parts. **Hybrid key exchange alone** adds about a kilobyte in each direction, which fits in a couple of packets and is already deployed widely (the next lesson shows a real server doing it). **Post-quantum certificate chains** are the larger problem: with ML-DSA-65 the authentication material alone is over thirteen kilobytes, and with SLH-DSA about twenty-three, before any certificate fields are counted. That is why designs that reduce the number of signatures on the wire, such as shorter chains or alternative certificate-compression and authentication approaches, are active work areas. A model like this shows *where* the cost is; measuring a real deployment shows *how much*."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In the model, how many public keys and signatures does the server send for authentication?",
+              "options": [
+                "2 public keys and 3 signatures",
+                "1 public key and 1 signature",
+                "3 public keys and 2 signatures"
+              ],
+              "correct_index": 0,
+              "explanation": "A leaf and an intermediate certificate each carry a public key and are signed by the next certificate; CertificateVerify adds a third signature."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why are the model's totals only lower bounds?",
+              "options": [
+                "Certificate names, validity, extensions, SCTs and OCSP responses are not counted.",
+                "Packets are always smaller than modelled.",
+                "The model counts too much."
+              ],
+              "correct_index": 0,
+              "explanation": "Only cryptographic material that changes was modelled; real handshakes contain more bytes."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B98",
+              "locator": "Section 4.1 and 4.2 (client share 1216 bytes, server share 1120 bytes)"
+            },
+            {
+              "book": "B92",
+              "locator": "Table 2 (ML-DSA sizes)"
+            },
+            {
+              "book": "B93",
+              "locator": "Table 2 (SLH-DSA-128s sizes)"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 12 (size comparison of PQC schemes)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The 1,460-byte segment payload is an assumption for illustration. The model ignores compression and caching techniques that real deployments may use."
+          }
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "11.5 TLS/PQC Experimentation",
+          "summary": "Run a real TLS 1.3 key exchange with the hybrid X25519MLKEM768 group against a public server, and prove from the server's own Finished message that your post-quantum secret matches.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "This lab does something unusual for a course: it performs a **real post-quantum key exchange with a live server** and checks that it worked. It builds a TLS 1.3 ClientHello by hand that offers the hybrid group **X25519MLKEM768** (code point 0x11EC, RFC 10024, a Proposed Standard of August 2026). The client share is the ML-KEM-768 encapsulation key followed by an X25519 public key (1,216 bytes). If the server supports the group, its ServerHello returns an ML-KEM ciphertext followed by its X25519 share (1,120 bytes). The script decapsulates, completes X25519, concatenates the two secrets with the ML-KEM secret first, and runs the **TLS 1.3 key schedule** you studied in B7. It then decrypts the server's encrypted handshake messages and verifies the server's **Finished** MAC. That MAC can only match if both sides derived the *same* 64-byte secret, so a `True` is evidence of a successful hybrid exchange between your `kyber-py` code and the server's ML-KEM implementation.\n\nSome servers do not support the group. A server that supports only classical groups answers with a **HelloRetryRequest** naming the group it wants (here 0x001d, X25519), which the script reports. That is exactly the mechanism the Q-CAPS scanner uses to observe a server's key-exchange preference without completing a handshake.\n\nThese labs use three Python packages: `cryptography` 50.0.1 (OpenSSL-backed X25519, ECDSA, RSA, ML-KEM and ML-DSA), `kyber-py` 1.2.0 and `dilithium-py` 1.4.0 (independent pure-Python ML-KEM and ML-DSA). Install them in a virtual environment with `pip install cryptography==50.0.1 kyber-py==1.2.0 dilithium-py==1.4.0`. **Safety and scope.** The script opens one ordinary TLS connection to port 443 of a public website, the same thing a browser does, and stops after the server's Finished message. It sends no application data. It does **not** validate the certificate, so it must not be used to talk to a site, only to test key exchange. Only point it at hosts you are allowed to connect to; for your own estate, use the Q-CAPS scanner's standard scan, which reports the same key-exchange observation with authorisation controls and a signed result."
+            },
+            {
+              "type": "code",
+              "id": "c-lab",
+              "language": "python",
+              "code": "import hashlib, hmac, os, socket, struct\nfrom cryptography.hazmat.primitives import serialization\nfrom cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey\nfrom cryptography.hazmat.primitives.ciphers.aead import AESGCM\nfrom kyber_py.ml_kem import ML_KEM_768\n\nHOST = \"example.com\"                 # any public HTTPS site; this opens one ordinary TLS connection like a browser does\nHYBRID, X25519 = 0x11EC, 0x001D      # group code points from RFC 10024 and RFC 8446\n\ndef ext(kind, body):\n    return struct.pack(\"!HH\", kind, len(body)) + body\n\n# Client key share: ML-KEM-768 encapsulation key followed by the X25519 public key (RFC 10024, section 4.1)\nml_ek, ml_dk = ML_KEM_768.keygen()\nx_private = X25519PrivateKey.generate()\nx_public = x_private.public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)\nclient_share = ml_ek + x_public\nname = HOST.encode()\nextensions = (\n    ext(0x0000, struct.pack(\"!H\", len(name) + 3) + b\"\\x00\" + struct.pack(\"!H\", len(name)) + name)       # server_name\n    + ext(0x000A, struct.pack(\"!HHH\", 4, HYBRID, X25519))                                            # supported_groups\n    + ext(0x000D, struct.pack(\"!H\", 8) + struct.pack(\"!HHHH\", 0x0403, 0x0804, 0x0401, 0x0805))      # signature_algorithms\n    + ext(0x002B, b\"\\x02\\x03\\x04\")                                                                    # supported_versions: TLS 1.3\n    + ext(0x0033, struct.pack(\"!H\", 4 + len(client_share)) + struct.pack(\"!HH\", HYBRID, len(client_share)) + client_share)\n)\nhello_body = (b\"\\x03\\x03\" + os.urandom(32) + b\"\\x20\" + os.urandom(32) + struct.pack(\"!H\", 2) + b\"\\x13\\x01\" + b\"\\x01\\x00\"\n              + struct.pack(\"!H\", len(extensions)) + extensions)\nclient_hello = b\"\\x01\" + len(hello_body).to_bytes(3, \"big\") + hello_body\n\ndef read_exact(sock, n):\n    data = b\"\"\n    while len(data) < n:\n        chunk = sock.recv(n - len(data))\n        if not chunk:\n            raise ConnectionError(\"connection closed\")\n        data += chunk\n    return data\ndef read_record(sock):\n    header = read_exact(sock, 5)\n    return header, read_exact(sock, struct.unpack(\"!H\", header[3:5])[0])\n\nsock = socket.create_connection((HOST, 443), timeout=10)\nsock.sendall(b\"\\x16\\x03\\x01\" + struct.pack(\"!H\", len(client_hello)) + client_hello)\nheader, server_hello = read_record(sock)\nif header[0] == 0x15:\n    print(f\"server sent a TLS alert: {server_hello[:2].hex()}\")\n    raise SystemExit\nposition = 4 + 2 + 32\nposition += 1 + server_hello[position]\ncipher_suite = server_hello[position:position + 2]\nposition += 3\nextension_end = position + 2 + struct.unpack(\"!H\", server_hello[position:position + 2])[0]\nposition += 2\ngroup, share = None, None\nwhile position < extension_end:\n    kind, length = struct.unpack(\"!HH\", server_hello[position:position + 4])\n    data = server_hello[position + 4:position + 4 + length]\n    if kind == 0x0033 and len(data) == 2:\n        group = struct.unpack(\"!H\", data)[0]                     # HelloRetryRequest: only the wanted group is sent\n    elif kind == 0x0033:\n        group, share = struct.unpack(\"!H\", data[:2])[0], data[4:]\n    position += 4 + length\nif share is None:\n    print(f\"HelloRetryRequest: this server wants group {group:#06x} instead of the hybrid group\")\n    raise SystemExit\nprint(f\"server selected group {group:#06x}, key share {len(share)} bytes, cipher suite {cipher_suite.hex()}\")\n\n# Decapsulate the ML-KEM part, finish X25519, concatenate in the order RFC 10024 specifies (ML-KEM secret first)\nshared = ML_KEM_768.decaps(ml_dk, share[:1088]) + x_private.exchange(X25519PublicKey.from_public_bytes(share[1088:]))\nprint(\"hybrid shared secret:\", len(shared), \"bytes\")\n\ndef extract(salt, ikm): return hmac.new(salt, ikm, hashlib.sha256).digest()\ndef expand(prk, info, length):\n    out, block, counter = b\"\", b\"\", 1\n    while len(out) < length:\n        block = hmac.new(prk, block + info + bytes([counter]), hashlib.sha256).digest()\n        out, counter = out + block, counter + 1\n    return out[:length]\ndef expand_label(secret, label, context, length):\n    full = b\"tls13 \" + label.encode()\n    return expand(secret, struct.pack(\"!H\", length) + bytes([len(full)]) + full + bytes([len(context)]) + context, length)\ndef derive_secret(secret, label, transcript): return expand_label(secret, label, hashlib.sha256(transcript).digest(), 32)\n\nearly = extract(bytes(32), bytes(32))\nhandshake_secret = extract(derive_secret(early, \"derived\", b\"\"), shared)\ntranscript = client_hello + server_hello\nserver_traffic = derive_secret(handshake_secret, \"s hs traffic\", transcript)\nkey, iv = expand_label(server_traffic, \"key\", b\"\", 16), expand_label(server_traffic, \"iv\", b\"\", 12)\nfinished_key = expand_label(server_traffic, \"finished\", b\"\", 32)\n\nmessages, sequence, buffer = [], 0, b\"\"\nwhile not messages or messages[-1][0] != 20:                      # read until the Finished message\n    header, payload = read_record(sock)\n    if header[0] == 0x14:\n        continue                                                  # change_cipher_spec, sent for compatibility\n    nonce = bytes(a ^ b for a, b in zip(bytes(4) + sequence.to_bytes(8, \"big\"), iv))\n    plain = AESGCM(key).decrypt(nonce, payload, header).rstrip(b\"\\x00\")\n    sequence += 1\n    buffer += plain[:-1]                                          # the last byte is the inner content type (22 = handshake)\n    while len(buffer) >= 4 and len(buffer) >= 4 + int.from_bytes(buffer[1:4], \"big\"):\n        size = 4 + int.from_bytes(buffer[1:4], \"big\")\n        messages.append(buffer[:size])\n        buffer = buffer[size:]\nsock.close()\nnames = {8: \"EncryptedExtensions\", 11: \"Certificate\", 13: \"CertificateRequest\", 15: \"CertificateVerify\", 20: \"Finished\"}\nprint(\"decrypted handshake messages (bytes):\", {names.get(m[0], m[0]): len(m) for m in messages})\nexpected = hmac.new(finished_key, hashlib.sha256(transcript + b\"\".join(messages[:-1])).digest(), hashlib.sha256).digest()\nprint(\"server Finished verifies with the hybrid secret:\", hmac.compare_digest(expected, messages[-1][4:]))",
+              "caption": "Not run in the build check: it connects to live servers, so output changes over time. Sample output follows."
+            },
+            {
+              "type": "code",
+              "id": "o-c-lab-example",
+              "language": "text",
+              "code": "server selected group 0x11ec, key share 1120 bytes, cipher suite 1301\nhybrid shared secret: 64 bytes\ndecrypted handshake messages (bytes): {'EncryptedExtensions': 10, 'Certificate': 3686, 'CertificateVerify': 80, 'Finished': 36}\nserver Finished verifies with the hybrid secret: True",
+              "caption": "Sample output with HOST = example.com (author's machine, 2026-10-04; yours will differ)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-lab-classical",
+              "language": "text",
+              "code": "HelloRetryRequest: this server wants group 0x001d instead of the hybrid group",
+              "caption": "Sample output with HOST = github.com (author's machine, 2026-10-04): a server that did not accept the hybrid group"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**What the sample shows.** On the hybrid-capable server the key share is 1,120 bytes, the shared secret 64 bytes, and the Finished message verifies; the sizes of the decrypted messages show the server's certificate message dominating the flight, which you can compare with the lower bound from the previous lesson. On the classical-only server the exchange stops at a HelloRetryRequest requesting X25519, so it does not currently offer post-quantum protection for that handshake, and any traffic recorded today is exposed to harvest now, decrypt later (B8).\n\n**Troubleshooting.** A timeout means port 443 is blocked from your network. An alert means the server rejected the ClientHello (for example, it requires different extensions). If the Finished check prints `False`, check that the ML-KEM secret is placed *before* the X25519 secret: the order is part of the specification.\n\n**Cleanup.** Nothing is written to disk. **Stretch.** Offer a classical X25519 share as well, so a classical-only server can complete the handshake instead of retrying."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In X25519MLKEM768, which shared secret comes first in the concatenation fed to the TLS 1.3 key schedule?",
+              "options": [
+                "The ML-KEM secret",
+                "The X25519 secret",
+                "Either, it does not matter"
+              ],
+              "correct_index": 0,
+              "explanation": "RFC 10024 specifies the ML-KEM shared secret first for X25519MLKEM768; the order matters because both sides must feed identical bytes."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does a verified Finished message prove the hybrid exchange worked?",
+              "options": [
+                "It is a MAC under keys derived from the shared secret, so it matches only if both sides derived the same secret.",
+                "It contains the certificate.",
+                "It is encrypted with the ML-KEM public key."
+              ],
+              "correct_index": 0,
+              "explanation": "The Finished verify_data is an HMAC under a key derived from the handshake secret; a mismatch would mean a different shared secret."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does a HelloRetryRequest for group 0x001d tell you about the server?",
+              "options": [
+                "It did not accept the offered hybrid share and asks for X25519 instead.",
+                "It supports ML-KEM-1024.",
+                "It is down."
+              ],
+              "correct_index": 0,
+              "explanation": "The HelloRetryRequest carries only the group the server wants; here the client's hybrid key share was not used."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B98",
+              "locator": "Sections 4.1 to 4.3 (client share, server share, shared secret order), 7.1 (code point 0x11EC)"
+            },
+            {
+              "book": "B95",
+              "locator": "Section 4.6 (Multi-Algorithm KEMs and PQ/T Hybrids)"
+            },
+            {
+              "book": "B90",
+              "locator": "Package metadata, version 1.2.0",
+              "note": "ML-KEM implementation used by the client."
+            },
+            {
+              "book": "B100",
+              "locator": "Package: X25519 and AES-GCM",
+              "note": "Used for the classical share and record decryption."
+            }
+          ],
+          "needs_verification": {
+            "reason": "The live sample outputs were produced on 2026-10-04 against the named hosts and will change. The experiment does not validate the server certificate by design."
+          }
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "11.6 Hybrid Cryptography (Hands-On)",
+          "summary": "Build the composite KEM of X25519MLKEM768 yourself, with the checks RFC 10024 requires, interoperating between two ML-KEM implementations.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **hybrid** (PQ/T) key exchange combines a post-quantum algorithm with a traditional one so the result stays secure if *either* component is broken (SP 800-227). In TLS the combination is done by running both exchanges and concatenating the two shared secrets before the key schedule. RFC 10024 states the rules for X25519MLKEM768, and the build below follows them: client share = ML-KEM-768 encapsulation key plus X25519 public key (1,216 bytes); server share = ML-KEM ciphertext plus X25519 public key (1,120 bytes); shared secret = ML-KEM secret followed by X25519 secret (64 bytes). The standard also imposes **mandatory checks**: the server must perform the FIPS 203 encapsulation key check on the client's key; the client must check the ciphertext length; both must process the X25519 part including the **all-zero shared secret check**; and any failure aborts the connection.\n\nIn the listing the client uses the OpenSSL-backed ML-KEM and the server uses the independent pure-Python `kyber-py`, so the experiment also doubles as another interoperability test. RFC 10024 notes that its security analysis relies on the TLS 1.3 transcript and that one cannot assume the same hybridisation is secure in other protocols, so this is a model of the TLS group, not a general-purpose hybrid KEM."
+            },
+            {
+              "type": "code",
+              "id": "c-hybrid",
+              "language": "python",
+              "code": "from cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric.mlkem import MLKEM768PrivateKey\nfrom cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey\nfrom cryptography.hazmat.primitives.kdf.hkdf import HKDF\nfrom kyber_py.ml_kem import ML_KEM_768\n\nQ = 3329\nRAW = dict(encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw)\n\nclass Abort(Exception):\n    pass\n\ndef decode12(data):\n    out = []\n    for i in range(0, len(data), 3):\n        b0, b1, b2 = data[i:i + 3]\n        out += [b0 | (b1 & 15) << 8, (b1 >> 4) | b2 << 4]\n    return out\n\ndef server_respond(client_share):\n    if len(client_share) != 1216:\n        raise Abort(\"illegal_parameter: client share has the wrong length\")\n    ek, x_peer = client_share[:1184], client_share[1184:]\n    if any(c >= Q for c in decode12(ek[:1152])):\n        raise Abort(\"illegal_parameter: ML-KEM encapsulation key check failed (FIPS 203, section 7.2)\")\n    ml_secret, ciphertext = ML_KEM_768.encaps(ek)\n    x_private = X25519PrivateKey.generate()\n    try:\n        x_secret = x_private.exchange(X25519PublicKey.from_public_bytes(x_peer))\n    except ValueError:\n        raise Abort(\"illegal_parameter: X25519 shared secret check failed\")\n    return ciphertext + x_private.public_key().public_bytes(**RAW), ml_secret + x_secret         # ML-KEM secret first\n\nclass Client:\n    def __init__(self):\n        self.ml = MLKEM768PrivateKey.generate()\n        self.x = X25519PrivateKey.generate()\n    def share(self):\n        return self.ml.public_key().public_bytes_raw() + self.x.public_key().public_bytes(**RAW)\n    def finish(self, server_share):\n        if len(server_share) != 1120:\n            raise Abort(\"illegal_parameter: server share has the wrong length\")\n        try:\n            x_secret = self.x.exchange(X25519PublicKey.from_public_bytes(server_share[1088:]))\n        except ValueError:\n            raise Abort(\"illegal_parameter: X25519 shared secret check failed\")\n        return self.ml.decapsulate(server_share[:1088]) + x_secret\n\nclient = Client()\nclient_share = client.share()\nserver_share, server_secret = server_respond(client_share)\nclient_secret = client.finish(server_share)\nprint(\"client share bytes:\", len(client_share), \"| server share bytes:\", len(server_share), \"| shared secret bytes:\", len(client_secret))\nprint(\"both sides derive the same 64-byte hybrid secret:\", client_secret == server_secret)\n\nprint(\"--- mandatory checks ---\")\nfor label, action in (\n    (\"truncated client share\", lambda: server_respond(client_share[:-1])),\n    (\"out-of-range ML-KEM coefficient\", lambda: server_respond(b\"\\xff\\xff\\xff\" + client_share[3:])),\n    (\"all-zero X25519 point\", lambda: server_respond(client_share[:1184] + bytes(32))),\n    (\"truncated server share\", lambda: client.finish(server_share[:-1])),\n):\n    try:\n        action()\n        print(f\"{label}: accepted (this should not happen)\")\n    except Abort as error:\n        print(f\"{label}: aborted with {error}\")\n\nprint(\"--- the hybrid secret depends on both parts ---\")\ndef derive(secret):\n    return HKDF(hashes.SHA256(), 32, None, b\"lab hybrid key\").derive(secret).hex()[:16]\nml_part, x_part = client_secret[:32], client_secret[32:]\nbase = derive(client_secret)\nprint(\"the same hybrid secret always gives the same key:\", derive(client_secret) == base)\nprint(\"changing only the X25519 part changes the key:   \", derive(ml_part + bytes(32)) != base)\nprint(\"changing only the ML-KEM part changes the key:   \", derive(bytes(32) + x_part) != base)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-hybrid",
+              "language": "text",
+              "code": "client share bytes: 1216 | server share bytes: 1120 | shared secret bytes: 64\nboth sides derive the same 64-byte hybrid secret: True\n--- mandatory checks ---\ntruncated client share: aborted with illegal_parameter: client share has the wrong length\nout-of-range ML-KEM coefficient: aborted with illegal_parameter: ML-KEM encapsulation key check failed (FIPS 203, section 7.2)\nall-zero X25519 point: aborted with illegal_parameter: X25519 shared secret check failed\ntruncated server share: aborted with illegal_parameter: server share has the wrong length\n--- the hybrid secret depends on both parts ---\nthe same hybrid secret always gives the same key: True\nchanging only the X25519 part changes the key:    True\nchanging only the ML-KEM part changes the key:    True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Check the three outcomes. The client and server agree on a 64-byte secret across two implementations. Each malformed input is rejected with the alert the RFC prescribes, rather than being processed. And changing either half of the secret changes the derived key, which is the property that makes a hybrid depend on both components (the listing shows the dependence, not the security proof; that argument is in SP 800-227 and the RFC's referenced analyses).\n\n**Why the checks matter.** The all-zero X25519 check blocks small-subgroup inputs that would force a predictable secret. The encapsulation key check and length checks stop malformed input from reaching the algorithm. These are protocol requirements, not optimisations.\n\n**Troubleshooting.** If `server_respond` rejects a valid key, check that you pass the first 1,152 bytes (384 × 3) to the coefficient check and not the whole key. **Cleanup:** nothing persists."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does RFC 10024 require the all-zero shared secret check for X25519?",
+              "options": [
+                "A low-order input point would make the X25519 secret predictable, so the connection must be aborted.",
+                "To save bandwidth.",
+                "Because ML-KEM needs it."
+              ],
+              "correct_index": 0,
+              "explanation": "The check rejects degenerate inputs; it is part of how the ECDHE half is processed in TLS 1.3."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What property does a hybrid key exchange aim to provide?",
+              "options": [
+                "Security as long as at least one component remains secure.",
+                "Security only if both components are secure.",
+                "Faster handshakes."
+              ],
+              "correct_index": 0,
+              "explanation": "SP 800-227 and RFC 9954 describe hybrids as secure if at least one component is secure, even if the other is compromised."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How should a client treat a server share of the wrong length?",
+              "options": [
+                "Abort the handshake with an illegal_parameter alert.",
+                "Truncate it.",
+                "Ignore the ML-KEM part."
+              ],
+              "correct_index": 0,
+              "explanation": "RFC 10024 requires length checks and an illegal_parameter alert on failure."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B98",
+              "locator": "Sections 4.1 to 4.3 (shares, mandatory checks, shared secret) and 6 (Security Considerations)"
+            },
+            {
+              "book": "B95",
+              "locator": "Section 4.6 (composite KEMs and key combiners)"
+            },
+            {
+              "book": "B04",
+              "locator": "Section 7.2 (encapsulation key check)"
+            },
+            {
+              "book": "B100",
+              "locator": "Package: OpenSSL-backed ML-KEM, X25519 and HKDF",
+              "note": "Client side."
+            },
+            {
+              "book": "B90",
+              "locator": "Package metadata, version 1.2.0",
+              "note": "Server-side ML-KEM."
+            }
+          ],
+          "needs_verification": {
+            "reason": "The listing models the X25519MLKEM768 group's message formats and checks; it is not a complete TLS implementation. The 'depends on both parts' demonstration shows dependence, not security."
+          }
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "11.7 PQC Performance Benchmarking",
+          "summary": "How to measure fairly, a benchmark you can run on your own machine, and the author's sample results with their limits.",
+          "estimated_minutes": 35,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Performance claims about PQC are easy to get wrong, so this lesson is mostly about **method**. A fair benchmark: uses the **same kind of implementation** on both sides (here OpenSSL-backed code for both classical and post-quantum algorithms), **warms up** before timing, repeats each operation many times and reports the **median** (means are distorted by outliers), runs on an otherwise idle machine, and states the hardware and library versions. It also does not mix a handshake's CPU time with its network time: PQC mainly changes bytes on the wire (previous lessons), and CPU cost is only one part of latency.\n\nThese labs use three Python packages: `cryptography` 50.0.1 (OpenSSL-backed X25519, ECDSA, RSA, ML-KEM and ML-DSA), `kyber-py` 1.2.0 and `dilithium-py` 1.4.0 (independent pure-Python ML-KEM and ML-DSA). Install them in a virtual environment with `pip install cryptography==50.0.1 kyber-py==1.2.0 dilithium-py==1.4.0`. The listing below follows those rules. It deliberately includes two rows for the pure-Python `kyber-py` to show why it is **not** a valid performance baseline: it is a learning implementation, orders of magnitude slower than OpenSSL's, and says nothing about ML-KEM itself.\n\nThe build check does not compare this listing's output, because timings differ on every machine and run. The sample below was measured on the author's machine on 2026-10-04. Treat it as an example of what a result looks like, **not** as a figure to quote."
+            },
+            {
+              "type": "code",
+              "id": "c-bench",
+              "language": "python",
+              "code": "import platform, statistics, time\nfrom importlib.metadata import version\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import ec, padding, rsa\nfrom cryptography.hazmat.primitives.asymmetric.mldsa import MLDSA65PrivateKey\nfrom cryptography.hazmat.primitives.asymmetric.mlkem import MLKEM768PrivateKey\nfrom cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey\nfrom kyber_py.ml_kem import ML_KEM_768\n\ndef median_microseconds(function, runs):\n    function()                                              # warm-up\n    samples = []\n    for _ in range(runs):\n        start = time.perf_counter()\n        function()\n        samples.append((time.perf_counter() - start) * 1e6)\n    return statistics.median(samples)\n\nprint(platform.system(), platform.machine(), \"| Python\", platform.python_version(), \"| cryptography\", version(\"cryptography\"))\npeer = X25519PrivateKey.generate().public_key()\necdsa = ec.generate_private_key(ec.SECP256R1())\necdsa_signature = ecdsa.sign(b\"m\", ec.ECDSA(hashes.SHA256()))\nrsa_key = rsa.generate_private_key(65537, 2048)\npss = padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=32)\nrsa_signature = rsa_key.sign(b\"m\", pss, hashes.SHA256())\nkem = MLKEM768PrivateKey.generate()\nsecret, ciphertext = kem.public_key().encapsulate()\ndsa = MLDSA65PrivateKey.generate()\ndsa_signature = dsa.sign(b\"m\")\nek, dk = ML_KEM_768.keygen()\n_, py_ciphertext = ML_KEM_768.encaps(ek)\n\ncases = [\n    (\"X25519 key generation + exchange\", lambda: X25519PrivateKey.generate().exchange(peer), 500),\n    (\"ECDSA P-256 sign\",                 lambda: ecdsa.sign(b\"m\", ec.ECDSA(hashes.SHA256())), 500),\n    (\"ECDSA P-256 verify\",               lambda: ecdsa.public_key().verify(ecdsa_signature, b\"m\", ec.ECDSA(hashes.SHA256())), 500),\n    (\"RSA-2048 sign\",                    lambda: rsa_key.sign(b\"m\", pss, hashes.SHA256()), 100),\n    (\"RSA-2048 verify\",                  lambda: rsa_key.public_key().verify(rsa_signature, b\"m\", pss, hashes.SHA256()), 500),\n    (\"ML-KEM-768 key generation (OpenSSL)\", lambda: MLKEM768PrivateKey.generate(), 500),\n    (\"ML-KEM-768 encapsulate (OpenSSL)\", lambda: kem.public_key().encapsulate(), 500),\n    (\"ML-KEM-768 decapsulate (OpenSSL)\", lambda: kem.decapsulate(ciphertext), 500),\n    (\"ML-DSA-65 sign (OpenSSL)\",         lambda: dsa.sign(b\"m\"), 200),\n    (\"ML-DSA-65 verify (OpenSSL)\",       lambda: dsa.public_key().verify(dsa_signature, b\"m\"), 500),\n    (\"ML-KEM-768 encapsulate (pure Python)\", lambda: ML_KEM_768.encaps(ek), 20),\n    (\"ML-KEM-768 decapsulate (pure Python)\", lambda: ML_KEM_768.decaps(dk, py_ciphertext), 20),\n]\nprint(f\"{'operation':40} {'median microseconds':>20}\")\nfor name, function, runs in cases:\n    print(f\"{name:40} {median_microseconds(function, runs):>20,.0f}\")",
+              "caption": "Not run in the build check: timings differ on every machine and run. A sample from the author's machine follows."
+            },
+            {
+              "type": "code",
+              "id": "o-c-bench",
+              "language": "text",
+              "code": "Windows AMD64 | Python 3.14.6 | cryptography 50.0.1\noperation                                 median microseconds\nX25519 key generation + exchange                           91\nECDSA P-256 sign                                           35\nECDSA P-256 verify                                        121\nRSA-2048 sign                                             825\nRSA-2048 verify                                            58\nML-KEM-768 key generation (OpenSSL)                       226\nML-KEM-768 encapsulate (OpenSSL)                          112\nML-KEM-768 decapsulate (OpenSSL)                          101\nML-DSA-65 sign (OpenSSL)                                1,021\nML-DSA-65 verify (OpenSSL)                                292\nML-KEM-768 encapsulate (pure Python)                    6,047\nML-KEM-768 decapsulate (pure Python)                    8,417",
+              "caption": "Sample output (author's machine, 2026-10-04; yours will differ)"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Reading the sample.** Compare operations *within* a family measured the same way: for example the OpenSSL ML-KEM-768 operations against X25519, or ML-DSA-65 sign and verify against ECDSA and RSA. Notice which operations dominate: classical RSA signing is slow, while verification is fast; the cost profile of each scheme is different, and the right comparison depends on what your system does most (a server signs once per handshake and verifies certificates; a client mostly verifies).\n\n**What not to conclude.** One machine, one library build and a single-threaded microbenchmark cannot tell you production latency, throughput under load, or behaviour on constrained devices. The pure-Python rows show nothing about the algorithms. For a procurement or migration decision, benchmark the exact library, hardware and workload you will deploy, and record the versions, as this lab does.\n\n**Stretch.** Add ML-KEM-1024 and ML-DSA-44 and ML-DSA-87 to the list, and report the ratio of the median to the X25519 and ECDSA figures. State every assumption in the same output."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why should a benchmark report the median rather than the mean?",
+              "options": [
+                "Occasional slow runs distort the mean; the median reflects typical behaviour.",
+                "The median is always smaller.",
+                "Means cannot be computed."
+              ],
+              "correct_index": 0,
+              "explanation": "System noise produces outliers; medians are robust to them."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is the pure-Python ML-KEM row not a valid baseline for the algorithm's performance?",
+              "options": [
+                "It is a learning implementation, far slower than optimised code, so it measures the implementation, not ML-KEM.",
+                "ML-KEM cannot run in Python.",
+                "It uses a different algorithm."
+              ],
+              "correct_index": 0,
+              "explanation": "Compare like with like: optimised implementations against optimised implementations."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What else must be reported with benchmark results?",
+              "options": [
+                "Hardware, operating system and library versions.",
+                "Nothing; numbers are enough.",
+                "The author's name."
+              ],
+              "correct_index": 0,
+              "explanation": "Without the environment, a result cannot be interpreted or reproduced."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B100",
+              "locator": "Package: OpenSSL-backed implementations used as the like-for-like baseline",
+              "note": "Measurement tool."
+            },
+            {
+              "book": "B90",
+              "locator": "Package metadata, version 1.2.0",
+              "note": "Pure-Python ML-KEM, shown as a counter-example baseline."
+            },
+            {
+              "book": "B95",
+              "locator": "Section 1.3 (RS2: FIPS 140-3 guidance for implementations)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Timings in the sample are from a single run on one machine and are illustrative only. The methodology rules are standard benchmarking practice and are not cited to one source."
+          }
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "11.8 Cryptographic Inventory (Hands-On)",
+          "summary": "Build a cryptographic bill of materials (CBOM) for a small estate, validate it against the official CycloneDX schema, and see what it does and does not tell you.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "You cannot migrate what you cannot see, which is why the first step of the five-step approach in *Becoming Quantum Safe* is to **discover the cryptographic inventory**: the algorithms in applications, the cipher suites on network endpoints, key sizes and certificates. The **Cryptography Bill of Materials (CBOM)** is the standard way to record it: an extension of the CycloneDX SBOM format that models cryptographic **assets** (algorithms, certificates, protocols, key material), their **properties** (for an algorithm: primitive, parameter set, mode, classical and quantum security level) and their **dependencies** (what implements and what uses an algorithm).\n\nIn CycloneDX 1.6 a cryptographic asset is a component of type `cryptographic-asset` with `cryptoProperties`. Its `assetType` is `algorithm`, `certificate`, `protocol` or `related-crypto-material`; an algorithm carries `algorithmProperties` with fields such as `primitive`, `parameterSetIdentifier`, `classicalSecurityLevel` and `nistQuantumSecurityLevel` (0 to 6, where 0 means no NIST category is met). The listing builds an inventory of five **synthetic** certificates generated for the exercise (under the reserved `.test` domain, so they refer to no real system), records them as CBOM components, adds the post-quantum target algorithms, and **validates the result against the official CycloneDX 1.6 JSON schema**, downloaded from the specification repository (tag 1.6) the first time it runs.\n\nThis lab uses `jsonschema` and `referencing` in addition to the packages above (`pip install jsonschema`). For real systems the same structure is populated by discovery tools; in Q-CAPS, the scanner's standard scan observes the certificate and key-exchange of a public endpoint **you are authorised to assess**, and its findings feed the readiness model. An inventory built from observation of endpoints is only a partial picture: it cannot see algorithms inside applications, code or data at rest."
+            },
+            {
+              "type": "code",
+              "id": "c-inventory",
+              "language": "python",
+              "code": "import datetime, json, tempfile, urllib.request\nfrom pathlib import Path\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa\nfrom cryptography.x509.oid import NameOID\n\n# 1. Build a small synthetic estate: certificates generated for this exercise (names under the reserved .test domain)\ndef make_certificate(name, key, hash_algorithm):\n    subject = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, name)])\n    now = datetime.datetime(2026, 10, 1, tzinfo=datetime.timezone.utc)\n    return (x509.CertificateBuilder().subject_name(subject).issuer_name(subject).public_key(key.public_key())\n            .serial_number(x509.random_serial_number()).not_valid_before(now).not_valid_after(now + datetime.timedelta(days=90))\n            .sign(key, hash_algorithm))\n\nestate = [\n    (\"shop.example.test\",      make_certificate(\"shop.example.test\",      rsa.generate_private_key(65537, 2048), hashes.SHA256())),\n    (\"vault.example.test\",     make_certificate(\"vault.example.test\",     rsa.generate_private_key(65537, 3072), hashes.SHA256())),\n    (\"api.example.test\",       make_certificate(\"api.example.test\",       ec.generate_private_key(ec.SECP256R1()), hashes.SHA256())),\n    (\"admin.example.test\",     make_certificate(\"admin.example.test\",     ec.generate_private_key(ec.SECP384R1()), hashes.SHA384())),\n    (\"internal.example.test\",  make_certificate(\"internal.example.test\",  ed25519.Ed25519PrivateKey.generate(), None)),\n]\n\n# 2. Describe each certificate's public key: algorithm, size or curve, classical strength (SP 800-57 Table 2)\ndef describe(certificate):\n    key = certificate.public_key()\n    if isinstance(key, rsa.RSAPublicKey):\n        return \"RSA\", f\"RSA-{key.key_size}\", str(key.key_size), {2048: 112, 3072: 128}[key.key_size]\n    if isinstance(key, ec.EllipticCurvePublicKey):\n        return \"EC\", f\"ECDSA-{key.curve.name}\", key.curve.name, {\"secp256r1\": 128, \"secp384r1\": 192}[key.curve.name]\n    return \"Ed25519\", \"Ed25519\", \"curve25519\", 128\n\nprint(f\"{'asset':24} {'public key':18} {'signature algorithm':22} {'strength':>8}  quantum-vulnerable\")\ncomponents, algorithm_refs = [], {}\nfor name, certificate in estate:\n    family, label, parameter, strength = describe(certificate)\n    signature_name = f\"{family} + {certificate.signature_hash_algorithm.name}\" if certificate.signature_hash_algorithm else f\"{family} (pure EdDSA)\"\n    print(f\"{name:24} {label:18} {signature_name:22} {strength:>8}  yes (Shor's algorithm)\")\n    if label not in algorithm_refs:\n        algorithm_refs[label] = f\"alg-{len(algorithm_refs) + 1}\"\n        components.append({\n            \"type\": \"cryptographic-asset\", \"bom-ref\": algorithm_refs[label], \"name\": label,\n            \"cryptoProperties\": {\"assetType\": \"algorithm\", \"algorithmProperties\": {\n                \"primitive\": \"signature\", \"parameterSetIdentifier\": parameter, \"classicalSecurityLevel\": strength,\n                \"nistQuantumSecurityLevel\": 0, \"cryptoFunctions\": [\"sign\", \"verify\"]}}})\n    components.append({\n        \"type\": \"cryptographic-asset\", \"bom-ref\": f\"cert-{name}\", \"name\": name,\n        \"cryptoProperties\": {\"assetType\": \"certificate\", \"certificateProperties\": {\n            \"subjectName\": certificate.subject.rfc4514_string(), \"issuerName\": certificate.issuer.rfc4514_string(),\n            \"notValidBefore\": certificate.not_valid_before_utc.isoformat(), \"notValidAfter\": certificate.not_valid_after_utc.isoformat(),\n            \"signatureAlgorithmRef\": algorithm_refs[label]}}})\n\n# 3. Targets for the migration: the post-quantum algorithms, with their NIST security categories\nfor label, primitive, parameter, level in ((\"ML-KEM-768\", \"kem\", \"768\", 3), (\"ML-DSA-65\", \"signature\", \"65\", 3)):\n    components.append({\"type\": \"cryptographic-asset\", \"bom-ref\": f\"target-{label}\", \"name\": label,\n                       \"cryptoProperties\": {\"assetType\": \"algorithm\", \"algorithmProperties\": {\n                           \"primitive\": primitive, \"parameterSetIdentifier\": parameter, \"nistQuantumSecurityLevel\": level}}})\n\nbom = {\"bomFormat\": \"CycloneDX\", \"specVersion\": \"1.6\", \"version\": 1, \"components\": components}\n\n# 4. Validate against the official CycloneDX 1.6 JSON schema (downloaded from the specification repository, tag 1.6)\nimport jsonschema\nfrom referencing import Registry, Resource\nbase = \"https://raw.githubusercontent.com/CycloneDX/specification/1.6/schema/\"\ncache = Path(tempfile.gettempdir()) / \"cyclonedx-1.6-schemas\"\ncache.mkdir(exist_ok=True)\nschemas = {}\nfor filename in (\"bom-1.6.schema.json\", \"spdx.schema.json\", \"jsf-0.82.schema.json\"):\n    if not (cache / filename).exists():\n        (cache / filename).write_bytes(urllib.request.urlopen(base + filename, timeout=30).read())\n    schemas[filename] = json.loads((cache / filename).read_text(encoding=\"utf-8\"))\nregistry = Registry().with_resources([(content[\"$id\"], Resource.from_contents(content)) for content in schemas.values()])\nvalidator = jsonschema.Draft7Validator(schemas[\"bom-1.6.schema.json\"], registry=registry)\nerrors = list(validator.iter_errors(bom))\nprint(\"components in the CBOM:\", len(components), \"| valid against the official CycloneDX 1.6 schema:\", not errors)\nfor error in errors[:3]:\n    print(\"  schema error:\", error.message[:150])\nprint(json.dumps(next(c for c in components if c[\"name\"] == \"RSA-2048\"), indent=2))",
+              "caption": "Not run in the build check: it downloads the schema files from the internet. Sample output follows."
+            },
+            {
+              "type": "code",
+              "id": "o-c-inventory",
+              "language": "text",
+              "code": "asset                    public key         signature algorithm    strength  quantum-vulnerable\nshop.example.test        RSA-2048           RSA + sha256                112  yes (Shor's algorithm)\nvault.example.test       RSA-3072           RSA + sha256                128  yes (Shor's algorithm)\napi.example.test         ECDSA-secp256r1    EC + sha256                 128  yes (Shor's algorithm)\nadmin.example.test       ECDSA-secp384r1    EC + sha384                 192  yes (Shor's algorithm)\ninternal.example.test    Ed25519            Ed25519 (pure EdDSA)        128  yes (Shor's algorithm)\ncomponents in the CBOM: 12 | valid against the official CycloneDX 1.6 schema: True\n{\n  \"type\": \"cryptographic-asset\",\n  \"bom-ref\": \"alg-1\",\n  \"name\": \"RSA-2048\",\n  \"cryptoProperties\": {\n    \"assetType\": \"algorithm\",\n    \"algorithmProperties\": {\n      \"primitive\": \"signature\",\n      \"parameterSetIdentifier\": \"2048\",\n      \"classicalSecurityLevel\": 112,\n      \"nistQuantumSecurityLevel\": 0,\n      \"cryptoFunctions\": [\n        \"sign\",\n        \"verify\"\n      ]\n    }\n  }\n}",
+              "caption": "Sample output (2026-10-04); the printed values are the same on every run"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Read the result.** Every certificate in the estate uses an algorithm broken by Shor's algorithm, so every row is marked quantum-vulnerable for *authentication*; this is expected today and not a defect to fix immediately. What the inventory gives you is the ability to ask better questions: which of these keys are long-lived? which protect data that must stay confidential for years (that determines the harvest-now-decrypt-later exposure, which depends on the **key exchange** the endpoint uses, not on its certificate)? what is the classical strength, so that NIST's draft transition dates (112-bit algorithms deprecated after 2030, all quantum-vulnerable ones disallowed after 2035) can be applied? The inventory is the input to the migration plan in the next lesson.\n\n**Limits.** A CBOM is only as complete as discovery. A schema-valid CBOM can still be wrong or missing assets. Keep the discovery method alongside the inventory, and rescan to measure progress (this is the reassessment step of the Q-CAPS method).\n\n**Troubleshooting.** If the schema download fails, check your network or copy the three schema files to the cache folder named in the code. **Cleanup:** the schema files remain in your temporary directory; delete them if you wish. **Stretch.** Add a `protocol` asset for TLS 1.3 with `cipherSuites` and a link to the key-exchange group, as in the book's Figure 5-3 example for AES-GCM."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does `nistQuantumSecurityLevel: 0` mean in a CBOM algorithm asset?",
+              "options": [
+                "None of the NIST security categories is met, as for RSA and elliptic-curve algorithms against quantum attack.",
+                "The algorithm is unbroken.",
+                "The level is unknown."
+              ],
+              "correct_index": 0,
+              "explanation": "The schema describes 0 as 'none of the categories are met'; levels 1 to 6 correspond to NIST categories."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is an inventory built only from scanning endpoints incomplete?",
+              "options": [
+                "It cannot see algorithms inside applications, code, or data at rest.",
+                "Endpoint scans are always wrong.",
+                "Certificates are not cryptographic assets."
+              ],
+              "correct_index": 0,
+              "explanation": "Discovery needs several methods (network observation, code scanning, configuration and key inventories)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "A certificate uses ECDSA P-256. Which statement is correct?",
+              "options": [
+                "Its signature algorithm is vulnerable to Shor's algorithm, but the harvest-now-decrypt-later risk depends on the key exchange of the endpoint.",
+                "It is quantum-safe.",
+                "It affects only symmetric encryption."
+              ],
+              "correct_index": 0,
+              "explanation": "Authentication risk is about forging in the future; recorded traffic confidentiality depends on the key exchange."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Chapter 5, 'A Prescriptive Approach for Transitioning to Quantum-Safe Cryptography', Step 1: Discover the Cryptographic Inventory (CBOM) and Figure 5-3"
+            },
+            {
+              "book": "B99",
+              "locator": "JSON schema bom-1.6: component type 'cryptographic-asset', cryptoProperties, algorithmProperties (including nistQuantumSecurityLevel) and certificateProperties"
+            },
+            {
+              "book": "B97",
+              "locator": "Table 2 (classical security strengths used in the listing)"
+            },
+            {
+              "book": "B85",
+              "locator": "Tables of transition dates: 112-bit deprecated after 2030, all disallowed after 2035 (draft)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The schema validation proves the document is well formed under CycloneDX 1.6, not that the inventory is accurate or complete. IR 8547 is an initial public draft."
+          }
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "11.9 PQC Migration Planning (Hands-On)",
+          "summary": "Turn an inventory into an explainable, phased plan with dependencies, using the lifetime-plus-migration rule from B8 and the five-step approach.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A migration plan answers three questions: **what first, in what order, and why**. *Becoming Quantum Safe* describes five steps: **discover** the inventory, **assess risk and prioritise**, **design a crypto-agile architecture**, **migrate**, and **monitor and adapt**. The previous lesson covered discovery. This lesson covers the second step with an **explainable rule** so every priority can be defended and revisited when assumptions change.\n\nThe rule is the one you built in B8. For assets that protect **confidentiality**, add the years the data must stay confidential and the years the migration will take; if the total exceeds the assumed years until a cryptographically relevant quantum computer, the asset is exposed to harvest-now-decrypt-later and goes first, because the exposure builds up every day recorded traffic is stored. For assets that protect **authenticity** (signatures, roots), a forged signature needs a quantum computer at signing time, so there is no recording problem, but long migrations (a code-signing root can take years to replace) still need an early start. NIST's draft IR 8547 adds dated constraints: 112-bit algorithms such as RSA-2048 are proposed to be deprecated after 2030 and quantum-vulnerable algorithms disallowed after 2035, so the plan adds weight for them. **Dependencies** order the work: a firmware-signing key may block the gateway update that carries the new key exchange.\n\nThe listing prints a phased plan from an **invented** inventory with an **assumed** arrival year of 2035. Change the assumption and the plan changes, which is the point: the sensitivity is itself a finding. The scoring weights are a teaching device chosen for readability, not a validated risk model."
+            },
+            {
+              "type": "code",
+              "id": "c-plan",
+              "language": "python",
+              "code": "# A migration plan from an inventory, using an explicit rule: an asset is urgent for confidentiality when\n# (years it must stay confidential) + (years needed to migrate) exceeds (years until a quantum computer): the B8 rule.\nARRIVAL = 9                      # ASSUMPTION: a cryptographically relevant quantum computer in nine years (2035); vary it\nINVENTORY = [                    # invented example assets\n    # name, protects, key exchange / signature algorithm, confidentiality years, migration years, depends on\n    (\"patient portal\",        \"confidentiality\", \"ECDHE-P256\",       25, 2, []),\n    (\"insurer VPN\",           \"confidentiality\", \"ECDHE-P256\",       10, 3, [\"vpn-gateway-firmware\"]),\n    (\"backup key wrapping\",   \"confidentiality\", \"RSA-2048\",         20, 4, []),\n    (\"public website\",        \"confidentiality\", \"X25519\",            1, 1, []),\n    (\"code-signing root\",     \"authenticity\",    \"RSA-3072\",          0, 5, [\"build-pipeline\"]),\n    (\"vpn-gateway-firmware\",  \"authenticity\",    \"ECDSA-P256\",        0, 3, []),\n    (\"build-pipeline\",        \"authenticity\",    \"RSA-3072\",          0, 3, []),\n]\nDEPRECATED_AFTER_2030 = {\"RSA-2048\"}                              # 112-bit strength (IR 8547 draft, Table 2 of SP 800-57)\n\ndef assess(name, protects, algorithm, confidential_years, migration_years):\n    reasons, score = [], 0\n    if protects == \"confidentiality\":\n        overshoot = confidential_years + migration_years - ARRIVAL\n        if overshoot > 0:\n            score += 100 + overshoot\n            reasons.append(f\"harvest-now-decrypt-later: {confidential_years} + {migration_years} years exceeds the assumed {ARRIVAL} by {overshoot}\")\n        else:\n            score += 10\n            reasons.append(f\"margin of {-overshoot} years under the assumed arrival; schedule with normal change\")\n    else:\n        score += 40\n        reasons.append(\"authentication: forgery needs a quantum computer at signing time, but long migrations need an early start\" + (f\" ({migration_years} years)\" if migration_years >= 4 else \"\"))\n    if algorithm in DEPRECATED_AFTER_2030:\n        score += 20\n        reasons.append(\"112-bit algorithm: proposed deprecation after 2030 (NIST IR 8547 draft)\")\n    return score, reasons\n\nassets = {name: (protects, algorithm, c, m, deps) for name, protects, algorithm, c, m, deps in INVENTORY}\nranked = sorted(((assess(name, p, a, c, m), name) for name, (p, a, c, m, deps) in assets.items()), key=lambda item: (-item[0][0], item[1]))\nprint(\"PHASE 0 (now): fix hygiene that needs no code change, then keep the inventory current (rescan after every change)\")\nphase = {\"1: hybrid key exchange for confidentiality at risk\": [], \"2: signature roots and PKI\": [], \"3: normal change window\": []}\ntitles = list(phase)\nlevel = {}\nfor (score, reasons), name in ranked:\n    protects = assets[name][0]\n    level[name] = 0 if score >= 100 else 1 if protects == \"authenticity\" else 2\ndetails = {name: (score, list(reasons)) for (score, reasons), name in ranked}\nchanged = True\nwhile changed:                                                    # a dependency must not be scheduled after what needs it\n    changed = False\n    for name, (protects, algorithm, c, m, deps) in assets.items():\n        for dependency in deps:\n            if level[dependency] > level[name]:\n                level[dependency] = level[name]\n                details[dependency][1].append(f\"pulled into this phase because {name} depends on it\")\n                changed = True\nfor (score, reasons), name in ranked:\n    phase[titles[level[name]]].append((name, details[name][0], details[name][1]))\nfor title, items in phase.items():\n    print(f\"PHASE {title}\")\n    for name, score, reasons in items:\n        deps = assets[name][4]\n        print(f\"  {name} ({assets[name][1]}, score {score})\" + (f\", migrate after: {', '.join(deps)}\" if deps else \"\"))\n        for reason in reasons:\n            print(\"      -\", reason)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-plan",
+              "language": "text",
+              "code": "PHASE 0 (now): fix hygiene that needs no code change, then keep the inventory current (rescan after every change)\nPHASE 1: hybrid key exchange for confidentiality at risk\n  backup key wrapping (RSA-2048, score 135)\n      - harvest-now-decrypt-later: 20 + 4 years exceeds the assumed 9 by 15\n      - 112-bit algorithm: proposed deprecation after 2030 (NIST IR 8547 draft)\n  patient portal (ECDHE-P256, score 118)\n      - harvest-now-decrypt-later: 25 + 2 years exceeds the assumed 9 by 18\n  insurer VPN (ECDHE-P256, score 104), migrate after: vpn-gateway-firmware\n      - harvest-now-decrypt-later: 10 + 3 years exceeds the assumed 9 by 4\n  vpn-gateway-firmware (ECDSA-P256, score 40)\n      - authentication: forgery needs a quantum computer at signing time, but long migrations need an early start\n      - pulled into this phase because insurer VPN depends on it\nPHASE 2: signature roots and PKI\n  build-pipeline (RSA-3072, score 40)\n      - authentication: forgery needs a quantum computer at signing time, but long migrations need an early start\n  code-signing root (RSA-3072, score 40), migrate after: build-pipeline\n      - authentication: forgery needs a quantum computer at signing time, but long migrations need an early start (5 years)\nPHASE 3: normal change window\n  public website (X25519, score 10)\n      - margin of 7 years under the assumed arrival; schedule with normal change",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Read the plan.** The assets whose confidentiality lifetime plus migration time overshoots the assumed arrival come first, ordered by how far they overshoot; they are the ones to move to a hybrid key exchange (the previous labs show how). Signature roots follow, with their dependencies named so work is sequenced. The public website, with one-year confidentiality, has margin and can wait for a normal change window. Phase 0 is not optional: expired certificates, weak keys and missing inventory are fixed first because they need no code change and they make everything after them measurable.\n\n**Make it yours.** Replace the inventory with your own, set the arrival assumption to three values (for example 6, 9 and 15 years), and list which assets stay in Phase 1 in all three cases. Those are the robust priorities. Then add a **verification step** for each phase: how will you show, by rescanning, that the algorithm in use has actually changed? A plan without a measurable end state is only a list of intentions.\n\n**Troubleshooting.** If everything lands in Phase 1, your migration times may be unrealistic or the arrival assumption too early; test both. **Cleanup:** nothing persists."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does the plan place assets that protect long-lived confidentiality first?",
+              "options": [
+                "Recorded traffic is exposed to later decryption, so exposure grows with every day of delay.",
+                "They are the cheapest to migrate.",
+                "NIST requires it."
+              ],
+              "correct_index": 0,
+              "explanation": "Harvest now, decrypt later turns a future capability into a present exposure for data that must stay confidential for years."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why should the arrival-year assumption be varied in a plan?",
+              "options": [
+                "Priorities that hold under every plausible date are robust; others depend on an uncertain guess.",
+                "To make the plan longer.",
+                "Because the arrival year is known exactly."
+              ],
+              "correct_index": 0,
+              "explanation": "The date is uncertain; sensitivity analysis shows which decisions do not depend on it."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why are dependencies recorded in the plan?",
+              "options": [
+                "A component such as a firmware-signing key can block the update that deploys a new algorithm, so work must be ordered.",
+                "They add points to every asset.",
+                "They are required by CycloneDX."
+              ],
+              "correct_index": 0,
+              "explanation": "Migration order is constrained by what each component depends on."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Chapter 5, 'A Prescriptive Approach for Transitioning to Quantum-Safe Cryptography': Steps 2 to 5 (assess and prioritise, crypto-agile architecture, migrate, monitor); Chapter 6 (Building a Quantum-Safe Transition Roadmap)"
+            },
+            {
+              "book": "B85",
+              "locator": "Transition tables (112-bit algorithms deprecated after 2030; disallowed after 2035), initial public draft"
+            },
+            {
+              "book": "B97",
+              "locator": "Table 2 (RSA-2048 is a 112-bit strength)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The scoring weights are invented for the exercise. IR 8547 is an initial public draft and the dates are proposals. Chapter 6 is cited at chapter level only."
+          }
+        }
+      ],
+      "quiz": [
+        {
+          "id": "b11-n01",
+          "prompt": "What is the NIST SP 800-57 classical security strength of a 2048-bit RSA modulus?",
+          "options": [
+            "112 bits",
+            "128 bits",
+            "256 bits"
+          ],
+          "correct_index": 0,
+          "explanation": "Table 2 lists 2048-bit RSA at 112 bits and 3072-bit RSA at 128 bits.",
+          "source": {
+            "book": "B97",
+            "locator": "Table 2"
+          }
+        },
+        {
+          "id": "b11-n02",
+          "prompt": "What structural difference separates a KEM exchange from ECDH?",
+          "options": [
+            "A KEM is asymmetric: the initiator's encapsulation key goes first and the responder returns a ciphertext.",
+            "A KEM needs no randomness.",
+            "ECDH needs a ciphertext."
+          ],
+          "correct_index": 0,
+          "explanation": "Roles in a KEM exchange are not interchangeable the way the two ECDH parties are.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 3.1"
+          }
+        },
+        {
+          "id": "b11-n03",
+          "prompt": "What do you learn when kyber-py and OpenSSL derive the same ML-KEM shared secret in both directions?",
+          "options": [
+            "Both implementations agree on the specification for the inputs tested.",
+            "ML-KEM is secure.",
+            "The implementations are constant-time."
+          ],
+          "correct_index": 0,
+          "explanation": "Interoperability testing checks agreement, not side-channel or security properties.",
+          "source": {
+            "book": "B100",
+            "locator": "Package behaviour verified in this lab"
+          }
+        },
+        {
+          "id": "b11-n04",
+          "prompt": "How large is the X25519MLKEM768 client key share?",
+          "options": [
+            "1216 bytes",
+            "32 bytes",
+            "1184 bytes"
+          ],
+          "correct_index": 0,
+          "explanation": "RFC 10024: 1184 bytes of ML-KEM-768 encapsulation key plus 32 bytes of X25519.",
+          "source": {
+            "book": "B98",
+            "locator": "Section 4.1"
+          }
+        },
+        {
+          "id": "b11-n05",
+          "prompt": "In X25519MLKEM768, which secret comes first in the concatenated shared secret?",
+          "options": [
+            "The ML-KEM secret",
+            "The X25519 secret",
+            "Neither; they are XORed"
+          ],
+          "correct_index": 0,
+          "explanation": "RFC 10024 section 4.3 places the ML-KEM secret first for this group.",
+          "source": {
+            "book": "B98",
+            "locator": "Section 4.3"
+          }
+        },
+        {
+          "id": "b11-n06",
+          "prompt": "What must a TLS server do with a client's ML-KEM encapsulation key in the hybrid groups?",
+          "options": [
+            "Perform the FIPS 203 encapsulation key check and abort with illegal_parameter on failure",
+            "Accept it without checks",
+            "Ignore the ML-KEM part"
+          ],
+          "correct_index": 0,
+          "explanation": "RFC 10024 section 4.2 requires the check.",
+          "source": {
+            "book": "B98",
+            "locator": "Section 4.2"
+          }
+        },
+        {
+          "id": "b11-n07",
+          "prompt": "A server answers a hybrid ClientHello with a HelloRetryRequest naming group 0x001d. What does that mean?",
+          "options": [
+            "It did not accept the hybrid share and asks for X25519",
+            "It supports only ML-KEM",
+            "The certificate is invalid"
+          ],
+          "correct_index": 0,
+          "explanation": "The HelloRetryRequest names the group the server wants instead.",
+          "source": {
+            "book": "B98",
+            "locator": "Section 4 and RFC 8446 HelloRetryRequest"
+          }
+        },
+        {
+          "id": "b11-n08",
+          "prompt": "In the byte-count model, which part grows most when moving from ECDSA to ML-DSA certificate chains?",
+          "options": [
+            "The authentication material: public keys and signatures in the chain",
+            "The client key share",
+            "The cipher suite list"
+          ],
+          "correct_index": 0,
+          "explanation": "Chains carry 2 public keys and 3 signatures, each far larger with ML-DSA.",
+          "source": {
+            "book": "B92",
+            "locator": "Table 2"
+          }
+        },
+        {
+          "id": "b11-n09",
+          "prompt": "Why must a benchmark of PQC performance compare optimised implementations with optimised implementations?",
+          "options": [
+            "A learning implementation measures the implementation, not the algorithm",
+            "Optimised code is less accurate",
+            "Pure Python cannot run ML-KEM"
+          ],
+          "correct_index": 0,
+          "explanation": "Fair benchmarks hold the kind of implementation constant.",
+          "source": {
+            "book": "B100",
+            "locator": "Benchmark method"
+          }
+        },
+        {
+          "id": "b11-n10",
+          "prompt": "What kind of CycloneDX component represents an algorithm, certificate or protocol in a CBOM?",
+          "options": [
+            "cryptographic-asset",
+            "library",
+            "firmware"
+          ],
+          "correct_index": 0,
+          "explanation": "CycloneDX 1.6 introduced the cryptographic-asset component type.",
+          "source": {
+            "book": "B99",
+            "locator": "bom-1.6 schema"
+          }
+        },
+        {
+          "id": "b11-n11",
+          "prompt": "What does an assumed quantum-computer arrival year do in a migration plan?",
+          "options": [
+            "It sets which assets overshoot; priorities that hold for every plausible year are robust",
+            "It fixes the exact migration date",
+            "It is irrelevant"
+          ],
+          "correct_index": 0,
+          "explanation": "Sensitivity to the arrival assumption is itself a result.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 5, Step 2"
+          }
+        },
+        {
+          "id": "b11-n12",
+          "prompt": "Which is NOT one of the five steps of the prescriptive approach in Becoming Quantum Safe?",
+          "options": [
+            "Buy quantum hardware",
+            "Discover the cryptographic inventory",
+            "Migrate to quantum-safe cryptography"
+          ],
+          "correct_index": 0,
+          "explanation": "The five steps are discover, assess risk and prioritise, design a crypto-agile architecture, migrate, and monitor and adapt.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 5"
+          }
+        }
+      ],
+      "estimated_minutes": 338,
+      "notes": "Rewrites nine outline sections as labs: measured RSA/ECDH/ECDSA versus ML-KEM/ML-DSA comparisons with two-way interoperability tests, a byte-count model, a live hybrid TLS 1.3 key exchange verified through the server's Finished MAC, a hybrid KEM build following RFC 10024, a benchmark, a CycloneDX 1.6 CBOM validated against the official schema, and a migration plan.",
+      "learning_objectives": [
+        "Compare RSA, ECDH and ECDSA with ML-KEM and ML-DSA on security basis, strength, function shape and measured sizes.",
+        "Run and interpret an interoperability test between two independent ML-KEM and ML-DSA implementations.",
+        "Model the bytes added by hybrid key exchange and post-quantum certificate chains, with stated assumptions.",
+        "Perform a real hybrid TLS 1.3 key exchange and verify it with the server's Finished message.",
+        "Build the X25519MLKEM768 composite KEM with the mandatory checks.",
+        "Benchmark fairly, build and schema-validate a CBOM, and produce an explainable phased migration plan."
+      ]
+    }
+  ]
+}
