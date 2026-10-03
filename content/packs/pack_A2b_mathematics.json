@@ -1,0 +1,842 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B01",
+      "title": "Understanding Cryptography: From Established Symmetric and Asymmetric Ciphers to Post-Quantum Algorithms",
+      "authors": "Christof Paar, Jan Pelzl, Tim Güneysu",
+      "edition": "2nd edition",
+      "year": 2024,
+      "publisher": "Springer"
+    },
+    {
+      "id": "B02",
+      "title": "A Graduate Course in Applied Cryptography",
+      "authors": "Dan Boneh, Victor Shoup",
+      "edition": "Version 0.6",
+      "year": 2023
+    },
+    {
+      "id": "B34",
+      "title": "The Python Standard Library (Python 3.14 documentation)",
+      "authors": "Python Software Foundation",
+      "edition": "3.14, accessed 2026-10-04",
+      "publisher": "docs.python.org"
+    },
+    {
+      "id": "B41",
+      "title": "Linear Algebra",
+      "authors": "Jim Hefferon",
+      "edition": "free textbook, accessed 2026-10-04",
+      "publisher": "hefferon.net"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_a_a2_mathematics_foundations",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "Arithmetic, algebra and exact numbers",
+          "summary": "Solving simple equations, and why cryptography uses exact integers instead of floating-point numbers.",
+          "estimated_minutes": 15,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Algebra is the habit of working with **unknowns**. If a message is encrypted as `c = 3m + 5` and you see `c = 20`, then solving `3m + 5 = 20` gives `m = 5`. Every formula in this course, from RSA key generation to quantum probabilities, is solved by the same moves: do the same thing to both sides until the unknown stands alone. A **function** takes an input and gives one output, such as `f(m) = 3m + 5`; encryption is a function, and decryption is its **inverse**, the function that undoes it.\n\nHow numbers are stored matters just as much. Computers store **integers** exactly, and Python integers can be as large as memory allows, which is why they suit cryptography, where numbers have hundreds of digits. They store **floating-point** numbers (decimals) as binary approximations, so small rounding errors appear. That is acceptable for measuring a temperature and unacceptable for a key, a hash or a signature, where one wrong bit changes everything."
+            },
+            {
+              "type": "code",
+              "id": "c-exact",
+              "language": "python",
+              "code": "from fractions import Fraction\n\nprint(0.1 + 0.2)                                           # floating point: tiny rounding error\nprint(0.1 + 0.2 == 0.3)\nprint(Fraction(1, 10) + Fraction(2, 10) == Fraction(3, 10))    # exact arithmetic with fractions\nprint(2**128)                                              # Python integers have no fixed size limit\n\ndef solve_linear(a, b, c):                                 # solve a*x + b = c exactly\n    return Fraction(c - b, a)\n\nprint(solve_linear(3, 5, 20), solve_linear(7, 1, 2))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-exact",
+              "language": "text",
+              "code": "0.30000000000000004\nFalse\nTrue\n340282366920938463463374607431768211456\n5 1/7",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "Never use floating point for cryptography",
+              "text": "Use integers and bytes for anything that must be exact. If you see a decimal point in a key size, a modulus or a hash calculation, something is wrong. Floats appear later in this module only for probabilities and quantum amplitudes, where approximation is expected."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Solve 4x + 3 = 27 for x.",
+              "options": [
+                "6",
+                "7.5",
+                "24"
+              ],
+              "correct_index": 0,
+              "explanation": "Subtract 3 from both sides to get 4x = 24, then divide by 4 to get x = 6."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why do cryptographic programs use integers rather than floating-point numbers for keys and moduli?",
+              "options": [
+                "Integers are exact, while floating-point numbers are approximations that would corrupt the values.",
+                "Integers use less memory.",
+                "Floating-point numbers cannot be negative."
+              ],
+              "correct_index": 0,
+              "explanation": "A single wrong bit invalidates a key or a hash. Floating-point arithmetic rounds, so it cannot be trusted for exact values; Python's arbitrary-size integers can."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, fractions module and built-in numeric types (int, float)"
+            },
+            {
+              "book": "B41",
+              "locator": "Chapter One (Linear Systems): solving equations step by step",
+              "note": "Used only for the general idea of solving by equivalent steps."
+            }
+          ]
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "Exponents and logarithms",
+          "summary": "Why an n-bit key has 2^n possibilities, what a logarithm undoes, and how to measure a password in bits.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "An **exponent** says how many times to multiply a number by itself: 2^10 = 1,024. A **logarithm** is the opposite question. `log2(1024)` asks \"what power of 2 gives 1,024?\" and the answer is 10. Because computers work in bits, the base-2 logarithm is the natural measure of size in this field.\n\nThe link to security is direct. A key of **n bits** can take 2^n different values, and every extra bit **doubles** the number of possibilities. That is why key lengths are given in bits and why 128-bit keys are so much stronger than 64-bit keys: not twice as strong, but 2^64 times. In the other direction, the number of bits needed to tell apart N possibilities is log2(N) rounded up. Two logarithm rules you will use constantly: log2(a × b) = log2(a) + log2(b), and log2(2^n) = n."
+            },
+            {
+              "type": "code",
+              "id": "c-exp",
+              "language": "python",
+              "code": "import math\n\nfor bits in (8, 56, 128, 256):\n    print(f\"2^{bits} has {len(str(2**bits))} decimal digits\")\nprint(math.log2(1024), math.log2(2**100))\nprint(math.log2(8 * 32) == math.log2(8) + math.log2(32))\nprint(\"bits to distinguish 1,000,000 values:\", math.ceil(math.log2(1_000_000)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-exp",
+              "language": "text",
+              "code": "2^8 has 3 decimal digits\n2^56 has 17 decimal digits\n2^128 has 39 decimal digits\n2^256 has 78 decimal digits\n10.0 100.0\nTrue\nbits to distinguish 1,000,000 values: 20",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The same idea measures **how guessable a secret is**. If a password is chosen uniformly at random from an alphabet of A symbols and has length L, there are A^L possibilities and the strength in bits is L × log2(A). Printable ASCII has 94 symbols (letters, digits and punctuation, excluding the space). The key word is **random**: a password people choose, such as a word with a number on the end, has far fewer bits than this formula says, because attackers try likely passwords first."
+            },
+            {
+              "type": "code",
+              "id": "c-entropy",
+              "language": "python",
+              "code": "import math\n\nschemes = {\n    \"8 random lowercase letters\": (26, 8),\n    \"8 random printable ASCII characters\": (94, 8),\n    \"16 random printable ASCII characters\": (94, 16),\n    \"4 random words from a 7,776-word list\": (7776, 4),\n}\nfor name, (alphabet, length) in schemes.items():\n    print(f\"{name:40} {length * math.log2(alphabet):5.1f} bits\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-entropy",
+              "language": "text",
+              "code": "8 random lowercase letters                37.6 bits\n8 random printable ASCII characters       52.4 bits\n16 random printable ASCII characters     104.9 bits\n4 random words from a 7,776-word list     51.7 bits",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "Bits of security",
+              "text": "When this course says a cipher has \"128-bit security\" it means an attacker needs roughly 2^128 operations to break it with the best known attack. Later modules show how quantum computers change that count for some algorithms and not others, so being fluent with powers of two now pays off."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How many times more possible keys does a 129-bit key have than a 128-bit key?",
+              "options": [
+                "2 times",
+                "129 times",
+                "2^128 times"
+              ],
+              "correct_index": 0,
+              "explanation": "Each extra bit doubles the number of possible values, so a 129-bit key space is twice as large as a 128-bit one."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Roughly how many bits does a password with 10 random digits have?",
+              "options": [
+                "About 10",
+                "About 33",
+                "About 100"
+              ],
+              "correct_index": 1,
+              "explanation": "Ten decimal digits give 10^10 possibilities, and log2(10^10) = 10 × 3.32, about 33 bits."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, math module: math.log2, math.ceil"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 1.3 (Symmetric Cryptography: Kerckhoffs' principle and brute-force key search) for key length in bits",
+              "note": "Used for the link between key length and search effort."
+            }
+          ],
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "Probability and statistics",
+          "summary": "Independent events, expected value, and the birthday bound that limits how short a hash can be.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Probability** measures how likely an event is, from 0 (impossible) to 1 (certain). When all outcomes are equally likely, the probability of an event is the number of favourable outcomes divided by the total. Probabilities of all possible outcomes add up to 1, so the chance something does *not* happen is 1 minus the chance it does. Events that do not influence each other are **independent**, and their probabilities **multiply**: three fair coins all landing heads has probability 1/2 × 1/2 × 1/2 = 1/8. The **expected value** of a random quantity is each outcome weighted by its probability.\n\nQuantum measurement is probabilistic in exactly this sense: a qubit measured in a state gives each outcome with a probability, and those probabilities sum to 1. You will rely on the same rules there. The listing counts outcomes exactly using fractions, so there is no rounding."
+            },
+            {
+              "type": "code",
+              "id": "c-prob",
+              "language": "python",
+              "code": "from fractions import Fraction\nfrom itertools import product\n\noutcomes = list(product(range(1, 7), repeat=2))                # two fair dice\np_seven = Fraction(sum(1 for a, b in outcomes if a + b == 7), len(outcomes))\nprint(\"P(sum = 7) =\", p_seven)\nprint(\"P(HHH) =\", Fraction(1, 2) ** 3)                         # independent events multiply\nprint(\"E[one die] =\", sum(Fraction(v, 6) for v in range(1, 7)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-prob",
+              "language": "text",
+              "code": "P(sum = 7) = 1/6\nP(HHH) = 1/8\nE[one die] = 7/2",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "One result of probability has large consequences for security: the **birthday paradox**. In a group of only 23 people the chance that two share a birthday is already about 50%, far higher than intuition suggests, because there are many *pairs* of people to compare. The same effect governs **collisions**: if a hash function produces values from a space of N possibilities, you expect a collision after only about the square root of N random inputs, not after N. For an n-bit hash that means roughly 2^(n/2) inputs, which is why a 128-bit hash gives only about 64 bits of collision resistance and why hashes used for signatures are made much longer than keys."
+            },
+            {
+              "type": "code",
+              "id": "c-birthday",
+              "language": "python",
+              "code": "def collision_probability(n, space):\n    no_collision = 1.0\n    for i in range(n):\n        no_collision *= (space - i) / space\n    return 1 - no_collision\n\nprint(f\"23 people, 365 days:                 {collision_probability(23, 365):.3f}\")\nprint(f\"77,000 values in a 32-bit space:     {collision_probability(77_000, 2**32):.3f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-birthday",
+              "language": "text",
+              "code": "23 people, 365 days:                 0.507\n77,000 values in a 32-bit space:     0.499",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "Statistics summarises measured data. The **mean** is the average and the **standard deviation** measures how spread out the values are. In security you meet them when judging whether a measurement is unusual, for example response times or login counts. The next listing computes both for a short list of sample response times; the numbers are invented for the exercise."
+            },
+            {
+              "type": "code",
+              "id": "c-stats",
+              "language": "python",
+              "code": "import statistics\n\ntimes_ms = [12, 15, 11, 14, 13]            # invented sample values\nprint(\"mean:\", statistics.mean(times_ms))\nprint(\"population standard deviation:\", round(statistics.pstdev(times_ms), 3))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-stats",
+              "language": "text",
+              "code": "mean: 13\npopulation standard deviation: 1.414",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "A fair coin is flipped three times. What is the probability that all three are tails?",
+              "options": [
+                "1/8",
+                "1/3",
+                "3/8"
+              ],
+              "correct_index": 0,
+              "explanation": "Each flip is tails with probability 1/2 and the flips are independent, so the probabilities multiply: 1/2 × 1/2 × 1/2 = 1/8."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Roughly how many random outputs of a 64-bit hash do you need before a collision becomes likely?",
+              "options": [
+                "About 2^32",
+                "About 2^64",
+                "About 64"
+              ],
+              "correct_index": 0,
+              "explanation": "The birthday bound says a collision is likely after about the square root of the space, 2^(n/2). For n = 64 that is about 2^32 outputs, which is why short hashes are weak against collisions."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B02",
+              "locator": "Section 8.3 (Birthday attacks on collision resistant hash functions) and Appendix B.1 (The birthday paradox)"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 11.2.3 (Collision Resistance and the Birthday Attack)"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, fractions, itertools and statistics modules"
+            }
+          ],
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "Complex numbers",
+          "summary": "Numbers with a real and an imaginary part, magnitude and conjugate, and how they describe qubit amplitudes.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **complex number** has the form a + bi, where a is the **real part**, b is the **imaginary part** and i is defined by i² = −1. Python writes it `3 + 4j`. You can picture it as a point on a plane, with the real part along one axis and the imaginary part along the other. Addition works component by component; multiplication uses i² = −1: (3 + 4i)(1 − 2i) = 3 − 6i + 4i − 8i² = 11 − 2i.\n\nTwo operations matter most. The **conjugate** of a + bi is a − bi. The **magnitude** (or modulus) is the distance from the origin, √(a² + b²), and multiplying a number by its conjugate gives its magnitude squared: z × z̄ = |z|². Quantum mechanics is written in complex numbers: the state of a qubit is described by two complex **amplitudes**, and the probability of a measurement outcome is the **squared magnitude** of its amplitude. That one fact is why you need this lesson."
+            },
+            {
+              "type": "code",
+              "id": "c-complex",
+              "language": "python",
+              "code": "import cmath, math\n\nz, w = 3 + 4j, 1 - 2j\nprint(z.real, z.imag, abs(z))\nprint(z.conjugate(), z * z.conjugate())\nprint(z + w, z * w)\n\nvalue = cmath.exp(1j * math.pi)                         # Euler's formula: e^(i*pi) = -1\nprint(f\"e^(i pi) = {value.real:.3f} + {value.imag:.3f}i\")\n\nalpha, beta = 1 / math.sqrt(2), 1j / math.sqrt(2)         # a qubit's amplitudes\nprint([round(abs(a) ** 2, 3) for a in (alpha, beta)], \"sum =\", round(abs(alpha) ** 2 + abs(beta) ** 2, 3))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-complex",
+              "language": "text",
+              "code": "3.0 4.0 5.0\n(3-4j) (25+0j)\n(4+2j) (11-2j)\ne^(i pi) = -1.000 + 0.000i\n[0.5, 0.5] sum = 1.0",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "Why the imaginary part still matters",
+              "text": "The two amplitudes above give the same probabilities (50% each) whether the second one is real or imaginary, yet they describe different states. The imaginary part is a **phase**, invisible to a single measurement but decisive when amplitudes are combined later, which is how quantum algorithms get their power."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the magnitude of 3 + 4i?",
+              "options": [
+                "5",
+                "7",
+                "25"
+              ],
+              "correct_index": 0,
+              "explanation": "The magnitude is the square root of 3² + 4² = 9 + 16 = 25, which is 5."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "A qubit has an amplitude of 0.6 for outcome 0. What is the probability of measuring 0?",
+              "options": [
+                "0.6",
+                "0.36",
+                "0.8"
+              ],
+              "correct_index": 1,
+              "explanation": "Probability is the squared magnitude of the amplitude: 0.6² = 0.36. (The other amplitude would have magnitude 0.8, since 0.36 + 0.64 = 1.)"
+            }
+          ],
+          "sources": [
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, cmath module and the built-in complex type"
+            },
+            {
+              "book": "B41",
+              "locator": "Chapter Five (Similarity), Section I (Complex Vector Spaces)",
+              "note": "Background on complex numbers as scalars."
+            }
+          ],
+          "needs_verification": {
+            "reason": "The section and chapter locators for the free Hefferon text (Chapter Five, Section I) were taken from the published table of contents from memory and should be confirmed against the current edition."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "Vectors and matrices",
+          "summary": "A vector as a list of numbers, a matrix as a transformation, and applying the Hadamard matrix to a qubit state.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **vector** is an ordered list of numbers, such as (1, 0). A **matrix** is a grid of numbers. Multiplying a matrix by a vector produces a new vector: each entry of the result is the **dot product** of one row of the matrix with the vector (multiply matching entries and add). In this way a matrix acts as a **transformation** that turns one vector into another.\n\nThis is the engine of quantum computing. The state of a qubit is a vector of two amplitudes; the state |0⟩ is (1, 0) and |1⟩ is (0, 1). A **quantum gate** is a matrix that transforms the state vector. The vector's **length** must stay 1, because the squared magnitudes of the amplitudes are probabilities that sum to 1; gates that do this are called **unitary**. The listing applies the **Hadamard** gate to |0⟩. The result is an equal mix of both outcomes, the state called an equal superposition."
+            },
+            {
+              "type": "code",
+              "id": "c-matvec",
+              "language": "python",
+              "code": "import math\n\ndef mat_vec(M, v):\n    return [sum(M[r][c] * v[c] for c in range(len(v))) for r in range(len(M))]\n\ndef mat_mul(A, B):\n    return [[sum(A[i][k] * B[k][j] for k in range(len(B))) for j in range(len(B[0]))] for i in range(len(A))]\n\ndef clean(x):\n    return round(x, 4) + 0.0          # round, and turn -0.0 into 0.0 for tidy printing\n\ns = 1 / math.sqrt(2)\nH = [[s, s], [s, -s]]                  # Hadamard matrix\nX = [[0, 1], [1, 0]]                   # bit flip\nZ = [[1, 0], [0, -1]]                  # phase flip\nket0 = [1, 0]\nstate = mat_vec(H, ket0)\nprint(\"H applied to |0>:\", [clean(x) for x in state])\nprint(\"probabilities:\", [clean(abs(x) ** 2) for x in state])\nprint(\"length:\", clean(math.sqrt(sum(abs(x) ** 2 for x in state))))\nprint(\"X applied to |0>:\", mat_vec(X, ket0))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-matvec",
+              "language": "text",
+              "code": "H applied to |0>: [0.7071, 0.7071]\nprobabilities: [0.5, 0.5]\nlength: 1.0\nX applied to |0>: [0, 1]",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Read the output as follows. The state (0.7071, 0.7071) has two equal amplitudes, so measuring gives 0 or 1 with probability 0.5 each, and the probabilities sum to 1. The `X` matrix, by contrast, simply swaps the two entries, turning |0⟩ into |1⟩: it is the quantum version of a NOT gate. Matrices written as grids are just compact instructions for these multiply-and-add steps, so everything here can be computed by hand for 2 × 2 cases."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the product of the matrix [[0, 1], [1, 0]] with the vector (1, 0)?",
+              "options": [
+                "(1, 0)",
+                "(0, 1)",
+                "(1, 1)"
+              ],
+              "correct_index": 1,
+              "explanation": "Row one is (0, 1) and its dot product with (1, 0) is 0; row two is (1, 0) and its dot product is 1. The result is (0, 1): the entries are swapped."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why must a quantum gate keep the length of the state vector equal to 1?",
+              "options": [
+                "Because the squared magnitudes of the amplitudes are probabilities and must sum to 1.",
+                "Because shorter vectors use less memory.",
+                "Because gates may only multiply by 1."
+              ],
+              "correct_index": 0,
+              "explanation": "Probabilities of all outcomes must total 1. A transformation that kept the length at 1 (a unitary one) preserves that."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B41",
+              "locator": "Chapter One (Linear Systems) and Chapter Three (Maps Between Spaces): vectors, matrices and matrix-vector products"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, math module (sqrt) and built-in sum and zip"
+            }
+          ],
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "Matrix products and unitary matrices",
+          "summary": "Multiplying matrices, why order matters, and checking that a gate is reversible.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Two transformations applied one after the other combine into one: this is **matrix multiplication**. Entry (i, j) of the product AB is the dot product of row i of A with column j of B. Unlike ordinary numbers, **the order matters**: AB is usually not equal to BA, because \"flip then twist\" differs from \"twist then flip\". The **identity matrix** I (ones on the diagonal, zeros elsewhere) changes nothing: IA = AI = A.\n\nQuantum gates must be **reversible**, because applying a gate and then its undo should return the original state. A matrix U is **unitary** when U† U = I, where U† (the *conjugate transpose*) is U flipped over its diagonal with every entry conjugated. Unitary matrices preserve length, so they preserve total probability. The listing shows that order matters for X and Z, and that the Hadamard matrix is its own inverse (HH = I)."
+            },
+            {
+              "type": "code",
+              "id": "c-matmul",
+              "language": "python",
+              "code": "import math\n\ndef mat_vec(M, v):\n    return [sum(M[r][c] * v[c] for c in range(len(v))) for r in range(len(M))]\n\ndef mat_mul(A, B):\n    return [[sum(A[i][k] * B[k][j] for k in range(len(B))) for j in range(len(B[0]))] for i in range(len(A))]\n\ndef clean(x):\n    return round(x, 4) + 0.0          # round, and turn -0.0 into 0.0 for tidy printing\n\ns = 1 / math.sqrt(2)\nH = [[s, s], [s, -s]]                  # Hadamard matrix\nX = [[0, 1], [1, 0]]                   # bit flip\nZ = [[1, 0], [0, -1]]                  # phase flip\nprint(\"XZ =\", mat_mul(X, Z))\nprint(\"ZX =\", mat_mul(Z, X))                     # different: order matters\nHH = mat_mul(H, H)\nprint(\"HH =\", [[clean(x) for x in row] for row in HH])"
+            },
+            {
+              "type": "code",
+              "id": "o-c-matmul",
+              "language": "text",
+              "code": "XZ = [[0, -1], [1, 0]]\nZX = [[0, 1], [-1, 0]]\nHH = [[1.0, 0.0], [0.0, 1.0]]",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The **determinant** of a 2 × 2 matrix [[a, b], [c, d]] is ad − bc. A matrix is **invertible** exactly when its determinant is not zero. The inverse then exists and undoes the transformation, which is the matrix version of decrypting. Every quantum gate has a non-zero determinant of magnitude 1, which is another way to see reversibility. The listing computes the determinants and checks unitarity of H by confirming that H†H gives the identity, using that H has only real entries so its conjugate transpose is just its transpose."
+            },
+            {
+              "type": "code",
+              "id": "c-unitary",
+              "language": "python",
+              "code": "import math\n\ndef mat_vec(M, v):\n    return [sum(M[r][c] * v[c] for c in range(len(v))) for r in range(len(M))]\n\ndef mat_mul(A, B):\n    return [[sum(A[i][k] * B[k][j] for k in range(len(B))) for j in range(len(B[0]))] for i in range(len(A))]\n\ndef clean(x):\n    return round(x, 4) + 0.0          # round, and turn -0.0 into 0.0 for tidy printing\n\ns = 1 / math.sqrt(2)\nH = [[s, s], [s, -s]]                  # Hadamard matrix\nX = [[0, 1], [1, 0]]                   # bit flip\nZ = [[1, 0], [0, -1]]                  # phase flip\ndef det2(M):\n    return M[0][0] * M[1][1] - M[0][1] * M[1][0]\n\ndef transpose(M):\n    return [[M[j][i] for j in range(len(M))] for i in range(len(M[0]))]\n\nprint(\"det X =\", det2(X), \" det Z =\", det2(Z), \" det H =\", clean(det2(H)))\nprint(\"H^T H =\", [[clean(x) for x in row] for row in mat_mul(transpose(H), H)])"
+            },
+            {
+              "type": "code",
+              "id": "o-c-unitary",
+              "language": "text",
+              "code": "det X = -1  det Z = -1  det H = -1.0\nH^T H = [[1.0, 0.0], [0.0, 1.0]]",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "If A and B are matrices, which statement is generally true?",
+              "options": [
+                "AB and BA are always equal.",
+                "AB and BA can be different, so the order of multiplication matters.",
+                "AB is always the identity."
+              ],
+              "correct_index": 1,
+              "explanation": "Matrix multiplication is not commutative. The XZ and ZX results in the listing differ."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does it mean for a quantum gate to be unitary?",
+              "options": [
+                "It maps a state to a longer vector.",
+                "It is reversible and preserves the length of the state vector (total probability).",
+                "It always swaps the two amplitudes."
+              ],
+              "correct_index": 1,
+              "explanation": "Unitary matrices satisfy U†U = I, so they can be undone and they keep the probabilities summing to 1."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B41",
+              "locator": "Chapter Three (Maps Between Spaces): matrix operations, products and inverses; Chapter Four (Determinants)"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, built-in list comprehensions used for matrix code"
+            }
+          ],
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "Eigenvalues and eigenvectors (conceptual)",
+          "summary": "Vectors a matrix only stretches, how to find the eigenvalues of a 2 x 2 matrix, and why they appear in measurement.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Most vectors change direction when a matrix acts on them. Some special vectors do not: the matrix only **scales** them. If A v = λ v, then v is an **eigenvector** of A and the scale factor λ is its **eigenvalue**. The words come from German for \"own\": these are the matrix's own special directions.\n\nFor a 2 × 2 matrix the eigenvalues solve a quadratic equation built from the **trace** (sum of the diagonal, a + d) and the **determinant** (ad − bc): λ² − (trace) λ + (determinant) = 0. This is what the listing solves. In quantum mechanics the possible results of a measurement are the eigenvalues of the measured operator, and the state you are left with after the measurement is the matching eigenvector. A unitary matrix has eigenvalues of magnitude 1, which is another way to say it only rotates things."
+            },
+            {
+              "type": "code",
+              "id": "c-eigen",
+              "language": "python",
+              "code": "import math\n\ndef mat_vec(M, v):\n    return [sum(M[r][c] * v[c] for c in range(len(v))) for r in range(len(M))]\n\ndef mat_mul(A, B):\n    return [[sum(A[i][k] * B[k][j] for k in range(len(B))) for j in range(len(B[0]))] for i in range(len(A))]\n\ndef clean(x):\n    return round(x, 4) + 0.0          # round, and turn -0.0 into 0.0 for tidy printing\n\ns = 1 / math.sqrt(2)\nH = [[s, s], [s, -s]]                  # Hadamard matrix\nX = [[0, 1], [1, 0]]                   # bit flip\nZ = [[1, 0], [0, -1]]                  # phase flip\nimport cmath\n\ndef eigenvalues_2x2(M):\n    (a, b), (c, d) = M\n    trace, det = a + d, a * d - b * c\n    root = cmath.sqrt(trace ** 2 / 4 - det)\n    return trace / 2 + root, trace / 2 - root\n\nfor name, M in ((\"Z\", Z), (\"X\", X), (\"H\", H)):\n    print(name, [complex(clean(l.real), clean(l.imag)) for l in eigenvalues_2x2(M)])\n\nprint(\"X * (1, 1)  =\", mat_vec(X, [1, 1]), \" (eigenvalue 1)\")\nprint(\"X * (1, -1) =\", mat_vec(X, [1, -1]), \" (eigenvalue -1)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-eigen",
+              "language": "text",
+              "code": "Z [(1+0j), (-1+0j)]\nX [(1+0j), (-1+0j)]\nH [(1+0j), (-1+0j)]\nX * (1, 1)  = [1, 1]  (eigenvalue 1)\nX * (1, -1) = [-1, 1]  (eigenvalue -1)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Check the last two lines against the definition. X times (1, 1) gives (1, 1), which is 1 times the original vector, so (1, 1) is an eigenvector with eigenvalue 1. X times (1, −1) gives (−1, 1), which is −1 times the original, so (1, −1) is an eigenvector with eigenvalue −1. The three gates shown all have eigenvalues +1 and −1, and both have magnitude 1, as expected for unitary matrices. You will meet eigenvectors again as the \"measurement bases\" of Tracks B and C."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "A matrix A satisfies A v = 3 v for a non-zero vector v. What is v?",
+              "options": [
+                "An eigenvector of A with eigenvalue 3.",
+                "The inverse of A.",
+                "A vector of length 3."
+              ],
+              "correct_index": 0,
+              "explanation": "That equation is exactly the definition: A only scales v, by the factor 3, so v is an eigenvector and 3 is its eigenvalue."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What are the eigenvalues of the diagonal matrix [[2, 0], [0, 5]]?",
+              "options": [
+                "2 and 5",
+                "7 and 10",
+                "0 and 7"
+              ],
+              "correct_index": 0,
+              "explanation": "For a diagonal matrix the eigenvalues are the diagonal entries: it stretches the first axis by 2 and the second by 5."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B41",
+              "locator": "Chapter Five (Similarity), Section II (Similarity), part on eigenvalues and eigenvectors"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, cmath module (cmath.sqrt)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The location of the eigenvalue discussion within the free Hefferon text was taken from its published table of contents from memory and should be confirmed against the current edition."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "pk-task",
+          "action": "new",
+          "title": "Task: estimate brute-force and collision costs",
+          "summary": "A guided calculation that applies exponents, logarithms and the birthday bound to realistic security questions.",
+          "estimated_minutes": 25,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Objective.** Use the maths of this module to answer two questions a security engineer actually asks: how long would it take to guess a secret, and how many outputs does it take to find a hash collision?\n\n**Prerequisites.** The lessons on exponents and logarithms and on probability, and Python 3.\n\n**Part 1: guessing time.** A secret chosen at random from a space of S possibilities needs about S/2 guesses on average to find (the attacker may be lucky earlier or later). Divide by the attacker's guesses per second to get a time. The rates below are **assumptions for illustration** (a fast, unsalted hash against a powerful rig versus a deliberately slow password hash), not measurements of any real system. Complete the table in your own script first, then compare."
+            },
+            {
+              "type": "code",
+              "id": "c-guess",
+              "language": "python",
+              "code": "import math\n\nRATES = {\"fast hash, 10^10 guesses/s\": 10**10, \"slow hash, 10^4 guesses/s\": 10**4}   # assumed rates\nSECRETS = {\"8 random lowercase letters\": 26**8, \"8 random printable ASCII\": 94**8, \"4 random words (7,776-word list)\": 7776**4}\n\ndef pretty(seconds):\n    for unit, size in ((\"years\", 365 * 24 * 3600), (\"days\", 24 * 3600), (\"hours\", 3600), (\"minutes\", 60)):\n        if seconds >= size:\n            return f\"{seconds / size:,.1f} {unit}\"\n    return f\"{seconds:,.2f} seconds\"\n\nfor secret, space in SECRETS.items():\n    print(f\"{secret} ({math.log2(space):.1f} bits)\")\n    for rate_name, rate in RATES.items():\n        print(f\"    {rate_name:30} average {pretty(space / 2 / rate)}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-guess",
+              "language": "text",
+              "code": "8 random lowercase letters (37.6 bits)\n    fast hash, 10^10 guesses/s     average 10.44 seconds\n    slow hash, 10^4 guesses/s      average 120.8 days\n8 random printable ASCII (52.4 bits)\n    fast hash, 10^10 guesses/s     average 3.5 days\n    slow hash, 10^4 guesses/s      average 9,664.7 years\n4 random words (7,776-word list) (51.7 bits)\n    fast hash, 10^10 guesses/s     average 2.1 days\n    slow hash, 10^4 guesses/s      average 5,796.8 years",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Part 2: collision cost.** For an n-bit hash the number of random outputs needed for a roughly 50% chance of a collision is about 1.1774 × 2^(n/2) (this comes from solving the birthday formula). Compute it for truncated hashes of 32, 48 and 64 bits, then reflect: a system that identifies files by a 32-bit hash can be fooled with only tens of thousands of attempts."
+            },
+            {
+              "type": "code",
+              "id": "c-collide",
+              "language": "python",
+              "code": "import math\n\nfor bits in (32, 48, 64):\n    n = math.sqrt(2 * math.log(2) * 2**bits)\n    print(f\"{bits}-bit hash: about {n:,.0f} outputs for a 50% chance of a collision\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-collide",
+              "language": "text",
+              "code": "32-bit hash: about 77,163 outputs for a 50% chance of a collision\n48-bit hash: about 19,753,662 outputs for a 50% chance of a collision\n64-bit hash: about 5,056,937,541 outputs for a 50% chance of a collision",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "**Verify.** Your results should show the 8-character lowercase secret falling in seconds to a fast-hash attacker while the 8-character printable-ASCII secret takes a long time, and the slow hash multiplying every time by a million. For collisions, 32 bits needs about 77,000 outputs. **Troubleshooting:** if your times look wrong by a factor of 2, remember the average is half the space; if you see float rounding on huge numbers, use integers for the space and floats only for the final division.\n\n**Stretch.** Add a row for a 128-bit random key and observe that the answer overflows any sensible unit: that is what \"infeasible\" means. Then repeat the 50% collision calculation for a 128-bit hash and explain why its collision resistance is only about 64 bits."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In Part 1, why does a slow password hash help even though the secret space is unchanged?",
+              "options": [
+                "It lowers the attacker's guesses per second, multiplying the time to search the same space.",
+                "It makes the secret longer.",
+                "It makes the secret random."
+              ],
+              "correct_index": 0,
+              "explanation": "Search time is the space divided by the guess rate. A slow hash cuts the rate, so the same number of possibilities takes far longer."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "About how many outputs of a 32-bit hash give a 50% chance of a collision?",
+              "options": [
+                "About 77,000",
+                "About 4 billion",
+                "About 32"
+              ],
+              "correct_index": 0,
+              "explanation": "The birthday bound is about 1.1774 × 2^16, which is roughly 77,000. Only a tiny fraction of the full 2^32 space is needed."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B02",
+              "locator": "Section 8.3 (Birthday attacks on collision resistant hash functions) and Appendix B.1"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, math module (log, sqrt, log2)"
+            }
+          ],
+          "after": "sec-7"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "a2-n01",
+          "prompt": "Solve 5x - 2 = 18 for x.",
+          "options": [
+            "4",
+            "3.2",
+            "16"
+          ],
+          "correct_index": 0,
+          "explanation": "Add 2 to get 5x = 20, then divide by 5: x = 4.",
+          "source": {
+            "book": "B41",
+            "locator": "Chapter One (Linear Systems)"
+          },
+          "competency_id": "MATH.1",
+          "depth": "Apply",
+          "lesson_id": "A2.L1"
+        },
+        {
+          "id": "a2-n02",
+          "prompt": "How many possible values does a 40-bit key have?",
+          "options": [
+            "40",
+            "2^40",
+            "40^2"
+          ],
+          "correct_index": 1,
+          "explanation": "Each bit has two states, so n bits give 2^n values.",
+          "source": {
+            "book": "B34",
+            "locator": "math.log2 and powers"
+          },
+          "competency_id": "MATH.1",
+          "depth": "Apply",
+          "lesson_id": "A2.L1"
+        },
+        {
+          "id": "a2-n03",
+          "prompt": "Two independent events have probabilities 1/4 and 1/5. What is the probability that both occur?",
+          "options": [
+            "1/20",
+            "9/20",
+            "1/9"
+          ],
+          "correct_index": 0,
+          "explanation": "Independent probabilities multiply: 1/4 × 1/5 = 1/20.",
+          "source": {
+            "book": "B34",
+            "locator": "fractions module"
+          },
+          "competency_id": "MATH.2",
+          "depth": "Apply",
+          "lesson_id": "A2.L2"
+        },
+        {
+          "id": "a2-n04",
+          "prompt": "Roughly how many random outputs of an n-bit hash are needed to find a collision with good probability?",
+          "options": [
+            "About 2^n",
+            "About 2^(n/2)",
+            "About n"
+          ],
+          "correct_index": 1,
+          "explanation": "The birthday bound: collisions appear after about the square root of the space.",
+          "source": {
+            "book": "B02",
+            "locator": "Section 8.3"
+          },
+          "competency_id": "MATH.2",
+          "depth": "Apply",
+          "lesson_id": "A2.L2"
+        },
+        {
+          "id": "a2-n05",
+          "prompt": "What is (2 + 3i) + (1 - i)?",
+          "options": [
+            "3 + 2i",
+            "3 + 4i",
+            "2 + 3i"
+          ],
+          "correct_index": 0,
+          "explanation": "Add real and imaginary parts separately: 3 + 2i.",
+          "source": {
+            "book": "B34",
+            "locator": "cmath and complex type"
+          },
+          "competency_id": "MATH.3",
+          "depth": "Explain",
+          "lesson_id": "A2.L5"
+        },
+        {
+          "id": "a2-n06",
+          "prompt": "A qubit has amplitudes 0.6 and 0.8 (both real). What is the probability of measuring the second outcome?",
+          "options": [
+            "0.8",
+            "0.64",
+            "0.48"
+          ],
+          "correct_index": 1,
+          "explanation": "Probability is the squared magnitude: 0.8² = 0.64 (and 0.6² = 0.36, which sums with it to 1).",
+          "source": {
+            "book": "B34",
+            "locator": "complex type"
+          },
+          "competency_id": "MATH.3",
+          "depth": "Explain",
+          "lesson_id": "A2.L5"
+        },
+        {
+          "id": "a2-n07",
+          "prompt": "Multiplying the matrix [[1, 0], [0, -1]] by the vector (3, 5) gives:",
+          "options": [
+            "(3, -5)",
+            "(-3, 5)",
+            "(3, 5)"
+          ],
+          "correct_index": 0,
+          "explanation": "Row one gives 1·3 + 0·5 = 3; row two gives 0·3 + (-1)·5 = -5.",
+          "source": {
+            "book": "B41",
+            "locator": "Chapter Three"
+          },
+          "competency_id": "MATH.3",
+          "depth": "Apply",
+          "lesson_id": "A2.L6"
+        },
+        {
+          "id": "a2-n08",
+          "prompt": "For two matrices A and B, which statement is generally true?",
+          "options": [
+            "AB = BA always",
+            "AB may differ from BA",
+            "AB is the identity"
+          ],
+          "correct_index": 1,
+          "explanation": "Matrix multiplication is not commutative.",
+          "source": {
+            "book": "B41",
+            "locator": "Chapter Three"
+          },
+          "competency_id": "MATH.3",
+          "depth": "Apply",
+          "lesson_id": "A2.L6"
+        },
+        {
+          "id": "a2-n09",
+          "prompt": "If A v = 4 v for a non-zero vector v, then 4 is:",
+          "options": [
+            "An eigenvalue of A",
+            "The determinant of A",
+            "The length of v"
+          ],
+          "correct_index": 0,
+          "explanation": "That equation defines an eigenvector v with eigenvalue 4.",
+          "source": {
+            "book": "B41",
+            "locator": "Chapter Five"
+          },
+          "competency_id": "MATH.3",
+          "depth": "Aware",
+          "lesson_id": "A2.L7"
+        }
+      ],
+      "estimated_minutes": 233,
+      "notes": "Rewrites the seven outline sections (algebra, exponents and logarithms, probability, complex numbers, vectors, matrices, eigenvalues) as lessons and adds a guided estimation task. The five sections from the earlier pack are unchanged."
+    }
+  ]
+}
