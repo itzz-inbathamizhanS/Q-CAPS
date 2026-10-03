@@ -1,8 +1,8 @@
 # Book → Course Source Map and Content Implementation Plan
 
 Prepared 2026-10-03 (analysis stage; no code or content changed). Builds on
-`docs/SYSTEM_UNDERSTANDING.md`, `docs/Html/Q-CAPS Curriculum Architecture v1.md` and
-`docs/Html/Q-CAPS Curriculum Inventory & Gap Analysis.md`. Where this document and those disagree,
+`docs/architecture/SYSTEM_UNDERSTANDING.md`, `docs/curriculum/Q-CAPS Curriculum Architecture v1.md` and
+`docs/curriculum/Q-CAPS Curriculum Inventory & Gap Analysis.md`. Where this document and those disagree,
 this one was checked against the live code and dev database on the date above.
 
 ---

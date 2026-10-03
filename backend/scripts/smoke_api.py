@@ -1,5 +1,10 @@
 import json
 import os
+import sys
+from pathlib import Path
+
+# Run from anywhere: python backend/scripts/smoke_api.py
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "main_api"))
 os.environ["QCAPS_ENABLE_LEGACY_QUIZ_SUBMIT"] = "1"  # legacy endpoint is off by default
 # This script drops and recreates every table, so it must never run against the real database.
 # Both variables must be set before main/database are imported.

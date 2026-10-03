@@ -2,7 +2,7 @@
   "version": 1,
   "status": "proposed-v1",
   "description": "Track A lesson structure from Q-CAPS Track A Lesson Design v1. Structure only: no lesson text. Display codes A1-A9 follow Architecture section 4; module_id values are the kept ids, with one new planned module.",
-  "source_document": "docs/Html/Q-CAPS Track A Lesson Design v1.md",
+  "source_document": "docs/curriculum/Q-CAPS Track A Lesson Design v1.md",
   "modules": [
     {
       "code": "A1",

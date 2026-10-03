@@ -2,7 +2,7 @@
   "version": 1,
   "status": "proposed-v1",
   "description": "Skill model from Q-CAPS Curriculum Architecture v1 section 3. Every lesson objective, quiz item and practical carries exactly one primary competency id and one depth. Capability is estimated per competency from server-graded evidence only; XP plays no part.",
-  "source_document": "docs/Html/Q-CAPS Curriculum Architecture v1.md",
+  "source_document": "docs/curriculum/Q-CAPS Curriculum Architecture v1.md",
   "depths": [
     {
       "id": "Aware",

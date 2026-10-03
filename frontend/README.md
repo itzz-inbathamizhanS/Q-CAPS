@@ -36,7 +36,7 @@ ASSESS → IDENTIFY SKILL GAP → LEARN → PRACTICE → REASSESS
 
 - **Framework**: React 18 + TypeScript + Vite
 - **Routing**: React Router DOM v6
-- **Styling**: Vanilla CSS tokens matching `interface_concept` design system
+- **Styling**: Vanilla CSS tokens matching the interface concept design system (`docs/design/interface-concept`)
 - **State & Data**: Zustand + @tanstack/react-query
 - **Visualization**: Recharts (Radar, Bar, Pie charts)
 - **Icons**: Lucide React + Material Symbols
@@ -46,7 +46,7 @@ ASSESS → IDENTIFY SKILL GAP → LEARN → PRACTICE → REASSESS
 
 ## 3. UI/UX Source of Truth
 
-The folder `interface_concept/` serves as the primary visual design reference:
+The folder `docs/design/interface-concept/` serves as the primary visual design reference:
 - Color palette: Core Light Mode (`#F5F5FA`, `#FFFFFF`, `#5427e6`, `#6D4AFF`, `#3CB7E8`)
 - Typography: Inter & JetBrains Mono
 - Layout: 250px fixed sidebar, 64px header, Bento Grid dashboard

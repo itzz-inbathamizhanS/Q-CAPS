@@ -5,6 +5,8 @@
 **Updates since this report (2026-10-03 end-to-end audit, verified by running the stack and tests).**
 S1 (JWT secret from env), S4 (server-graded quizzes, legacy submit returns 410), S9 (login now throttled per address+name; leaderboard now requires auth) and S12 (exact case-insensitive name match) are resolved. S5 is resolved: `/api/scanner/log` requires a receipt signed by the scanner (`scan_receipts.py`) and derives findings/XP from the verified result. Registration validates name/password, `progress_data` must be a JSON object ≤ 64 KB (S8 partly; the blob is still client-authored), and profile readiness no longer mixes in XP. Still open: S6 (DNS-rebinding window), S7 for the diagnostic assessment, S10, S11, and evidence/findings having no ownership model.
 
+**Project restructure (2026-10-03).** The legacy Node server and test artifacts were removed, mockups and planning documents moved under `docs/`, the loose backend tests moved to `backend/tests` and `backend/scripts`, and unused frontend dependencies were dropped. Paths in the sections below describe the layout at the time of the original analysis unless stated otherwise; see the root `README.md` for the current layout.
+
 **What was not verified.** The backend test suite, the frontend build, and the end-to-end tests were not executed (this was an analysis-only pass). Anything described as "likely" is inferred from reading the code, not from running it.
 
 ---
@@ -30,11 +32,11 @@ Q-CAPS is a working prototype, not a production system, and its integrity proble
 | `backend/scanner_api/` | **Flask** (not FastAPI) scanner on port 5000 | Active |
 | `content/Course`, `content/Quizzes` | 36 module markdown files plus quiz JSON (Tracks A–D) | Source content |
 | `content/Mission`, `Labs`, `Badges`, `ui-specs` | Mission, escape-room and badge specs | Partly compiled into `frontend/src/data` |
-| `content/Backend/` | **Legacy** Node/Express/MongoDB auth server | Dead (nothing calls it) |
-| `docs/tasks/*` | Team task-assignment docs | Planning, partly outdated |
-| `docs/FRONTEND_STRUCTURE.md` | Architecture doc | Mostly accurate |
-| `frontend/interface_concept/` | Static design mockups | Not runtime |
-| `frontend/test-results/` | Playwright failure artifacts | Test spec not committed |
+| `content/Backend/` | **Legacy** Node/Express/MongoDB auth server | Removed in the project restructure (nothing called it; see git history) |
+| `docs/archive/tasks/*` | Team task-assignment docs | Archived planning, partly outdated |
+| `docs/architecture/FRONTEND_STRUCTURE.md` | Architecture doc | Mostly accurate |
+| `docs/design/interface-concept/` | Static design mockups (moved from `frontend/interface_concept/`) | Not runtime |
+| `frontend/test-results/` | Playwright failure artifacts | Removed in the restructure (now git-ignored) |
 
 **Remote branches.** Besides `main`, the repo has `Content-Security`, `Sample-01`, `sample-02`, `feature/scanner-backend` and `vishnu-priya-backend`. All are older than `main`. Not diffed.
 
@@ -304,14 +306,14 @@ No readiness score uses scanner evidence, recency or coverage.
 
 ## 18. Testing Coverage
 
-**`backend/main_api/test_api.py`.**
+**`backend/scripts/smoke_api.py` (was `main_api/test_api.py`).**
 - It's a script, not pytest: it uses custom `check()` calls inside `run_api_tests()`, so pytest would collect 0 tests.
 - It hits the **real `qcaps.db`**, so a second run would fail at the duplicate "Alice" registration.
 - It uses the scanner `details` list format that production never sends.
 - **Covered:** health, register/login, quiz scoring, recommendations, leaderboard ranks, profile.
 - **Not covered:** 401/403 paths, cross-user IDOR attempts, WebSocket, PDF report.
 
-**`test_recommendation.py`.** 24 checks against the pure function `get_recommendation_from_scores`. Decent unit coverage of that logic.
+**`backend/scripts/check_recommendation.py` (was `test_recommendation.py`).** 24 checks against the pure function `get_recommendation_from_scores`. Decent unit coverage of that logic.
 
 **Scanner.** No tests at all.
 
@@ -322,8 +324,8 @@ No readiness score uses scanner evidence, recency or coverage.
 ## 19. Legacy/Duplicate/Dead Code
 
 **Legacy and planning material:**
-- **`content/Backend/`** is a full Express/MongoDB auth server with bcrypt and rate-limiting. Nothing references it. Ironically it has better auth hygiene than the active backend, including a secret from the environment.
-- **`docs/tasks/*`** describe the "FastAPI or Node", "SQLite or MongoDB" and "Organizational Readiness Score" plans. They're planning docs, not the current state.
+- **`content/Backend/`** (removed in the restructure) was a full Express/MongoDB auth server with bcrypt and rate-limiting. Nothing references it. Ironically it has better auth hygiene than the active backend, including a secret from the environment.
+- **`docs/archive/tasks/*`** describe the "FastAPI or Node", "SQLite or MongoDB" and "Organizational Readiness Score" plans. They're planning docs, not the current state.
 
 **Broken content pipeline.** `frontend/scripts/compile-content.cjs` reads from `../../Content-Security`, which **doesn't exist**; the folder is now `content/`. The generated `src/data/*.ts` files can't be regenerated, so it's unclear whether the markdown/JSON in `content/` or the `.ts` files are the real source of truth.
 

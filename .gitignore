@@ -2,6 +2,8 @@ node_modules/
 .continue/
 dist/
 .env
+.env.*
+!.env.example
 
 # Python
 __pycache__/
@@ -11,8 +13,24 @@ venv/
 .venv/
 env/
 .env/
+.pytest_cache/
 
 # Databases
 *.db
 *.sqlite
 *.sqlite3
+
+# Test and build artifacts
+test-results/
+playwright-report/
+coverage/
+*.log
+*.tsbuildinfo
+
+# Editor and OS files
+.obsidian/
+.vscode/*
+!.vscode/extensions.json
+.idea/
+.DS_Store
+Thumbs.db

@@ -1,4 +1,4 @@
-"""Run: pytest test_config.py -q"""
+"""Run from backend/: pytest tests/test_config.py -q"""
 import pathlib
 
 import pytest
@@ -31,7 +31,6 @@ def test_development_fallback_is_random_and_long():
 
 
 def test_old_hardcoded_key_is_gone():
-    here = pathlib.Path(__file__).parent
-    for f in here.glob("*.py"):
-        if f.name != "test_config.py":
-            assert "qcaps_super_secret" not in f.read_text(), f.name
+    app_dir = pathlib.Path(__file__).resolve().parents[1] / "main_api"
+    for f in app_dir.rglob("*.py"):
+        assert "qcaps_super_secret" not in f.read_text(encoding="utf-8"), f.name

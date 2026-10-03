@@ -1,4 +1,4 @@
-"""Server-graded quiz tests. Run: pytest test_quiz_attempts.py -q
+"""Server-graded quiz tests. Run from backend/: pytest tests/test_quiz_attempts.py -q
 Uses an isolated in-memory SQLite database; never touches qcaps.db."""
 import json
 import os

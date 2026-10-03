@@ -1,3 +1,8 @@
+import sys
+from pathlib import Path
+
+# Run from anywhere: python backend/scripts/check_recommendation.py
+sys.path.insert(0, str(Path(__file__).resolve().parents[1] / "main_api"))
 from recommendation import get_recommendation_from_scores
 
 passed = 0
