@@ -23,8 +23,6 @@ from fastapi.security import OAuth2PasswordBearer
 # Candidate A Services
 from services import evidence_service
 from closure.engine import process_closure_verification
-from competency.mapper import get_required_competencies
-from interventions.selector import select_intervention
 from course_content.admin_routes import create_admin_router
 from course_content.public_routes import create_public_router
 from course_content.ratelimit import login_limiter

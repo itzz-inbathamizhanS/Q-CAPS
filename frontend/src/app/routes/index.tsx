@@ -23,7 +23,6 @@ import { ErrorPage } from '@/pages/ErrorPage';
 import { ClosurePage } from '@/pages/ClosurePage';
 import { Organization } from '@/pages/Organization';
 import { Reassessment } from '@/pages/Reassessment';
-import { Community } from '@/pages/Community';
 
 export const router = createBrowserRouter([
   {
@@ -111,10 +110,6 @@ export const router = createBrowserRouter([
           {
             path: 'organization',
             element: <Organization />,
-          },
-          {
-            path: 'community',
-            element: <Community />,
           },
           {
             path: 'closure/:findingId',

@@ -53,8 +53,6 @@ export const KpiSection: React.FC<KpiSectionProps> = ({ liveProfile }) => {
       // The backend reports rank 0 for accounts that are not on the leaderboard (admins).
       value: displayRank ? `#${displayRank}` : displayRank === 0 ? 'Not ranked' : '#N/A',
       supportingText: displayRank === 0 ? 'Admins are not on the leaderboard' : 'Global Leaderboard',
-      visualType: 'bar' as const,
-      barProgress: displayRank ? Math.max(10, 100 - displayRank * 10) : 0,
     }
   ];
 
@@ -81,7 +79,6 @@ export const KpiSection: React.FC<KpiSectionProps> = ({ liveProfile }) => {
           linkTo={metric.linkTo}
           visualType={metric.visualType}
           ringProgress={metric.ringProgress}
-          barProgress={metric.barProgress}
           icon={renderIcon(metric.iconName)}
           iconBgColor={metric.iconBgColor}
           iconColor={metric.iconColor}

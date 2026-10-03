@@ -40,7 +40,7 @@ export const MissionHub: React.FC = () => {
           </h1>
         </div>
         <p style={{ fontSize: '15px', color: 'var(--color-text-secondary)', maxWidth: '780px' }}>
-          High-stakes operational simulations where theoretical quantum cybersecurity meets real-world constraints, live photon telemetry, and executive risk governance.
+          High-stakes operational simulations where theoretical quantum cybersecurity meets real-world constraints, simulated photon telemetry, and executive risk governance.
         </p>
       </div>
 

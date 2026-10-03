@@ -114,7 +114,7 @@ export const LoginPage: React.FC = () => {
             color: 'var(--color-text-secondary, #64748b)',
             fontSize: '15px'
           }}>
-            Authenticate to access the Post-Quantum Cryptography Simulator.
+            Sign in to continue your post-quantum cybersecurity training.
           </p>
         </div>
 

@@ -77,7 +77,7 @@ export const MissionPlay: React.FC = () => {
           </button>
           <div>
             <span style={{ fontSize: '11px', color: 'var(--cyber-primary-violet, #7C5CFF)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
-              Q-CAPS Operational Simulation
+              SIMULATION - scripted scenario, not real data
             </span>
             <div style={{ fontSize: '15px', fontWeight: 600, color: '#f8fafc' }}>
               {mission.title}

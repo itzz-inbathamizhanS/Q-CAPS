@@ -69,14 +69,8 @@ def build_graph_projection(db: Session, user_id: int) -> Graph:
                 properties={}
             ))
             
-            # Simulated linkage: Which competencies does this finding require?
-            # Ideally this uses the competency mapper. We'll simulate it linking to comp_1 for this projection.
-            req_comp_id = "comp_1" # In a full system, dynamically map finding_type -> competency_id
-            edges.append(Edge(
-                source_id=finding_id,
-                target_id=req_comp_id,
-                relationship="REQUIRES",
-                properties={"minimum_score": 0.8}
-            ))
+            # No REQUIRES edge: there is no defined mapping from a finding to the competency it needs, and one is
+            # not invented here. Findings without a path are covered by the score-based recommender, which uses
+            # the real quiz results and scan evidence.
             
     return Graph(nodes=nodes, edges=edges)

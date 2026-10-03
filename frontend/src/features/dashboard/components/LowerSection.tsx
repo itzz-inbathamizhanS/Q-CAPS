@@ -22,15 +22,6 @@ export const LowerSection: React.FC = () => {
     iconName: idx % 3 === 0 ? 'trophy' : (idx % 3 === 1 ? 'shield' : 'compass'),
     colorType: idx % 3 === 0 ? 'primary' : (idx % 3 === 1 ? 'secondary' : 'tertiary')
   }));
-  if (achievements.length === 0) {
-    achievements.push({
-      id: 'default',
-      title: 'First Steps',
-      subtitle: 'Complete your first module',
-      iconName: 'compass',
-      colorType: 'tertiary'
-    });
-  }
 
   // Generate days array based on streakDays and current day
   const daysOfWeek = ['M', 'T', 'W', 'T', 'F', 'S', 'S'];
@@ -81,7 +72,8 @@ export const LowerSection: React.FC = () => {
     return d === 'Cybersecurity Fundamentals';
   });
 
-  const avg = (arr: [string, number][]) => arr.length > 0 ? Math.round(arr.reduce((sum, [, v]) => sum + v, 0) / arr.length) : 0;
+  // No quiz in a domain means unknown, which must not be shown as 0%.
+  const avg = (arr: [string, number][]): number | null => arr.length > 0 ? Math.round(arr.reduce((sum, [, v]) => sum + v, 0) / arr.length) : null;
 
   const skillBreakdown = [
     { name: 'Quantum & PQC', score: avg(quantumScores), color: '#3CB7E8' },
@@ -145,6 +137,11 @@ export const LowerSection: React.FC = () => {
         </div>
 
         <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+          {achievements.length === 0 && (
+            <p style={{ margin: 0, fontSize: '13px', color: 'var(--color-text-secondary)' }}>
+              No badges earned yet. Badges are awarded for completed modules and missions.
+            </p>
+          )}
           {achievements.map((achievement) => {
             const colors = getAchievementColors(achievement.colorType);
             return (
@@ -256,7 +253,7 @@ export const LowerSection: React.FC = () => {
                     color: item.color,
                   }}
                 >
-                  {item.score}%
+                  {item.score === null ? 'No data' : `${item.score}%`}
                 </span>
               </div>
               <div

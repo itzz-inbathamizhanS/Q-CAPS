@@ -21,7 +21,7 @@ def create_evidence(
     normalized = normalize_scan(raw_scan)
     payload_hash = hash_payload(normalized)
 
-    # Calculate confidence - dummy values for prototype based on scan data presence
+    # Confidence is a weighted count of which observations were present (TLS version, certificate); it is not a probability.
     conf = weighted_confidence(
         protocol_evidence=1.0 if normalized.get("tls_version") else 0.0,
         certificate_evidence=1.0 if normalized.get("certificate_public_key_algorithm") else 0.0,
