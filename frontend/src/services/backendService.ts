@@ -4,6 +4,7 @@
 
 import { useAuthStore } from '../features/auth/authStore';
 import { handleUnauthorized } from '../features/auth/session';
+import type { ScanLogSummary } from '../features/scanner/types';
 
 export const BACKEND_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
@@ -344,26 +345,60 @@ export const answerQuizQuestion = (attemptId: string, itemId: string, selectedPo
 export const finishQuizAttempt = (attemptId: string) =>
   quizRequest<QuizAttemptResult>(`/quizzes/attempts/${attemptId}/submit`, { answers: [] });
 
-/**
- * Record a scan log into the backend database to feed the recommendation engine
- */
-export async function logScannerResult(payload: Omit<ScannerLogPayload, 'user_id'>) {
-  const { userId, token } = useAuthStore.getState();
-  if (!userId || !token) return null;
+/** Row returned by POST /scanner/log. */
+export interface ScannerLogRecord {
+  id: number;
+  endpoint: string;
+  status: string;
+  vulnerabilities_found: number;
+  details: string | null;
+  created_at: string;
+  xp_awarded: number | null;
+}
 
+async function errorDetail(res: Response, fallback: string): Promise<string> {
   try {
-    const res = await fetch(`${BACKEND_BASE_URL}/scanner/log`, {
+    const data = await res.json();
+    if (typeof data?.detail === 'string') return data.detail;
+  } catch {
+    /* keep the fallback */
+  }
+  return fallback;
+}
+
+/**
+ * Record a scan in the backend (history, XP, recommendation evidence). Throws with the server's reason
+ * when the scan was not recorded, so the UI can say so instead of silently showing an unsaved result.
+ */
+export async function logScannerResult(payload: Omit<ScannerLogPayload, 'user_id'>): Promise<ScannerLogRecord> {
+  const { userId, token } = useAuthStore.getState();
+  if (!userId || !token) throw new Error('Sign in to save scan results.');
+
+  let res: Response;
+  try {
+    res = await fetch(`${BACKEND_BASE_URL}/scanner/log`, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
+      headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
       body: JSON.stringify({ ...payload, user_id: userId }),
     });
-    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-    return await res.json();
-  } catch (error) {
-    console.warn('Failed to log scanner finding to backend:', error);
-    return null;
+  } catch {
+    throw new Error('The Q-CAPS server is not reachable.');
   }
+  if (!res.ok) {
+    if (res.status === 401) handleUnauthorized();
+    throw new Error(await errorDetail(res, `The server rejected the scan (HTTP ${res.status}).`));
+  }
+  return res.json();
+}
+
+/** The current user's recent scans, newest first. */
+export async function fetchScanLogs(limit = 20): Promise<ScanLogSummary[]> {
+  const { data } = await api.get(`/scanner/logs?limit=${limit}`);
+  return data as ScanLogSummary[];
+}
+
+/** One stored scan (its `details` is the scanner JSON result). */
+export async function fetchScanLog(logId: number): Promise<ScannerLogRecord> {
+  const { data } = await api.get(`/scanner/logs/${logId}`);
+  return data as ScannerLogRecord;
 }
