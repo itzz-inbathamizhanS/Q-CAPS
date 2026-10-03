@@ -1,0 +1,1018 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B05",
+      "title": "Becoming Quantum Safe: Protect Your Business and Mitigate Risks with Post-Quantum Cryptography and Crypto-Agility",
+      "authors": "Jai Singh Arun, Ray Harishankar, Walid Rjaibi",
+      "edition": "1st edition",
+      "year": 2025,
+      "publisher": "Wiley"
+    },
+    {
+      "id": "B60",
+      "title": "Basics of quantum information (IBM Quantum Learning course)",
+      "authors": "John Watrous",
+      "edition": "online course, accessed 2026-10-04",
+      "publisher": "IBM Quantum"
+    },
+    {
+      "id": "B61",
+      "title": "Qiskit SDK documentation (Qiskit 2.5.2): QuantumCircuit and qiskit.quantum_info.Statevector",
+      "authors": "Qiskit contributors",
+      "edition": "2.5.2, accessed 2026-10-04",
+      "publisher": "IBM Quantum"
+    },
+    {
+      "id": "B34",
+      "title": "The Python Standard Library (Python 3.14 documentation)",
+      "authors": "Python Software Foundation",
+      "edition": "3.14, accessed 2026-10-04",
+      "publisher": "docs.python.org"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_a_a6_quantum_foundations",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "Classical bits and qubits",
+          "summary": "A bit is 0 or 1; a qubit has a state described by two amplitudes, and a measurement still gives one bit.",
+          "estimated_minutes": 18,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **classical bit** is always exactly 0 or 1. A **qubit** is the quantum counterpart, and its state is richer. Instead of being one of two values, the state of a qubit is described by two **complex numbers**, called **amplitudes**, written α and β. They tell you the probability of each result when you look: the probability of reading 0 is |α|² and of reading 1 is |β|², and those two probabilities must add up to 1.\n\nTwo points stop the most common misunderstandings. First, a measurement of a qubit always gives an ordinary classical bit, 0 or 1. You never read the amplitudes directly; they describe how likely each answer is. Second, a qubit is not a bit that is secretly 0 or 1 and merely unknown to us. The amplitudes carry information (including a **phase**) that changes what later operations do, as the interference lesson shows.\n\nQuantum computers matter for security because certain problems that are hopeless for classical machines, such as factoring large numbers, become feasible with the right quantum algorithm. This module gives you the vocabulary to understand how. It uses small programs you can run yourself, written in plain Python with the maths you met in the mathematics module."
+            },
+            {
+              "type": "code",
+              "id": "c-bitqubit",
+              "language": "python",
+              "code": "import math\n\nbit = 1                                                  # a classical bit is exactly 0 or 1\nalpha, beta = math.sqrt(3) / 2, 0.5                      # the two amplitudes of one example qubit state\np0, p1 = abs(alpha) ** 2, abs(beta) ** 2\nprint(\"classical bit:\", bit)\nprint(f\"qubit amplitudes: alpha={alpha:.3f}, beta={beta:.3f}\")\nprint(f\"P(read 0) = {p0:.2f}, P(read 1) = {p1:.2f}, total = {p0 + p1:.2f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-bitqubit",
+              "language": "text",
+              "code": "classical bit: 1\nqubit amplitudes: alpha=0.866, beta=0.500\nP(read 0) = 0.75, P(read 1) = 0.25, total = 1.00",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "A qubit has amplitudes α = 0.6 and β = 0.8 (real). What is the probability of measuring 1?",
+              "options": [
+                "0.8",
+                "0.64",
+                "0.36"
+              ],
+              "correct_index": 1,
+              "explanation": "The probability is the squared magnitude of the amplitude: 0.8² = 0.64. The other outcome has 0.6² = 0.36, and the two sum to 1."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does measuring a qubit give you?",
+              "options": [
+                "Both amplitudes, so you can read the full state.",
+                "A single classical bit, 0 or 1, chosen with the probabilities the amplitudes define.",
+                "The phase of the state."
+              ],
+              "correct_index": 1,
+              "explanation": "Measurement yields one classical bit. The amplitudes are not directly observable; they only determine how likely each result is."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Single systems: classical and quantum states of a single system"
+            },
+            {
+              "book": "B05",
+              "locator": "Chapter 1, sections Quantum Computing and Quantum Computing and Modern Cryptography"
+            }
+          ]
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "Quantum states and Dirac notation",
+          "summary": "State vectors, normalisation, kets, and why a global phase cannot be observed.",
+          "estimated_minutes": 18,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The complete description of a qubit at one moment is its **quantum state**, written as a vector of two amplitudes. Physicists write the two basic states as **kets**: |0⟩ is the vector (1, 0) and |1⟩ is (0, 1). A general state is a combination, |ψ⟩ = α|0⟩ + β|1⟩, which just means the vector (α, β). This **Dirac notation** is shorthand: the ket |ψ⟩ is a column vector, and the matching **bra** ⟨ψ| is its conjugate transpose (the row vector with each entry conjugated).\n\nA valid state must be **normalised**: |α|² + |β|² = 1, because those numbers are probabilities of exhaustive outcomes. If you have a vector that is not normalised, divide it by its length to fix it. One more fact matters: multiplying the whole state by a unit-size complex number such as e^(iφ) (a **global phase**) changes nothing that can ever be measured. Only **relative** phase between the amplitudes has physical effect. The listing normalises a raw vector and shows that a global phase leaves all the probabilities unchanged."
+            },
+            {
+              "type": "text",
+              "id": "t1b",
+              "markdown": "Two more pieces of notation are worth knowing now. The **inner product** ⟨φ|ψ⟩ of two states is a single complex number measuring how much they overlap. The basis states are **orthogonal**, ⟨0|1⟩ = 0, meaning they can be told apart with certainty, while ⟨ψ|ψ⟩ = 1 is the normalisation condition in one line. Two states are distinguishable for sure exactly when their inner product is zero; states with a non-zero overlap, such as |0⟩ and |+⟩, can never be told apart perfectly with a single measurement."
+            },
+            {
+              "type": "code",
+              "id": "c-states",
+              "language": "python",
+              "code": "import cmath, math, random\n\nSQ2 = 1 / math.sqrt(2)\n\ndef clean(x):\n    return round(x, 3) + 0.0                      # round, and turn -0.0 into 0.0 for tidy printing\n\ndef show(state):\n    return [complex(clean(complex(a).real), clean(complex(a).imag)) for a in state]\n\ndef probabilities(state):\n    return [clean(abs(a) ** 2) for a in state]\n\ndef apply(gate, state):\n    return [sum(gate[r][c] * state[c] for c in range(len(state))) for r in range(len(gate))]\n\nZERO, ONE = [1, 0], [0, 1]\nH = [[SQ2, SQ2], [SQ2, -SQ2]]\nX = [[0, 1], [1, 0]]\nY = [[0, -1j], [1j, 0]]\nZ = [[1, 0], [0, -1]]\nS_GATE = [[1, 0], [0, 1j]]\ndef normalise(state):\n    length = math.sqrt(sum(abs(a) ** 2 for a in state))\n    return [a / length for a in state]\n\nraw = [3, 4j]                                             # not a valid state: its length is 5\nstate = normalise(raw)\nprint(\"normalised:\", show(state))\nprint(\"probabilities:\", probabilities(state), \"sum =\", clean(sum(probabilities(state))))\n\nshifted = [cmath.exp(1j * 0.9) * a for a in state]        # multiply by a global phase\nprint(\"global phase changes the probabilities:\", probabilities(shifted) != probabilities(state))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-states",
+              "language": "text",
+              "code": "normalised: [(0.6+0j), 0.8j]\nprobabilities: [0.36, 0.64] sum = 1.0\nglobal phase changes the probabilities: False",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What must be true of the amplitudes of a valid single-qubit state?",
+              "options": [
+                "|α|² + |β|² = 1",
+                "α + β = 1",
+                "α and β are both real"
+              ],
+              "correct_index": 0,
+              "explanation": "The squared magnitudes are probabilities of the two possible outcomes, so they must sum to 1. The amplitudes themselves may be complex."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Multiplying a whole state by the complex number e^(iφ) (a global phase) changes:",
+              "options": [
+                "Nothing that can be measured.",
+                "The probability of each outcome.",
+                "The length of the state vector."
+              ],
+              "correct_index": 0,
+              "explanation": "A global phase has size 1, so it does not change any probability or the length. Only the relative phase between amplitudes matters."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Single systems: quantum state vectors and the standard basis"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, cmath and math modules"
+            }
+          ],
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "Superposition",
+          "summary": "Equal superpositions, phases, and why |+>, |-> and |+i> are different states that look identical to a basic measurement.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A state such as α|0⟩ + β|1⟩ with both α and β non-zero is a **superposition** of |0⟩ and |1⟩. The most important example is the **equal superposition** with α = β = 1/√2, called |+⟩. Its partner |−⟩ has amplitudes (1/√2, −1/√2). A third, |+i⟩, has (1/√2, i/√2). A measurement in the usual (0/1) way gives 0 or 1 with probability ½ each for all three.\n\nThat raises the question: if the probabilities are the same, in what sense are the states different? The answer is the **relative phase** between the amplitudes: +1, −1 and +i. A single 0/1 measurement cannot see it, but later operations can, which is the subject of the interference lesson. So superposition is not the same as an ordinary random coin: a coin has no phase, so a \"fair coin\" cannot be made to produce a certain answer from two sequential operations, while |+⟩ can.\n\nAvoid two popular slogans. \"A qubit is both 0 and 1 at the same time\" is at best loose: it is in a definite state, a particular vector, that gives each outcome with some probability. And \"superposition means we do not know which one it is\" is wrong: if it were mere ignorance, interference could not happen."
+            },
+            {
+              "type": "code",
+              "id": "c-super",
+              "language": "python",
+              "code": "import cmath, math, random\n\nSQ2 = 1 / math.sqrt(2)\n\ndef clean(x):\n    return round(x, 3) + 0.0                      # round, and turn -0.0 into 0.0 for tidy printing\n\ndef show(state):\n    return [complex(clean(complex(a).real), clean(complex(a).imag)) for a in state]\n\ndef probabilities(state):\n    return [clean(abs(a) ** 2) for a in state]\n\ndef apply(gate, state):\n    return [sum(gate[r][c] * state[c] for c in range(len(state))) for r in range(len(gate))]\n\nZERO, ONE = [1, 0], [0, 1]\nH = [[SQ2, SQ2], [SQ2, -SQ2]]\nX = [[0, 1], [1, 0]]\nY = [[0, -1j], [1j, 0]]\nZ = [[1, 0], [0, -1]]\nS_GATE = [[1, 0], [0, 1j]]\nplus = apply(H, ZERO)                       # the Hadamard gate turns |0> into |+>\nminus = apply(H, ONE)\nplus_i = apply(S_GATE, plus)                # the S gate multiplies the |1> amplitude by i\nfor name, state in ((\"|+>\", plus), (\"|->\", minus), (\"|+i>\", plus_i)):\n    print(f\"{name:5}\", show(state), probabilities(state))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-super",
+              "language": "text",
+              "code": "|+>   [(0.707+0j), (0.707+0j)] [0.5, 0.5]\n|->   [(0.707+0j), (-0.707+0j)] [0.5, 0.5]\n|+i>  [(0.707+0j), 0.707j] [0.5, 0.5]",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "The states |+> and |-> give the same probabilities (0.5 and 0.5) when measured in the 0/1 basis. What distinguishes them?",
+              "options": [
+                "The relative phase between their amplitudes.",
+                "Their length.",
+                "Nothing: they are the same state."
+              ],
+              "correct_index": 0,
+              "explanation": "|+> has amplitudes (1/√2, 1/√2) and |-> has (1/√2, -1/√2). The sign is a relative phase, and later operations such as another Hadamard turn the difference into different measurement results."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is a qubit in superposition not just 'an unknown 0 or 1'?",
+              "options": [
+                "Because the amplitudes include phase, which affects later operations in a way mere ignorance could not.",
+                "Because qubits are always measured twice.",
+                "Because superposition only occurs on hardware."
+              ],
+              "correct_index": 0,
+              "explanation": "If the state were merely unknown, there would be no phase to interfere. The measurable difference between |+> and |-> after a second operation shows the amplitudes are real physical quantities."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Single systems: the Hadamard operation and the plus and minus states"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, cmath and math modules"
+            }
+          ],
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "Measurement",
+          "summary": "The Born rule, collapse, repeated measurement and why you need many shots.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Measurement** asks a qubit for a classical answer. The **Born rule** says the outcome 0 occurs with probability |α|² and the outcome 1 with probability |β|². Crucially, measurement **changes the state**: after you read 0, the qubit is in |0⟩; after you read 1, it is in |1⟩. This is called **collapse**. Measuring again immediately gives the same answer every time, because the state is no longer a superposition.\n\nThe consequence is that you cannot find out a state by measuring once, and you cannot copy an unknown state to measure the copies (the **no-cloning theorem**). To learn probabilities you must **prepare the same state many times** and measure each one. In quantum programming each repetition is a **shot**, and the counts of results approximate the probabilities. The listing prepares |+⟩ a thousand times and counts the results. The random numbers use a fixed seed so the printed counts are reproducible; with a different seed the counts would be close to 500 and 500 but not identical. Statistical scatter is normal and shrinks as the number of shots grows."
+            },
+            {
+              "type": "code",
+              "id": "c-measure",
+              "language": "python",
+              "code": "import cmath, math, random\n\nSQ2 = 1 / math.sqrt(2)\n\ndef clean(x):\n    return round(x, 3) + 0.0                      # round, and turn -0.0 into 0.0 for tidy printing\n\ndef show(state):\n    return [complex(clean(complex(a).real), clean(complex(a).imag)) for a in state]\n\ndef probabilities(state):\n    return [clean(abs(a) ** 2) for a in state]\n\ndef apply(gate, state):\n    return [sum(gate[r][c] * state[c] for c in range(len(state))) for r in range(len(gate))]\n\nZERO, ONE = [1, 0], [0, 1]\nH = [[SQ2, SQ2], [SQ2, -SQ2]]\nX = [[0, 1], [1, 0]]\nY = [[0, -1j], [1j, 0]]\nZ = [[1, 0], [0, -1]]\nS_GATE = [[1, 0], [0, 1j]]\ndef measure(state, rng):\n    outcome = 0 if rng.random() < abs(state[0]) ** 2 else 1\n    return outcome, (ZERO if outcome == 0 else ONE)          # collapse to the observed basis state\n\nrng = random.Random(2024)                                    # fixed seed: reproducible output\nplus = apply(H, ZERO)\ncounts = {0: 0, 1: 0}\nfor _ in range(1000):                                        # 1000 shots: prepare |+> and measure\n    counts[measure(plus, rng)[0]] += 1\nprint(\"1000 shots of |+>:\", counts)\n\noutcome, after = measure(plus, rng)\nagain = {measure(after, rng)[0] for _ in range(20)}\nprint(\"measured\", outcome, \"-> state is now\", after, \"-> measuring again always gives\", again)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-measure",
+              "language": "text",
+              "code": "1000 shots of |+>: {0: 502, 1: 498}\nmeasured 0 -> state is now [1, 0] -> measuring again always gives {0}",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "A security consequence",
+              "text": "Because measuring disturbs an unknown quantum state, an eavesdropper cannot read quantum-encoded information without leaving traces. That is the basis of quantum key distribution, which you will study in Track C. It is a different idea from post-quantum cryptography."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "A qubit is measured and gives 1. If it is measured again straight away, what do you expect?",
+              "options": [
+                "1 again, because the measurement collapsed the state.",
+                "0 or 1 at random again.",
+                "0, to balance the first result."
+              ],
+              "correct_index": 0,
+              "explanation": "After collapse the state is |1>, so a repeated measurement in the same basis returns 1 with certainty."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why are quantum programs run for many shots?",
+              "options": [
+                "Each run gives only one random result; many runs reveal the probabilities.",
+                "Each shot makes the qubit more accurate.",
+                "Because the computer forgets the answer."
+              ],
+              "correct_index": 0,
+              "explanation": "A single measurement is one sample from the probability distribution, so repeating the experiment estimates it."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Single systems: measuring quantum states (standard basis measurements)"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, random module (random.Random.random is reproducible for a given seed)"
+            }
+          ],
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "Probability amplitudes and phase",
+          "summary": "Amplitudes are complex numbers: why |+> and |-> behave differently after a second Hadamard.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Amplitudes are **complex numbers**, which is where the mathematics of the previous module pays off. Probabilities come from squared magnitudes, so amplitudes of equal size always give equal probabilities, but amplitudes also have a direction in the complex plane, the **phase**. Two different states can share every probability and still differ in phase.\n\nThe listing makes this concrete with the Hadamard gate. Both |+⟩ and |−⟩ give 50/50 outcomes if measured now. Apply a second Hadamard, though, and the picture changes completely: H|+⟩ is exactly |0⟩ and H|−⟩ is exactly |1⟩. The only difference between the inputs was the sign of one amplitude, a relative phase. That sign was invisible to a measurement of the input and decisive for the output. This is the central mechanism of quantum computing: the amplitudes carry information that probabilities alone cannot."
+            },
+            {
+              "type": "text",
+              "id": "t1b",
+              "markdown": "Work it by hand to see why. The Hadamard matrix has entries 1/√2 and −1/√2. Applied to |+⟩ = (1/√2, 1/√2), the first output entry is (1/√2)(1/√2) + (1/√2)(1/√2) = ½ + ½ = 1 and the second is (1/√2)(1/√2) − (1/√2)(1/√2) = ½ − ½ = 0, giving (1, 0), which is |0⟩. For |−⟩ = (1/√2, −1/√2) the signs make the first entry ½ − ½ = 0 and the second ½ + ½ = 1, giving |1⟩.\n\nA relative phase is a factor e^(iφ) on one amplitude. The values to remember are φ = 0 (the state |+⟩), φ = π (a minus sign, the state |−⟩) and φ = π/2 (a factor of i, the state |+i⟩). All of them lie on the equator of the Bloch sphere, which the next lesson draws."
+            },
+            {
+              "type": "code",
+              "id": "c-phase",
+              "language": "python",
+              "code": "import cmath, math, random\n\nSQ2 = 1 / math.sqrt(2)\n\ndef clean(x):\n    return round(x, 3) + 0.0                      # round, and turn -0.0 into 0.0 for tidy printing\n\ndef show(state):\n    return [complex(clean(complex(a).real), clean(complex(a).imag)) for a in state]\n\ndef probabilities(state):\n    return [clean(abs(a) ** 2) for a in state]\n\ndef apply(gate, state):\n    return [sum(gate[r][c] * state[c] for c in range(len(state))) for r in range(len(gate))]\n\nZERO, ONE = [1, 0], [0, 1]\nH = [[SQ2, SQ2], [SQ2, -SQ2]]\nX = [[0, 1], [1, 0]]\nY = [[0, -1j], [1j, 0]]\nZ = [[1, 0], [0, -1]]\nS_GATE = [[1, 0], [0, 1j]]\nplus, minus = apply(H, ZERO), apply(H, ONE)\nprint(\"|+> and |-> measure the same now:\", probabilities(plus), probabilities(minus))\nprint(\"H|+> =\", show(apply(H, plus)), probabilities(apply(H, plus)))\nprint(\"H|-> =\", show(apply(H, minus)), probabilities(apply(H, minus)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-phase",
+              "language": "text",
+              "code": "|+> and |-> measure the same now: [0.5, 0.5] [0.5, 0.5]\nH|+> = [(1+0j), 0j] [1.0, 0.0]\nH|-> = [0j, (1+0j)] [0.0, 1.0]",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "After applying a Hadamard gate to |->, what is the result?",
+              "options": [
+                "|0>",
+                "|1>",
+                "|+>"
+              ],
+              "correct_index": 1,
+              "explanation": "H maps |+> to |0> and |-> to |1>. The listing shows the amplitudes (0, 1)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Two states have identical measurement probabilities. Which statement must be true?",
+              "options": [
+                "They are the same state.",
+                "They can still be different states, because the phases of the amplitudes may differ.",
+                "They must be orthogonal."
+              ],
+              "correct_index": 1,
+              "explanation": "Probabilities depend only on magnitudes. Different relative phases give different states with the same probabilities."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Single systems: quantum state vectors, and the effect of unitary operations"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, cmath module"
+            }
+          ],
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "The Bloch sphere",
+          "summary": "A picture of every single-qubit state as a point on a sphere, and how to compute it.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Every state of one qubit, ignoring global phase, can be drawn as a point on the surface of a sphere, the **Bloch sphere**. Write a state as cos(θ/2)|0⟩ + e^(iφ) sin(θ/2)|1⟩, where θ is the angle down from the north pole and φ is the angle around the equator. The point has coordinates (x, y, z) = (sin θ cos φ, sin θ sin φ, cos θ), and you can compute them straight from the amplitudes: x = 2 Re(α\\*β), y = 2 Im(α\\*β) and z = |α|² − |β|².\n\nThe landmarks are worth memorising. The **north pole** (z = +1) is |0⟩ and the **south pole** (z = −1) is |1⟩. States on the equator are equal superpositions that differ only in phase: |+⟩ at x = +1, |−⟩ at x = −1, |+i⟩ at y = +1. Note that orthogonal states sit at **opposite** points of the sphere, which is not the same as being at right angles in ordinary space. The height z tells you the probability of reading 0 or 1; the angle φ is pure phase, invisible to a 0/1 measurement but visible after rotations."
+            },
+            {
+              "type": "code",
+              "id": "c-bloch",
+              "language": "python",
+              "code": "import cmath, math, random\n\nSQ2 = 1 / math.sqrt(2)\n\ndef clean(x):\n    return round(x, 3) + 0.0                      # round, and turn -0.0 into 0.0 for tidy printing\n\ndef show(state):\n    return [complex(clean(complex(a).real), clean(complex(a).imag)) for a in state]\n\ndef probabilities(state):\n    return [clean(abs(a) ** 2) for a in state]\n\ndef apply(gate, state):\n    return [sum(gate[r][c] * state[c] for c in range(len(state))) for r in range(len(gate))]\n\nZERO, ONE = [1, 0], [0, 1]\nH = [[SQ2, SQ2], [SQ2, -SQ2]]\nX = [[0, 1], [1, 0]]\nY = [[0, -1j], [1j, 0]]\nZ = [[1, 0], [0, -1]]\nS_GATE = [[1, 0], [0, 1j]]\ndef bloch(state):\n    a, b = complex(state[0]), complex(state[1])\n    product = a.conjugate() * b\n    return (clean(2 * product.real), clean(2 * product.imag), clean(abs(a) ** 2 - abs(b) ** 2))\n\nplus = apply(H, ZERO)\nstates = {\"|0>\": ZERO, \"|1>\": ONE, \"|+>\": plus, \"|->\": apply(H, ONE), \"|+i>\": apply(S_GATE, plus)}\nfor name, state in states.items():\n    print(f\"{name:5} (x, y, z) = {bloch(state)}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-bloch",
+              "language": "text",
+              "code": "|0>   (x, y, z) = (0.0, 0.0, 1.0)\n|1>   (x, y, z) = (0.0, 0.0, -1.0)\n|+>   (x, y, z) = (1.0, 0.0, 0.0)\n|->   (x, y, z) = (-1.0, 0.0, 0.0)\n|+i>  (x, y, z) = (0.0, 1.0, 0.0)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which point on the Bloch sphere is the state |1>?",
+              "options": [
+                "The north pole",
+                "The south pole",
+                "A point on the equator"
+              ],
+              "correct_index": 1,
+              "explanation": "|0> is the north pole (z = +1) and |1> is the south pole (z = -1)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "A state on the equator of the Bloch sphere, when measured in the 0/1 basis, gives:",
+              "options": [
+                "0 and 1 with probability 1/2 each.",
+                "Always 0.",
+                "Always 1."
+              ],
+              "correct_index": 0,
+              "explanation": "Equatorial states have z = 0, which means |α|² = |β|² = 1/2, so each outcome has probability one half."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Single systems: the Bloch sphere"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, complex type and cmath"
+            }
+          ],
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "Quantum gates",
+          "summary": "Gates as unitary matrices: X, Y, Z, H and S, and why every gate is reversible.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **quantum gate** changes the state of a qubit and is a **unitary matrix**: it keeps the state vector's length at 1 (so probabilities still sum to 1) and can always be undone by applying the conjugate transpose. This reversibility is a real difference from classical logic, where gates such as AND destroy information.\n\nThe most common single-qubit gates are **X** (the bit flip, swapping |0⟩ and |1⟩, the quantum NOT), **Z** (the phase flip: it leaves |0⟩ alone and multiplies |1⟩ by −1), **Y** (a combination of both with an i), **H** (the Hadamard, which creates equal superpositions) and **S** (a quarter-turn of phase, multiplying |1⟩ by i). On the Bloch sphere X, Y and Z are half-turns about the x, y and z axes, and H swaps the z and x axes.\n\nThe listing checks unitarity numerically (U† times U equals the identity) and shows what each gate does to |0⟩. Notice that Z leaves |0⟩ unchanged: its effect only shows on states that have a |1⟩ part, which is why it is called a *phase* gate and why you need the superposition and interference lessons to see its use."
+            },
+            {
+              "type": "code",
+              "id": "c-gates",
+              "language": "python",
+              "code": "import cmath, math, random\n\nSQ2 = 1 / math.sqrt(2)\n\ndef clean(x):\n    return round(x, 3) + 0.0                      # round, and turn -0.0 into 0.0 for tidy printing\n\ndef show(state):\n    return [complex(clean(complex(a).real), clean(complex(a).imag)) for a in state]\n\ndef probabilities(state):\n    return [clean(abs(a) ** 2) for a in state]\n\ndef apply(gate, state):\n    return [sum(gate[r][c] * state[c] for c in range(len(state))) for r in range(len(gate))]\n\nZERO, ONE = [1, 0], [0, 1]\nH = [[SQ2, SQ2], [SQ2, -SQ2]]\nX = [[0, 1], [1, 0]]\nY = [[0, -1j], [1j, 0]]\nZ = [[1, 0], [0, -1]]\nS_GATE = [[1, 0], [0, 1j]]\ndef dagger(M):\n    return [[complex(M[c][r]).conjugate() for c in range(len(M))] for r in range(len(M[0]))]\n\ndef matmul(A, B):\n    return [[sum(A[i][k] * B[k][j] for k in range(len(B))) for j in range(len(B[0]))] for i in range(len(A))]\n\ndef is_identity(M):\n    return all(abs(M[i][j] - (1 if i == j else 0)) < 1e-9 for i in range(len(M)) for j in range(len(M)))\n\nfor name, gate in ((\"X\", X), (\"Y\", Y), (\"Z\", Z), (\"H\", H), (\"S\", S_GATE)):\n    print(f\"{name}: unitary = {is_identity(matmul(dagger(gate), gate))!s:5} | on |0> -> {show(apply(gate, ZERO))}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-gates",
+              "language": "text",
+              "code": "X: unitary = True  | on |0> -> [0j, (1+0j)]\nY: unitary = True  | on |0> -> [0j, 1j]\nZ: unitary = True  | on |0> -> [(1+0j), 0j]\nH: unitary = True  | on |0> -> [(0.707+0j), (0.707+0j)]\nS: unitary = True  | on |0> -> [(1+0j), 0j]",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which gate swaps |0> and |1>?",
+              "options": [
+                "X",
+                "Z",
+                "H"
+              ],
+              "correct_index": 0,
+              "explanation": "X is the bit flip (quantum NOT). Z changes the sign of the |1> amplitude and H creates a superposition."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why must a quantum gate be unitary?",
+              "options": [
+                "So it preserves total probability and can be reversed.",
+                "So it only works on real numbers.",
+                "So it always creates superposition."
+              ],
+              "correct_index": 0,
+              "explanation": "Unitary matrices preserve the length of the state vector and have an inverse (the conjugate transpose), so no information is lost."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Single systems: unitary operations (X, Y, Z, H, S and T)"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, built-in complex numbers"
+            }
+          ],
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "Quantum circuits",
+          "summary": "Reading a circuit left to right, and checking a pure-Python result against Qiskit.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **quantum circuit** is a recipe: a list of gates applied to qubits, usually ending with measurement. It is drawn as horizontal lines (one per qubit) with gates placed along them, **read from left to right**. This is the basic unit of a quantum program.\n\nThe listing builds the circuit H, Z, H on one qubit with **Qiskit** (version 2.5.2), prints its text diagram, and asks Qiskit for the exact output state with `Statevector`. It then repeats the calculation with this lesson's pure-Python gates. The two agree, which is a useful habit: check any library result against a hand calculation on a small case. The result is also a good example of interference. H takes |0⟩ to |+⟩, Z flips the sign of the |1⟩ amplitude to give |−⟩, and the second H turns |−⟩ into |1⟩, so the circuit as a whole acts as an X gate."
+            },
+            {
+              "type": "text",
+              "id": "t1b",
+              "markdown": "A circuit usually has several qubits, drawn as several lines, plus **classical bits** that hold measurement results; a measurement is drawn as a meter symbol that copies a qubit's outcome into a classical bit. The **depth** of a circuit is the number of layers of gates, a rough measure of how long it takes to run. A circuit is only a description. It is executed later by a **simulator** on an ordinary computer or by real quantum hardware, and for the same circuit the simulator gives the ideal result while hardware adds noise.\n\nOne convention trips up almost everyone. Qiskit numbers qubits from the **right** in printed bitstrings: qubit 0 is the least significant bit. A result written `10` means qubit 1 gave 1 and qubit 0 gave 0. Textbooks often write the first qubit on the left, so always check which convention a tool uses before comparing results."
+            },
+            {
+              "type": "code",
+              "id": "c-circuit",
+              "language": "python",
+              "code": "import cmath, math, random\n\nSQ2 = 1 / math.sqrt(2)\n\ndef clean(x):\n    return round(x, 3) + 0.0                      # round, and turn -0.0 into 0.0 for tidy printing\n\ndef show(state):\n    return [complex(clean(complex(a).real), clean(complex(a).imag)) for a in state]\n\ndef probabilities(state):\n    return [clean(abs(a) ** 2) for a in state]\n\ndef apply(gate, state):\n    return [sum(gate[r][c] * state[c] for c in range(len(state))) for r in range(len(gate))]\n\nZERO, ONE = [1, 0], [0, 1]\nH = [[SQ2, SQ2], [SQ2, -SQ2]]\nX = [[0, 1], [1, 0]]\nY = [[0, -1j], [1j, 0]]\nZ = [[1, 0], [0, -1]]\nS_GATE = [[1, 0], [0, 1j]]\nfrom qiskit import QuantumCircuit\nfrom qiskit.quantum_info import Statevector\n\nqc = QuantumCircuit(1)\nqc.h(0)\nqc.z(0)\nqc.h(0)\nprint(qc.draw(output=\"text\"))\n\nqiskit_state = Statevector(qc).data\nmine = apply(H, apply(Z, apply(H, ZERO)))\nprint(\"Qiskit probabilities:\", {str(k): round(float(v), 3) for k, v in Statevector(qc).probabilities_dict().items()})\nprint(\"my pure-Python result:\", show(mine))\nprint(\"agree:\", all(abs(a - b) < 1e-9 for a, b in zip(qiskit_state, mine)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-circuit",
+              "language": "text",
+              "code": "   ┌───┐┌───┐┌───┐\nq: ┤ H ├┤ Z ├┤ H ├\n   └───┘└───┘└───┘\nQiskit probabilities: {'1': 1.0}\nmy pure-Python result: [0j, (1+0j)]\nagree: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In which order are the gates of a circuit diagram applied?",
+              "options": [
+                "Left to right",
+                "Right to left",
+                "All at the same time"
+              ],
+              "correct_index": 0,
+              "explanation": "Circuit diagrams are read from left to right: the leftmost gate acts first."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "The circuit H, Z, H on |0> ends in |1>. What single gate does that circuit act like?",
+              "options": [
+                "Z",
+                "X",
+                "S"
+              ],
+              "correct_index": 1,
+              "explanation": "H Z H equals X: it flips |0> to |1>. The listing shows probability 1 for outcome 1."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Quantum circuits"
+            },
+            {
+              "book": "B61",
+              "locator": "QuantumCircuit (construction, gates and text drawing) and quantum_info.Statevector (exact simulation)",
+              "note": "Qiskit 2.5.2."
+            }
+          ],
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "Entanglement",
+          "summary": "Bell states, correlated measurements, how to tell an entangled state from a product, and what entanglement does not do.",
+          "estimated_minutes": 25,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "With two qubits the state has four amplitudes, for the outcomes 00, 01, 10 and 11. Some states can be written as a **product** of one state for each qubit. Others cannot, and these are **entangled**. The classic example is the **Bell state** (|00⟩ + |11⟩)/√2: it has amplitude 1/√2 on 00 and on 11 and zero on the others. If you measure the first qubit you get 0 or 1 at random, but the second qubit then gives **the same** result every time. Neither qubit has a definite state of its own; the pair has one.\n\nFor a pure two-qubit state with amplitudes (a, b, c, d) on (00, 01, 10, 11) there is a simple test: it is a product state exactly when a·d = b·c. For the Bell state a·d = ½ while b·c = 0, so it is entangled. The listing computes the Bell state's probabilities, samples a thousand measurements (with a fixed seed for reproducible output) and applies the test.\n\nEntanglement is often misdescribed. It does **not** let you send messages faster than light, because each side's results look random until the two sets of results are compared over an ordinary channel. And it is **not** what protects data in post-quantum cryptography. **Quantum key distribution (QKD)** uses quantum states, including entangled pairs in some designs, to detect eavesdropping, while **post-quantum cryptography (PQC)** is ordinary mathematics that runs on classical computers and is designed to resist quantum attacks. The two are different answers to the same threat."
+            },
+            {
+              "type": "code",
+              "id": "c-bell",
+              "language": "python",
+              "code": "import random\n\nSQ2 = 0.5 ** 0.5\nlabels = [\"00\", \"01\", \"10\", \"11\"]\nbell = [SQ2, 0, 0, SQ2]                                       # amplitudes of |00>, |01>, |10>, |11>\nprint(\"probabilities:\", {label: round(float(abs(a) ** 2), 3) for label, a in zip(labels, bell)})\n\nrng = random.Random(7)                                        # fixed seed: reproducible output\ncounts = {}\nfor _ in range(1000):\n    r, total = rng.random(), 0.0\n    for label, amplitude in zip(labels, bell):\n        total += abs(amplitude) ** 2\n        if r < total:\n            counts[label] = counts.get(label, 0) + 1\n            break\nprint(\"1000 shots:\", dict(sorted(counts.items())))\n\ndef is_product(state):                                        # a*d == b*c for a pure two-qubit state\n    a, b, c, d = state\n    return abs(a * d - b * c) < 1e-12\n\nprint(\"Bell state is a product state:\", is_product(bell))\nprint(\"|+> tensor |0> is a product state:\", is_product([SQ2, 0, SQ2, 0]))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-bell",
+              "language": "text",
+              "code": "probabilities: {'00': 0.5, '01': 0.0, '10': 0.0, '11': 0.5}\n1000 shots: {'00': 537, '11': 463}\nBell state is a product state: False\n|+> tensor |0> is a product state: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "Two ideas people confuse",
+              "text": "QKD and PQC are different technologies: QKD needs special quantum hardware and links, PQC needs only new software and standards. Most organisations will use PQC for the large-scale migration, which is the subject of the later tracks."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "You measure both qubits of the Bell state (|00> + |11>)/√2. Which pairs of results can occur?",
+              "options": [
+                "00 or 11 only",
+                "00, 01, 10 or 11 equally",
+                "01 or 10 only"
+              ],
+              "correct_index": 0,
+              "explanation": "The amplitudes on 01 and 10 are zero, so only the matching pairs 00 and 11 occur, each with probability one half."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Can entanglement be used to send a message faster than light?",
+              "options": [
+                "No: each side's results look random until compared over an ordinary channel.",
+                "Yes, by choosing which qubit to measure first.",
+                "Only with three or more qubits."
+              ],
+              "correct_index": 0,
+              "explanation": "Local results are random on their own, so no information is transmitted; the correlation only shows when the results are brought together by conventional means."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Multiple systems: entangled states and Bell states"
+            },
+            {
+              "book": "B05",
+              "locator": "Chapter 3, section Additional Quantum-Safe Technologies (quantum key distribution contrasted with post-quantum cryptography)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement that most organisations will migrate with PQC rather than QKD reflects the book's framing and common guidance; it is a judgement, not a measured fact."
+          },
+          "after": "sec-8"
+        },
+        {
+          "slug": "sec-10",
+          "action": "replace",
+          "title": "Interference",
+          "summary": "How amplitudes add and cancel, and why quantum computers do not simply try every answer at once.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Amplitudes are added before probabilities are computed, so contributions can **reinforce** each other (**constructive interference**) or **cancel** (**destructive interference**). This is the mechanism that gives quantum algorithms their power.\n\nFollow the amplitude of |1⟩ through two Hadamard gates. After the first, the state is (1/√2, 1/√2). The second Hadamard builds the |1⟩ amplitude from two contributions: (1/√2)·(1/√2) from the first amplitude and (1/√2)·(−1/√2) from the second. They are +½ and −½, so they cancel to 0: destructive interference. For |0⟩ the contributions are +½ and +½, which add to 1: constructive interference. The qubit therefore returns to |0⟩ with certainty. Insert a Z gate between the Hadamards and the sign of the second contribution flips, so the cancellation happens on |0⟩ instead and the result is |1⟩.\n\nThis corrects a very common misconception. A quantum computer does **not** try all possible answers in parallel and then pick the right one; a measurement would just return one random answer. Algorithms are designed so that interference makes the amplitudes of **wrong** answers cancel and those of **right** answers add, so that a measurement is likely to give a useful result. Designing that cancellation is the hard part."
+            },
+            {
+              "type": "code",
+              "id": "c-interference",
+              "language": "python",
+              "code": "import cmath, math, random\n\nSQ2 = 1 / math.sqrt(2)\n\ndef clean(x):\n    return round(x, 3) + 0.0                      # round, and turn -0.0 into 0.0 for tidy printing\n\ndef show(state):\n    return [complex(clean(complex(a).real), clean(complex(a).imag)) for a in state]\n\ndef probabilities(state):\n    return [clean(abs(a) ** 2) for a in state]\n\ndef apply(gate, state):\n    return [sum(gate[r][c] * state[c] for c in range(len(state))) for r in range(len(gate))]\n\nZERO, ONE = [1, 0], [0, 1]\nH = [[SQ2, SQ2], [SQ2, -SQ2]]\nX = [[0, 1], [1, 0]]\nY = [[0, -1j], [1j, 0]]\nZ = [[1, 0], [0, -1]]\nS_GATE = [[1, 0], [0, 1j]]\nstate = apply(H, ZERO)\nprint(\"after one H: \", show(state), probabilities(state))\nafter_two = apply(H, state)\nprint(\"after two H: \", show(after_two), probabilities(after_two))\nwith_z = apply(H, apply(Z, state))\nprint(\"H, Z, H:     \", show(with_z), probabilities(with_z))\n\na0, a1 = state\nprint(\"amplitude of |1> after the second H:\", clean(SQ2 * a0 - SQ2 * a1), \"= 0.5 + (-0.5)  (destructive)\")\nprint(\"amplitude of |0> after the second H:\", clean(SQ2 * a0 + SQ2 * a1), \"= 0.5 + 0.5  (constructive)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-interference",
+              "language": "text",
+              "code": "after one H:  [(0.707+0j), (0.707+0j)] [0.5, 0.5]\nafter two H:  [(1+0j), 0j] [1.0, 0.0]\nH, Z, H:      [0j, (1+0j)] [0.0, 1.0]\namplitude of |1> after the second H: 0.0 = 0.5 + (-0.5)  (destructive)\namplitude of |0> after the second H: 1.0 = 0.5 + 0.5  (constructive)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which statement about quantum computers is correct?",
+              "options": [
+                "Algorithms use interference so wrong answers cancel and right answers reinforce before measurement.",
+                "They try every answer at once and read out the best one.",
+                "They work by measuring every qubit repeatedly."
+              ],
+              "correct_index": 0,
+              "explanation": "Measurement returns one random outcome, so simply 'trying everything' is useless. The skill is arranging interference so the desired outcome has high probability."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "In the H, Z, H circuit the two contributions to the |0> amplitude are +0.5 and -0.5. What is the result for |0>?",
+              "options": [
+                "Constructive interference: the amplitude becomes 1.",
+                "Destructive interference: the amplitude becomes 0.",
+                "The amplitude stays 0.5."
+              ],
+              "correct_index": 1,
+              "explanation": "The contributions cancel, so the |0> amplitude is 0 and the qubit ends in |1>."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Quantum circuits and lesson Single systems (Hadamard operations and interference)"
+            },
+            {
+              "book": "B05",
+              "locator": "Chapter 1, section Quantum Algorithms (algorithms rely on interference, not on trying all answers)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The framing of interference as the mechanism of quantum algorithms is the standard explanation; the book chapter is cited for context and its exact wording was not compared."
+          },
+          "after": "sec-9"
+        },
+        {
+          "slug": "sec-11",
+          "action": "replace",
+          "title": "Tensor products and the size of quantum states",
+          "summary": "How states of several qubits combine, and why n qubits need 2^n amplitudes.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "To describe more than one qubit you combine their states with the **tensor product** (also called the Kronecker product). For two qubits with states (a₀, a₁) and (b₀, b₁), the combined state has four amplitudes: (a₀b₀, a₀b₁, a₁b₀, a₁b₁). Three qubits give eight amplitudes, and **n qubits give 2^n amplitudes**. Product states, built this way, are exactly the unentangled ones; entangled states are the combinations that cannot be factored.\n\nThis exponential growth is why simulating quantum computers on ordinary hardware gets hard fast. A straightforward simulator stores every amplitude, which at 16 bytes per complex number needs about 16 GiB of memory for 30 qubits and about 16 million GiB for 50. The listing prints the numbers. Be careful about what this shows and does not show: it means the **naive full-state method** becomes impractical beyond a few dozen qubits, not that every quantum circuit is hard to simulate (many structured circuits can be simulated far more cheaply), and not by itself that quantum computers solve useful problems faster."
+            },
+            {
+              "type": "code",
+              "id": "c-tensor",
+              "language": "python",
+              "code": "def kron(a, b):\n    return [x * y for x in a for y in b]\n\nSQ2 = 0.5 ** 0.5\nplus, zero, one = [SQ2, SQ2], [1, 0], [0, 1]\nprint(\"|+> x |0> =\", [round(x, 3) for x in kron(plus, zero)])\nprint(\"|0> x |1> =\", kron(zero, one))\n\nfor n in (1, 2, 10, 30, 50):\n    amplitudes = 2 ** n\n    print(f\"{n:>2} qubits: {amplitudes:>20,} amplitudes, {amplitudes * 16 / 2**30:>16,.4f} GiB at 16 bytes each\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-tensor",
+              "language": "text",
+              "code": "|+> x |0> = [0.707, 0.0, 0.707, 0.0]\n|0> x |1> = [0, 1, 0, 0]\n 1 qubits:                    2 amplitudes,           0.0000 GiB at 16 bytes each\n 2 qubits:                    4 amplitudes,           0.0000 GiB at 16 bytes each\n10 qubits:                1,024 amplitudes,           0.0000 GiB at 16 bytes each\n30 qubits:        1,073,741,824 amplitudes,          16.0000 GiB at 16 bytes each\n50 qubits: 1,125,899,906,842,624 amplitudes,  16,777,216.0000 GiB at 16 bytes each",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How many amplitudes describe the state of 3 qubits?",
+              "options": [
+                "3",
+                "6",
+                "8"
+              ],
+              "correct_index": 2,
+              "explanation": "n qubits need 2^n amplitudes, and 2^3 = 8."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does the memory table prove?",
+              "options": [
+                "That naive storage of the full state vector becomes impractical beyond a few dozen qubits.",
+                "That every quantum circuit is impossible to simulate.",
+                "That quantum computers solve every problem faster."
+              ],
+              "correct_index": 0,
+              "explanation": "It shows the cost of the naive method only. Many structured circuits can be simulated cheaply, and the table says nothing about which problems quantum computers solve faster."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lesson Multiple systems: tensor products and multi-qubit states"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Language Reference, list comprehensions and integer arithmetic"
+            }
+          ],
+          "after": "sec-10"
+        },
+        {
+          "slug": "sec-12",
+          "action": "new",
+          "title": "Task: build a Bell state two ways",
+          "summary": "A guided practical: implement a CNOT in plain Python, create a Bell state, and verify it against Qiskit.",
+          "estimated_minutes": 30,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Objective.** Reproduce the Bell state with your own code and with Qiskit, and confirm they agree. This is the best test you can run on a quantum program you wrote yourself: an independent check.\n\n**Prerequisites.** The lessons on gates, circuits, entanglement and tensor products. Python 3 and, for the second half, Qiskit (`pip install qiskit`; this course was verified with version 2.5.2).\n\n**Steps.** (1) Write a function that multiplies a matrix by a vector. (2) Write a function that builds a 4 × 4 matrix for a single-qubit gate acting on the first of two qubits, using the tensor product with the 2 × 2 identity. (3) Write the CNOT matrix, which flips the second qubit when the first is 1. (4) Start in |00⟩, apply H to the first qubit, then CNOT. (5) Build the same circuit in Qiskit with `h(0)` and `cx(0, 1)` and compare the state vectors. Try it yourself before reading the solution."
+            },
+            {
+              "type": "code",
+              "id": "c-task",
+              "language": "python",
+              "code": "import math\nfrom qiskit import QuantumCircuit\nfrom qiskit.quantum_info import Statevector\n\nSQ2 = 1 / math.sqrt(2)\nH = [[SQ2, SQ2], [SQ2, -SQ2]]\nI2 = [[1, 0], [0, 1]]\n\ndef kron_matrix(A, B):                                  # A acts on the first qubit, B on the second\n    return [[A[i // 2][j // 2] * B[i % 2][j % 2] for j in range(4)] for i in range(4)]\n\ndef apply(M, v):\n    return [sum(M[r][c] * v[c] for c in range(len(v))) for r in range(len(M))]\n\nCNOT = [[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]]     # first qubit controls a flip of the second\nmine = apply(CNOT, apply(kron_matrix(H, I2), [1, 0, 0, 0]))          # start in |00>\nprint(\"mine:  \", [round(a, 3) for a in mine])\n\nqc = QuantumCircuit(2)\nqc.h(0)\nqc.cx(0, 1)\ntheirs = Statevector(qc).data\nprint(\"qiskit:\", [round(float(a.real), 3) for a in theirs])\nprint(\"agree:\", all(abs(a - b) < 1e-9 for a, b in zip(mine, theirs)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-task",
+              "language": "text",
+              "code": "mine:   [0.707, 0.0, 0.0, 0.707]\nqiskit: [0.707, 0.0, 0.0, 0.707]\nagree: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Verify.** Both vectors should be (0.707, 0, 0, 0.707) and the last line should say `agree: True`.\n\n**A caution about conventions.** Qiskit numbers qubits from the right: qubit 0 is the *least* significant position of a bitstring, while the plain-Python code above treats the first qubit as the most significant. For this symmetric Bell state both conventions give the same vector, but for most other states they would not. Whenever you compare programs, check the ordering convention first.\n\n**Troubleshooting.** `ModuleNotFoundError: qiskit` means Qiskit is not installed in the environment you are running. If the numbers differ, check that the CNOT row order is 00, 01, 10, 11 and that you built the H matrix for the first qubit.\n\n**Cleanup.** Nothing to clean up; no files are written.\n\n**Stretch.** Change the circuit to H on the first qubit and X on the second before the CNOT, predict the result by hand, then check both programs."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In the finished program, what two measurement outcomes can occur for the Bell state?",
+              "options": [
+                "00 and 11",
+                "01 and 10",
+                "All four equally"
+              ],
+              "correct_index": 0,
+              "explanation": "The amplitudes are on 00 and 11 only, so only those two outcomes occur."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is it valuable to compare your own simulation with a library such as Qiskit?",
+              "options": [
+                "Independent implementations catch mistakes in either one.",
+                "Libraries are always wrong.",
+                "It makes the program run faster."
+              ],
+              "correct_index": 0,
+              "explanation": "If two independently written programs agree on small cases, that is strong evidence both are right. A disagreement tells you exactly where to look."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B61",
+              "locator": "QuantumCircuit.h and QuantumCircuit.cx, and quantum_info.Statevector (Qiskit 2.5.2); qubit ordering convention"
+            },
+            {
+              "book": "B60",
+              "locator": "Basics of quantum information, lessons Multiple systems and Quantum circuits (controlled operations and Bell states)"
+            }
+          ],
+          "after": "sec-11"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "a6-n01",
+          "prompt": "A qubit's amplitudes are 0.6 and 0.8. What is the probability of reading 0?",
+          "options": [
+            "0.36",
+            "0.6",
+            "0.64"
+          ],
+          "correct_index": 0,
+          "explanation": "The probability is the squared magnitude: 0.6² = 0.36.",
+          "source": {
+            "book": "B60",
+            "locator": "Single systems"
+          },
+          "competency_id": "QNT.1",
+          "depth": "Explain",
+          "lesson_id": "A7.L1"
+        },
+        {
+          "id": "a6-n02",
+          "prompt": "Which of these is a valid normalised single-qubit state?",
+          "options": [
+            "(0.6, 0.8)",
+            "(0.6, 0.6)",
+            "(1, 1)"
+          ],
+          "correct_index": 0,
+          "explanation": "0.6² + 0.8² = 1. The others do not sum to 1.",
+          "source": {
+            "book": "B60",
+            "locator": "Single systems"
+          },
+          "competency_id": "QNT.1",
+          "depth": "Explain",
+          "lesson_id": "A7.L1"
+        },
+        {
+          "id": "a6-n03",
+          "prompt": "|+> and |-> have identical measurement probabilities in the 0/1 basis. They differ in:",
+          "options": [
+            "Relative phase",
+            "Length",
+            "Nothing"
+          ],
+          "correct_index": 0,
+          "explanation": "Their amplitudes differ by a sign (a relative phase of π).",
+          "source": {
+            "book": "B60",
+            "locator": "Single systems"
+          },
+          "competency_id": "QNT.1",
+          "depth": "Explain",
+          "lesson_id": "A7.L2"
+        },
+        {
+          "id": "a6-n04",
+          "prompt": "After measuring a qubit and obtaining 0, measuring it again immediately gives:",
+          "options": [
+            "0 with certainty",
+            "0 or 1 at random",
+            "1 with certainty"
+          ],
+          "correct_index": 0,
+          "explanation": "Measurement collapses the state to |0>.",
+          "source": {
+            "book": "B60",
+            "locator": "Single systems"
+          },
+          "competency_id": "QNT.1",
+          "depth": "Explain",
+          "lesson_id": "A7.L2"
+        },
+        {
+          "id": "a6-n05",
+          "prompt": "Where does the state |1> sit on the Bloch sphere?",
+          "options": [
+            "North pole",
+            "South pole",
+            "On the equator"
+          ],
+          "correct_index": 1,
+          "explanation": "|0> is the north pole and |1> the south pole.",
+          "source": {
+            "book": "B60",
+            "locator": "Single systems"
+          },
+          "competency_id": "QNT.1",
+          "depth": "Aware",
+          "lesson_id": "A7.L3"
+        },
+        {
+          "id": "a6-n06",
+          "prompt": "Which gate turns |0> into an equal superposition?",
+          "options": [
+            "X",
+            "H",
+            "Z"
+          ],
+          "correct_index": 1,
+          "explanation": "The Hadamard gate maps |0> to (|0> + |1>)/√2.",
+          "source": {
+            "book": "B60",
+            "locator": "Single systems"
+          },
+          "competency_id": "QNT.2",
+          "depth": "Explain",
+          "lesson_id": "A7.L4"
+        },
+        {
+          "id": "a6-n07",
+          "prompt": "How many amplitudes describe the state of 5 qubits?",
+          "options": [
+            "10",
+            "25",
+            "32"
+          ],
+          "correct_index": 2,
+          "explanation": "n qubits need 2^n amplitudes: 2^5 = 32.",
+          "source": {
+            "book": "B60",
+            "locator": "Multiple systems"
+          },
+          "competency_id": "QNT.2",
+          "depth": "Explain",
+          "lesson_id": "A7.L5"
+        },
+        {
+          "id": "a6-n08",
+          "prompt": "In the Bell state (|00> + |11>)/√2, which pairs of outcomes can be observed?",
+          "options": [
+            "00 and 11 only",
+            "00, 01, 10 and 11",
+            "01 and 10 only"
+          ],
+          "correct_index": 0,
+          "explanation": "Only 00 and 11 have non-zero amplitude.",
+          "source": {
+            "book": "B60",
+            "locator": "Multiple systems"
+          },
+          "competency_id": "QNT.2",
+          "depth": "Explain",
+          "lesson_id": "A7.L6"
+        },
+        {
+          "id": "a6-n09",
+          "prompt": "Why does H followed by H return a qubit in |0> to |0>?",
+          "options": [
+            "The amplitudes for |1> cancel (destructive interference) and those for |0> add",
+            "The second H undoes the measurement",
+            "Gates are random"
+          ],
+          "correct_index": 0,
+          "explanation": "The |1> contributions are +1/2 and -1/2, which cancel; the |0> contributions add to 1.",
+          "source": {
+            "book": "B60",
+            "locator": "Single systems"
+          },
+          "competency_id": "QNT.2",
+          "depth": "Explain",
+          "lesson_id": "A7.L7"
+        },
+        {
+          "id": "a6-n10",
+          "prompt": "Which statement distinguishes QKD from PQC?",
+          "options": [
+            "QKD uses quantum states, PQC is classical mathematics on ordinary computers",
+            "PQC needs quantum hardware, QKD does not",
+            "They are the same technology"
+          ],
+          "correct_index": 0,
+          "explanation": "QKD relies on quantum hardware; PQC is software based on mathematical problems believed hard for quantum computers.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 3"
+          },
+          "competency_id": "QNT.2",
+          "depth": "Aware",
+          "lesson_id": "A7.L6"
+        }
+      ],
+      "estimated_minutes": 253,
+      "notes": "Rewrites eleven outline sections as lessons built on a small pure-Python state-vector simulator, cross-checks against Qiskit 2.5.2, and adds a Bell-state task. Sources are the IBM Quantum Learning course by John Watrous, the Qiskit documentation and the quantum-safe book.",
+      "learning_objectives": [
+        "Describe a qubit state as a normalised vector of two complex amplitudes and compute measurement probabilities.",
+        "Explain superposition, relative phase, measurement and collapse, and why many shots are needed.",
+        "Locate single-qubit states on the Bloch sphere and compute their coordinates.",
+        "Apply X, Y, Z, H and S as unitary matrices and read a one-qubit circuit.",
+        "Explain entanglement with a Bell state, test for a product state, and separate QKD from PQC.",
+        "Explain interference and why 2^n amplitudes make naive simulation expensive, and verify a result against Qiskit."
+      ]
+    }
+  ]
+}
