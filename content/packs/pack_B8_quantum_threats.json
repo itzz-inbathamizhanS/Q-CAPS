@@ -1,0 +1,895 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B01",
+      "title": "Understanding Cryptography: From Established Symmetric and Asymmetric Ciphers to Post-Quantum Algorithms",
+      "authors": "Christof Paar, Jan Pelzl, Tim Güneysu",
+      "edition": "2nd edition",
+      "year": 2024,
+      "publisher": "Springer"
+    },
+    {
+      "id": "B02",
+      "title": "A Graduate Course in Applied Cryptography",
+      "authors": "Dan Boneh, Victor Shoup",
+      "edition": "Version 0.6",
+      "year": 2023
+    },
+    {
+      "id": "B03",
+      "title": "A Tutorial on Post-quantum Cryptography (lecture slides)",
+      "authors": "Douglas R. Stinson",
+      "edition": "11 August 2025",
+      "year": 2025
+    },
+    {
+      "id": "B05",
+      "title": "Becoming Quantum Safe: Protect Your Business and Mitigate Risks with Post-Quantum Cryptography and Crypto-Agility",
+      "authors": "Jai Singh Arun, Ray Harishankar, Walid Rjaibi",
+      "edition": "1st edition",
+      "year": 2025,
+      "publisher": "Wiley"
+    },
+    {
+      "id": "B80",
+      "title": "Polynomial-Time Algorithms for Prime Factorization and Discrete Logarithms on a Quantum Computer (arXiv quant-ph/9508027)",
+      "authors": "Peter W. Shor",
+      "edition": "arXiv version, 1995",
+      "year": 1995
+    },
+    {
+      "id": "B81",
+      "title": "How to factor 2048 bit RSA integers in 8 hours using 20 million noisy qubits (arXiv 1905.09749)",
+      "authors": "Craig Gidney, Martin Ekerå",
+      "edition": "2019",
+      "year": 2019
+    },
+    {
+      "id": "B82",
+      "title": "How to factor 2048 bit RSA integers with less than a million noisy qubits (arXiv 2505.15917)",
+      "authors": "Craig Gidney",
+      "edition": "May 2025",
+      "year": 2025
+    },
+    {
+      "id": "B83",
+      "title": "Quantum resource estimates for computing elliptic curve discrete logarithms (arXiv 1706.06752)",
+      "authors": "Martin Roetteler, Michael Naehrig, Krysta M. Svore, Kristin Lauter",
+      "edition": "2017",
+      "year": 2017
+    },
+    {
+      "id": "B84",
+      "title": "Grover's quantum searching algorithm is optimal (arXiv quant-ph/9711070)",
+      "authors": "Christof Zalka",
+      "edition": "1997",
+      "year": 1997
+    },
+    {
+      "id": "B85",
+      "title": "IR 8547 (initial public draft), Transition to Post-Quantum Cryptography Standards",
+      "authors": "Dustin Moody, Ray Perlner, Andrew Regenscheid, Angela Robinson, David Cooper",
+      "edition": "November 2024, accessed 2026-10-04",
+      "publisher": "NIST"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_b_b8_quantum_threats",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "Why RSA is vulnerable",
+          "summary": "Factoring reduces to finding a period; the quantum computer only does that one step, and the rest is ordinary arithmetic you can run.",
+          "estimated_minutes": 25,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The security of RSA rests on the belief that **factoring** a large number N = p × q is hard. The best classical algorithm, the general number field sieve, is **sub-exponential**: far better than trying every divisor, but still growing so fast that 2048-bit numbers are out of reach. In 1994 Peter Shor showed that a quantum computer could factor in time that grows only **polynomially** with the number of digits, and the same algorithm solves the discrete logarithm problem that protects Diffie-Hellman and elliptic curves.\n\nThe key insight is that factoring can be turned into **period finding**. Pick a number a that shares no factor with N and look at the sequence a^x mod N. It repeats with some **period** r (the *order* of a modulo N). If r is even and a^(r/2) is not −1 modulo N, then gcd(a^(r/2) − 1, N) and gcd(a^(r/2) + 1, N) are non-trivial factors of N. Everything in that recipe is cheap arithmetic **except finding r**. That single step is what a quantum computer does efficiently, using the quantum Fourier transform, which you will study in B3. The listing does the surrounding classical arithmetic exactly as in Shor's algorithm and finds the period by brute force, which only works for tiny numbers."
+            },
+            {
+              "type": "code",
+              "id": "c-shor",
+              "language": "python",
+              "code": "from math import gcd\n\ndef order(a, n):                       # smallest r > 0 with a**r = 1 (mod n): the step a quantum computer speeds up\n    r, value = 1, a % n\n    while value != 1:\n        value, r = value * a % n, r + 1\n    return r\n\ndef factors_from_order(n, a):\n    if gcd(a, n) != 1:\n        return gcd(a, n), n // gcd(a, n)                   # lucky guess: a already shares a factor with n\n    r = order(a, n)\n    if r % 2:\n        return None                                        # odd period: try another a\n    x = pow(a, r // 2, n)\n    if x == n - 1:\n        return None                                        # a**(r/2) = -1: try another a\n    return gcd(x - 1, n), gcd(x + 1, n)\n\nfor n, a in ((15, 7), (21, 2), (3233, 3), (3233, 5)):\n    print(f\"N={n:<5} a={a}: order={order(a, n):<4} factors={factors_from_order(n, a)}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-shor",
+              "language": "text",
+              "code": "N=15    a=7: order=4    factors=(3, 5)\nN=21    a=2: order=6    factors=(7, 3)\nN=3233  a=3: order=260  factors=(61, 53)\nN=3233  a=5: order=780  factors=(61, 53)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Read the output: for N = 15 and a = 7 the period is 4, and the gcd step recovers 3 and 5. For N = 3233 (= 61 × 53) the choice a = 5 fails because the period gives a trivial result, which is normal: Shor's algorithm succeeds with good probability, and you simply try another a when it does not. Now see why the brute-force period search does not scale. The second listing counts the steps for products of two primes with 2, 3 and 4 digits each. Because the period can be as large as roughly N itself, the worst-case number of steps grows in proportion to N, which for a 2048-bit N (about 10^616) is hopeless, while a quantum period finder needs only a number of operations polynomial in the bit length. The listing reports the largest period found among the bases 2 to 40 that are coprime to N, since a single base can have a short period by luck."
+            },
+            {
+              "type": "code",
+              "id": "c-growth",
+              "language": "python",
+              "code": "from math import gcd\n\ndef steps_to_find_order(a, n):\n    steps, value = 1, a % n\n    while value != 1:\n        value, steps = value * a % n, steps + 1\n    return steps\n\nfor p, q in ((11, 13), (101, 103), (1009, 1013)):\n    n = p * q\n    worst = max(steps_to_find_order(a, n) for a in range(2, 41) if gcd(a, n) == 1)\n    print(f\"N = {p} x {q} = {n:>9,}   largest brute-force order search among a = 2..40: {worst:>8,} steps\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-growth",
+              "language": "text",
+              "code": "N = 11 x 13 =       143   largest brute-force order search among a = 2..40:       60 steps\nN = 101 x 103 =    10,403   largest brute-force order search among a = 2..40:    5,100 steps\nN = 1009 x 1013 = 1,022,117   largest brute-force order search among a = 2..40:  255,024 steps",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In Shor's algorithm, which step is the one a quantum computer speeds up dramatically?",
+              "options": [
+                "Finding the period (order) of a^x mod N.",
+                "Computing the gcd.",
+                "Multiplying the two prime factors."
+              ],
+              "correct_index": 0,
+              "explanation": "The gcd and the arithmetic are cheap on a classical computer. Finding the period is the hard step, and the quantum Fourier transform makes it efficient."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "If the period found is odd, what does Shor's algorithm do?",
+              "options": [
+                "Picks a different random a and tries again.",
+                "Concludes that N is prime.",
+                "Gives up permanently."
+              ],
+              "correct_index": 0,
+              "explanation": "An odd period cannot be halved, so the method fails for that a. Choosing another a succeeds with good probability."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B80",
+              "locator": "The algorithm for factoring, reduced to finding the order of an element modulo N"
+            },
+            {
+              "book": "B02",
+              "locator": "Section 16.4 (Analyzing the factoring and RSA assumptions) and Section 16.5 (Quantum attacks on factoring and discrete log)"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 12.1 (Introduction), subsection Quantum Computer Attacks on Asymmetric Cryptosystems"
+            }
+          ]
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "Why ECC is vulnerable",
+          "summary": "The discrete logarithm on an elliptic curve, why Shor's idea applies to it, and published resource estimates.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Elliptic-curve cryptography relies on the **elliptic-curve discrete logarithm problem (ECDLP)**: given a point P and a multiple Q = kP, finding the number k is believed to be infeasible for good curves. Shor's paper solved the **discrete logarithm** in a general way, and the same period-finding idea carries over to the group of points on an elliptic curve. So a large enough quantum computer breaks ECDH key exchange and ECDSA or EdDSA signatures just as it breaks RSA.\n\nA natural question is which is easier to attack. Because ECC achieves the same classical strength with much shorter keys, a quantum attacker needs **fewer logical qubits** for a 256-bit curve than for a 2048-bit RSA modulus, although the circuit is deeper in other respects. Roetteler, Naehrig, Svore and Lauter worked out precise counts. For an elliptic curve over an n-bit prime field they show the discrete logarithm can be computed with at most 9n + 2⌈log₂ n⌉ + 10 qubits and at most 448 n³ log₂ n + 4090 n³ Toffoli gates. (A **logical** qubit is an error-corrected qubit built from many noisy **physical** qubits; the next lesson returns to the difference.) The listing evaluates the formulas for the three NIST curve sizes, and prints, for comparison, the 2n + 3 qubits of Beauregard's circuit for factoring a 2048-bit RSA modulus, which is about 4,099 logical qubits, nearly twice the 256-bit curve figure. The two are not directly comparable, because circuit designs trade qubit count against running time and gate count."
+            },
+            {
+              "type": "code",
+              "id": "c-ecc",
+              "language": "python",
+              "code": "import math\n\nprint(f\"{'curve size n':>12} {'logical qubits':>15} {'Toffoli gates':>16}\")\nfor n in (256, 384, 521):\n    qubits = 9 * n + 2 * math.ceil(math.log2(n)) + 10\n    toffoli = 448 * n**3 * math.log2(n) + 4090 * n**3\n    print(f\"{n:>12} {qubits:>15,} {toffoli:>16.3e}\")\nprint(\"RSA-2048 with Beauregard's 2n+3 qubit circuit:\", 2 * 2048 + 3, \"logical qubits (a different design; qubits are traded against runtime)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-ecc",
+              "language": "text",
+              "code": "curve size n  logical qubits    Toffoli gates\n         256           2,330        1.287e+11\n         384           3,484        4.494e+11\n         521           4,719        1.150e+12\nRSA-2048 with Beauregard's 2n+3 qubit circuit: 4099 logical qubits (a different design; qubits are traded against runtime)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "What these numbers do and do not say",
+              "text": "They count idealised, error-corrected resources for specific circuit designs. They say a 256-bit curve needs only a few thousand logical qubits, not when such a machine will exist. Better algorithms and circuits tend to lower the counts over time, as the next lesson shows for RSA."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is a 256-bit elliptic curve attacked with fewer logical qubits than a 2048-bit RSA modulus?",
+              "options": [
+                "Because ECC achieves comparable classical strength with much smaller numbers, so the arithmetic registers are smaller.",
+                "Because Shor's algorithm cannot attack ECC.",
+                "Because elliptic curves are quantum-safe."
+              ],
+              "correct_index": 0,
+              "explanation": "Smaller numbers mean smaller quantum registers. This does not make ECC safe: it is still broken by Shor's idea."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which statement about the Roetteler et al. formulas is correct?",
+              "options": [
+                "They give resource counts for an idealised, error-corrected implementation, not a date.",
+                "They predict the year a quantum computer will break ECC.",
+                "They apply only to RSA."
+              ],
+              "correct_index": 0,
+              "explanation": "The formulas count logical qubits and gates for a particular circuit design. They bound the cost, but the timeline depends on hardware progress."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B83",
+              "locator": "Abstract and main result: at most 9n + 2⌈log₂ n⌉ + 10 qubits and 448 n³ log₂ n + 4090 n³ Toffoli gates for an n-bit prime field curve"
+            },
+            {
+              "book": "B80",
+              "locator": "Discrete logarithms on a quantum computer"
+            },
+            {
+              "book": "B02",
+              "locator": "Section 16.5 (Quantum attacks on factoring and discrete log)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The 2n+3 qubit count for factoring (Beauregard) is stated from the title of arXiv quant-ph/0205095 (Circuit for Shor's algorithm using 2n+3 qubits); its runtime trade-off was not re-read here."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "The Shor threat model",
+          "summary": "What an attacker needs, why estimates keep falling, and how to read them.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **cryptographically relevant quantum computer (CRQC)** is one large and reliable enough to run Shor's algorithm against real key sizes. To judge the threat you need to separate three things that headlines often blur: **logical qubits** (error-corrected, what the algorithm needs), **physical qubits** (what the hardware has, thousands of which may be needed per logical qubit to keep errors down) and **time** (how long the run takes).\n\nPublished estimates for breaking 2048-bit RSA show how the requirement has been falling. In 2019, Gidney and Ekerå estimated that it could be factored in about **8 hours** with **20 million noisy qubits**. In May 2025, Gidney estimated that **fewer than a million noisy qubits** and **less than a week** would suffice, under the **same hardware assumptions** (a square grid of qubits with nearest-neighbour connections, a 0.1% gate error rate, a one-microsecond surface-code cycle and a ten-microsecond control reaction time). Better algorithms, not better hardware, accounted for a reduction of at least twenty times. The practical lesson is that **planning for a threat should assume the estimates will keep dropping**, and also that nobody can read a calendar date off them.\n\nA threat model states its assumptions. Who is the adversary (a state with a large machine, or a criminal group)? What can they do now (record encrypted traffic) and later (decrypt it)? What is the earliest and latest plausible arrival of a CRQC? Stinson's tutorial notes how divided expert opinion is by quoting the 2024 Quantum Threat Timeline Report: estimated probabilities of a 2048-bit RSA break within five years of between 5% and 14%, and within twenty years of between 60% and 82%. Treat such figures as survey opinions, not forecasts."
+            },
+            {
+              "type": "code",
+              "id": "c-estimates",
+              "language": "python",
+              "code": "estimates = [\n    (\"Gidney and Ekera, 2019\", 20_000_000, \"8 hours\"),\n    (\"Gidney, 2025\", 1_000_000, \"less than 1 week\"),          # the paper says 'less than a million'; 1,000,000 is an upper bound\n]\nfor source, noisy_qubits, runtime in estimates:\n    print(f\"{source:25} noisy qubits: {noisy_qubits:>11,} (upper bound)  runtime: {runtime}\")\nprint(\"qubit requirement fell by a factor of at least\", estimates[0][1] // estimates[1][1], \"under the same stated hardware assumptions\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-estimates",
+              "language": "text",
+              "code": "Gidney and Ekera, 2019    noisy qubits:  20,000,000 (upper bound)  runtime: 8 hours\nGidney, 2025              noisy qubits:   1,000,000 (upper bound)  runtime: less than 1 week\nqubit requirement fell by a factor of at least 20 under the same stated hardware assumptions",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "Do not read a date off the numbers",
+              "text": "An estimate tells you how large a machine would have to be. It does not tell you when one will be built, or whether it will be. Prudent planning uses ranges of arrival dates and asks which of your data would still matter in each."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the practical lesson of the falling qubit estimates for RSA-2048 between 2019 and 2025?",
+              "options": [
+                "Algorithmic improvements can lower requirements, so threat planning should not assume today's estimates stay fixed.",
+                "RSA is now safe.",
+                "Quantum computers have already broken RSA-2048."
+              ],
+              "correct_index": 0,
+              "explanation": "The 2025 estimate used the same hardware assumptions as 2019 but needed at least twenty times fewer noisy qubits, purely from better methods."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What distinguishes a logical qubit from a physical qubit?",
+              "options": [
+                "A logical qubit is error-corrected and is built from many physical qubits.",
+                "A logical qubit is faster.",
+                "They are the same thing."
+              ],
+              "correct_index": 0,
+              "explanation": "Algorithms are designed in terms of reliable logical qubits; hardware provides noisy physical qubits, and many of them are combined per logical qubit."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B81",
+              "locator": "Abstract: 2048-bit RSA in 8 hours with 20 million noisy qubits, and the stated hardware assumptions"
+            },
+            {
+              "book": "B82",
+              "locator": "Abstract: fewer than a million noisy qubits and less than a week, under the same assumptions"
+            },
+            {
+              "book": "B03",
+              "locator": "Introduction, slide 6 of 141: opinions on timing, quoting the Quantum Threat Timeline Report 2024"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The 2024 Quantum Threat Timeline Report percentages are reproduced from Stinson's slides, not from the report itself, and are survey opinions."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "Grover and symmetric cryptography",
+          "summary": "A square-root speed-up, what it does to key sizes, and why parallel quantum search helps less than you might think.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Grover's algorithm** (1996) searches an unsorted collection of N items in about √N steps instead of N. Brute-forcing a symmetric key is exactly such a search, so a key of k bits, which costs about 2^k classical steps, costs only about **2^(k/2)** quantum steps. That is a quadratic speed-up, much weaker than Shor's exponential one, and it does not break symmetric ciphers: it halves their effective strength in bits. AES-128 drops to about 64 bits, which is the reason to move to **AES-256** (about 128 bits against Grover).\n\nTwo facts temper the threat further. First, Zalka showed that Grover's search is **optimal** and that it **cannot be parallelised better than by splitting the search space among independent quantum computers**. So with S machines the time falls only by a factor of √S, not S. Second, quantum operations are far more expensive than classical ones, as Paar notes in a footnote: an attack of 2^64 quantum operations could be out of range for decades.\n\nThe listing prints the effective strengths and then illustrates the parallelisation penalty with **assumed** numbers: a hypothetical fault-tolerant machine performing a million Grover iterations a second. Those assumptions are invented for the illustration; no such machine is known to exist."
+            },
+            {
+              "type": "code",
+              "id": "c-grover",
+              "language": "python",
+              "code": "import math\n\nfor bits in (128, 192, 256):\n    print(f\"AES-{bits}: classical search about 2^{bits} steps, Grover about 2^{bits // 2} sequential steps\")\n\niterations_per_second = 10**6          # ASSUMED speed of a hypothetical fault-tolerant machine\nseconds_per_year = 365 * 24 * 3600\nsteps = 2**64                          # Grover steps against AES-128\nfor machines in (1, 10**6):\n    years = steps / math.sqrt(machines) / iterations_per_second / seconds_per_year\n    print(f\"AES-128 with {machines:>9,} machine(s): about {years:,.0f} years (parallel speed-up is only sqrt of the machine count)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-grover",
+              "language": "text",
+              "code": "AES-128: classical search about 2^128 steps, Grover about 2^64 sequential steps\nAES-192: classical search about 2^192 steps, Grover about 2^96 sequential steps\nAES-256: classical search about 2^256 steps, Grover about 2^128 sequential steps\nAES-128 with         1 machine(s): about 584,942 years (parallel speed-up is only sqrt of the machine count)\nAES-128 with 1,000,000 machine(s): about 585 years (parallel speed-up is only sqrt of the machine count)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "tip",
+              "title": "The practical rule",
+              "text": "Prefer AES-256 for data that must stay secret for a long time, keep using strong modes such as GCM, and do not panic about symmetric ciphers. The urgent work is on public-key cryptography, where the quantum speed-up is exponential."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the effective strength of AES-256 against Grover's algorithm?",
+              "options": [
+                "About 128 bits",
+                "About 256 bits",
+                "About 64 bits"
+              ],
+              "correct_index": 0,
+              "explanation": "Grover halves the exponent: a 256-bit key costs about 2^128 quantum steps."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does running Grover's search on a million quantum computers not make it a million times faster?",
+              "options": [
+                "Grover's search can only be parallelised by splitting the space, giving a speed-up of about the square root of the number of machines.",
+                "Quantum computers cannot be networked.",
+                "Grover's algorithm is not a search."
+              ],
+              "correct_index": 0,
+              "explanation": "Zalka's result: parallel Grover search gains only a square-root factor in the number of machines."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Section 12.1 (Introduction), subsection Quantum Computer Attacks on Symmetric Cryptosystems, including the footnote on the cost of quantum operations"
+            },
+            {
+              "book": "B84",
+              "locator": "Abstract: Grover's algorithm is optimal and cannot be parallelised better than by splitting the search space"
+            },
+            {
+              "book": "B03",
+              "locator": "Introduction, slide 8 of 141: Grover's algorithm and key length"
+            }
+          ],
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "Hash security under quantum attack",
+          "summary": "Preimage and collision resistance against quantum algorithms, in terms of output length.",
+          "estimated_minutes": 18,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "For an n-bit hash function, the classical costs are well known: finding a **preimage** (an input with a given hash) or a **second preimage** takes about 2^n steps, and finding a **collision** (any two inputs with the same hash) takes about 2^(n/2) steps by the birthday attack. Quantum algorithms change these exponents. Grover's algorithm finds a preimage in about **2^(n/2)** steps. For collisions, the best known quantum algorithm, by Brassard, Høyer and Tapp, takes about **2^(n/3)** steps, as summarised in Stinson's tutorial.\n\nRead these as **upper-level security estimates** rather than practical attacks. The collision algorithm needs a very large quantum memory, and its true cost compared with the classical birthday attack is debated, so many analyses do not assume it gives a real advantage. Even taking the numbers at face value, **long hashes remain safe**: SHA-256 keeps about 128 bits against preimage attacks and the 384- and 512-bit variants give more. This is why hash-based signature schemes, which rely only on hash functions, are a conservative post-quantum choice.\n\nThe practical advice is simple. Use a hash with at least a 256-bit output for new designs, and prefer 384 or 512 bits when long-term collision resistance matters. The listing tabulates the exponents."
+            },
+            {
+              "type": "code",
+              "id": "c-hash",
+              "language": "python",
+              "code": "print(f\"{'hash output':>11} {'preimage (classical)':>22} {'preimage (Grover)':>19} {'collision (classical)':>23} {'collision (BHT)':>17}\")\nfor n in (128, 256, 384, 512):\n    print(f\"{n:>9}-bit {'2^' + str(n):>22} {'2^' + str(n // 2):>19} {'2^' + str(n // 2):>23} {'2^' + format(n / 3, '.1f'):>17}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-hash",
+              "language": "text",
+              "code": "hash output   preimage (classical)   preimage (Grover)   collision (classical)   collision (BHT)\n      128-bit                  2^128                2^64                    2^64            2^42.7\n      256-bit                  2^256               2^128                   2^128            2^85.3\n      384-bit                  2^384               2^192                   2^192           2^128.0\n      512-bit                  2^512               2^256                   2^256           2^170.7",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How does Grover's algorithm change the cost of finding a hash preimage for a 256-bit hash?",
+              "options": [
+                "From about 2^256 to about 2^128 steps",
+                "From about 2^256 to about 2^85 steps",
+                "It makes it trivial"
+              ],
+              "correct_index": 0,
+              "explanation": "Grover gives a quadratic speed-up for unstructured search, halving the exponent for preimage search."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why do hash-based signature schemes appeal as a conservative post-quantum choice?",
+              "options": [
+                "They rely only on hash functions, whose quantum attacks are limited to roughly halving security in bits.",
+                "They need no keys.",
+                "They are the smallest signatures."
+              ],
+              "correct_index": 0,
+              "explanation": "Their security rests on hash properties rather than on factoring or discrete logarithms, so Shor's algorithm does not apply."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B03",
+              "locator": "Introduction, slide 9 of 141: classical and quantum complexity of preimage, second preimage and collision (Grover; Brassard, Høyer and Tapp)"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 11.2.3 (Collision Resistance and the Birthday Attack)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement that the practical advantage of the 2^(n/3) quantum collision algorithm is debated because of its memory needs is a widely held view that was not tied to a source in this lesson."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "Harvest now, decrypt later",
+          "summary": "Why recorded traffic is a risk today, which assets it applies to, and which it does not.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Harvest now, decrypt later (HNDL)**, also called store now, decrypt later, describes an adversary who records encrypted traffic today and waits until a quantum computer can break the key exchange that protected it. It turns a future threat into a **present** one for any data that will still be sensitive when that day comes. The attacker needs no quantum computer yet, only storage and access to the traffic, which is exactly what large intelligence services and well-resourced criminals are assumed to have.\n\nHNDL applies to **confidentiality**, and only when the key exchange or public-key encryption is quantum-vulnerable. A TLS session using classical ECDHE can be recorded now and solved later, which would reveal the traffic. It does **not** apply in the same way to **authentication**: a forged signature must be produced while the victim is still trusting it, so breaking a server certificate years later does not let anyone impersonate it in the past. There is a caveat. Long-lived signatures (software update roots, document signatures, certificate authority keys that live for decades) remain a problem because trust in them must outlast the break.\n\nSymmetric encryption with long keys is not affected by HNDL in this way. The practical conclusion is to look first at **data in transit protected by classical key exchange** whose confidentiality must last many years, and to deploy hybrid or post-quantum key exchange there first. This is why hybrid key exchange such as X25519MLKEM768 is already appearing in TLS."
+            },
+            {
+              "type": "code",
+              "id": "c-hndl",
+              "language": "python",
+              "code": "ASSETS = [   # (asset, needs confidentiality for years, protected by classical public-key exchange, long-lived signature)\n    (\"web session cookies\", 0.01, True, False),\n    (\"customer database backups in transit\", 10, True, False),\n    (\"VPN traffic of a research lab\", 25, True, False),\n    (\"firmware update signing root\", 0, False, True),\n    (\"AES-256 encrypted archive (key stored locally)\", 30, False, False),\n]\nfor name, shelf_life_years, classical_exchange, long_lived_signature in ASSETS:\n    if classical_exchange and shelf_life_years >= 5:\n        verdict = \"HNDL risk: migrate key exchange first\"\n    elif classical_exchange:\n        verdict = \"HNDL applies but the data loses value quickly\"\n    elif long_lived_signature:\n        verdict = \"not HNDL: signature trust must outlast a break\"\n    else:\n        verdict = \"not exposed through public-key exchange\"\n    print(f\"{name:48} {verdict}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-hndl",
+              "language": "text",
+              "code": "web session cookies                              HNDL applies but the data loses value quickly\ncustomer database backups in transit             HNDL risk: migrate key exchange first\nVPN traffic of a research lab                    HNDL risk: migrate key exchange first\nfirmware update signing root                     not HNDL: signature trust must outlast a break\nAES-256 encrypted archive (key stored locally)   not exposed through public-key exchange",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "Illustrative table",
+              "text": "The assets and lifetimes above are invented to show the reasoning. In a real assessment they come from your inventory and data classification, which the enterprise track covers in detail."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which traffic is most at risk from harvest now, decrypt later?",
+              "options": [
+                "Traffic protected by classical key exchange whose contents must stay confidential for many years.",
+                "Short-lived session cookies.",
+                "Data encrypted only with AES-256 and a locally stored key."
+              ],
+              "correct_index": 0,
+              "explanation": "HNDL needs classical public-key protection and a long confidentiality lifetime, so a future decryption still matters."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is a forged signature in the future usually not a harvest-now-decrypt-later problem?",
+              "options": [
+                "An authentication attack must succeed while the victim trusts the signature; breaking an old key later does not change past exchanges.",
+                "Signatures are always quantum-safe.",
+                "Signatures are never recorded."
+              ],
+              "correct_index": 0,
+              "explanation": "HNDL concerns recorded secrets. Impersonation requires a live deception, though long-lived signature roots are still a separate migration concern."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Chapter 1, sections Impact of Potential Threats to Modern Cryptography and Need for Action Now"
+            },
+            {
+              "book": "B02",
+              "locator": "Section 16.5 (Quantum attacks on factoring and discrete log)",
+              "note": "Technical basis of the key-exchange threat."
+            },
+            {
+              "book": "B01",
+              "locator": "Section 12.1 (Introduction)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The claim that a well-resourced adversary can store recorded traffic is the standard HNDL assumption in the literature rather than an observed fact cited here."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "Long-lived sensitive data",
+          "summary": "Shelf life of data, scenarios for when a break might arrive, and which data is exposed in each.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The risk from HNDL depends on one comparison: **how long must this data stay confidential** compared with **how long until a quantum computer can read it**. Some data is worthless within days (a session token). Other data stays sensitive for decades: medical and genetic records, long-term financial records, state secrets and some intellectual property. The longer the confidentiality lifetime, the more likely it overlaps with a plausible break date.\n\nBecause nobody knows the arrival date, treat it as an **assumption to vary**, not a prediction to bet on. The listing builds a small **scenario grid**. Today is 2026. Data captured today with a confidentiality requirement of Y years remains sensitive until 2026 + Y. If a CRQC arrives in a given year earlier than that, the captured data is exposed. The data classes and the arrival years are invented inputs for the exercise; the point is the method, which you will apply to real inventories later.\n\nNIST's draft transition report (IR 8547, an initial public draft from November 2024) proposes to deprecate 112-bit-strength RSA, ECDSA, EdDSA and Diffie-Hellman after 2030 and disallow all quantum-vulnerable public-key algorithms after 2035. It is a draft that has not been finalised, so it indicates direction rather than a rule. The related US memorandum NSM-10 sets 2035 as the primary target for mitigating quantum risk in federal systems."
+            },
+            {
+              "type": "code",
+              "id": "c-scenarios",
+              "language": "python",
+              "code": "CAPTURE_YEAR = 2026\nDATA_CLASSES = [(\"session tokens\", 0.01), (\"payment records\", 7), (\"employee records\", 30), (\"health records\", 50)]   # invented shelf lives, in years\nARRIVAL_SCENARIOS = (2032, 2038, 2045)                                                                              # invented assumptions\n\nprint(f\"{'data class':18} {'secret until':>12} | \" + \" | \".join(f\"break in {y}\" for y in ARRIVAL_SCENARIOS))\nfor name, shelf_life in DATA_CLASSES:\n    secret_until = CAPTURE_YEAR + shelf_life\n    cells = [\"EXPOSED\" if secret_until > arrival else \"safe   \" for arrival in ARRIVAL_SCENARIOS]\n    print(f\"{name:18} {secret_until:>12.1f} | \" + \" | \".join(f\"{c:^13}\" for c in cells))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-scenarios",
+              "language": "text",
+              "code": "data class         secret until | break in 2032 | break in 2038 | break in 2045\nsession tokens           2026.0 |    safe       |    safe       |    safe      \npayment records          2033.0 |    EXPOSED    |    safe       |    safe      \nemployee records         2056.0 |    EXPOSED    |    EXPOSED    |    EXPOSED   \nhealth records           2076.0 |    EXPOSED    |    EXPOSED    |    EXPOSED   ",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In the scenario grid, why is the health-records class exposed in every scenario?",
+              "options": [
+                "Its confidentiality requirement extends past every assumed arrival year.",
+                "Health records use weaker algorithms.",
+                "Because recording is impossible to prevent."
+              ],
+              "correct_index": 0,
+              "explanation": "Data captured in 2026 and sensitive until 2076 outlives all three assumed break years, so it is exposed whichever occurs."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "How should IR 8547 be described in a lesson in October 2026?",
+              "options": [
+                "An initial public draft proposing deprecation after 2030 and disallowance after 2035; not yet a final rule.",
+                "A final binding regulation.",
+                "A withdrawn document."
+              ],
+              "correct_index": 0,
+              "explanation": "The NIST page shows the draft published in November 2024 with no final version, so dates must be presented as proposals."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B85",
+              "locator": "The transition tables: RSA, ECDSA, EdDSA and Diffie-Hellman 112-bit and 128-bit strength: deprecated after 2030 and disallowed after 2035 (proposed); overview of NSM-10 and the 2035 target"
+            },
+            {
+              "book": "B05",
+              "locator": "Chapter 4 (Managing Risks in the Quantum Era), discussion of data lifetimes and quantum risk"
+            }
+          ],
+          "needs_verification": {
+            "reason": "IR 8547 is an initial public draft (November 2024) and had no final version on 2026-10-04; check the NIST page before quoting its dates. Chapter 4 of Becoming Quantum Safe was cited at chapter level only."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "Quantum threat modelling",
+          "summary": "Putting assets, algorithms, lifetimes and migration time into one ranked list.",
+          "estimated_minutes": 25,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **quantum threat model** answers: *which of our assets are exposed, how badly, and what should we migrate first?* For each asset collect four facts. The **algorithm** protecting it, taken from a cryptographic inventory (is it RSA, ECC, a classical key exchange, or symmetric with long keys?). The **confidentiality lifetime**, how long the data must stay secret. The **migration time**, how long it will take to change the protection, including testing and vendor delays. And the **assumed arrival** of a CRQC.\n\nThese combine in the inequality you met in the PQC awareness module (Mosca's inequality): an asset is in trouble if **confidentiality lifetime + migration time is greater than the time until a CRQC**. The shorter the margin, the sooner you must start. The assets with a quantum-vulnerable algorithm and the largest overshoot should be migrated first. Symmetric encryption with long keys and hashes need no emergency action.\n\nThe listing ranks an invented inventory by that overshoot, using an assumed arrival of 2035. Change the assumption and watch the order and the list of exposed assets change; that sensitivity is itself a finding."
+            },
+            {
+              "type": "code",
+              "id": "c-ranking",
+              "language": "python",
+              "code": "ARRIVAL_YEARS_FROM_NOW = 9          # ASSUMPTION: a CRQC in 2035, nine years from 2026\nINVENTORY = [   # (asset, algorithm, years it must stay confidential, years needed to migrate): invented example\n    (\"patient portal TLS\", \"ECDHE-P256\", 20, 3),\n    (\"internal wiki TLS\", \"ECDHE-P256\", 2, 1),\n    (\"backup encryption keys wrapped with RSA\", \"RSA-2048\", 15, 4),\n    (\"payments gateway VPN\", \"IKEv2 with DH group 14\", 8, 2),\n    (\"disk encryption\", \"AES-256-XTS\", 30, 0),\n]\nVULNERABLE = (\"RSA\", \"ECDHE\", \"DH\", \"ECDSA\", \"ECDH\")\n\nrows = []\nfor asset, algorithm, shelf_life, migration in INVENTORY:\n    vulnerable = any(algorithm.startswith(prefix) or prefix in algorithm for prefix in VULNERABLE)\n    overshoot = shelf_life + migration - ARRIVAL_YEARS_FROM_NOW if vulnerable else None\n    rows.append((overshoot if overshoot is not None else float(\"-inf\"), asset, algorithm, vulnerable))\nfor overshoot, asset, algorithm, vulnerable in sorted(rows, reverse=True):\n    if not vulnerable:\n        status = \"not public-key exposed\"\n    elif overshoot > 0:\n        status = f\"AT RISK: overshoots by {overshoot} year(s)\"\n    else:\n        status = f\"margin of {-overshoot} year(s)\"\n    print(f\"{asset:42} {algorithm:24} {status}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-ranking",
+              "language": "text",
+              "code": "patient portal TLS                         ECDHE-P256               AT RISK: overshoots by 14 year(s)\nbackup encryption keys wrapped with RSA    RSA-2048                 AT RISK: overshoots by 10 year(s)\npayments gateway VPN                       IKEv2 with DH group 14   AT RISK: overshoots by 1 year(s)\ninternal wiki TLS                          ECDHE-P256               margin of 6 year(s)\ndisk encryption                            AES-256-XTS              not public-key exposed",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In the ranking, why is 'disk encryption' (AES-256-XTS) not marked at risk despite a 30-year lifetime?",
+              "options": [
+                "It does not rely on a quantum-vulnerable public-key algorithm; Grover only halves the effective strength of a 256-bit key.",
+                "Because 30 years is short.",
+                "Because disks cannot be recorded."
+              ],
+              "correct_index": 0,
+              "explanation": "Shor's algorithm threatens public-key schemes. A 256-bit symmetric key keeps about 128 bits against Grover, which is adequate."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "An asset needs confidentiality for 10 years, migration will take 3 years, and a CRQC is assumed in 9 years. What is the overshoot?",
+              "options": [
+                "4 years: it needs protection beyond the assumed arrival.",
+                "-4 years: it is safe.",
+                "0 years"
+              ],
+              "correct_index": 0,
+              "explanation": "10 + 3 − 9 = 4 years. The asset would still be sensitive four years after the assumed break, so migration is urgent."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Chapter 4 (Managing Risks in the Quantum Era): identifying quantum-related risks and a risk-based approach"
+            },
+            {
+              "book": "B81",
+              "locator": "Estimates used to bound the arrival assumptions (see the Shor threat model lesson)",
+              "note": "Context for choosing arrival scenarios."
+            }
+          ],
+          "needs_verification": {
+            "reason": "The use of lifetime plus migration time against arrival follows Mosca's inequality as taught in the awareness module; the book chapter is cited at chapter level."
+          },
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "new",
+          "title": "Task: write a quantum threat model for a small organisation",
+          "summary": "A guided practical: take an inventory, classify it, vary the assumptions and write down what you learned.",
+          "estimated_minutes": 35,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Objective.** Produce a short, defensible quantum threat model for a made-up organisation, and show how sensitive its conclusions are to your assumptions. A good threat model is mostly about being explicit.\n\n**Scenario.** *Northwind Clinic* runs a patient portal, an internal wiki, a billing system that exchanges files with an insurer over a VPN, encrypted backups, and a firmware-signing process for its devices. (This is an invented organisation; use the inventory in the previous lesson as a starting point and add two assets of your own.)\n\n**Steps.** (1) List each asset with the algorithm that protects it, how long its data must stay confidential and how long migration would take. (2) Mark each asset as HNDL-exposed, signature-trust-exposed or not exposed. (3) Run the ranking for several arrival years and record which assets change status. (4) Write four sentences: the top priority and why, one assumption you are least sure of, one thing that would change your ranking, and what you would do in the next three months. The solution script below automates step 3; the reasoning in step 4 is yours."
+            },
+            {
+              "type": "code",
+              "id": "c-sensitivity",
+              "language": "python",
+              "code": "INVENTORY = [   # invented example assets: (name, quantum-vulnerable?, confidentiality years, migration years)\n    (\"patient portal TLS\", True, 20, 3),\n    (\"insurer VPN\", True, 8, 2),\n    (\"backup keys wrapped with RSA\", True, 15, 4),\n    (\"internal wiki TLS\", True, 2, 1),\n    (\"disk encryption AES-256\", False, 30, 0),\n]\n\ndef at_risk(arrival_years):\n    return sorted(name for name, vulnerable, shelf_life, migration in INVENTORY\n                  if vulnerable and shelf_life + migration > arrival_years)\n\nprevious = None\nfor arrival in (6, 9, 12, 20):\n    risky = at_risk(arrival)\n    change = \"\" if previous is None else f\"  (change: {sorted(set(previous) ^ set(risky)) or 'none'})\"\n    print(f\"CRQC in {arrival:>2} years: {len(risky)} asset(s) at risk {risky}{change}\")\n    previous = risky"
+            },
+            {
+              "type": "code",
+              "id": "o-c-sensitivity",
+              "language": "text",
+              "code": "CRQC in  6 years: 3 asset(s) at risk ['backup keys wrapped with RSA', 'insurer VPN', 'patient portal TLS']\nCRQC in  9 years: 3 asset(s) at risk ['backup keys wrapped with RSA', 'insurer VPN', 'patient portal TLS']  (change: none)\nCRQC in 12 years: 2 asset(s) at risk ['backup keys wrapped with RSA', 'patient portal TLS']  (change: ['insurer VPN'])\nCRQC in 20 years: 1 asset(s) at risk ['patient portal TLS']  (change: ['backup keys wrapped with RSA'])",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Verify.** As the assumed arrival moves later, assets drop off the at-risk list, and the patient portal (the longest confidentiality lifetime) is the last to leave. That tells you the portal is the right first priority under almost any assumption, which is a much stronger statement than a ranking for a single year. **Troubleshooting:** if an asset never appears, check that you marked it quantum-vulnerable; if everything is always at risk, your migration times may be unrealistically long, so question them.\n\n**Cleanup.** Nothing to clean up. Keep your write-up: the enterprise track builds on it with a real inventory and a migration plan.\n\n**Stretch.** Add a column for the cost of migrating each asset and compute the order that gives the most risk reduction per unit of effort, then explain what could make that order wrong."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is it useful to run the ranking for several arrival years instead of one?",
+              "options": [
+                "Assets that stay at risk across all scenarios are robust priorities, while the others are sensitive to an uncertain assumption.",
+                "To produce more output.",
+                "Because arrival years are known exactly."
+              ],
+              "correct_index": 0,
+              "explanation": "The arrival date is uncertain. Priorities that hold under all plausible dates are safe to act on first."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which sentence belongs in a good threat model write-up?",
+              "options": [
+                "An explicit statement of the assumption you are least sure of and what would change if it were wrong.",
+                "A guarantee of the exact date a quantum computer will arrive.",
+                "A claim that symmetric encryption is already broken."
+              ],
+              "correct_index": 0,
+              "explanation": "Threat models are valuable because they state assumptions so others can challenge them; nobody can guarantee the date."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Chapter 4 (Managing Risks in the Quantum Era)"
+            },
+            {
+              "book": "B03",
+              "locator": "Introduction, slides 6 to 9 of 141 (timing opinions and impacts)"
+            }
+          ],
+          "after": "sec-8"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "b8-n01",
+          "prompt": "Which step of Shor's factoring algorithm is performed efficiently by a quantum computer?",
+          "options": [
+            "Finding the period of a^x mod N",
+            "Computing gcd",
+            "Multiplying primes"
+          ],
+          "correct_index": 0,
+          "explanation": "Period finding via the quantum Fourier transform is the quantum step.",
+          "source": {
+            "book": "B80",
+            "locator": "Factoring via order finding"
+          }
+        },
+        {
+          "id": "b8-n02",
+          "prompt": "For Shor's algorithm, which of these is broken by a large quantum computer?",
+          "options": [
+            "ECDSA signatures",
+            "AES-256 encryption",
+            "SHA-256 preimage resistance"
+          ],
+          "correct_index": 0,
+          "explanation": "Elliptic-curve discrete logarithms fall to Shor's algorithm.",
+          "source": {
+            "book": "B80",
+            "locator": "Discrete logarithms"
+          }
+        },
+        {
+          "id": "b8-n03",
+          "prompt": "A 2025 estimate for factoring RSA-2048 required about:",
+          "options": [
+            "fewer than one million noisy qubits and less than a week",
+            "20 million qubits and 8 hours",
+            "100 qubits and 1 second"
+          ],
+          "correct_index": 0,
+          "explanation": "Gidney (2025) lowered the 2019 estimate under the same stated assumptions.",
+          "source": {
+            "book": "B82",
+            "locator": "Abstract"
+          }
+        },
+        {
+          "id": "b8-n04",
+          "prompt": "What is the effective strength of AES-128 against Grover's algorithm?",
+          "options": [
+            "About 64 bits",
+            "About 128 bits",
+            "About 32 bits"
+          ],
+          "correct_index": 0,
+          "explanation": "Grover reduces 2^128 to about 2^64 steps.",
+          "source": {
+            "book": "B01",
+            "locator": "Section 12.1"
+          }
+        },
+        {
+          "id": "b8-n05",
+          "prompt": "Parallelising Grover's search over S independent quantum computers speeds it up by about:",
+          "options": [
+            "the square root of S",
+            "S",
+            "log S"
+          ],
+          "correct_index": 0,
+          "explanation": "Zalka showed search cannot be parallelised better than splitting the search space.",
+          "source": {
+            "book": "B84",
+            "locator": "Abstract"
+          }
+        },
+        {
+          "id": "b8-n06",
+          "prompt": "What is the best known quantum collision-finding cost for an n-bit hash (as summarised in Stinson's tutorial)?",
+          "options": [
+            "About 2^(n/3)",
+            "About 2^(n/2)",
+            "About 2^n"
+          ],
+          "correct_index": 0,
+          "explanation": "The Brassard-Hoyer-Tapp algorithm needs about 2^(n/3) steps in theory.",
+          "source": {
+            "book": "B03",
+            "locator": "Slide 9"
+          }
+        },
+        {
+          "id": "b8-n07",
+          "prompt": "Harvest now, decrypt later is most relevant to:",
+          "options": [
+            "Long-lived confidential data protected by classical key exchange",
+            "Short-lived tokens",
+            "Locally encrypted data with 256-bit keys"
+          ],
+          "correct_index": 0,
+          "explanation": "It needs classical public-key protection and a long confidentiality lifetime.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 1"
+          }
+        },
+        {
+          "id": "b8-n08",
+          "prompt": "NIST IR 8547 in its November 2024 initial public draft proposes that quantum-vulnerable public-key algorithms at 112-bit strength be:",
+          "options": [
+            "Deprecated after 2030 and (with 128-bit) all disallowed after 2035",
+            "Banned immediately",
+            "Kept indefinitely"
+          ],
+          "correct_index": 0,
+          "explanation": "The tables in the draft propose deprecation after 2030 and disallowance after 2035.",
+          "source": {
+            "book": "B85",
+            "locator": "Transition tables"
+          }
+        },
+        {
+          "id": "b8-n09",
+          "prompt": "An asset needs 12 years of confidentiality, migration takes 4 years, and a CRQC is assumed in 10 years. What is the overshoot?",
+          "options": [
+            "6 years",
+            "-6 years",
+            "2 years"
+          ],
+          "correct_index": 0,
+          "explanation": "12 + 4 - 10 = 6 years beyond the assumed arrival.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 4"
+          }
+        },
+        {
+          "id": "b8-n10",
+          "prompt": "Why do threat-model results get stronger when run over several arrival scenarios?",
+          "options": [
+            "Assets at risk in all scenarios are robust priorities",
+            "The model becomes shorter",
+            "The arrival date becomes known"
+          ],
+          "correct_index": 0,
+          "explanation": "Robust priorities do not depend on the uncertain assumption.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 4"
+          }
+        }
+      ],
+      "estimated_minutes": 211,
+      "notes": "Rewrites eight outline sections as lessons with executed classical-side Shor code and resource arithmetic, adds a threat-model task, and grounds every published estimate in the cited paper or standard (checked on 2026-10-04).",
+      "learning_objectives": [
+        "Explain how Shor's algorithm reduces factoring to period finding and why only that step needs a quantum computer.",
+        "Explain why elliptic-curve cryptography is also broken by Shor's idea and read published resource estimates.",
+        "Interpret falling resource estimates and separate logical qubits, physical qubits and time.",
+        "Quantify the Grover threat to symmetric keys and hashes, including the limits of parallelisation.",
+        "Explain harvest-now-decrypt-later, decide which assets it applies to, and use scenarios for the uncertain arrival date.",
+        "Build and stress-test a quantum threat model from an inventory using the lifetime-plus-migration rule."
+      ]
+    }
+  ]
+}
