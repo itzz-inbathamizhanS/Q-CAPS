@@ -1,0 +1,1270 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B160",
+      "title": "RFC 9293: Transmission Control Protocol (TCP)",
+      "authors": "IETF",
+      "edition": "August 2022",
+      "year": 2022,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B161",
+      "title": "RFC 9846: The Transport Layer Security (TLS) Protocol Version 1.3 (obsoletes RFC 8446 and RFC 5246)",
+      "authors": "IETF",
+      "edition": "July 2026",
+      "year": 2026,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B162",
+      "title": "RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile",
+      "authors": "IETF",
+      "edition": "May 2008",
+      "year": 2008,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B163",
+      "title": "RFC 6960: X.509 Internet Public Key Infrastructure Online Certificate Status Protocol (OCSP)",
+      "authors": "IETF",
+      "edition": "June 2013",
+      "year": 2013,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B164",
+      "title": "RFC 4303: IP Encapsulating Security Payload (ESP)",
+      "authors": "IETF",
+      "edition": "December 2005",
+      "year": 2005,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B165",
+      "title": "RFC 4271: A Border Gateway Protocol 4 (BGP-4)",
+      "authors": "IETF",
+      "edition": "January 2006",
+      "year": 2006,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B166",
+      "title": "RFC 2328: OSPF Version 2",
+      "authors": "IETF",
+      "edition": "April 1998",
+      "year": 1998,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B167",
+      "title": "NIST SP 800-207: Zero Trust Architecture",
+      "authors": "Rose, Borchert, Mitchell, Connelly",
+      "edition": "August 2020",
+      "year": 2020,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B168",
+      "title": "NIST SP 800-41 Revision 1: Guidelines on Firewalls and Firewall Policy",
+      "authors": "Scarfone, Hoffman",
+      "edition": "September 2009",
+      "year": 2009,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B169",
+      "title": "RFC 6238: TOTP: Time-Based One-Time Password Algorithm",
+      "authors": "IETF",
+      "edition": "May 2011",
+      "year": 2011,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B170",
+      "title": "RFC 7519: JSON Web Token (JWT)",
+      "authors": "IETF",
+      "edition": "May 2015",
+      "year": 2015,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B171",
+      "title": "RFC 1071: Computing the Internet Checksum",
+      "authors": "IETF",
+      "edition": "September 1988",
+      "year": 1988,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B172",
+      "title": "RFC 1918: Address Allocation for Private Internets",
+      "authors": "IETF",
+      "edition": "February 1996",
+      "year": 1996,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B173",
+      "title": "Amazon VPC User Guide: security groups and network ACLs (accessed 2026-10-04)",
+      "authors": "Amazon Web Services",
+      "edition": "accessed 2026-10-04",
+      "year": 2026,
+      "publisher": "AWS"
+    },
+    {
+      "id": "B174",
+      "title": "RFC 4251: The Secure Shell (SSH) Protocol Architecture",
+      "authors": "IETF",
+      "edition": "January 2006",
+      "year": 2006,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B176",
+      "title": "RFC 8200: Internet Protocol, Version 6 (IPv6) Specification",
+      "authors": "IETF",
+      "edition": "July 2017",
+      "year": 2017,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B175",
+      "title": "IEEE 802.1Q: Bridges and Bridged Networks (not available for reading here)",
+      "authors": "IEEE",
+      "edition": "2022",
+      "year": 2022,
+      "publisher": "IEEE"
+    },
+    {
+      "id": "B100",
+      "title": "cryptography (Python package) version 50.0.1",
+      "authors": "Python Cryptographic Authority",
+      "edition": "50.0.1",
+      "year": 2026
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_b_b6_network_security_engineering",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "6.1 Advanced TCP/IP",
+          "summary": "The Internet checksum verified against the RFC example, IPv4 and TCP headers built by hand, the TCP state machine, and a real loopback transfer.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The protocols you met in A3 become engineering knowledge when you can build and check their bytes. The **Internet checksum** (RFC 1071) is the 16-bit one's-complement sum used by IPv4, TCP and UDP: add the data as 16-bit words, fold any carry back into the low bits, and complement the result. RFC 1071 gives a worked example: the eight bytes 00 01 f2 03 f4 f5 f6 f7 sum to **ddf2**, so the checksum field is the complement, 220d. A receiver sums the whole packet *including* the checksum, and gets all ones (zero after complement) if nothing was damaged. For TCP the checksum also covers a **pseudo-header** (source and destination addresses, protocol, length), which ties a segment to the addresses it was sent between. IPv6's base header is a fixed 40 bytes (RFC 8200), against 20 bytes for IPv4 without options.\n\nTCP (RFC 9293) is defined by a state machine: a connection moves through LISTEN, SYN-SENT, SYN-RECEIVED, ESTABLISHED, FIN-WAIT-1, FIN-WAIT-2, CLOSE-WAIT, CLOSING, LAST-ACK, TIME-WAIT and CLOSED. The side that closes first lingers in **TIME-WAIT for 2×MSL** so that stray segments of the old connection die before the address pair is reused. When no MSS option is received a sender must assume a send MSS of **536 bytes for IPv4 and 1220 for IPv6** (576 − 40 and 1280 − 60). The listing verifies the checksum against the RFC's numbers, builds an IPv4 header and a TCP SYN segment and validates both, walks the state machine through a connection's life, and moves 200,000 bytes through a real TCP connection on the loopback interface. The labs are self-contained Python (standard library plus `cryptography` 50.0.1 for the PKI, VPN and TLS lessons: `pip install cryptography==50.0.1`). Everything runs on your own machine on the loopback interface or in memory. **Nothing here scans, attacks or connects to other systems.** Where an attack is shown it is a **SIMULATION** against code written in the lesson."
+            },
+            {
+              "type": "code",
+              "id": "c-tcpip",
+              "language": "python",
+              "code": "import socket, struct, threading\n\ndef checksum(data):\n    if len(data) % 2:\n        data += b\"\\x00\"\n    total = sum(struct.unpack(\"!%dH\" % (len(data) // 2), data))\n    while total >> 16:\n        total = (total & 0xFFFF) + (total >> 16)                       # fold the carries back in\n    return ~total & 0xFFFF\n\nexample = bytes.fromhex(\"0001f203f4f5f6f7\")\nprint(\"RFC 1071 example: sum = %04x, checksum field = %04x\" % (~checksum(example) & 0xFFFF, checksum(example)))\n\nsrc, dst = socket.inet_aton(\"192.0.2.1\"), socket.inet_aton(\"192.0.2.2\")                    # documentation addresses (RFC 5737)\nheader = struct.pack(\"!BBHHHBBH4s4s\", 0x45, 0, 40, 0x1234, 0x4000, 64, 6, 0, src, dst)     # version/IHL, TOS, total length, id, flags, TTL, protocol 6, checksum 0\nheader = header[:10] + struct.pack(\"!H\", checksum(header)) + header[12:]\nprint(\"IPv4 header (20 bytes) verifies - checksum over the header incl. its checksum field is 0:\", checksum(header) == 0)\n\nsegment = struct.pack(\"!HHIIBBHHH\", 49152, 80, 1000, 0, 5 << 4, 0x02, 65535, 0, 0)          # TCP SYN, header 20 bytes\npseudo = src + dst + struct.pack(\"!BBH\", 0, 6, len(segment))\nsegment = segment[:16] + struct.pack(\"!H\", checksum(pseudo + segment)) + segment[18:]\nprint(\"TCP SYN segment verifies with the pseudo-header:\", checksum(pseudo + segment) == 0)\ncorrupted = segment[:4] + b\"\\xff\" + segment[5:]\nprint(\"a corrupted segment is detected:\", checksum(pseudo + corrupted) != 0)\nprint(\"default MSS: IPv4\", 576 - 20 - 20, \"| IPv6\", 1280 - 40 - 20, \"| IPv6 base header\", 40, \"bytes\")\n\nTRANSITIONS = {   # (state, event) -> next state, the main edges of the RFC 9293 diagram\n    (\"CLOSED\", \"passive open\"): \"LISTEN\", (\"CLOSED\", \"active open / send SYN\"): \"SYN-SENT\",\n    (\"LISTEN\", \"receive SYN / send SYN,ACK\"): \"SYN-RECEIVED\", (\"SYN-SENT\", \"receive SYN,ACK / send ACK\"): \"ESTABLISHED\",\n    (\"SYN-RECEIVED\", \"receive ACK\"): \"ESTABLISHED\",\n    (\"ESTABLISHED\", \"close / send FIN\"): \"FIN-WAIT-1\", (\"ESTABLISHED\", \"receive FIN / send ACK\"): \"CLOSE-WAIT\",\n    (\"FIN-WAIT-1\", \"receive ACK\"): \"FIN-WAIT-2\", (\"FIN-WAIT-2\", \"receive FIN / send ACK\"): \"TIME-WAIT\",\n    (\"CLOSE-WAIT\", \"close / send FIN\"): \"LAST-ACK\", (\"LAST-ACK\", \"receive ACK\"): \"CLOSED\",\n    (\"TIME-WAIT\", \"timeout 2MSL\"): \"CLOSED\",\n}\ndef walk(state, events):\n    path = [state]\n    for event in events:\n        state = TRANSITIONS[(state, event)]\n        path.append(state)\n    return path\nprint(\"client:\", \" -> \".join(walk(\"CLOSED\", [\"active open / send SYN\", \"receive SYN,ACK / send ACK\", \"close / send FIN\", \"receive ACK\", \"receive FIN / send ACK\", \"timeout 2MSL\"])))\nprint(\"server:\", \" -> \".join(walk(\"CLOSED\", [\"passive open\", \"receive SYN / send SYN,ACK\", \"receive ACK\", \"receive FIN / send ACK\", \"close / send FIN\", \"receive ACK\"])))\n\nserver = socket.socket(); server.bind((\"127.0.0.1\", 0)); server.listen(1)\nreceived = []\ndef serve():\n    connection, _ = server.accept()\n    with connection:\n        while chunk := connection.recv(65536):\n            received.append(len(chunk))\nthread = threading.Thread(target=serve); thread.start()\nwith socket.create_connection(server.getsockname()) as client:\n    client.sendall(b\"x\" * 200_000)\nthread.join(); server.close()\nprint(\"loopback TCP transfer: sent 200000 bytes, received\", sum(received), \"bytes in\", \"several recv calls\" if len(received) > 1 else \"one recv call\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-tcpip",
+              "language": "text",
+              "code": "RFC 1071 example: sum = ddf2, checksum field = 220d\nIPv4 header (20 bytes) verifies - checksum over the header incl. its checksum field is 0: True\nTCP SYN segment verifies with the pseudo-header: True\na corrupted segment is detected: True\ndefault MSS: IPv4 536 | IPv6 1220 | IPv6 base header 40 bytes\nclient: CLOSED -> SYN-SENT -> ESTABLISHED -> FIN-WAIT-1 -> FIN-WAIT-2 -> TIME-WAIT -> CLOSED\nserver: CLOSED -> LISTEN -> SYN-RECEIVED -> ESTABLISHED -> CLOSE-WAIT -> LAST-ACK -> CLOSED\nloopback TCP transfer: sent 200000 bytes, received 200000 bytes in several recv calls",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The checksum matches the RFC (sum ddf2, field 220d), both headers verify, and a single changed byte is caught; note that the checksum is an **error-detecting code, not security**: an attacker who modifies a packet simply recomputes it. The state machine paths show the asymmetry of closing: the side that sends the first FIN passes through FIN-WAIT-1, FIN-WAIT-2 and TIME-WAIT, while the other side passes through CLOSE-WAIT and LAST-ACK, which is why a busy server that closes connections itself accumulates TIME-WAIT sockets, and why a server leaking CLOSE-WAIT sockets has an application bug (it never calls close).\n\n**Engineering uses.** Reading a packet capture, building test traffic, and debugging middleboxes all depend on these fields. Remember the limits of this lesson's listing: the transfer is on loopback (no loss, reordering or congestion), and it shows the TCP byte-stream abstraction (the number of `recv` calls says nothing about segment boundaries)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How does a receiver verify the Internet checksum of a packet?",
+              "options": [
+                "Sum all 16-bit words including the checksum field; the result must be all ones",
+                "Compare with a stored hash",
+                "Decrypt it"
+              ],
+              "correct_index": 0,
+              "explanation": "A one's-complement sum over data plus checksum yields all ones (zero after complement) when undamaged."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the default send MSS an IPv4 TCP implementation must assume if no MSS option is received?",
+              "options": [
+                "536 bytes",
+                "1460 bytes",
+                "65535 bytes"
+              ],
+              "correct_index": 0,
+              "explanation": "RFC 9293: 536 (576 - 40) for IPv4 and 1220 for IPv6."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which side of a TCP connection enters TIME-WAIT?",
+              "options": [
+                "The side that closes first (sends the first FIN)",
+                "The side that opens first",
+                "Both sides always"
+              ],
+              "correct_index": 0,
+              "explanation": "The active closer waits 2 MSL so old segments expire before the address pair is reused."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B171",
+              "locator": "Section 3 (Numerical Examples): the 00 01 f2 03 f4 f5 f6 f7 example giving sum ddf2"
+            },
+            {
+              "book": "B160",
+              "locator": "Sections on the TCP state machine (state list and diagram), TIME-WAIT with 2MSL timeout, and the default send MSS of 536 (IPv4) and 1220 (IPv6)"
+            },
+            {
+              "book": "B176",
+              "locator": "Section 3: the IPv6 header (40 bytes)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The pseudo-header and IPv4 header layouts are standard and were validated by the listing's own checksum tests rather than quoted from the RFCs. The transition table lists the main edges only."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "6.2 Routing and Switching (Advanced)",
+          "summary": "Longest-prefix match, shortest-path (OSPF-style) computation, BGP best-path selection in the RFC's order, and a learning switch.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Forwarding** answers one question per packet: which interface? The router uses **longest-prefix match**: of all table entries whose prefix contains the destination, the most specific one (the longest prefix) wins, so a /24 beats a /16, and a default route 0.0.0.0/0 matches only when nothing else does. **Routing protocols** fill the table. Within an organisation, link-state protocols such as **OSPF** (RFC 2328) flood each router's links and costs; every router runs the **Dijkstra shortest-path algorithm** on the resulting map to find the cheapest path to every destination. Between organisations, **BGP** (RFC 4271) is a path-vector protocol driven by **policy**: a speaker first prefers the route with the highest local preference, and ties are broken in a fixed order that the RFC states must be applied as written: shortest AS_PATH, lowest origin, lowest MULTI_EXIT_DISC (comparable only between routes from the same neighbouring AS), then further criteria down to the lowest BGP identifier.\n\nOn a LAN, a **switch** forwards Ethernet frames by MAC address. It **learns** by recording the source address and arrival port of each frame, forwards known destinations out of one port, and **floods** unknown or broadcast destinations out of every other port. The listing implements the four mechanisms and tests them: longest-prefix match checked against brute force, Dijkstra on a small network checked against exhaustive path enumeration, BGP selection on examples that exercise the tie-breaks, and a learning switch. The labs are self-contained Python (standard library plus `cryptography` 50.0.1 for the PKI, VPN and TLS lessons: `pip install cryptography==50.0.1`). Everything runs on your own machine on the loopback interface or in memory. **Nothing here scans, attacks or connects to other systems.** Where an attack is shown it is a **SIMULATION** against code written in the lesson."
+            },
+            {
+              "type": "code",
+              "id": "c-routing",
+              "language": "python",
+              "code": "import heapq, ipaddress, itertools\n\n# --- longest-prefix match\nroutes = {\"0.0.0.0/0\": \"isp\", \"10.0.0.0/8\": \"core\", \"10.1.0.0/16\": \"site-a\", \"10.1.2.0/24\": \"lab\", \"192.0.2.0/24\": \"dmz\"}\ntable = sorted(((ipaddress.ip_network(p), hop) for p, hop in routes.items()), key=lambda e: -e[0].prefixlen)\ndef lookup(address):\n    address = ipaddress.ip_address(address)\n    return next(hop for network, hop in table if address in network)\nfor address in (\"10.1.2.9\", \"10.1.9.9\", \"10.9.9.9\", \"192.0.2.77\", \"8.8.8.8\"):\n    brute = max((n for n, _ in table if ipaddress.ip_address(address) in n), key=lambda n: n.prefixlen)\n    assert routes[str(brute)] == lookup(address)\n    print(f\"{address:>11} -> {lookup(address):7} (matched {brute})\")\n\n# --- shortest paths (the computation OSPF routers perform on the link-state map)\nlinks = {(\"A\", \"B\"): 1, (\"B\", \"C\"): 1, (\"A\", \"C\"): 5, (\"C\", \"D\"): 1, (\"B\", \"D\"): 4, (\"D\", \"E\"): 2, (\"C\", \"E\"): 5}\ngraph = {}\nfor (u, v), cost in links.items():\n    graph.setdefault(u, {})[v] = cost; graph.setdefault(v, {})[u] = cost\ndef dijkstra(source):\n    best, queue = {source: 0}, [(0, source)]\n    while queue:\n        cost, node = heapq.heappop(queue)\n        if cost > best[node]:\n            continue\n        for neighbour, weight in graph[node].items():\n            if cost + weight < best.get(neighbour, 1e9):\n                best[neighbour] = cost + weight; heapq.heappush(queue, (cost + weight, neighbour))\n    return best\ndef brute_force(source, target):\n    others = [n for n in graph if n not in (source, target)]\n    best = 1e9\n    for r in range(len(others) + 1):\n        for middle in itertools.permutations(others, r):\n            path = (source, *middle, target)\n            if all(b in graph[a] for a, b in zip(path, path[1:])):\n                best = min(best, sum(graph[a][b] for a, b in zip(path, path[1:])))\n    return best\ndistances = dijkstra(\"A\")\nprint(\"cost from A:\", dict(sorted(distances.items())), \"| agrees with exhaustive search:\", all(distances[t] == brute_force(\"A\", t) for t in \"BCDE\"))\n\n# --- BGP best-path selection in the order of RFC 4271, section 9.1\nroutes_bgp = [\n    {\"name\": \"via AS100\", \"local_pref\": 100, \"as_path\": [100, 400], \"origin\": 0, \"med\": 10, \"neighbour_as\": 100},\n    {\"name\": \"via AS200\", \"local_pref\": 100, \"as_path\": [200, 300, 400], \"origin\": 0, \"med\": 5, \"neighbour_as\": 200},\n    {\"name\": \"via AS500\", \"local_pref\": 200, \"as_path\": [500, 600, 700, 400], \"origin\": 2, \"med\": 0, \"neighbour_as\": 500},\n    {\"name\": \"via AS100 (second link)\", \"local_pref\": 100, \"as_path\": [100, 400], \"origin\": 0, \"med\": 3, \"neighbour_as\": 100},\n]\ndef best_path(candidates):\n    steps = []\n    top = max(r[\"local_pref\"] for r in candidates)\n    candidates = [r for r in candidates if r[\"local_pref\"] == top]; steps.append((\"highest local preference\", [r[\"name\"] for r in candidates]))\n    shortest = min(len(r[\"as_path\"]) for r in candidates)\n    candidates = [r for r in candidates if len(r[\"as_path\"]) == shortest]; steps.append((\"shortest AS_PATH\", [r[\"name\"] for r in candidates]))\n    lowest = min(r[\"origin\"] for r in candidates)\n    candidates = [r for r in candidates if r[\"origin\"] == lowest]; steps.append((\"lowest origin\", [r[\"name\"] for r in candidates]))\n    candidates = [r for r in candidates if not any(o[\"neighbour_as\"] == r[\"neighbour_as\"] and o[\"med\"] < r[\"med\"] for o in candidates)]\n    steps.append((\"lowest MED (same neighbouring AS only)\", [r[\"name\"] for r in candidates]))\n    return candidates[0][\"name\"], steps\nchosen, steps = best_path(routes_bgp)\nfor criterion, left in steps:\n    print(f\"  after {criterion}: {left}\")\nprint(\"BGP selects:\", chosen)\nprint(\"without the local-preference policy the shortest path would win:\", best_path([dict(r, local_pref=100) for r in routes_bgp])[0])\n\n# --- a learning switch\nclass Switch:\n    def __init__(self, ports): self.ports, self.mac_table = ports, {}\n    def frame(self, in_port, src, dst):\n        self.mac_table[src] = in_port                                 # learn\n        if dst in self.mac_table and dst != \"ff:ff\":\n            return [self.mac_table[dst]]\n        return [p for p in range(self.ports) if p != in_port]         # flood unknown or broadcast\nsw = Switch(4)\nprint(\"A->B (B unknown):\", sw.frame(0, \"A\", \"B\"), \"| B->A (A learned):\", sw.frame(1, \"B\", \"A\"), \"| A->B (now learned):\", sw.frame(0, \"A\", \"B\"), \"| broadcast from C:\", sw.frame(2, \"C\", \"ff:ff\"))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-routing",
+              "language": "text",
+              "code": "   10.1.2.9 -> lab     (matched 10.1.2.0/24)\n   10.1.9.9 -> site-a  (matched 10.1.0.0/16)\n   10.9.9.9 -> core    (matched 10.0.0.0/8)\n 192.0.2.77 -> dmz     (matched 192.0.2.0/24)\n    8.8.8.8 -> isp     (matched 0.0.0.0/0)\ncost from A: {'A': 0, 'B': 1, 'C': 2, 'D': 3, 'E': 5} | agrees with exhaustive search: True\n  after highest local preference: ['via AS500']\n  after shortest AS_PATH: ['via AS500']\n  after lowest origin: ['via AS500']\n  after lowest MED (same neighbouring AS only): ['via AS500']\nBGP selects: via AS500\nwithout the local-preference policy the shortest path would win: via AS100 (second link)\nA->B (B unknown): [1, 2, 3] | B->A (A learned): [0] | A->B (now learned): [1] | broadcast from C: [0, 1, 3]",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Each mechanism does what the theory says. The lookup picks the most specific route (10.1.2.9 goes to the /24 although the /16, the /8 and the default also match). Dijkstra's costs agree with exhaustive enumeration, which is the correctness check for the algorithm OSPF routers run. The BGP example shows **policy overriding shortness**: the route through AS 500 has the longest path but the highest local preference, so it wins; with equal preferences the shortest AS_PATH wins, and between the two routes from the same neighbouring AS the lower MED decides. The switch floods the first frame, then forwards directly once it has learned.\n\n**Security consequences.** Learning is **unauthenticated**: an attacker who sends frames with someone else's source address can poison the table, and a flooded table (MAC flooding) can make a switch behave like a hub; port security and dynamic ARP inspection address this. BGP trusts what neighbours announce, so a wrong announcement (a hijack or a leak) can divert traffic; route filtering and RPKI-based origin validation exist for that reason. These are defences to deploy, not behaviours the toy code demonstrates."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "A router has routes to 10.0.0.0/8 and 10.1.0.0/16. Where does a packet for 10.1.5.5 go?",
+              "options": [
+                "The /16 route, because the longest matching prefix wins",
+                "The /8 route",
+                "Either at random"
+              ],
+              "correct_index": 0,
+              "explanation": "Forwarding uses the most specific matching prefix."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "In BGP best-path selection, what is considered before AS_PATH length?",
+              "options": [
+                "The degree of preference (local preference)",
+                "The router identifier",
+                "The packet size"
+              ],
+              "correct_index": 0,
+              "explanation": "RFC 4271 applies the degree of preference first and then the tie-breaking criteria in the stated order."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does a learning switch do with a frame for an unknown destination?",
+              "options": [
+                "Floods it out of all ports except the one it came in on",
+                "Drops it",
+                "Sends it back"
+              ],
+              "correct_index": 0,
+              "explanation": "Flooding lets the destination reply, after which the switch learns its port."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B166",
+              "locator": "Section 16.1 (Calculating the shortest-path tree for an area: the Dijkstra algorithm)"
+            },
+            {
+              "book": "B165",
+              "locator": "Section 9.1 (Decision Process): degree of preference, and 9.1.2.2 (Breaking Ties, Phase 2): AS_PATH length, origin, MULTI_EXIT_DISC"
+            },
+            {
+              "book": "B175",
+              "locator": "IEEE 802.1D/802.1Q bridging: MAC learning and flooding (standard behaviour, not read here)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "MAC learning and flooding are standard bridge behaviour described from general knowledge (IEEE 802.1Q was not available to read). The BGP implementation covers only the first four criteria; the RFC lists further ones (eBGP over iBGP, interior cost, identifier)."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "6.3 VLANs",
+          "summary": "802.1Q tags built and parsed by hand, a VLAN-aware switch with access and trunk ports, and a simulated double-tagging escape.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **VLAN** (virtual LAN) divides one physical switched network into several separate **broadcast domains**: hosts in VLAN 10 cannot reach hosts in VLAN 20 at layer 2, even on the same switch, and traffic between them must pass through a router or firewall where policy is applied. Frames of different VLANs share links (**trunks**) by carrying a 4-byte **IEEE 802.1Q tag** inserted after the source MAC address: a 16-bit tag protocol identifier (TPID) with value 0x8100, then 3 bits of priority (PCP), 1 drop-eligible bit (DEI) and a **12-bit VLAN ID**, which allows 4,094 usable VLANs (IDs 0 and 4095 are reserved). **Access ports** carry one VLAN and send frames untagged to the host; **trunk ports** carry many VLANs tagged, usually with one **native VLAN** whose frames travel untagged. (The 802.1Q standard itself was not available to read when this lesson was written; the field layout above is the widely documented one and the listing builds and parses it.)\n\nVLANs are a segmentation tool, not a security boundary on their own, and one classic misconfiguration shows why. In **VLAN hopping by double tagging**, an attacker on the native VLAN sends a frame with two tags. The first switch strips the outer tag (it matches the native VLAN) and forwards the frame, still carrying the inner tag, across the trunk, where the next switch treats it as belonging to the inner, victim VLAN. The attack is one-way (no replies come back) and works only if the attacker's port is in the trunk's native VLAN. The listing is a **SIMULATION** on a switch model written for the lesson: it builds tags, tests the parser, models access and trunk ports, and reproduces the double-tagging escape and its two standard fixes. The labs are self-contained Python (standard library plus `cryptography` 50.0.1 for the PKI, VPN and TLS lessons: `pip install cryptography==50.0.1`). Everything runs on your own machine on the loopback interface or in memory. **Nothing here scans, attacks or connects to other systems.** Where an attack is shown it is a **SIMULATION** against code written in the lesson."
+            },
+            {
+              "type": "code",
+              "id": "c-vlan",
+              "language": "python",
+              "code": "import struct\n\ndef tag(vid, pcp=0, dei=0):\n    return struct.pack(\"!HH\", 0x8100, (pcp << 13) | (dei << 12) | vid)\ndef parse(frame):\n    tags, offset = [], 12\n    while struct.unpack(\"!H\", frame[offset:offset + 2])[0] == 0x8100:\n        tci = struct.unpack(\"!H\", frame[offset + 2:offset + 4])[0]\n        tags.append({\"pcp\": tci >> 13, \"dei\": (tci >> 12) & 1, \"vid\": tci & 0xFFF}); offset += 4\n    return tags, frame[offset:offset + 2], frame[offset + 2:]\ndef build(dst, src, vlans, payload=b\"data\"):\n    return bytes.fromhex(dst.replace(\":\", \"\")) + bytes.fromhex(src.replace(\":\", \"\")) + b\"\".join(tag(v) for v in vlans) + b\"\\x08\\x00\" + payload\n\nframe = build(\"aa:aa:aa:aa:aa:01\", \"aa:aa:aa:aa:aa:02\", [10])\ntags, ethertype, payload = parse(frame)\nprint(\"one tag:\", tags, \"| inner EtherType\", ethertype.hex(), \"| frame grew by 4 bytes:\", len(frame) - len(build(\"aa:aa:aa:aa:aa:01\", \"aa:aa:aa:aa:aa:02\", [])) == 4)\nprint(\"usable VLAN IDs:\", 2 ** 12 - 2, \"(0 and 4095 are reserved)\")\n\nclass VlanSwitch:\n    def __init__(self, name, ports, native=1, strip_native_on_trunk=True):\n        self.name, self.ports, self.native, self.strict = name, ports, native, strip_native_on_trunk\n    def receive(self, port, frame):\n        # returns (vlan the switch assigns, frame as seen inside the switch); access ports ignore tags, trunks use them\n        kind, config = self.ports[port]\n        tags, _, _ = parse(frame)\n        if kind == \"access\":\n            return (config, frame) if not tags else (None, frame)          # a tagged frame arriving on an access port is dropped\n        if not tags:\n            return self.native, frame                                      # untagged on a trunk: native VLAN\n        if tags[0][\"vid\"] == self.native and self.strict:                  # the outer tag is removed when it names the native VLAN\n            return self.native if len(tags) == 1 else tags[1][\"vid\"], frame[:12] + frame[16:]\n        return tags[0][\"vid\"], frame\n\ns1 = VlanSwitch(\"S1\", {0: (\"access\", 1), 1: (\"trunk\", None)})               # attacker on access port 0 in VLAN 1 (the trunk's native VLAN)\nattack = build(\"bb:bb:bb:bb:bb:01\", \"cc:cc:cc:cc:cc:66\", [1, 20], b\"attack\")\nvlan, seen = s1.receive(1, attack)                                            # the frame arrives from the attacker's side tagged, as modelled\nprint(\"SIMULATION double tag [1, 20]: the first switch removes tag 1; the next switch sees VLAN\", parse(seen)[0][0][\"vid\"], \"and delivers into the victim VLAN\")\ns3 = VlanSwitch(\"S3\", {0: (\"access\", 99), 1: (\"trunk\", None)}, native=1)\nprint(\"fix 1, the attacker's access port is in VLAN 99, not the native VLAN: an untagged frame from it is placed in VLAN\", s3.receive(0, build(\"bb:bb:bb:bb:bb:01\", \"cc:cc:cc:cc:cc:66\", [], b\"x\"))[0], \"and can never be treated as native-VLAN traffic\")\ns2 = VlanSwitch(\"S2\", {0: (\"access\", 99), 1: (\"trunk\", None)}, native=1000)\nprint(\"fix 2, the trunk's native VLAN is an unused VLAN (1000): the outer tag 1 is no longer special, the frame stays on VLAN\", s2.receive(1, attack)[0], \"(not 20)\")\nprint(\"fix 3, user ports are access ports, which drop tagged frames:\", s3.receive(0, attack)[0] is None)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-vlan",
+              "language": "text",
+              "code": "one tag: [{'pcp': 0, 'dei': 0, 'vid': 10}] | inner EtherType 0800 | frame grew by 4 bytes: True\nusable VLAN IDs: 4094 (0 and 4095 are reserved)\nSIMULATION double tag [1, 20]: the first switch removes tag 1; the next switch sees VLAN 20 and delivers into the victim VLAN\nfix 1, the attacker's access port is in VLAN 99, not the native VLAN: an untagged frame from it is placed in VLAN 99 and can never be treated as native-VLAN traffic\nfix 2, the trunk's native VLAN is an unused VLAN (1000): the outer tag 1 is no longer special, the frame stays on VLAN 1 (not 20)\nfix 3, user ports are access ports, which drop tagged frames: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The parser and builder agree (a tagged frame is 4 bytes longer, and the VLAN ID is in the low 12 bits of the tag control information). The simulation shows the escape: removing the native tag exposes the inner tag to the second switch. Two configuration rules close it, and a third makes it impossible from an access port. **Do not use VLAN 1 (the default) as the native VLAN or for user ports; set the native VLAN of trunks to an unused one; configure user-facing ports as access ports (which drop tagged frames) and disable automatic trunk negotiation.**\n\n**How far to trust VLANs.** They separate broadcast domains and make policy enforcement possible at the router, but they depend on switch configuration being right everywhere, and a mistake on any switch can bridge them. For high-assurance separation use separate physical networks or add layer-3 filtering and, where appropriate, encryption between zones (the following lessons)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How many usable VLAN IDs does the 12-bit VLAN ID field give?",
+              "options": [
+                "4,094",
+                "4,096",
+                "1,024"
+              ],
+              "correct_index": 0,
+              "explanation": "The 12-bit field has 4,096 values, of which 0 and 4095 are reserved."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is required for VLAN hopping by double tagging to work?",
+              "options": [
+                "The attacker's port is in the trunk's native VLAN",
+                "Physical access to the trunk cable",
+                "A weak encryption key"
+              ],
+              "correct_index": 0,
+              "explanation": "The first switch strips the outer tag only if it names the native VLAN, exposing the inner tag."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which configuration prevents double-tagging attacks?",
+              "options": [
+                "An unused native VLAN, and user ports as access ports that drop tagged frames",
+                "Using VLAN 1 for everything",
+                "Disabling the firewall"
+              ],
+              "correct_index": 0,
+              "explanation": "The attack needs the attacker's frames to be treated as native-VLAN frames on the trunk."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B175",
+              "locator": "Clauses on VLAN tags (TPID 0x8100, 12-bit VID), access and trunk ports and the native VLAN",
+              "note": "Not read here: the layout is described from widely documented behaviour."
+            }
+          ],
+          "needs_verification": {
+            "reason": "IEEE 802.1Q could not be read. The tag layout and the double-tagging mechanism are standard and widely documented, and are exercised only by the lesson's own model; this section should be checked against the standard or a vendor guide before being quoted."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "6.4 VPNs (Advanced)",
+          "summary": "An IPsec ESP packet built and authenticated with AES-GCM, the anti-replay window, and the byte cost of tunnelling.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **VPN** carries private traffic across an untrusted network inside an authenticated, encrypted wrapper. **IPsec** does this at the IP layer. Its **Encapsulating Security Payload (ESP)**, RFC 4303, provides confidentiality, integrity and anti-replay for each packet. An ESP packet consists of the **Security Parameters Index (SPI)**, which identifies the security association (the agreed keys and algorithms), a **sequence number**, the payload (encrypted), **padding**, a **pad length**, a **next header** field and the **integrity check value (ICV)**. In **tunnel mode** the whole original IP packet is the payload and a new outer IP header is added, which hides the original addresses and is what site-to-site VPNs and gateways use; in **transport mode** only the payload of the original packet is protected.\n\nThe sequence number gives **anti-replay protection**: the receiver keeps a sliding window of recently seen numbers, rejects any number at or below the window's left edge or already marked as received, and advances the window when a new highest valid number arrives (RFC 4303 requires that the check use only *authenticated* packets before the window moves). The listing builds a real ESP packet in tunnel mode using AES-GCM from the `cryptography` package (the SPI, sequence number and a nonce built from a per-packet value are authenticated or encrypted as the standard prescribes for AES-GCM; the exact nonce construction of RFC 4106 was not read here, so the listing uses a simple, documented one), verifies tampering is caught, implements the replay window and tests it, and computes the overhead of tunnelling. The labs are self-contained Python (standard library plus `cryptography` 50.0.1 for the PKI, VPN and TLS lessons: `pip install cryptography==50.0.1`). Everything runs on your own machine on the loopback interface or in memory. **Nothing here scans, attacks or connects to other systems.** Where an attack is shown it is a **SIMULATION** against code written in the lesson."
+            },
+            {
+              "type": "code",
+              "id": "c-esp",
+              "language": "python",
+              "code": "import os, struct\nfrom cryptography.exceptions import InvalidTag\nfrom cryptography.hazmat.primitives.ciphers.aead import AESGCM\n\nkey, salt = AESGCM.generate_key(128), os.urandom(4)\nspi = 0x1000\naead = AESGCM(key)\n\ndef esp_encrypt(sequence, inner_packet):\n    header = struct.pack(\"!II\", spi, sequence)                          # SPI and sequence number stay in the clear but are authenticated\n    pad_length = (-(len(inner_packet) + 2)) % 4                          # pad so that payload + pad length + next header is a multiple of 4\n    trailer = bytes(range(1, pad_length + 1)) + bytes([pad_length, 4])   # padding, pad length, next header = 4 (IPv4-in-IP, tunnel mode)\n    nonce_iv = struct.pack(\"!Q\", sequence)\n    ciphertext = aead.encrypt(salt + nonce_iv, inner_packet + trailer, header)      # ciphertext includes the 16-byte GCM tag (the ICV)\n    return header + nonce_iv + ciphertext\n\ndef esp_decrypt(packet):\n    header, nonce_iv, ciphertext = packet[:8], packet[8:16], packet[16:]\n    plain = aead.decrypt(salt + nonce_iv, ciphertext, header)\n    pad_length, next_header = plain[-2], plain[-1]\n    return plain[:-2 - pad_length]\n\ninner = b\"E\" * 1400                                                      # a stand-in for an original 1400-byte IP packet\npacket = esp_encrypt(7, inner)\nprint(\"round trip recovers the inner packet:\", esp_decrypt(packet) == inner)\ntampered = bytearray(packet); tampered[20] ^= 1\nfor name, bad in ((\"a flipped ciphertext bit\", bytes(tampered)), (\"a changed sequence number\", packet[:4] + struct.pack(\"!I\", 8) + packet[8:])):\n    try:\n        esp_decrypt(bad); print(name, \": accepted (should not happen)\")\n    except InvalidTag:\n        print(name, \": rejected by the integrity check\")\n\nouter_ip, esp_header, iv, icv = 20, 8, 8, 16\nfor payload in (64, 576, 1400):\n    pad = (-(payload + 2)) % 4\n    total = outer_ip + esp_header + iv + payload + pad + 2 + icv\n    print(f\"inner packet {payload:>4} bytes -> {total:>4} bytes on the wire: overhead {total - payload} bytes ({(total - payload) / payload:.1%}); a 1500-byte link MTU leaves {1500 - (outer_ip + esp_header + iv + 2 + icv) - 3} usable payload bytes\")\n\nclass ReplayWindow:\n    def __init__(self, size=64): self.size, self.highest, self.seen = size, 0, set()\n    def check_and_update(self, sequence):                                # call only for packets that passed authentication\n        if sequence == 0 or sequence <= self.highest - self.size or sequence in self.seen:\n            return False\n        if sequence > self.highest:\n            self.highest = sequence\n        self.seen.add(sequence)\n        self.seen = {s for s in self.seen if s > self.highest - self.size}\n        return True\nwindow = ReplayWindow(8)\nresults = [(s, window.check_and_update(s)) for s in (1, 2, 3, 3, 5, 4, 12, 4, 2, 11)]\nprint(\"sequence -> accepted:\", results)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-esp",
+              "language": "text",
+              "code": "round trip recovers the inner packet: True\na flipped ciphertext bit : rejected by the integrity check\na changed sequence number : rejected by the integrity check\ninner packet   64 bytes ->  120 bytes on the wire: overhead 56 bytes (87.5%); a 1500-byte link MTU leaves 1443 usable payload bytes\ninner packet  576 bytes ->  632 bytes on the wire: overhead 56 bytes (9.7%); a 1500-byte link MTU leaves 1443 usable payload bytes\ninner packet 1400 bytes -> 1456 bytes on the wire: overhead 56 bytes (4.0%); a 1500-byte link MTU leaves 1443 usable payload bytes\nsequence -> accepted: [(1, True), (2, True), (3, True), (3, False), (5, True), (4, True), (12, True), (4, False), (2, False), (11, True)]",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The packet round-trips, and both a flipped ciphertext bit and a changed sequence number are rejected, because AES-GCM authenticates the header as associated data: an attacker cannot alter or reorder the sequence numbers undetected. The window accepts the out-of-order 4 (it is inside the window and unseen), rejects the duplicate 3, rejects the second 4, and rejects 2 and a duplicate 4 once the window has moved (12 advanced the left edge to 5), which is the behaviour the RFC describes: replays are dropped, mild reordering is tolerated.\n\n**Operational points.** Tunnelling costs bytes (56 for this configuration: 20 for the outer IP header, 8 for SPI and sequence number, 8 for the IV, 16 for the ICV, 2 for pad length and next header, and 2 padding bytes in these cases), so a 1,500-byte link carries at most about 1,440 bytes of inner packet; ignoring that leads to fragmentation or black-holed packets when path MTU discovery is blocked, a very common VPN fault. And the cryptography in ESP today is **not quantum-safe** when its keys come from classical key exchange (B8, B11): the key-exchange protocol (IKEv2) is the part that needs hybrid or post-quantum methods, while the bulk AES-GCM is fine with 256-bit keys."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the ESP sequence number provide?",
+              "options": [
+                "Anti-replay protection through a sliding window at the receiver",
+                "Encryption",
+                "Compression"
+              ],
+              "correct_index": 0,
+              "explanation": "The receiver rejects numbers it has seen or that fall behind the window."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does tunnel mode protect?",
+              "options": [
+                "The entire original IP packet, which is carried inside a new outer IP packet",
+                "Only the TCP port numbers",
+                "Nothing"
+              ],
+              "correct_index": 0,
+              "explanation": "Tunnel mode hides the original addresses; transport mode protects only the payload."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why must ESP overhead be taken into account?",
+              "options": [
+                "It reduces the usable payload per packet and can cause fragmentation or lost packets",
+                "It speeds up transfers",
+                "It changes the key size"
+              ],
+              "correct_index": 0,
+              "explanation": "The added outer header, ESP header, IV, trailer and ICV consume part of the MTU."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B164",
+              "locator": "Section 2 (Packet Format: SPI, sequence number, payload, padding, pad length, next header, ICV), Section 3.4.3 (sequence number verification and the sliding window), and the tunnel and transport mode descriptions"
+            },
+            {
+              "book": "B100",
+              "locator": "Package: AES-GCM (AESGCM) used to build the ESP example"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The AES-GCM nonce construction used in the listing (4-byte salt plus the 64-bit sequence number) is a simplified teaching choice, not the RFC 4106 construction, which was not read. The quantum-safety remark follows B8 and B11."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "6.5 TLS (Engineering Depth)",
+          "summary": "A real TLS 1.3 connection on loopback: version control, certificate and hostname checking, resumption, and the failures you will meet in production.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "TLS is the protocol that protects most traffic on the Internet. The current specification is **RFC 9846 (July 2026)**, which obsoletes RFC 8446 (the original TLS 1.3) and also obsoletes RFC 5246 (TLS 1.2) along with several related RFCs. TLS 1.3 completes a handshake in one round trip, supports only forward-secret key exchange, and encrypts most of the handshake, including the certificate (you studied the key schedule in B7 and the post-quantum key exchange in B11). Engineering TLS means controlling four things: the **protocol versions** you allow, the **certificate checks** (chain to a trusted root, validity period, and above all that the certificate matches the **host name** you intended to reach), **session resumption** (tickets that skip the full handshake) and the **error behaviour** when any of those fail.\n\nThe listing runs real TLS between two threads on the loopback interface, with a server certificate generated for the exercise (an RSA certificate for the name `lab.example.test`, under the reserved `.test` domain). It checks that: the default negotiation gives TLS 1.3; a server limited to TLS 1.2 and a client limited to TLS 1.3 **fail to connect**; verification **rejects a host name that is not in the certificate**; verification **rejects an untrusted certificate**; and a second connection **resumes** the first session. The labs are self-contained Python (standard library plus `cryptography` 50.0.1 for the PKI, VPN and TLS lessons: `pip install cryptography==50.0.1`). Everything runs on your own machine on the loopback interface or in memory. **Nothing here scans, attacks or connects to other systems.** Where an attack is shown it is a **SIMULATION** against code written in the lesson."
+            },
+            {
+              "type": "code",
+              "id": "c-tls",
+              "language": "python",
+              "code": "import datetime, socket, ssl, tempfile, threading, os\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import rsa\nfrom cryptography.x509.oid import NameOID\n\ndirectory = tempfile.mkdtemp()\nkey = rsa.generate_private_key(65537, 2048)\nname = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, \"lab.example.test\")])\nnow = datetime.datetime.now(datetime.timezone.utc)\ncertificate = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key()).serial_number(x509.random_serial_number())\n               .not_valid_before(now - datetime.timedelta(days=1)).not_valid_after(now + datetime.timedelta(days=30))\n               .add_extension(x509.SubjectAlternativeName([x509.DNSName(\"lab.example.test\")]), critical=False)\n               .add_extension(x509.BasicConstraints(ca=True, path_length=None), critical=True)\n               .sign(key, hashes.SHA256()))\ncert_path, key_path = os.path.join(directory, \"cert.pem\"), os.path.join(directory, \"key.pem\")\nopen(cert_path, \"wb\").write(certificate.public_bytes(serialization.Encoding.PEM))\nopen(key_path, \"wb\").write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))\n\ndef server_context(minimum=None, maximum=None):\n    context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)\n    context.load_cert_chain(cert_path, key_path)\n    if minimum: context.minimum_version = minimum\n    if maximum: context.maximum_version = maximum\n    return context\n\ndef client_context(trust=True, minimum=None, maximum=None):\n    context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)                      # verifies the certificate and the host name by default\n    if trust: context.load_verify_locations(cert_path)\n    if minimum: context.minimum_version = minimum\n    if maximum: context.maximum_version = maximum\n    return context\n\ndef connect(server_ctx, client_ctx, hostname=\"lab.example.test\", session=None):\n    listener = socket.socket(); listener.bind((\"127.0.0.1\", 0)); listener.listen(1)\n    def serve():\n        try:\n            with server_ctx.wrap_socket(listener.accept()[0], server_side=True) as connection:\n                connection.sendall(connection.recv(100))\n        except (ssl.SSLError, OSError):\n            pass\n    thread = threading.Thread(target=serve); thread.start()\n    try:\n        with client_ctx.wrap_socket(socket.create_connection(listener.getsockname()), server_hostname=hostname, session=session) as connection:\n            connection.sendall(b\"ping\"); connection.recv(100)\n            return {\"version\": connection.version(), \"resumed\": connection.session_reused, \"session\": connection.session}\n    except ssl.SSLError as error:\n        return {\"error\": type(error).__name__}\n    finally:\n        thread.join(); listener.close()\n\nshared_server, shared_client = server_context(), client_context()                # resumption needs the same contexts on both connections\ndefault = connect(shared_server, shared_client)\nprint(\"default negotiation:\", default[\"version\"], \"| first connection resumed:\", default[\"resumed\"])\nprint(\"server limited to TLS 1.2, client only TLS 1.3:\", connect(server_context(maximum=ssl.TLSVersion.TLSv1_2), client_context(minimum=ssl.TLSVersion.TLSv1_3)))\nprint(\"server limited to TLS 1.2, client allows TLS 1.2:\", connect(server_context(maximum=ssl.TLSVersion.TLSv1_2), client_context())[\"version\"])\nprint(\"host name not in the certificate:\", connect(server_context(), client_context(), hostname=\"other.example.test\"))\nprint(\"certificate not trusted:\", connect(server_context(), client_context(trust=False)))\nsecond = connect(shared_server, shared_client, session=default[\"session\"])\nprint(\"second connection with the saved session ticket resumed:\", second[\"resumed\"], \"| version:\", second[\"version\"])"
+            },
+            {
+              "type": "code",
+              "id": "o-c-tls",
+              "language": "text",
+              "code": "default negotiation: TLSv1.3 | first connection resumed: False\nserver limited to TLS 1.2, client only TLS 1.3: {'error': 'SSLError'}\nserver limited to TLS 1.2, client allows TLS 1.2: TLSv1.2\nhost name not in the certificate: {'error': 'SSLCertVerificationError'}\ncertificate not trusted: {'error': 'SSLCertVerificationError'}\nsecond connection with the saved session ticket resumed: True | version: TLSv1.3",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The results are the engineering rules in miniature. With defaults the connection is TLS 1.3. A **version mismatch fails closed** (a handshake error, not a silent downgrade), which is why an old client talking to a server that has disabled TLS 1.2 simply breaks, so raising minimum versions needs an inventory of clients first (B11). Certificate verification checks **both** that the chain is trusted and that the name matches: the second failure is the one that stops an attacker presenting a valid certificate for a *different* site, and it is the check that is most often disabled by people who \"just want it to work\". The saved session ticket lets the second connection resume without a full handshake.\n\n**Rules for production.** Never disable verification (`CERT_NONE`, `verify=False`, or an empty hostname) to silence an error; fix the trust or the name. Set a minimum version deliberately, prefer TLS 1.3, plan certificate renewal before expiry (lesson 6.6), and log handshake failures because they are an early signal of both misconfiguration and attack. The cipher suites and groups offered, and whether the key exchange is post-quantum, are visible with the Q-CAPS scanner's standard scan of your own endpoints."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does RFC 9846 do to the earlier TLS specifications?",
+              "options": [
+                "It obsoletes RFC 8446 (TLS 1.3) and RFC 5246 (TLS 1.2)",
+                "It deprecates TLS 1.3",
+                "It defines SSL 4.0"
+              ],
+              "correct_index": 0,
+              "explanation": "The RFC front matter lists the RFCs it obsoletes, including 8446 and 5246."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What two things must certificate verification check?",
+              "options": [
+                "That the chain is trusted and that the name matches the host you intended",
+                "Only that the certificate has not expired",
+                "Only the key length"
+              ],
+              "correct_index": 0,
+              "explanation": "A valid certificate for another host name must be rejected."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "A server allows only TLS 1.2 and a client allows only TLS 1.3. What happens?",
+              "options": [
+                "The handshake fails; there is no silent downgrade",
+                "They fall back to SSL 3.0",
+                "TLS 1.3 is forced on the server"
+              ],
+              "correct_index": 0,
+              "explanation": "Version negotiation fails closed when no common version exists."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B161",
+              "locator": "Front matter: obsoletes RFC 8446, RFC 5246 and others; sections on the handshake and certificate authentication"
+            },
+            {
+              "book": "B162",
+              "locator": "Section 6 (Certification Path Validation) and name checking requirements"
+            },
+            {
+              "book": "B100",
+              "locator": "Package: x509 generation used for the test certificate; the lab uses Python's ssl module with the system OpenSSL"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The behaviours shown (default TLS 1.3, fail-closed mismatches, name checking, resumption) are the observed results of Python's ssl on this machine, not quotations of RFC text; session resumption depends on the TLS library version."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "6.6 PKI (Engineering Depth)",
+          "summary": "A root, an intermediate and a leaf built and validated, path-length and expiry failures, and revocation with a CRL, with the limits of each check.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **public key infrastructure** lets a stranger's public key be trusted through a chain of signatures. A **certificate** binds a name to a public key and is signed by an **issuer**. A **trust anchor** (root certificate) is trusted by configuration. Certification path validation (RFC 5280) checks, for the chain from the leaf up to a trust anchor, that every signature verifies, every certificate is within its validity period, names and constraints are respected, and every issuing certificate is permitted to be a CA: the **basicConstraints** extension has the CA flag, and an optional **pathLenConstraint** limits how many further CAs may follow (a pathLenConstraint of zero means no non-self-issued intermediate CAs may follow). **Revocation** is a separate mechanism: an issuer publishes a **Certificate Revocation List (CRL)** of revoked serial numbers (RFC 5280), or answers online status queries with **OCSP** (RFC 6960). A validity check by itself does **not** consult revocation data.\n\nThe listing builds a three-level hierarchy with the `cryptography` package, validates a server certificate with its X.509 verifier, and then exercises the failure modes: a wrong name, validation after expiry, an unconstrained extra CA below a path-length-limited intermediate, and an unrelated trust anchor. It issues a CRL signed by the intermediate, shows that the revoked leaf still passes path validation, and that the CRL lookup is what catches it. All names are in the reserved `.test` domain and all keys are generated for the exercise. The labs are self-contained Python (standard library plus `cryptography` 50.0.1 for the PKI, VPN and TLS lessons: `pip install cryptography==50.0.1`). Everything runs on your own machine on the loopback interface or in memory. **Nothing here scans, attacks or connects to other systems.** Where an attack is shown it is a **SIMULATION** against code written in the lesson."
+            },
+            {
+              "type": "code",
+              "id": "c-pki",
+              "language": "python",
+              "code": "import datetime\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import ec\nfrom cryptography.x509.oid import ExtendedKeyUsageOID, NameOID\nfrom cryptography.x509.verification import PolicyBuilder, Store, VerificationError\n\nNOW = datetime.datetime(2026, 10, 1, tzinfo=datetime.timezone.utc)\ndef name(common_name): return x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, common_name)])\n\ndef issue(subject, subject_key, issuer_name, issuer_key, days, ca=False, path_length=None, san=None, serial=None):\n    builder = (x509.CertificateBuilder().subject_name(name(subject)).issuer_name(issuer_name).public_key(subject_key.public_key())\n               .serial_number(serial or x509.random_serial_number()).not_valid_before(NOW).not_valid_after(NOW + datetime.timedelta(days=days))\n               .add_extension(x509.BasicConstraints(ca=ca, path_length=path_length if ca else None), critical=True))\n    builder = builder.add_extension(x509.SubjectKeyIdentifier.from_public_key(subject_key.public_key()), critical=False)\n    if issuer_key is not subject_key:\n        builder = builder.add_extension(x509.AuthorityKeyIdentifier.from_issuer_public_key(issuer_key.public_key()), critical=False)\n    if ca:\n        builder = builder.add_extension(x509.KeyUsage(False, False, False, False, False, True, True, False, False), critical=True)\n    else:\n        builder = builder.add_extension(x509.SubjectAlternativeName([x509.DNSName(san)]), critical=False)\n        builder = builder.add_extension(x509.ExtendedKeyUsage([ExtendedKeyUsageOID.SERVER_AUTH]), critical=False)\n    return builder.sign(issuer_key, hashes.SHA256())\n\nnew_key = lambda: ec.generate_private_key(ec.SECP256R1())\nroot_key, inter_key, leaf_key, rogue_key = new_key(), new_key(), new_key(), new_key()\nroot = issue(\"Lab Root CA\", root_key, name(\"Lab Root CA\"), root_key, 3650, ca=True)\nintermediate = issue(\"Lab Issuing CA\", inter_key, root.subject, root_key, 1800, ca=True, path_length=0)\nleaf = issue(\"shop.example.test\", leaf_key, intermediate.subject, inter_key, 90, san=\"shop.example.test\")\nother_key = new_key()\nother_root = issue(\"Unrelated Root CA\", other_key, name(\"Unrelated Root CA\"), other_key, 3650, ca=True)\n\ndef validate(certificate, chain, host, trust=(root,), when=NOW + datetime.timedelta(days=5)):\n    try:\n        verifier = PolicyBuilder().store(Store(list(trust))).time(when).build_server_verifier(x509.DNSName(host))\n        verifier.verify(certificate, chain)\n        return \"valid\"\n    except VerificationError as error:\n        return f\"rejected: {str(error)[:60]}\"\n\nprint(\"valid chain:\", validate(leaf, [intermediate], \"shop.example.test\"))\nprint(\"wrong host name:\", validate(leaf, [intermediate], \"evil.example.test\"))\nprint(\"after the 90-day lifetime:\", validate(leaf, [intermediate], \"shop.example.test\", when=NOW + datetime.timedelta(days=120)))\nprint(\"only an unrelated root is trusted:\", validate(leaf, [intermediate], \"shop.example.test\", trust=(other_root,)))\nprint(\"intermediate missing from the chain sent:\", validate(leaf, [], \"shop.example.test\"))\n\nsub_ca = issue(\"Unauthorised Sub CA\", rogue_key, intermediate.subject, inter_key, 365, ca=True)       # a CA below a pathLenConstraint=0 intermediate\nleaf2 = issue(\"deep.example.test\", new_key(), sub_ca.subject, rogue_key, 30, san=\"deep.example.test\")\nprint(\"a CA below the path-length-limited intermediate:\", validate(leaf2, [sub_ca, intermediate], \"deep.example.test\"))\n\n# Revocation: the CRL is a separate check\nrevoked = x509.RevokedCertificateBuilder().serial_number(leaf.serial_number).revocation_date(NOW + datetime.timedelta(days=2)).build()\ncrl = (x509.CertificateRevocationListBuilder().issuer_name(intermediate.subject).last_update(NOW).next_update(NOW + datetime.timedelta(days=7))\n       .add_revoked_certificate(revoked).sign(inter_key, hashes.SHA256()))\nprint(\"CRL is signed by the issuing CA:\", crl.is_signature_valid(inter_key.public_key()))\nprint(\"path validation of the revoked leaf (no revocation data consulted):\", validate(leaf, [intermediate], \"shop.example.test\"))\nprint(\"CRL lookup finds the revoked serial:\", crl.get_revoked_certificate_by_serial_number(leaf.serial_number) is not None)\nprint(\"CRL lookup for an unrevoked certificate:\", crl.get_revoked_certificate_by_serial_number(intermediate.serial_number) is None)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-pki",
+              "language": "text",
+              "code": "valid chain: valid\nwrong host name: rejected: validation failed: leaf certificate has no matching subjectA\nafter the 90-day lifetime: rejected: validation failed: cert is not valid at validation time (enc\nonly an unrelated root is trusted: rejected: validation failed: candidates exhausted: all candidates exha\nintermediate missing from the chain sent: rejected: validation failed: candidates exhausted: all candidates exha\na CA below the path-length-limited intermediate: rejected: validation failed: candidates exhausted: path length constra\nCRL is signed by the issuing CA: True\npath validation of the revoked leaf (no revocation data consulted): valid\nCRL lookup finds the revoked serial: True\nCRL lookup for an unrevoked certificate: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Every failure mode behaves as the standard says. The path validates only when the name matches, the time is inside the validity period, the chain leads to a trust anchor that is configured, and the chain supplies the intermediate (a common production fault is a server that sends only its leaf, which works in some clients that cache intermediates and fails in others). The extra CA below the intermediate is rejected because the intermediate's pathLenConstraint is zero. **Revocation is separate**: the revoked leaf still passes path validation, and only the CRL lookup identifies it, so a client that does not check revocation will accept it. Real deployments therefore choose a mechanism deliberately (CRL, OCSP with stapling, or very short-lived certificates that make revocation unnecessary), and have to decide what to do when revocation data cannot be fetched (soft-fail versus hard-fail).\n\n**Operational lessons.** Automate issuance and renewal (the ACME protocol, RFC 8555, exists for this); keep root keys offline and use intermediates for issuance; limit CA depth with pathLenConstraint and name constraints; monitor expiry (an expired certificate is one of the most common causes of outages); and inventory your certificates, which is also the first step in post-quantum migration (B11), since certificate signatures are among the algorithms that must eventually change."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Does certification path validation check whether a certificate has been revoked?",
+              "options": [
+                "No, revocation is checked separately with a CRL or OCSP",
+                "Yes, always",
+                "Only for root certificates"
+              ],
+              "correct_index": 0,
+              "explanation": "The revoked leaf still passes path validation; the CRL lookup is a separate step."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does a pathLenConstraint of zero on an intermediate CA mean?",
+              "options": [
+                "No further intermediate CAs may follow it in a path",
+                "The certificate is invalid",
+                "The certificate has no expiry"
+              ],
+              "correct_index": 0,
+              "explanation": "RFC 5280: zero indicates that no non-self-issued intermediate CA certificates may follow in a valid path."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "A server sends only its leaf certificate. What can go wrong?",
+              "options": [
+                "Clients that do not already have the intermediate cannot build the chain",
+                "Nothing, chains are never needed",
+                "The certificate expires immediately"
+              ],
+              "correct_index": 0,
+              "explanation": "The server should send the intermediates; clients rely on them to reach a trust anchor."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B162",
+              "locator": "Section 6 (Certification Path Validation), 4.2.1.9 (Basic Constraints and pathLenConstraint) and Section 5 (CRL profile)"
+            },
+            {
+              "book": "B163",
+              "locator": "Online Certificate Status Protocol: the alternative to CRLs"
+            },
+            {
+              "book": "B100",
+              "locator": "Package: x509 builders and the certificate verification API (PolicyBuilder, Store)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The verifier's error messages come from the cryptography package and are not RFC text. Statements about OCSP stapling, soft-fail behaviour and ACME (RFC 8555) are general practice and were not re-read from the RFCs here."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "6.7 Zero Trust",
+          "summary": "NIST's tenets turned into a policy decision function, compared with a perimeter model on concrete requests.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Zero trust** abandons the idea that being inside the network makes a request trustworthy. NIST SP 800-207 defines a zero trust architecture through tenets that include: all data sources and computing services are considered resources; **all communication is secured regardless of network location** (network location alone does not imply trust); access to individual resources is granted **per session**, with the trust of the requester evaluated before access and **least privilege** applied; and access is determined by **dynamic policy** that can take in the client identity, the application or service, the state of the requesting asset (for example patch level and installed software), and other behavioural and environmental attributes such as location, time and reported attacks. In the architecture, a **policy decision point** evaluates each request against policy and a **policy enforcement point** allows or blocks the connection.\n\nThe listing implements a small policy decision point with a **deny-by-default** rule set built from those ideas, and compares it with a **perimeter model** (\"anything from the internal network is allowed\") on six concrete requests. It then shows **session re-evaluation**: the same user is allowed, then denied after the device's posture changes, with no change to the network. The rules are an illustration of the decision structure, not a complete or recommended policy. The labs are self-contained Python (standard library plus `cryptography` 50.0.1 for the PKI, VPN and TLS lessons: `pip install cryptography==50.0.1`). Everything runs on your own machine on the loopback interface or in memory. **Nothing here scans, attacks or connects to other systems.** Where an attack is shown it is a **SIMULATION** against code written in the lesson."
+            },
+            {
+              "type": "code",
+              "id": "c-zerotrust",
+              "language": "python",
+              "code": "from dataclasses import dataclass\n\n@dataclass(frozen=True)\nclass Request:\n    user: str; role: str; mfa: bool; device_managed: bool; device_patched: bool; network: str; resource: str; hour: int\n\nRESOURCES = {\"wiki\": {\"sensitivity\": 1}, \"payroll\": {\"sensitivity\": 3}, \"prod-db\": {\"sensitivity\": 4}}\nROLE_ACCESS = {\"employee\": {\"wiki\"}, \"hr\": {\"wiki\", \"payroll\"}, \"dba\": {\"wiki\", \"prod-db\"}}                 # least privilege: what each role may ever touch\n\ndef perimeter_decision(r):\n    return \"allow\" if r.network == \"internal\" else \"deny\"                                                  # the old model: location is trust\n\ndef zero_trust_decision(r):\n    reasons = []\n    if r.resource not in ROLE_ACCESS.get(r.role, set()):\n        return \"deny\", [\"role is not entitled to this resource\"]                                         # deny by default\n    sensitivity = RESOURCES[r.resource][\"sensitivity\"]\n    if not r.mfa:\n        reasons.append(\"strong authentication required\")\n    if sensitivity >= 2 and not (r.device_managed and r.device_patched):\n        reasons.append(\"device must be managed and patched for sensitive data\")\n    if sensitivity >= 4 and not (7 <= r.hour <= 19):\n        reasons.append(\"production data only in business hours\")\n    if r.network == \"unknown-country\" and sensitivity >= 3:\n        reasons.append(\"high-risk location for sensitive data\")\n    return (\"allow\", [\"all conditions met\"]) if not reasons else (\"deny\", reasons)\n\ncases = [\n    Request(\"ana\", \"employee\", True, True, True, \"internal\", \"wiki\", 10),\n    Request(\"ben\", \"employee\", True, True, True, \"internal\", \"payroll\", 10),               # inside the network but not entitled\n    Request(\"cho\", \"hr\", True, True, True, \"home\", \"payroll\", 14),                          # outside the network, fully compliant\n    Request(\"dev\", \"hr\", True, False, False, \"internal\", \"payroll\", 14),                    # inside the network, unmanaged device\n    Request(\"eva\", \"dba\", True, True, True, \"internal\", \"prod-db\", 3),                      # inside, entitled, wrong time\n    Request(\"fay\", \"hr\", True, True, True, \"unknown-country\", \"payroll\", 14),\n]\nprint(f\"{'user':5} {'resource':8} {'network':16} {'perimeter':10} {'zero trust':10} reasons\")\nfor r in cases:\n    decision, reasons = zero_trust_decision(r)\n    print(f\"{r.user:5} {r.resource:8} {r.network:16} {perimeter_decision(r):10} {decision:10} {'; '.join(reasons)}\")\nwrongly_allowed = [r.user for r in cases if perimeter_decision(r) == \"allow\" and zero_trust_decision(r)[0] == \"deny\"]\nwrongly_denied = [r.user for r in cases if perimeter_decision(r) == \"deny\" and zero_trust_decision(r)[0] == \"allow\"]\nprint(\"the perimeter model allows requests that zero trust denies:\", wrongly_allowed, \"| and denies one that zero trust allows:\", wrongly_denied)\n\nsession = Request(\"cho\", \"hr\", True, True, True, \"home\", \"payroll\", 14)\nprint(\"session start:\", zero_trust_decision(session)[0])\ndrifted = Request(**{**session.__dict__, \"device_patched\": False})\nprint(\"an hour later the device falls out of patch compliance:\", zero_trust_decision(drifted)[0], \"-\", zero_trust_decision(drifted)[1][0])"
+            },
+            {
+              "type": "code",
+              "id": "o-c-zerotrust",
+              "language": "text",
+              "code": "user  resource network          perimeter  zero trust reasons\nana   wiki     internal         allow      allow      all conditions met\nben   payroll  internal         allow      deny       role is not entitled to this resource\ncho   payroll  home             deny       allow      all conditions met\ndev   payroll  internal         allow      deny       device must be managed and patched for sensitive data\neva   prod-db  internal         allow      deny       production data only in business hours\nfay   payroll  unknown-country  deny       deny       high-risk location for sensitive data\nthe perimeter model allows requests that zero trust denies: ['ben', 'dev', 'eva'] | and denies one that zero trust allows: ['cho']\nsession start: allow\nan hour later the device falls out of patch compliance: deny - device must be managed and patched for sensitive data",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The perimeter model differs from zero trust on four of the six requests, and each difference is a mistake in the sense that matters: it admits Ben (not entitled), Dev (an unmanaged, unpatched device) and Eva (outside business hours) because they are on the internal network, and it refuses Cho, a fully compliant remote HR user. The zero trust function decides each request on identity, entitlement, device state and context, and its last two lines show **continuous evaluation**: the same user and network are denied once the device drifts out of compliance.\n\n**What this does not cover.** A decision function is only a part of a zero trust architecture: it needs reliable signals (device posture from an inventory, identity from a strong provider), enforcement points on every path to the resource, encryption of internal traffic, logging for analysis, and a migration plan, and NIST describes zero trust as an ideal that is approached incrementally, not a product. The rules above are illustrative; real policies come from a risk assessment."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "According to NIST SP 800-207, does being on the enterprise network imply trust?",
+              "options": [
+                "No, network location alone does not imply trust",
+                "Yes, internal traffic is trusted",
+                "Only for managed devices"
+              ],
+              "correct_index": 0,
+              "explanation": "A tenet states that all communication is secured regardless of network location."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does 'deny by default' mean in a policy decision?",
+              "options": [
+                "Access is refused unless a rule explicitly grants it",
+                "Access is granted unless forbidden",
+                "All requests are logged only"
+              ],
+              "correct_index": 0,
+              "explanation": "Entitlements are explicit; anything not granted is denied."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is re-evaluation during a session important?",
+              "options": [
+                "Device posture and context can change, and trust should be re-assessed",
+                "Sessions must be short for performance",
+                "To save logs"
+              ],
+              "correct_index": 0,
+              "explanation": "Access is granted per session and policy is dynamic; a device that falls out of compliance should lose access."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B167",
+              "locator": "Section 2.1 (Tenets of Zero Trust): resources, communication secured regardless of location, per-session access with least privilege, dynamic policy with identity, asset state and behavioural and environmental attributes"
+            },
+            {
+              "book": "B167",
+              "locator": "Section 3 (Logical components): policy decision point and policy enforcement point"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Only tenets 1 to 4 of SP 800-207 were read in detail for this lesson; the policy rules in the listing are invented for illustration. The remark that NIST describes zero trust as an incremental goal is a paraphrase of the document's statement that the tenets are an ideal."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "6.8 IAM (Identity and Access Management)",
+          "summary": "Authentication and authorisation engineering: TOTP verified against the RFC vectors, RBAC and ABAC with separation of duties, and the JWT 'none' pitfall.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Identity and access management** answers two separate questions: **authentication** (who is this?) and **authorisation** (what may they do?). Strong authentication combines factors: something you know, have or are. One widely deployed second factor is the **time-based one-time password (TOTP)**, RFC 6238: the code is HOTP (RFC 4226) computed with a counter equal to the current Unix time divided by a time step, normally 30 seconds, from a shared secret. RFC 6238 publishes test vectors for a secret of ASCII \"12345678901234567890\", so an implementation can be checked exactly: at time 59 s the 8-digit SHA-1 code is **94287082**. Authorisation models decide permissions: **RBAC** assigns permissions to roles and roles to users, **ABAC** evaluates rules over attributes of the user, resource and context, and both are limited by **least privilege** and **separation of duties** (no one person can complete a sensitive action alone).\n\n**Tokens** carry identity between services. A **JSON Web Token** (RFC 7519) is a signed set of claims; a verifier must check the **signature with the algorithm it expects**, the **expiry**, the **audience** and the **issuer**. One classic vulnerability occurs when a library trusts the `alg` field of the token header: an attacker sets `alg: none` and the signature is skipped. The listing checks TOTP against the RFC vectors, implements RBAC and ABAC with a separation-of-duties rule, and shows (as a **SIMULATION** against the lesson's own verifier) that a naive verifier accepts a forged `none` token and a correct one rejects it. The labs are self-contained Python (standard library plus `cryptography` 50.0.1 for the PKI, VPN and TLS lessons: `pip install cryptography==50.0.1`). Everything runs on your own machine on the loopback interface or in memory. **Nothing here scans, attacks or connects to other systems.** Where an attack is shown it is a **SIMULATION** against code written in the lesson."
+            },
+            {
+              "type": "code",
+              "id": "c-iam",
+              "language": "python",
+              "code": "import base64, hashlib, hmac, json, struct, time\n\ndef hotp(secret, counter, digits=8, algorithm=hashlib.sha1):\n    digest = hmac.new(secret, struct.pack(\">Q\", counter), algorithm).digest()\n    offset = digest[-1] & 0x0F\n    value = (struct.unpack(\">I\", digest[offset:offset + 4])[0] & 0x7FFFFFFF) % 10 ** digits\n    return str(value).zfill(digits)\ndef totp(secret, when, step=30, digits=8, algorithm=hashlib.sha1):\n    return hotp(secret, int(when // step), digits, algorithm)\n\nvectors = [(59, \"94287082\", \"46119246\", \"90693936\"), (1111111109, \"07081804\", \"68084774\", \"25091201\"), (1234567890, \"89005924\", \"91819424\", \"93441116\"), (2000000000, \"69279037\", \"90698825\", \"38618901\")]\nsha1_key = b\"12345678901234567890\"; sha256_key = b\"12345678901234567890123456789012\"; sha512_key = b\"1234567890123456789012345678901234567890123456789012345678901234\"\nok = all(totp(sha1_key, t, algorithm=hashlib.sha1) == a and totp(sha256_key, t, algorithm=hashlib.sha256) == b and totp(sha512_key, t, algorithm=hashlib.sha512) == c for t, a, b, c in vectors)\nprint(\"TOTP matches every RFC 6238 test vector (SHA-1, SHA-256, SHA-512):\", ok)\nprint(\"accepting the previous and next time step tolerates clock drift:\", totp(sha1_key, 59 + 30) != totp(sha1_key, 59))\n\nROLE_PERMISSIONS = {\"clerk\": {\"invoice:create\", \"invoice:read\"}, \"approver\": {\"invoice:read\", \"invoice:approve\"}, \"auditor\": {\"invoice:read\", \"audit:read\"}}\ndef rbac(roles, permission): return any(permission in ROLE_PERMISSIONS[r] for r in roles)\ndef abac(user, action, resource, context):\n    if action == \"invoice:approve\":\n        return user[\"id\"] != resource[\"created_by\"] and resource[\"amount\"] <= user.get(\"limit\", 0) and context[\"mfa\"]       # separation of duties, limit, strong auth\n    return rbac(user[\"roles\"], action)\nana = {\"id\": \"ana\", \"roles\": [\"clerk\", \"approver\"], \"limit\": 10000}\ninvoice = {\"created_by\": \"ana\", \"amount\": 500}\nprint(\"RBAC alone lets Ana create and approve her own invoice:\", rbac(ana[\"roles\"], \"invoice:create\") and rbac(ana[\"roles\"], \"invoice:approve\"))\nprint(\"ABAC with separation of duties blocks her approving it:\", not abac(ana, \"invoice:approve\", invoice, {\"mfa\": True}))\nprint(\"another approver within the limit and with MFA may approve:\", abac({\"id\": \"bo\", \"roles\": [\"approver\"], \"limit\": 10000}, \"invoice:approve\", invoice, {\"mfa\": True}))\nprint(\"without MFA the same approver may not:\", not abac({\"id\": \"bo\", \"roles\": [\"approver\"], \"limit\": 10000}, \"invoice:approve\", invoice, {\"mfa\": False}))\n\ndef b64(data): return base64.urlsafe_b64encode(data).rstrip(b\"=\").decode()\ndef unb64(text): return base64.urlsafe_b64decode(text + \"=\" * (-len(text) % 4))\nSECRET = b\"server-side-secret\"\ndef make(claims, alg=\"HS256\", secret=SECRET):\n    head, body = b64(json.dumps({\"alg\": alg, \"typ\": \"JWT\"}).encode()), b64(json.dumps(claims).encode())\n    signature = b64(hmac.new(secret, f\"{head}.{body}\".encode(), hashlib.sha256).digest()) if alg == \"HS256\" else \"\"\n    return f\"{head}.{body}.{signature}\"\ndef naive_verify(token):                                           # VULNERABLE: trusts the algorithm named in the token\n    head, body, signature = token.split(\".\")\n    alg = json.loads(unb64(head))[\"alg\"]\n    if alg == \"none\":\n        return json.loads(unb64(body))\n    expected = b64(hmac.new(SECRET, f\"{head}.{body}\".encode(), hashlib.sha256).digest())\n    return json.loads(unb64(body)) if hmac.compare_digest(signature, expected) else None\ndef correct_verify(token, now=1_800_000_000, audience=\"invoice-api\"):\n    head, body, signature = token.split(\".\")\n    if json.loads(unb64(head))[\"alg\"] != \"HS256\":                    # the verifier decides the algorithm, never the token\n        return None\n    expected = b64(hmac.new(SECRET, f\"{head}.{body}\".encode(), hashlib.sha256).digest())\n    claims = json.loads(unb64(body))\n    if not hmac.compare_digest(signature, expected) or claims.get(\"exp\", 0) < now or claims.get(\"aud\") != audience:\n        return None\n    return claims\nlegit = make({\"sub\": \"ana\", \"role\": \"clerk\", \"aud\": \"invoice-api\", \"exp\": 1_900_000_000})\nforged = make({\"sub\": \"attacker\", \"role\": \"admin\", \"aud\": \"invoice-api\", \"exp\": 1_900_000_000}, alg=\"none\")\nexpired = make({\"sub\": \"ana\", \"aud\": \"invoice-api\", \"exp\": 1_000})\nwrong_audience = make({\"sub\": \"ana\", \"aud\": \"other-api\", \"exp\": 1_900_000_000})\nprint(\"SIMULATION: naive verifier accepts the forged 'none' token as admin:\", (naive_verify(forged) or {}).get(\"role\") == \"admin\")\nprint(\"correct verifier: legitimate token\", correct_verify(legit) is not None, \"| forged none\", correct_verify(forged) is None, \"| expired\", correct_verify(expired) is None, \"| wrong audience\", correct_verify(wrong_audience) is None)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-iam",
+              "language": "text",
+              "code": "TOTP matches every RFC 6238 test vector (SHA-1, SHA-256, SHA-512): True\naccepting the previous and next time step tolerates clock drift: True\nRBAC alone lets Ana create and approve her own invoice: True\nABAC with separation of duties blocks her approving it: True\nanother approver within the limit and with MFA may approve: True\nwithout MFA the same approver may not: True\nSIMULATION: naive verifier accepts the forged 'none' token as admin: True\ncorrect verifier: legitimate token True | forged none True | expired True | wrong audience True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "TOTP matches all published vectors, which is how you validate any implementation of a standard primitive (a mismatch would reveal a byte-order or truncation bug). The authorisation example shows why RBAC alone is not enough: the roles that let Ana create an invoice and approve invoices together let her approve her own, and only a **separation-of-duties** attribute rule prevents it. The token simulation shows the cost of trusting the token to name its own algorithm, and the correct verifier's four checks: the algorithm is fixed by the verifier, the signature verifies, the token has not expired, and it was issued for **this** service.\n\n**Practice.** Prefer phishing-resistant authentication where possible (passkeys and hardware-bound credentials over codes, which can be relayed by a phishing site); store no secrets in tokens; keep token lifetimes short and verify audience and issuer; centralise authorisation decisions so they can be audited; review privileges regularly; and remember that NIST's current digital identity guidance (SP 800-63B-4) sets requirements for authenticators, which you should read before designing a policy."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the TOTP value at time 59 s for the RFC 6238 SHA-1 test secret with 8 digits?",
+              "options": [
+                "94287082",
+                "12345678",
+                "00000059"
+              ],
+              "correct_index": 0,
+              "explanation": "The published test vector; the time step counter at 59 seconds is 1."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is RBAC alone insufficient to stop one person creating and approving an invoice?",
+              "options": [
+                "Roles can be combined, so an attribute rule for separation of duties is needed",
+                "RBAC cannot assign permissions",
+                "Roles expire quickly"
+              ],
+              "correct_index": 0,
+              "explanation": "A user holding both roles passes both checks unless a rule compares the creator with the approver."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What must a JWT verifier decide for itself rather than read from the token?",
+              "options": [
+                "The signature algorithm it accepts",
+                "The user's name",
+                "The token's size"
+              ],
+              "correct_index": 0,
+              "explanation": "Trusting the header's alg field allows the 'none' forgery."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B169",
+              "locator": "Section 4 (the TOTP algorithm) and Appendix B (test vectors: secret 12345678901234567890, T = 1 at 59 s gives 94287082 for SHA-1)"
+            },
+            {
+              "book": "B170",
+              "locator": "Sections on JWS signing and validation of the claims (exp, aud, iss)"
+            },
+            {
+              "book": "B167",
+              "locator": "Section 2.1 (least privilege and per-session access)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The 'alg: none' attack is a well-known implementation flaw; the RFC 7519 text on unsecured JWTs was not re-read, and the description of the vulnerability is from general knowledge. SP 800-63B-4 is mentioned without citing a specific requirement."
+          },
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "6.9 Network Segmentation",
+          "summary": "A firewall policy as data, tested for reachability between zones, and the lateral-movement paths a flat rule creates.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Network segmentation** divides a network into zones with controlled paths between them, so that a compromise in one zone does not reach everything. NIST SP 800-41 Revision 1 explains the principle behind the policy: **deny by default** is a more secure approach than permitting all traffic that is not explicitly forbidden, because of the dynamic nature of hosts, networks, protocols and applications. A rule set is evaluated **top to bottom**, the **first matching rule decides**, and an explicit final deny catches everything else; rule order therefore matters, and a too-broad early rule can silently override later, more specific ones.\n\nSecurity of a *policy* can be tested like code. The listing models five zones (internet, DMZ, application, database, admin) with a rule set, then **checks invariants** over every pair of zones: for example that the internet can never reach the database directly, which zones it can reach through a chain of permitted hops (lateral movement), that every zone has a way to reach logging, and that no rule is unreachable (shadowed by an earlier one). It then adds one convenient, overly broad rule and shows how the checks catch the new **lateral-movement path**. The example is a model for reasoning about policy; real enforcement uses firewalls, host rules and cloud security groups. The labs are self-contained Python (standard library plus `cryptography` 50.0.1 for the PKI, VPN and TLS lessons: `pip install cryptography==50.0.1`). Everything runs on your own machine on the loopback interface or in memory. **Nothing here scans, attacks or connects to other systems.** Where an attack is shown it is a **SIMULATION** against code written in the lesson."
+            },
+            {
+              "type": "code",
+              "id": "c-segmentation",
+              "language": "python",
+              "code": "from collections import deque\n\nZONES = [\"internet\", \"dmz\", \"app\", \"db\", \"admin\", \"logging\"]\n# (source, destination, port, action); evaluated top to bottom, first match wins; the last rule is the explicit default deny\nBASE = [\n    (\"internet\", \"dmz\", 443, \"allow\"),\n    (\"dmz\", \"app\", 8443, \"allow\"),\n    (\"app\", \"db\", 5432, \"allow\"),\n    (\"admin\", \"app\", 22, \"allow\"),\n    (\"admin\", \"db\", 22, \"allow\"),\n    (\"dmz\", \"logging\", 514, \"allow\"), (\"app\", \"logging\", 514, \"allow\"), (\"db\", \"logging\", 514, \"allow\"), (\"admin\", \"logging\", 514, \"allow\"),\n    (\"any\", \"any\", None, \"deny\"),\n]\ndef decide(rules, src, dst, port):\n    for r_src, r_dst, r_port, action in rules:\n        if r_src in (\"any\", src) and r_dst in (\"any\", dst) and r_port in (None, port):\n            return action\n    return \"deny\"\n\ndef reachable_from(rules, start, ports=(22, 443, 514, 5432, 8443)):\n    edges = {z: {d for d in ZONES if d != z and any(decide(rules, z, d, p) == \"allow\" for p in ports)} for z in ZONES}\n    seen, queue = {start}, deque([start])\n    while queue:\n        for nxt in edges[queue.popleft()]:\n            if nxt not in seen:\n                seen.add(nxt); queue.append(nxt)\n    return seen - {start}, edges\n\ndef shadowed(rules):\n    found = []\n    for i, (s, d, p, a) in enumerate(rules):\n        for earlier in rules[:i]:\n            if earlier[0] in (\"any\", s) and earlier[1] in (\"any\", d) and earlier[2] in (None, p) and earlier[3] != \"-\":\n                if (earlier[0] == \"any\" or earlier[0] == s) and (earlier[1] == \"any\" or earlier[1] == d) and (earlier[2] is None or earlier[2] == p):\n                    found.append((i, earlier)); break\n    return found\n\ndef audit(name, rules):\n    from_internet, edges = reachable_from(rules, \"internet\")\n    print(f\"--- {name}\")\n    print(\"directly allowed from the internet:\", sorted(edges[\"internet\"]))\n    print(\"reachable from the internet through any chain of allowed hops:\", sorted(from_internet))\n    print(\"internet can reach the database directly:\", \"db\" in edges[\"internet\"], \"| through a chain (lateral movement):\", \"db\" in from_internet)\n    print(\"every zone can send logs:\", all(\"logging\" in edges[z] for z in ZONES if z not in (\"internet\", \"logging\")))\n    print(\"shadowed (unreachable) rules:\", shadowed(rules) or \"none\")\n\naudit(\"base policy\", BASE)\nbroad = BASE[:1] + [(\"dmz\", \"any\", None, \"allow\")] + BASE[1:]                   # a convenient rule: the DMZ may talk to everything\naudit(\"after adding 'dmz -> any: allow'\", broad)\nprint(\"with the broad rule the internet-facing DMZ can open the database directly:\", decide(broad, \"dmz\", \"db\", 5432))\nprint(\"in the base policy the same connection is:\", decide(BASE, \"dmz\", \"db\", 5432))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-segmentation",
+              "language": "text",
+              "code": "--- base policy\ndirectly allowed from the internet: ['dmz']\nreachable from the internet through any chain of allowed hops: ['app', 'db', 'dmz', 'logging']\ninternet can reach the database directly: False | through a chain (lateral movement): True\nevery zone can send logs: True\nshadowed (unreachable) rules: none\n--- after adding 'dmz -> any: allow'\ndirectly allowed from the internet: ['dmz']\nreachable from the internet through any chain of allowed hops: ['admin', 'app', 'db', 'dmz', 'logging']\ninternet can reach the database directly: False | through a chain (lateral movement): True\nevery zone can send logs: True\nshadowed (unreachable) rules: [(2, ('dmz', 'any', None, 'allow')), (6, ('dmz', 'any', None, 'allow'))]\nwith the broad rule the internet-facing DMZ can open the database directly: allow\nin the base policy the same connection is: deny",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "In the base policy the only thing exposed to the internet is the DMZ on port 443, and the database is reachable from the internet only through a **chain** of allowed hops (DMZ to application to database): so zone-to-zone checks must consider chains, because that is the path an attacker takes (lateral movement). The chain check therefore reports the database as reachable in three hops (internet, DMZ, application, database), which is the correct finding for this design: it tells you which hosts to harden and which application-layer controls carry the weight. The convenient broad rule makes it worse by allowing the DMZ to reach the database directly, which skips the application tier entirely.\n\n**Practical rules.** Write the policy as reviewable data, test the invariants in CI, give every rule an owner and expiry, keep management (the admin zone) separate, and prefer **host-level and identity-aware** controls inside zones as well, since a flat zone gives an attacker free movement (the zero trust lesson). Segmentation reduces blast radius; it is **not** a replacement for patching, authentication or monitoring."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is 'deny by default' preferred in firewall policy?",
+              "options": [
+                "Permitting all traffic not explicitly forbidden is less secure given how dynamic networks and applications are",
+                "It is faster",
+                "It is required by TCP"
+              ],
+              "correct_index": 0,
+              "explanation": "NIST SP 800-41r1 states this directly."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why must segmentation checks consider chains of hops and not only direct rules?",
+              "options": [
+                "Attackers move laterally through a sequence of permitted connections",
+                "Chains are faster",
+                "Firewalls forward only chains"
+              ],
+              "correct_index": 0,
+              "explanation": "A zone that is not directly reachable may be reachable via an intermediate zone."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is a shadowed rule?",
+              "options": [
+                "A rule that can never match because an earlier rule already matches the same traffic",
+                "A rule written in lower case",
+                "A rule with a log action"
+              ],
+              "correct_index": 0,
+              "explanation": "Rule order matters because the first matching rule decides."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B168",
+              "locator": "Section on firewall policy: deny by default is a more secure approach than permitting all traffic that is not explicitly forbidden; first-match rule sets"
+            },
+            {
+              "book": "B172",
+              "locator": "Private address ranges commonly used inside zones: 10.0.0.0/8, 172.16.0.0/12, 192.168.0.0/16"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The shadowed-rule check in the listing is a simplified model; the zone design and the invariants are the lesson's own examples."
+          },
+          "after": "sec-8"
+        },
+        {
+          "slug": "sec-10",
+          "action": "replace",
+          "title": "6.10 Cloud Networking",
+          "summary": "CIDR planning with the standard library, overlap detection, and the difference between stateful security groups and stateless network ACLs.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Cloud networks reuse the ideas of the previous lessons with a software API. A **virtual private cloud (VPC)** is a private address space, normally chosen from the private ranges of RFC 1918 (10.0.0.0/8, 172.16.0.0/12 and 192.168.0.0/16), divided into **subnets**; routing between them and to the outside is configured with route tables. Planning the address space well matters because **overlapping CIDR ranges cannot be connected** by peering or VPN without translation, and a VPC's range is hard to change later. Two filtering layers have different semantics, as the Amazon VPC documentation describes: **security groups are stateful** (if you send a request out, the response is allowed in regardless of inbound rules, and rules only *allow*), while **network ACLs are stateless** (return traffic must be allowed explicitly, rules are evaluated in order starting with the lowest number and can both allow and deny). The vocabulary differs between providers, but the stateful-versus-stateless distinction is general.\n\nThe listing plans an address space with Python's `ipaddress` module: it checks that the VPC ranges of three environments do not overlap, carves subnets, and detects an overlap that would block peering. It then models a stateful and a stateless filter and shows the practical difference on a web request and its reply: the stateless ACL blocks the response unless the ephemeral-port return rule exists. These are models of documented semantics, not calls to any cloud API. The labs are self-contained Python (standard library plus `cryptography` 50.0.1 for the PKI, VPN and TLS lessons: `pip install cryptography==50.0.1`). Everything runs on your own machine on the loopback interface or in memory. **Nothing here scans, attacks or connects to other systems.** Where an attack is shown it is a **SIMULATION** against code written in the lesson."
+            },
+            {
+              "type": "code",
+              "id": "c-cloud",
+              "language": "python",
+              "code": "import ipaddress\n\nenvironments = {\"production\": \"10.10.0.0/16\", \"staging\": \"10.20.0.0/16\", \"development\": \"10.10.128.0/17\"}      # development accidentally sits inside production's range\nnames = list(environments)\nprivate = [ipaddress.ip_network(n) for n in (\"10.0.0.0/8\", \"172.16.0.0/12\", \"192.168.0.0/16\")]\nfor name, cidr in environments.items():\n    network = ipaddress.ip_network(cidr)\n    print(f\"{name:11} {cidr:15} addresses {network.num_addresses:>6,} private range (RFC 1918): {any(network.subnet_of(p) for p in private)}\")\nfor i in range(len(names)):\n    for j in range(i + 1, len(names)):\n        a, b = ipaddress.ip_network(environments[names[i]]), ipaddress.ip_network(environments[names[j]])\n        print(f\"  {names[i]} and {names[j]} overlap (cannot be peered): {a.overlaps(b)}\")\n\nvpc = ipaddress.ip_network(\"10.10.0.0/16\")\nsubnets = list(vpc.subnets(new_prefix=20))\nprint(f\"a /16 split into /20 subnets gives {len(subnets)} subnets of {subnets[0].num_addresses:,} addresses; first three: {[str(s) for s in subnets[:3]]}\")\nprint(\"usable hosts after the provider's reserved addresses (assuming 5 reserved per subnet, as documented for AWS):\", subnets[0].num_addresses - 5)\n\ndef security_group(inbound_allow, outbound_allow):\n    state = set()                                                   # stateful: remembers connections that were allowed out\n    def send(flow):\n        if flow in outbound_allow:\n            state.add((flow[1], flow[0])); return True\n        return False\n    def receive(flow):\n        return flow in inbound_allow or (flow[0], flow[1]) in state\n    return send, receive\ndef network_acl(rules):\n    def check(flow):\n        for number, action, match in sorted(rules):                 # stateless: every packet is checked against the ordered rules\n            if match(flow):\n                return action == \"allow\"\n        return False\n    return check\n\nCLIENT, SERVER = (\"10.10.1.5\", 50123), (\"10.10.9.9\", 443)\nrequest, reply = (CLIENT, SERVER), (SERVER, CLIENT)\nsend, receive = security_group(inbound_allow=set(), outbound_allow={request})\nprint(\"security group (stateful): request leaves:\", send(request), \"| reply arrives with no inbound rule at all:\", receive(reply))\nnacl_out = network_acl([(100, \"allow\", lambda f: f[1][1] == 443)])\nnacl_in_missing = network_acl([(100, \"allow\", lambda f: f[1][1] == 443)])               # no rule for the reply\nnacl_in_full = network_acl([(100, \"allow\", lambda f: f[1][1] == 443), (110, \"allow\", lambda f: 1024 <= f[1][1] <= 65535)])\nprint(\"network ACL (stateless): request allowed out:\", nacl_out(request), \"| reply allowed in without a return rule:\", nacl_in_missing(reply), \"| with an ephemeral-port rule:\", nacl_in_full(reply))\nordered = network_acl([(90, \"deny\", lambda f: f[0][0] == \"10.10.1.5\"), (100, \"allow\", lambda f: True)])\nprint(\"rule order: a deny at 90 beats an allow at 100:\", ordered(request) is False)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-cloud",
+              "language": "text",
+              "code": "production  10.10.0.0/16    addresses 65,536 private range (RFC 1918): True\nstaging     10.20.0.0/16    addresses 65,536 private range (RFC 1918): True\ndevelopment 10.10.128.0/17  addresses 32,768 private range (RFC 1918): True\n  production and staging overlap (cannot be peered): False\n  production and development overlap (cannot be peered): True\n  staging and development overlap (cannot be peered): False\na /16 split into /20 subnets gives 16 subnets of 4,096 addresses; first three: ['10.10.0.0/20', '10.10.16.0/20', '10.10.32.0/20']\nusable hosts after the provider's reserved addresses (assuming 5 reserved per subnet, as documented for AWS): 4091\nsecurity group (stateful): request leaves: True | reply arrives with no inbound rule at all: True\nnetwork ACL (stateless): request allowed out: True | reply allowed in without a return rule: False | with an ephemeral-port rule: True\nrule order: a deny at 90 beats an allow at 100: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The planning checks catch the classic mistake: the development range lies inside production's, so those two environments overlap and could never be peered, while production and staging are cleanly separate. Splitting a /16 into sixteen /20 subnets shows how quickly a plan uses address space (the usable count is smaller than the subnet size because providers reserve addresses; the number 5 is the figure documented for AWS and differs between clouds). The filtering model reproduces the documented semantics: the **stateful** group lets the reply in with no inbound rule at all, the **stateless** ACL drops it unless the ephemeral-port return rule is added, and rule numbers decide the order.\n\n**Practical guidance.** Allocate non-overlapping ranges for every environment and every site from the start (including your on-premises ranges); prefer security groups as the main control and use ACLs as a coarse extra layer; never leave sensitive ports open to the world; use flow logs; and treat the account's identity and API permissions as part of the network perimeter, since an attacker with API access can change the rules (the IAM lesson). Provider-specific numbers (reserved addresses, limits) should be confirmed in the provider's current documentation."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the key difference between a stateful security group and a stateless network ACL?",
+              "options": [
+                "A stateful filter automatically allows replies to allowed requests; a stateless one checks every packet against the rules",
+                "Stateful filters are slower",
+                "Stateless filters remember connections"
+              ],
+              "correct_index": 0,
+              "explanation": "The Amazon VPC documentation describes security groups as stateful and network ACLs as stateless."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is overlapping address space a problem?",
+              "options": [
+                "Overlapping networks cannot be connected by peering or VPN without address translation",
+                "Overlaps use more bandwidth",
+                "Overlaps break TLS"
+              ],
+              "correct_index": 0,
+              "explanation": "Routing cannot distinguish two networks that use the same addresses."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which RFC defines the private address ranges 10/8, 172.16/12 and 192.168/16?",
+              "options": [
+                "RFC 1918",
+                "RFC 793",
+                "RFC 8200"
+              ],
+              "correct_index": 0,
+              "explanation": "RFC 1918 allocates these ranges for private internets."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B173",
+              "locator": "Security groups are stateful (responses are allowed regardless of inbound rules); network ACLs are stateless and rules are evaluated in order starting with the lowest number"
+            },
+            {
+              "book": "B172",
+              "locator": "Section 3: the private address blocks 10.0.0.0/8, 172.16.0.0/12 and 192.168.0.0/16"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The count of 5 reserved addresses per subnet is the AWS figure and was not re-read from the documentation here; other providers reserve different numbers. The filters are models of the documented semantics, not provider code."
+          },
+          "after": "sec-9"
+        },
+        {
+          "slug": "sec-11",
+          "action": "replace",
+          "title": "6.11 Secure Protocols",
+          "summary": "What an eavesdropper sees on plain and TLS connections (measured), a simulated STARTTLS downgrade, and SSH host-key fingerprints.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Many protocols exist in a plain version and a protected one: HTTP and HTTPS, FTP and SFTP, Telnet and SSH, SMTP with and without TLS. The difference is what a person on the network path can read or change. The **SSH protocol architecture** (RFC 4251) states its goals: to provide secure remote login and other services over an insecure network, with a transport layer that gives strong encryption, server authentication and integrity, and it discusses the **host key**, the server's long-term identity that clients should verify on first use and remember. The risk of **trust on first use** is that an attacker present at the first connection can substitute a key, which is why fingerprints should be verified through a separate channel.\n\nOpportunistic upgrades such as **STARTTLS** (the client asks the server to switch the connection to TLS) have a weakness: the request travels in the clear, so an active attacker can **strip** the upgrade offer and the client may continue in plaintext unless it is configured to *require* TLS. The listing shows all three ideas on loopback. It relays the same message over a plain socket and over TLS through a recording proxy to compare what the eavesdropper captures. It then runs a **SIMULATION** of a STARTTLS-stripping attacker against a mail-like exchange written for the lesson, with a client that falls back and a client that requires TLS. Finally it computes an SSH-style SHA-256 host-key fingerprint. The labs are self-contained Python (standard library plus `cryptography` 50.0.1 for the PKI, VPN and TLS lessons: `pip install cryptography==50.0.1`). Everything runs on your own machine on the loopback interface or in memory. **Nothing here scans, attacks or connects to other systems.** Where an attack is shown it is a **SIMULATION** against code written in the lesson."
+            },
+            {
+              "type": "code",
+              "id": "c-protocols",
+              "language": "python",
+              "code": "import base64, datetime, hashlib, os, socket, ssl, tempfile, threading\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import ed25519, rsa\nfrom cryptography.x509.oid import NameOID\n\nSECRET = b\"password=hunter2&card=4111111111111111\"                     # a fake secret, the well-known test number\n\n# --- what a person on the path captures: plain versus TLS (a recording relay between client and server)\ndirectory = tempfile.mkdtemp()\nkey = rsa.generate_private_key(65537, 2048)\nsubject = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, \"svc.example.test\")])\nnow = datetime.datetime.now(datetime.timezone.utc)\ncert = (x509.CertificateBuilder().subject_name(subject).issuer_name(subject).public_key(key.public_key()).serial_number(1)\n        .not_valid_before(now - datetime.timedelta(days=1)).not_valid_after(now + datetime.timedelta(days=2))\n        .add_extension(x509.SubjectAlternativeName([x509.DNSName(\"svc.example.test\")]), critical=False).sign(key, hashes.SHA256()))\ncert_path, key_path = os.path.join(directory, \"c.pem\"), os.path.join(directory, \"k.pem\")\nopen(cert_path, \"wb\").write(cert.public_bytes(serialization.Encoding.PEM))\nopen(key_path, \"wb\").write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))\n\ndef run(use_tls):\n    captured = []\n    server_socket = socket.socket(); server_socket.bind((\"127.0.0.1\", 0)); server_socket.listen(1)\n    relay_socket = socket.socket(); relay_socket.bind((\"127.0.0.1\", 0)); relay_socket.listen(1)\n    def server():\n        connection, _ = server_socket.accept()\n        if use_tls:\n            context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); context.load_cert_chain(cert_path, key_path)\n            connection = context.wrap_socket(connection, server_side=True)\n        connection.sendall(connection.recv(4096)); connection.close()\n    def relay():                                                    # the eavesdropper: forwards bytes both ways and records them\n        client_side, _ = relay_socket.accept()\n        server_side = socket.create_connection(server_socket.getsockname())\n        def pump(a, b):\n            try:\n                while data := a.recv(4096):\n                    captured.append(data); b.sendall(data)\n            except OSError:\n                pass\n        threads = [threading.Thread(target=pump, args=(client_side, server_side)), threading.Thread(target=pump, args=(server_side, client_side))]\n        [t.start() for t in threads]; [t.join(timeout=3) for t in threads]\n    threads = [threading.Thread(target=server), threading.Thread(target=relay)]\n    [t.start() for t in threads]\n    with socket.create_connection(relay_socket.getsockname()) as raw:\n        connection = raw\n        if use_tls:\n            context = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT); context.load_verify_locations(cert_path)\n            connection = context.wrap_socket(raw, server_hostname=\"svc.example.test\")\n        connection.sendall(SECRET); connection.recv(4096)\n    [t.join(timeout=5) for t in threads]; server_socket.close(); relay_socket.close()\n    return b\"\".join(captured)\nplain, tls = run(False), run(True)\nprint(\"plain connection: the eavesdropper captured the secret in readable form:\", SECRET in plain)\nprint(\"TLS connection: the secret appears in the captured bytes:\", SECRET in tls, \"| captured\", len(tls), \"bytes of handshake and ciphertext\")\n\n# --- SIMULATION: a STARTTLS stripping attacker against two client policies\ndef server_reply(command, attacker_strips):\n    if command == \"EHLO\":\n        return \"250 mail.example.test\" if attacker_strips else \"250 mail.example.test STARTTLS\"      # the attacker removes the capability from the clear-text reply\n    return \"220 ready for TLS\"\ndef client(policy, attacker_strips):\n    capabilities = server_reply(\"EHLO\", attacker_strips)\n    if \"STARTTLS\" in capabilities:\n        return \"upgraded to TLS before sending the message\"\n    return \"REFUSED to continue without TLS\" if policy == \"require\" else \"sent the message in PLAINTEXT\"\nfor policy in (\"opportunistic\", \"require\"):\n    print(f\"client policy {policy:13}: no attacker -> {client(policy, False)} | with a stripping attacker -> {client(policy, True)}\")\n\n# --- an SSH-style host key fingerprint (SHA-256 of the public key blob, base64 without padding)\nhost_key = ed25519.Ed25519PrivateKey.generate().public_key().public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)\nblob = (len(b\"ssh-ed25519\")).to_bytes(4, \"big\") + b\"ssh-ed25519\" + len(host_key).to_bytes(4, \"big\") + host_key\nfingerprint = \"SHA256:\" + base64.b64encode(hashlib.sha256(blob).digest()).decode().rstrip(\"=\")\nprint(\"fingerprint format:\", fingerprint[:7] + \"...\", \"| length\", len(fingerprint), \"(SHA256: plus 43 base64 characters)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-protocols",
+              "language": "text",
+              "code": "plain connection: the eavesdropper captured the secret in readable form: True\nTLS connection: the secret appears in the captured bytes: False | captured 4601 bytes of handshake and ciphertext\nclient policy opportunistic: no attacker -> upgraded to TLS before sending the message | with a stripping attacker -> sent the message in PLAINTEXT\nclient policy require      : no attacker -> upgraded to TLS before sending the message | with a stripping attacker -> REFUSED to continue without TLS\nfingerprint format: SHA256:... | length 50 (SHA256: plus 43 base64 characters)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The measurements make the protocol difference concrete. On the plain connection the eavesdropper captures the secret in readable form; on the TLS connection the same secret appears nowhere in the captured bytes, which are the handshake and ciphertext. The downgrade simulation shows why **how the client is configured** matters as much as what the server supports: a client with an *opportunistic* policy is silently downgraded by an attacker who removes the STARTTLS capability from the server's reply, while a client that *requires* TLS refuses to continue. This is the reasoning behind mechanisms that make TLS mandatory (strict transport policies for web and mail).\n\n**Rules.** Use only protected protocols (HTTPS, SSH, SFTP, TLS-protected mail and database connections); disable the plaintext variants and legacy versions; configure clients to **require** TLS and verify certificates; verify SSH host-key fingerprints through a separate channel on first connection, or distribute host keys or certificates in advance; and rotate keys. The same thinking applies to the post-quantum migration: a protocol that can silently fall back to a weaker algorithm can be downgraded, so cryptographic agility needs a policy that refuses weak options (B11 and the enterprise track)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why can a STARTTLS upgrade be defeated by an active attacker?",
+              "options": [
+                "The capability offer travels in the clear and can be removed, so a client that tolerates plaintext continues without TLS",
+                "TLS is broken",
+                "The attacker steals the server key"
+              ],
+              "correct_index": 0,
+              "explanation": "Only a client policy that requires TLS is protected against stripping."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does an eavesdropper capture on a TLS connection?",
+              "options": [
+                "Handshake messages and ciphertext, not the application data in readable form",
+                "The plaintext",
+                "The server's private key"
+              ],
+              "correct_index": 0,
+              "explanation": "The measurement shows the secret does not appear in the captured bytes."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the weakness of trust on first use for SSH host keys?",
+              "options": [
+                "An attacker present at the first connection can substitute a key unless the fingerprint is verified separately",
+                "SSH has no encryption",
+                "Host keys expire daily"
+              ],
+              "correct_index": 0,
+              "explanation": "The client accepts and remembers whatever key it sees first."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B174",
+              "locator": "Sections on the architecture and goals of SSH, host keys and server authentication (strong encryption, server authentication and integrity over an insecure network)"
+            },
+            {
+              "book": "B161",
+              "locator": "TLS 1.3 handshake: encrypted application data and server authentication"
+            },
+            {
+              "book": "B100",
+              "locator": "Package: x509 and Ed25519 used for the test certificate and fingerprint"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The STARTTLS-stripping scenario is a simulation of a well-known attack class using code written for the lesson; the format of the SHA-256 SSH fingerprint (base64 without padding) is the standard OpenSSH format and was verified against ssh-keygen in the earlier networking module, not re-checked here."
+          },
+          "after": "sec-10"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "b6-n01",
+          "prompt": "What does the Internet checksum cover for TCP in addition to the segment?",
+          "options": [
+            "A pseudo-header with the source and destination addresses",
+            "The MAC addresses",
+            "The TLS certificate"
+          ],
+          "correct_index": 0,
+          "explanation": "The pseudo-header ties a segment to the addresses it was sent between.",
+          "source": {
+            "book": "B171",
+            "locator": "Section 3 and TCP pseudo-header"
+          }
+        },
+        {
+          "id": "b6-n02",
+          "prompt": "Which TCP side enters TIME-WAIT?",
+          "options": [
+            "The side that closes first",
+            "The listener",
+            "The side that opens first"
+          ],
+          "correct_index": 0,
+          "explanation": "It waits 2MSL.",
+          "source": {
+            "book": "B160",
+            "locator": "State machine"
+          }
+        },
+        {
+          "id": "b6-n03",
+          "prompt": "What does BGP prefer before AS_PATH length?",
+          "options": [
+            "The highest local preference",
+            "The lowest router ID",
+            "The lowest MED"
+          ],
+          "correct_index": 0,
+          "explanation": "Degree of preference comes first, then the tie-breaks.",
+          "source": {
+            "book": "B165",
+            "locator": "Section 9.1"
+          }
+        },
+        {
+          "id": "b6-n04",
+          "prompt": "What does Dijkstra's algorithm compute in OSPF?",
+          "options": [
+            "The shortest-path tree from the router to every destination",
+            "The encryption key",
+            "The MTU"
+          ],
+          "correct_index": 0,
+          "explanation": "Each router runs it on the link-state database.",
+          "source": {
+            "book": "B166",
+            "locator": "Section 16.1"
+          }
+        },
+        {
+          "id": "b6-n05",
+          "prompt": "What is required for VLAN hopping by double tagging?",
+          "options": [
+            "The attacker's port is in the trunk's native VLAN",
+            "A weak password",
+            "A hub"
+          ],
+          "correct_index": 0,
+          "explanation": "The first switch strips the outer native tag.",
+          "source": {
+            "book": "B175",
+            "locator": "Native VLAN behaviour"
+          }
+        },
+        {
+          "id": "b6-n06",
+          "prompt": "What does the ESP anti-replay window do?",
+          "options": [
+            "Rejects duplicate or old sequence numbers",
+            "Encrypts the payload",
+            "Compresses packets"
+          ],
+          "correct_index": 0,
+          "explanation": "The receiver keeps a sliding window of validated sequence numbers.",
+          "source": {
+            "book": "B164",
+            "locator": "Section 3.4.3"
+          }
+        },
+        {
+          "id": "b6-n07",
+          "prompt": "What does RFC 9846 obsolete?",
+          "options": [
+            "RFC 8446 (TLS 1.3) and RFC 5246 (TLS 1.2), among others",
+            "Only SSL 2.0",
+            "Nothing"
+          ],
+          "correct_index": 0,
+          "explanation": "The front matter lists the obsoleted RFCs.",
+          "source": {
+            "book": "B161",
+            "locator": "Front matter"
+          }
+        },
+        {
+          "id": "b6-n08",
+          "prompt": "Does path validation consult revocation data by itself?",
+          "options": [
+            "No, revocation is a separate check",
+            "Yes",
+            "Only for roots"
+          ],
+          "correct_index": 0,
+          "explanation": "A revoked leaf still passes path validation.",
+          "source": {
+            "book": "B162",
+            "locator": "Sections 5 and 6"
+          }
+        },
+        {
+          "id": "b6-n09",
+          "prompt": "What does NIST SP 800-207 say about network location?",
+          "options": [
+            "It alone does not imply trust",
+            "Internal means trusted",
+            "Only VPN users are trusted"
+          ],
+          "correct_index": 0,
+          "explanation": "All communication is secured regardless of network location.",
+          "source": {
+            "book": "B167",
+            "locator": "Section 2.1"
+          }
+        },
+        {
+          "id": "b6-n10",
+          "prompt": "What is the TOTP value at 59 s for the RFC 6238 SHA-1 test secret (8 digits)?",
+          "options": [
+            "94287082",
+            "00000059",
+            "12345678"
+          ],
+          "correct_index": 0,
+          "explanation": "The published test vector.",
+          "source": {
+            "book": "B169",
+            "locator": "Appendix B"
+          }
+        },
+        {
+          "id": "b6-n11",
+          "prompt": "Security groups are described as stateful. What does that mean?",
+          "options": [
+            "Replies to allowed requests are allowed regardless of inbound rules",
+            "They store logs",
+            "They block all traffic"
+          ],
+          "correct_index": 0,
+          "explanation": "Network ACLs by contrast are stateless.",
+          "source": {
+            "book": "B173",
+            "locator": "Security groups and network ACLs"
+          }
+        },
+        {
+          "id": "b6-n12",
+          "prompt": "Why does a client policy of 'require TLS' defeat STARTTLS stripping?",
+          "options": [
+            "It refuses to continue if the TLS upgrade is not offered",
+            "It encrypts the capability list",
+            "It hides the server"
+          ],
+          "correct_index": 0,
+          "explanation": "Opportunistic clients silently fall back to plaintext.",
+          "source": {
+            "book": "B174",
+            "locator": "Secure protocols"
+          }
+        }
+      ],
+      "estimated_minutes": 550,
+      "notes": "Rewrites eleven outline sections as lessons built on RFCs and NIST publications read for this purpose, with local executed labs: checksum and header construction verified against RFC 1071, routing and BGP selection models, VLAN tag handling with a simulated double-tagging escape, an AES-GCM ESP packet with replay window, real loopback TLS tests, a full CA hierarchy with CRL, a zero-trust policy decision function, TOTP verified against RFC 6238 vectors, a segmentation audit, CIDR and filter models, and a measured plain-versus-TLS capture. IEEE 802.1Q could not be read and the VLAN section is flagged accordingly.",
+      "learning_objectives": [
+        "Compute and verify Internet checksums, build IPv4 and TCP headers, and follow the TCP state machine.",
+        "Explain and implement longest-prefix match, shortest-path routing, BGP best-path selection and switch learning.",
+        "Describe VLAN tagging, trunks and the native-VLAN weakness with its fixes.",
+        "Build an ESP packet with authenticated encryption and implement the anti-replay window.",
+        "Engineer TLS and PKI correctly: versions, names, chains, expiry, path length and revocation.",
+        "Apply zero trust, IAM, segmentation, cloud network design and secure-protocol practice, each tested."
+      ]
+    }
+  ]
+}
