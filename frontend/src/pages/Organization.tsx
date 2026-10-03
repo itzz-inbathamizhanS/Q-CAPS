@@ -41,9 +41,9 @@ export const Organization: React.FC = () => {
       ws.onmessage = (event) => {
         if (!isMounted) return;
         try {
-          const data = JSON.parse(event.data);
-          const sorted = [...data].sort((a: any, b: any) => b.xp - a.xp);
-          const ranked = sorted.map((entry: any, index: number) => ({
+          const data: LeaderboardEntry[] = JSON.parse(event.data);
+          const sorted = [...data].sort((a, b) => b.xp - a.xp);
+          const ranked = sorted.map((entry, index) => ({
             ...entry,
             rank: index + 1
           }));

@@ -22,7 +22,9 @@ export const BentoSection: React.FC<BentoSectionProps> = ({ liveRecommendation }
 
   const displayTitle = liveRecommendation?.title || recommendedMod?.title || 'Shor\'s Algorithm & RSA';
   const displayDesc = liveRecommendation?.reason || 'Critical for understanding the upcoming PQC migration.';
-  const displayBadge = liveRecommendation?.priority ? `Priority: ${liveRecommendation.priority}` : 'Recommended';
+  const displayBadge = liveRecommendation?.status === 'no_evidence'
+    ? 'Start here'
+    : liveRecommendation?.priority ? `Priority: ${liveRecommendation.priority}` : 'Recommended';
 
   const totalModules = curriculumModules.length;
   const progressPercent = Math.round((completedModules.length / totalModules) * 100);
@@ -117,6 +119,23 @@ export const BentoSection: React.FC<BentoSectionProps> = ({ liveRecommendation }
               gap: '24px',
             }}
           >
+            {liveRecommendation?.graph_paths && liveRecommendation.graph_paths.length > 0 && (
+              <div style={{ width: '100%', marginBottom: '12px' }}>
+                <span className="text-xs text-indigo-400 font-mono font-semibold tracking-wider uppercase mb-2 block">
+                  ⟡ Graph Engine Optimization
+                </span>
+                <div className="flex gap-2 overflow-x-auto">
+                  {liveRecommendation.graph_paths.map((path, idx) => (
+                    <div key={idx} className="bg-indigo-950/30 border border-indigo-500/20 rounded p-2 text-xs text-gray-300 min-w-[200px]">
+                      <div className="text-indigo-300 mb-1">Target: {path.finding_id?.substring(0,8)}</div>
+                      <div>Risk Score: <span className="font-bold text-white">{path.risk_score.toFixed(1)}</span></div>
+                      <div>Action: {path.proposed_intervention_type}</div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+            
             <div style={{ display: 'flex', flexDirection: 'column' }}>
               <span
                 style={{

@@ -1,4 +1,4 @@
-// Generated from Content-Security/Badges/master_badges_and_certificates.md
+// Generated from content/Badges/master_badges_and_certificates.md
 import { BadgeItem, CertificateItem } from '@/features/curriculum/curriculumTypes';
 
 export const badgesData: BadgeItem[] = [
@@ -450,6 +450,46 @@ export const badgesData: BadgeItem[] = [
     "unlockTrigger": "Complete BB84 Diplomatic Channel Mission without compromise",
     "iconName": "Radio",
     "xpAward": 100,
+    "isUnlocked": false
+  },
+  {
+    "id": "b_lab_6",
+    "name": "Quantum Beginner",
+    "trackId": "lab",
+    "category": "lab",
+    "unlockTrigger": "Solve Superposition Panic Scenario",
+    "iconName": "Atom",
+    "xpAward": 30,
+    "isUnlocked": false
+  },
+  {
+    "id": "b_lab_7",
+    "name": "Risk Prioritizer",
+    "trackId": "lab",
+    "category": "lab",
+    "unlockTrigger": "Solve Grover vs Shor Budget Scenario",
+    "iconName": "AlertTriangle",
+    "xpAward": 70,
+    "isUnlocked": false
+  },
+  {
+    "id": "b_lab_8",
+    "name": "Hybrid Mode Auditor",
+    "trackId": "lab",
+    "category": "lab",
+    "unlockTrigger": "Solve Hybrid Mode Flaw Scenario",
+    "iconName": "ShieldCheck",
+    "xpAward": 90,
+    "isUnlocked": false
+  },
+  {
+    "id": "b_lab_9",
+    "name": "Executive Communicator",
+    "trackId": "lab",
+    "category": "lab",
+    "unlockTrigger": "Solve Executive Buy-in Scenario",
+    "iconName": "Target",
+    "xpAward": 70,
     "isUnlocked": false
   }
 ];

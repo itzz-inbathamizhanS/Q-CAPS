@@ -7,18 +7,24 @@ import { Assessment } from '@/pages/Assessment';
 import { Skills } from '@/pages/Skills';
 import { CurriculumMap } from '@/pages/CurriculumMap';
 import { Learning } from '@/pages/Learning';
-import { CourseModule } from '@/pages/CourseModule';
+import { ModuleOverview } from '@/pages/ModuleOverview';
+import { SectionLesson } from '@/pages/SectionLesson';
+import { AdminRoute } from '@/features/admin/AdminRoute';
+import { AdminCourses } from '@/pages/AdminCourses';
+import { AdminSectionEditor } from '@/pages/AdminSectionEditor';
+import { AdminAudit } from '@/pages/AdminAudit';
 import { QuizPage } from '@/pages/QuizPage';
 import { BadgesAndCerts } from '@/pages/BadgesAndCerts';
 import { MissionHub } from '@/pages/MissionHub';
 import { MissionPlay } from '@/pages/MissionPlay';
 import { EscapeRoomPage } from '@/pages/EscapeRoomPage';
 import { ScannerPage } from '@/pages/ScannerPage';
-import { SandboxPage } from '@/pages/SandboxPage';
+import { ErrorPage } from '@/pages/ErrorPage';
+import { ClosurePage } from '@/pages/ClosurePage';
 import { Organization } from '@/pages/Organization';
 import { Reassessment } from '@/pages/Reassessment';
 import { Community } from '@/pages/Community';
-import { ErrorPage } from '@/pages/ErrorPage';
+
 export const router = createBrowserRouter([
   {
     path: '/login',
@@ -58,7 +64,21 @@ export const router = createBrowserRouter([
           },
           {
             path: 'learning/:moduleId',
-            element: <CourseModule />,
+            element: <ModuleOverview />,
+          },
+          {
+            path: 'learning/:moduleId/:sectionId',
+            element: <SectionLesson />,
+          },
+          {
+            // The backend authorises every admin call; AdminRoute only avoids showing a broken page.
+            path: 'admin',
+            element: <AdminRoute />,
+            children: [
+              { index: true, element: <AdminCourses /> },
+              { path: 'audit', element: <AdminAudit /> },
+              { path: 'modules/:moduleId/sections/:sectionId', element: <AdminSectionEditor /> },
+            ],
           },
           {
             path: 'quiz/:moduleId',
@@ -85,10 +105,6 @@ export const router = createBrowserRouter([
             element: <ScannerPage />,
           },
           {
-            path: 'sandbox',
-            element: <SandboxPage />,
-          },
-          {
             path: 'reassessment',
             element: <Reassessment />,
           },
@@ -99,6 +115,10 @@ export const router = createBrowserRouter([
           {
             path: 'community',
             element: <Community />,
+          },
+          {
+            path: 'closure/:findingId',
+            element: <ClosurePage />,
           },
         ]
       }

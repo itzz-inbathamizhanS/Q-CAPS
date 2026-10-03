@@ -13,7 +13,8 @@ export const KpiSection: React.FC<KpiSectionProps> = ({ liveProfile }) => {
 
   // Use backend values when available, fall back to local store
   const displayXp = liveProfile?.xp ?? totalXp;
-  const displayReadiness = liveProfile?.readiness_score ?? readinessScore;
+  // Backend is authoritative; null means "no evidence yet", which must not be shown as 0%.
+  const displayReadiness: number | null = liveProfile ? liveProfile.readiness_score : (readinessScore > 0 ? readinessScore : null);
   const displayRank = liveProfile?.global_rank;
   const currentLevel = Math.floor(displayXp / 500) + 1;
 
@@ -21,10 +22,10 @@ export const KpiSection: React.FC<KpiSectionProps> = ({ liveProfile }) => {
     {
       id: 'kpi-capability',
       title: 'Capability Readiness',
-      value: `${displayReadiness}%`,
-      supportingText: 'Based on quiz performance',
+      value: displayReadiness === null ? 'No data' : `${displayReadiness}%`,
+      supportingText: displayReadiness === null ? 'Complete a quiz to establish a baseline' : 'Based on quiz performance',
       visualType: 'ring' as const,
-      ringProgress: displayReadiness,
+      ringProgress: displayReadiness ?? 0,
       linkText: 'View Skill Matrix',
       linkTo: '/learning',
     },
@@ -49,8 +50,9 @@ export const KpiSection: React.FC<KpiSectionProps> = ({ liveProfile }) => {
     {
       id: 'kpi-rank',
       title: 'Global Rank',
-      value: displayRank ? `#${displayRank}` : '#N/A',
-      supportingText: 'Global Leaderboard',
+      // The backend reports rank 0 for accounts that are not on the leaderboard (admins).
+      value: displayRank ? `#${displayRank}` : displayRank === 0 ? 'Not ranked' : '#N/A',
+      supportingText: displayRank === 0 ? 'Admins are not on the leaderboard' : 'Global Leaderboard',
       visualType: 'bar' as const,
       barProgress: displayRank ? Math.max(10, 100 - displayRank * 10) : 0,
     }

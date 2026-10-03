@@ -8,6 +8,7 @@ import {
   CheckCircle2
 } from 'lucide-react';
 import { missionsData } from '@/data/missionsData';
+import { curriculumModules } from '@/data/curriculumData';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 import { Button } from '@/components/ui/Button';
 
@@ -94,7 +95,10 @@ export const MissionHub: React.FC = () => {
                       fontFamily: 'var(--font-mono)'
                     }}
                   >
-                    {mission.linked_module_id}
+                    {(() => {
+                      const linked = curriculumModules.find((m) => m.id === mission.linked_module_id);
+                      return linked ? `${linked.code} · ${linked.title}` : mission.linked_module_id;
+                    })()}
                   </span>
 
                   {isDone && (

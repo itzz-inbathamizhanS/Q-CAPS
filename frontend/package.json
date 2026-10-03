@@ -7,7 +7,10 @@
     "dev": "vite",
     "build": "tsc -b && vite build",
     "lint": "eslint .",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "content:compile": "node scripts/compile-content.cjs",
+    "content:check": "node scripts/compile-content.cjs --check",
+    "test:content": "node --test scripts/curriculum-validation.test.cjs scripts/competency-validation.test.cjs scripts/avalanche.test.cjs"
   },
   "dependencies": {
     "@hookform/resolvers": "^3.9.0",

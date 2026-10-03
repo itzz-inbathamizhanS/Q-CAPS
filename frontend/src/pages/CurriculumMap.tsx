@@ -1,5 +1,5 @@
 // src/pages/CurriculumMap.tsx
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   GraduationCap,
@@ -15,19 +15,37 @@ import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 import { TrackSection } from '@/features/curriculum/components/TrackSection';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { fetchUserProfile, type UserProfile } from '@/services/backendService';
 
 export const CurriculumMap: React.FC = () => {
   const navigate = useNavigate();
   const {
     completedModules,
     currentModuleId,
-    quizScores,
     unlockedBadges,
     totalXp,
     readinessScore,
+    quizScores,
     resetProgress,
     getRecommendedNextModule
   } = useCurriculumStore();
+
+  // XP and readiness are server-authoritative (same values as the dashboard); the local store is only
+  // a fallback while the backend is unreachable.
+  const [profile, setProfile] = useState<UserProfile | null>(null);
+  useEffect(() => {
+    let cancelled = false;
+    fetchUserProfile().then((p) => {
+      if (!cancelled) setProfile(p);
+    });
+    return () => {
+      cancelled = true;
+    };
+  }, []);
+  const displayXp = profile?.xp ?? totalXp;
+  const displayReadiness: number | null = profile
+    ? profile.readiness_score
+    : Object.keys(quizScores).length === 0 ? null : readinessScore;
 
   // Find active track for auto-expansion
   const currentMod = curriculumModules.find((m) => m.id === currentModuleId);
@@ -99,7 +117,7 @@ export const CurriculumMap: React.FC = () => {
         </div>
 
         {/* Action Controls */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '12px' }}>
           {recommendedMod && (
             <Button
               variant="primary"
@@ -183,10 +201,10 @@ export const CurriculumMap: React.FC = () => {
             <Compass size={16} color="#38bdf8" />
           </div>
           <div style={{ fontSize: '26px', fontWeight: 700, color: '#38bdf8', marginTop: '6px' }}>
-            {readinessScore}%
+            {displayReadiness === null ? 'No data' : `${displayReadiness}%`}
           </div>
           <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '8px', display: 'block' }}>
-            Based on completed quizzes & assessments
+            Based on quiz performance
           </span>
         </Card>
 
@@ -196,7 +214,7 @@ export const CurriculumMap: React.FC = () => {
             <Zap size={16} color="#f59e0b" />
           </div>
           <div style={{ fontSize: '26px', fontWeight: 700, color: '#f59e0b', marginTop: '6px' }}>
-            {totalXp.toLocaleString()}
+            {displayXp.toLocaleString()}
           </div>
           <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '8px', display: 'block' }}>
             XP earned from quizzes & labs
@@ -250,7 +268,6 @@ export const CurriculumMap: React.FC = () => {
               modules={trackMods}
               completedModules={completedModules}
               currentModuleId={currentModuleId}
-              quizScores={quizScores}
               isExpanded={isExpanded}
               onToggle={() => setExpandedTrack(isExpanded ? '' : track.id)}
               isLockedTrack={isLocked}

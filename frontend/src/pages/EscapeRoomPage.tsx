@@ -14,6 +14,7 @@ import {
   ArrowRight
 } from 'lucide-react';
 import { escapeRoomScenarios, EscapeScenarioChoice } from '@/data/escapeRoomData';
+import { curriculumModules } from '@/data/curriculumData';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 import { Button } from '@/components/ui/Button';
 
@@ -402,7 +403,10 @@ export const EscapeRoomPage: React.FC = () => {
                 {scenario.difficulty}
               </span>
               <span style={{ fontFamily: 'var(--font-mono)', fontSize: '12px', color: '#94a3b8' }}>
-                {scenario.module_id}
+                {(() => {
+                  const linked = curriculumModules.find((m) => m.id === scenario.module_id);
+                  return linked ? `${linked.code} ${linked.title}` : scenario.module_id;
+                })()}
               </span>
             </div>
             <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-text-primary)', marginTop: '8px' }}>
@@ -576,6 +580,8 @@ export const EscapeRoomPage: React.FC = () => {
       <div
         style={{
           display: 'flex',
+          flexWrap: 'wrap',
+          gap: '12px',
           justifyContent: 'space-between',
           alignItems: 'center',
           backgroundColor: 'var(--color-surface, #ffffff)',

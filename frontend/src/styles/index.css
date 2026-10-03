@@ -78,6 +78,7 @@
 }
 
 [data-theme="dark"] {
+  color-scheme: dark; /* dark native scrollbars and form controls */
   /* Surface & Canvas Tokens */
   --color-bg: var(--cyber-bg);
   --color-surface: var(--cyber-surface);
@@ -178,6 +179,7 @@ button, input, select, textarea {
   min-height: 100vh;
   margin-left: var(--sidebar-width);
   width: calc(100% - var(--sidebar-width));
+  min-width: 0; /* let wide content shrink or scroll instead of widening the whole page */
 }
 
 .app-canvas {
@@ -189,6 +191,13 @@ button, input, select, textarea {
   display: flex;
   flex-direction: column;
   gap: var(--stack-gap-lg);
+}
+
+/* Page wrappers use `margin: 0 auto` + max-width. As flex items, auto margins stop them stretching,
+   so they size to their widest child and overflow narrow viewports. Pin them to the canvas width. */
+.app-canvas > * {
+  width: 100%;
+  box-sizing: border-box;
 }
 
 /* ==========================================================
@@ -221,6 +230,15 @@ button, input, select, textarea {
   height: auto;
   object-fit: contain;
   display: block;
+}
+
+/* The logo is dark navy on a transparent background, which disappears on the dark sidebar.
+   A light plate keeps the brand colours and restores the wordmark's contrast. */
+[data-theme="dark"] .brand-logo {
+  background: #ffffff;
+  padding: 6px 8px;
+  border-radius: 10px;
+  box-sizing: border-box;
 }
 
 .sidebar-nav {
@@ -476,7 +494,7 @@ button, input, select, textarea {
     stroke-dasharray: 0 100;
   }
   to {
-    stroke-dasharray: 68 100;
+    stroke-dasharray: var(--ring-dash, 0 100);
   }
 }
 
@@ -840,7 +858,7 @@ button, input, select, textarea {
    RECOMMENDATION SECTION
    ========================================================== */
 
-.recommendation-section { max-width: 1280px; margin: 0 auto; padding: 40px 32px 0; }
+.recommendation-section { max-width: 1280px; width: 100%; box-sizing: border-box; margin: 0 auto; padding: 40px 32px 0; }
 
 .section-eyebrow { display: flex; align-items: center; gap: 8px; font-family: var(--font-mono); font-size: 11px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--color-primary); margin-bottom: 6px; }
 
@@ -884,11 +902,11 @@ button, input, select, textarea {
    CATALOG SECTION
    ========================================================== */
 
-.catalog-section { max-width: 1280px; margin: 0 auto; padding: 40px 32px 0; }
+.catalog-section { max-width: 1280px; width: 100%; box-sizing: border-box; margin: 0 auto; padding: 40px 32px 0; }
 
 .catalog-header { display: flex; flex-direction: row; align-items: flex-end; justify-content: space-between; gap: 16px; margin-bottom: 28px; flex-wrap: wrap; }
 
-.catalog-search-filters { display: flex; align-items: center; gap: 10px; flex-shrink: 0; flex-wrap: wrap; }
+.catalog-search-filters { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; min-width: 0; max-width: 100%; }
 
 .catalog-search { position: relative; display: flex; align-items: center; }
 
@@ -900,7 +918,7 @@ button, input, select, textarea {
 
 .catalog-search-input::placeholder { color: var(--color-outline); }
 
-.filter-tabs { display: flex; align-items: center; gap: 3px; padding: 4px; background: var(--color-surface-low); border: 1px solid var(--color-border); border-radius: 9px; }
+.filter-tabs { display: flex; align-items: center; gap: 3px; padding: 4px; max-width: 100%; overflow-x: auto; background: var(--color-surface-low); border: 1px solid var(--color-border); border-radius: 9px; }
 
 .filter-tab { padding: 6px 12px; border-radius: 6px; font-size: 13px; font-weight: 500; cursor: pointer; transition: all 0.15s; border: none; background: transparent; color: var(--color-text-secondary); white-space: nowrap; font-family: var(--font-sans); }
 
@@ -1008,13 +1026,13 @@ button, input, select, textarea {
    EMPTY STATE BANNER
    ========================================================== */
 
-.empty-state-banner { max-width: 1280px; margin: 0 auto; padding: 32px 32px 0; }
+.empty-state-banner { max-width: 1280px; width: 100%; box-sizing: border-box; margin: 0 auto; padding: 32px 32px 0; }
 
 .empty-state-card { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 22px 26px; background: var(--color-surface); border: 1px solid var(--color-border); border-left: 4px solid var(--color-primary); border-radius: var(--radius-card); flex-wrap: wrap; box-shadow: var(--shadow-card); }
 
 .empty-state-icon { width: 42px; height: 42px; border-radius: 9999px; background: var(--color-primary-fixed); color: var(--color-primary); display: flex; align-items: center; justify-content: center; flex-shrink: 0; }
 
-.empty-state-content { display: flex; align-items: center; gap: 14px; flex: 1; min-width: 0; }
+.empty-state-content { display: flex; align-items: center; gap: 14px; flex: 1 1 320px; min-width: 0; }
 
 /* ==========================================================
    COURSE READER LAYOUT
@@ -1259,7 +1277,9 @@ button, input, select, textarea {
   .recommendation-section { padding: 24px 16px 0; }
   .recommendation-grid { grid-template-columns: 1fr; }
   .catalog-section { padding: 24px 16px 0; }
-  .catalog-header { flex-direction: column; align-items: flex-start; }
+  .catalog-header { flex-direction: column; align-items: stretch; }
+  .catalog-search-filters { width: 100%; }
+  .catalog-search { width: 100%; }
   .catalog-search-input { width: 100%; }
   .module-grid { grid-template-columns: 1fr; }
   .reader-header { padding: 14px 16px; }

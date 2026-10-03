@@ -1,4 +1,4 @@
-// Generated from Content-Security/Course
+// Generated from content/Course
 import { CurriculumModule, CurriculumTrack } from '@/features/curriculum/curriculumTypes';
 
 export const curriculumTracks: CurriculumTrack[] = [
@@ -139,12 +139,12 @@ export const curriculumModules: CurriculumModule[] = [
       {
         "id": "sec-4",
         "title": "1.4 Programming Concepts",
-        "content": "Variables, functions, loops, conditionals, and data types are the building blocks of every program you'll write in this course, including the Python scanning and scoring scripts your teammates are building."
+        "content": "Variables, functions, loops, conditionals, and data types are the building blocks of every program you'll write in this course, including the Python scanning and scoring tools used throughout Q-CAPS."
       },
       {
         "id": "sec-5",
         "title": "1.5 Python Fundamentals",
-        "content": "Python is the primary language used across Q-CAPS — Inba's scanner engine and Vishnu Priya's backend both use it. Core skills to build here: variables and data types, control flow (`if`/`for`/`while`), functions, working with strings and JSON, and using libraries (`import`).",
+        "content": "Python is the primary language used across Q-CAPS — the scanner engine and the analytics backend both use it. Core skills to build here: variables and data types, control flow (`if`/`for`/`while`), functions, working with strings and JSON, and using libraries (`import`).",
         "interactiveCallout": "**🎨 Interactive/Visual Requirement:** In-browser Python code sandbox (e.g., embedded Pyodide) where learners can run small snippets directly and see output immediately, rather than just reading code blocks."
       },
       {
@@ -177,9 +177,7 @@ export const curriculumModules: CurriculumModule[] = [
     "level": "Beginner",
     "estimatedMinutes": 150,
     "xp": 120,
-    "prerequisites": [
-      "track_a_a1_computing_foundations"
-    ],
+    "prerequisites": [],
     "unlocks": "track_a_a3_networking_foundations",
     "learningObjectives": [
       "Build comfort with algebra, exponents, and logarithms as they apply to cryptographic key sizes.",
@@ -244,9 +242,7 @@ export const curriculumModules: CurriculumModule[] = [
     "level": "Beginner",
     "estimatedMinutes": 130,
     "xp": 120,
-    "prerequisites": [
-      "track_a_a2_mathematics_foundations"
-    ],
+    "prerequisites": [],
     "unlocks": "track_a_a4_cybersecurity_foundations",
     "learningObjectives": [
       "Understand LAN/WAN, the OSI and TCP/IP models, and how data actually travels across a network.",
@@ -257,7 +253,7 @@ export const curriculumModules: CurriculumModule[] = [
       {
         "id": "sec-1",
         "title": "3.1 LAN/WAN",
-        "content": "A **LAN (Local Area Network)** connects devices within a limited area (a home, office, campus). A **WAN (Wide Area Network)** connects LANs across larger distances — the internet itself is the largest WAN. Every scan Inba's scanner engine performs travels across this exact LAN → WAN → target-server path."
+        "content": "A **LAN (Local Area Network)** connects devices within a limited area (a home, office, campus). A **WAN (Wide Area Network)** connects LANs across larger distances — the internet itself is the largest WAN. Every scan the Q-CAPS scanner performs travels across this exact LAN → WAN → target-server path."
       },
       {
         "id": "sec-2",
@@ -282,7 +278,7 @@ export const curriculumModules: CurriculumModule[] = [
       {
         "id": "sec-6",
         "title": "3.6 DNS and DHCP",
-        "content": "**DNS (Domain Name System)** translates human-readable domain names (google.com) into IP addresses. **DHCP (Dynamic Host Configuration Protocol)** automatically assigns IP addresses to devices joining a network. Both are common attack surfaces in real-world cybersecurity, and DNS resolution is the very first step Inba's scanner performs before it can even connect to a target."
+        "content": "**DNS (Domain Name System)** translates human-readable domain names (google.com) into IP addresses. **DHCP (Dynamic Host Configuration Protocol)** automatically assigns IP addresses to devices joining a network. Both are common attack surfaces in real-world cybersecurity, and DNS resolution is the very first step the Q-CAPS scanner performs before it can even connect to a target."
       },
       {
         "id": "sec-7",
@@ -393,7 +389,7 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 140,
     "xp": 120,
     "prerequisites": [
-      "track_a_a4_cybersecurity_foundations"
+      "track_a_a2_mathematics_foundations"
     ],
     "unlocks": "track_a_a6_quantum_foundations",
     "learningObjectives": [
@@ -474,6 +470,7 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 140,
     "xp": 120,
     "prerequisites": [
+      "track_a_a2_mathematics_foundations",
       "track_a_a5_cryptography_foundations"
     ],
     "unlocks": "track_a_a7_first_quantum_programming",
@@ -555,6 +552,7 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 150,
     "xp": 120,
     "prerequisites": [
+      "track_a_a1_computing_foundations",
       "track_a_a6_quantum_foundations"
     ],
     "unlocks": "track_a_a8_pqc_mitigation",
@@ -617,12 +615,13 @@ export const curriculumModules: CurriculumModule[] = [
     "code": "A8",
     "domain": "PQC Fundamentals",
     "recommendationTopic": "pqc",
-    "title": "Module 3: PQC Mitigation",
+    "title": "PQC Mitigation",
     "level": "Intermediate",
     "estimatedMinutes": 110,
     "xp": 160,
     "prerequisites": [
-      "track_a_a7_first_quantum_programming"
+      "track_a_a5_cryptography_foundations",
+      "track_a_a6_quantum_foundations"
     ],
     "unlocks": "track_b_b1_advanced_math_for_quantum",
     "learningObjectives": [
@@ -671,7 +670,7 @@ export const curriculumModules: CurriculumModule[] = [
       {
         "id": "sec-7",
         "title": "Module 3 Wrap-Up",
-        "content": "**Summary:** You've covered what Shor's and Grover's algorithms actually threaten and how the mitigations differ, why \"Harvest Now, Decrypt Later\" creates urgency today rather than someday, the two families of PQC and the three NIST-standardized algorithms built on them, and how crypto-agility and hybrid cryptography form the practical migration strategy organizations use in the real world.\n\n- CTA: \"Take the Module 3 Quiz\" → `module_3_pqc_mitigation_questions.json`.\n- Submission uses `\"module_id\": \"module_3_pqc_mitigation\"` in the shared Quiz Submission format.\n- Final CTA: **\"You've completed PQC Foundations. Try your first Authorized Crypto Scan →\"** — hands off directly to Inba's Scanner Engine."
+        "content": "**Summary:** You've covered what Shor's and Grover's algorithms actually threaten and how the mitigations differ, why \"Harvest Now, Decrypt Later\" creates urgency today rather than someday, the two families of PQC and the three NIST-standardized algorithms built on them, and how crypto-agility and hybrid cryptography form the practical migration strategy organizations use in the real world.\n\n- Next step: you've completed PQC Foundations. Try your first authorized crypto scan in the Q-CAPS scanner."
       }
     ],
     "wrapUp": {
@@ -689,7 +688,7 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 160,
     "xp": 160,
     "prerequisites": [
-      "track_a_a8_pqc_mitigation"
+      "track_a_a2_mathematics_foundations"
     ],
     "unlocks": "track_b_b2_quantum_information",
     "learningObjectives": [
@@ -831,6 +830,7 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 180,
     "xp": 160,
     "prerequisites": [
+      "track_b_b1_advanced_math_for_quantum",
       "track_b_b2_quantum_information"
     ],
     "unlocks": "track_b_b4_quantum_programming",
@@ -913,6 +913,7 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 170,
     "xp": 160,
     "prerequisites": [
+      "track_a_a7_first_quantum_programming",
       "track_b_b3_quantum_algorithms"
     ],
     "unlocks": "track_b_b5_quantum_hardware",
@@ -989,7 +990,7 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 140,
     "xp": 160,
     "prerequisites": [
-      "track_b_b4_quantum_programming"
+      "track_b_b2_quantum_information"
     ],
     "unlocks": "track_b_b6_network_security_engineering",
     "learningObjectives": [
@@ -1065,7 +1066,8 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 150,
     "xp": 160,
     "prerequisites": [
-      "track_b_b5_quantum_hardware"
+      "track_a_a3_networking_foundations",
+      "track_a_a4_cybersecurity_foundations"
     ],
     "unlocks": "track_b_b7_advanced_cryptography",
     "learningObjectives": [
@@ -1097,7 +1099,7 @@ export const curriculumModules: CurriculumModule[] = [
       {
         "id": "sec-5",
         "title": "6.5 TLS (Engineering Depth)",
-        "content": "Building on A5.10's handshake walkthrough, this section covers TLS from an engineering/operations perspective: cipher suite configuration, certificate management at scale, and common misconfigurations that weaken an otherwise-correct TLS deployment — directly relevant to what Inba's scanner engine is built to detect."
+        "content": "Building on A5.10's handshake walkthrough, this section covers TLS from an engineering/operations perspective: cipher suite configuration, certificate management at scale, and common misconfigurations that weaken an otherwise-correct TLS deployment — directly relevant to what the Q-CAPS scanner is built to detect."
       },
       {
         "id": "sec-6",
@@ -1146,7 +1148,7 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 160,
     "xp": 160,
     "prerequisites": [
-      "track_b_b6_network_security_engineering"
+      "track_a_a5_cryptography_foundations"
     ],
     "unlocks": "track_b_b8_quantum_threats",
     "learningObjectives": [
@@ -1193,7 +1195,7 @@ export const curriculumModules: CurriculumModule[] = [
       {
         "id": "sec-8",
         "title": "7.8 SSH",
-        "content": "**SSH (Secure Shell)** uses the same core cryptographic building blocks (asymmetric key exchange, symmetric encryption, MACs) as TLS but in a different protocol structure, primarily for secure remote system administration — directly relevant since Inba's scanner engine's Phase 3 scope includes SSH configuration analysis."
+        "content": "**SSH (Secure Shell)** uses the same core cryptographic building blocks (asymmetric key exchange, symmetric encryption, MACs) as TLS but in a different protocol structure, primarily for secure remote system administration — directly relevant since the Q-CAPS scanner's planned scope includes SSH configuration analysis."
       },
       {
         "id": "sec-9",
@@ -1227,6 +1229,7 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 140,
     "xp": 160,
     "prerequisites": [
+      "track_b_b3_quantum_algorithms",
       "track_b_b7_advanced_cryptography"
     ],
     "unlocks": "track_b_b9_pqc_fundamentals",
@@ -1462,7 +1465,7 @@ export const curriculumModules: CurriculumModule[] = [
       {
         "id": "sec-8",
         "title": "11.8 Cryptographic Inventory (Hands-On)",
-        "content": "Hands-on exercise: given a small set of simulated/test systems, perform manual and tool-assisted discovery of what cryptographic algorithms and key sizes are in use — a smaller-scale, individual rehearsal of the Cryptographic Discovery process that Track D's Enterprise track covers at organizational scale, and directly related to what Inba's scanner engine automates for Q-CAPS."
+        "content": "Hands-on exercise: given a small set of simulated/test systems, perform manual and tool-assisted discovery of what cryptographic algorithms and key sizes are in use — a smaller-scale, individual rehearsal of the Cryptographic Discovery process that Track D's Enterprise track covers at organizational scale, and directly related to what the Q-CAPS scanner automates for Q-CAPS."
       },
       {
         "id": "sec-9",
@@ -1486,7 +1489,7 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 170,
     "xp": 200,
     "prerequisites": [
-      "track_b_b11_intermediate_pqc_labs"
+      "track_b_b2_quantum_information"
     ],
     "unlocks": "track_c_c2_advanced_quantum_algorithms",
     "learningObjectives": [
@@ -1552,6 +1555,7 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 190,
     "xp": 200,
     "prerequisites": [
+      "track_b_b3_quantum_algorithms",
       "track_c_c1_advanced_quantum_information"
     ],
     "unlocks": "track_c_c3_quantum_error_correction",
@@ -1633,7 +1637,8 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 180,
     "xp": 200,
     "prerequisites": [
-      "track_c_c2_advanced_quantum_algorithms"
+      "track_c_c1_advanced_quantum_information",
+      "track_b_b5_quantum_hardware"
     ],
     "unlocks": "track_c_c4_quantum_networking",
     "learningObjectives": [
@@ -1709,7 +1714,8 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 150,
     "xp": 200,
     "prerequisites": [
-      "track_c_c3_quantum_error_correction"
+      "track_c_c1_advanced_quantum_information",
+      "track_b_b6_network_security_engineering"
     ],
     "unlocks": "track_c_c5_quantum_communications",
     "learningObjectives": [
@@ -1927,7 +1933,7 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 170,
     "xp": 200,
     "prerequisites": [
-      "track_c_c6_quantum_key_distribution"
+      "track_b_b7_advanced_cryptography"
     ],
     "unlocks": "track_c_c8_pqc_mathematics",
     "learningObjectives": [
@@ -2003,6 +2009,7 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 190,
     "xp": 200,
     "prerequisites": [
+      "track_b_b9_pqc_fundamentals",
       "track_c_c7_advanced_cryptography"
     ],
     "unlocks": "track_c_c9_pqc_implementation_engineering",
@@ -2079,7 +2086,8 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 200,
     "xp": 200,
     "prerequisites": [
-      "track_c_c8_pqc_mathematics"
+      "track_c_c8_pqc_mathematics",
+      "track_b_b11_intermediate_pqc_labs"
     ],
     "unlocks": "track_c_c10_pqc_attack_surface",
     "learningObjectives": [
@@ -2347,7 +2355,10 @@ export const curriculumModules: CurriculumModule[] = [
     "estimatedMinutes": 130,
     "xp": 250,
     "prerequisites": [
-      "track_c_c11_pqc_defense_engineering"
+      "track_b_b4_quantum_programming",
+      "track_b_b5_quantum_hardware",
+      "track_b_b6_network_security_engineering",
+      "track_b_b11_intermediate_pqc_labs"
     ],
     "unlocks": "track_d_e2_cryptographic_discovery",
     "learningObjectives": [
@@ -2430,7 +2441,7 @@ export const curriculumModules: CurriculumModule[] = [
       {
         "id": "sec-3",
         "title": "2.3 Algorithm Discovery",
-        "content": "Building on B7's TLS/PKI engineering depth, this section covers systematically identifying which cryptographic algorithms (RSA, ECC, AES, and their specific parameters) are actually in use across discovered assets — exactly the technical operation Inba's scanner performs when it connects to a target and reports its detected encryption algorithm."
+        "content": "Building on B7's TLS/PKI engineering depth, this section covers systematically identifying which cryptographic algorithms (RSA, ECC, AES, and their specific parameters) are actually in use across discovered assets — exactly the technical operation the Q-CAPS scanner performs when it connects to a target and reports its detected encryption algorithm."
       },
       {
         "id": "sec-4",
@@ -2460,7 +2471,7 @@ export const curriculumModules: CurriculumModule[] = [
       }
     ],
     "wrapUp": {
-      "summary": "- Knowledge check quiz covering sections 2.1–2.8.\n- Practical assessment: given a small set of simulated scan results (structured similarly to Inba's Scanner Mission JSON output), compile them into a structured cryptographic inventory with dependency notes.\n- Unlocks: `E3 — Quantum Readiness Assessment`."
+      "summary": "- Knowledge check quiz covering sections 2.1–2.8.\n- Practical assessment: given a small set of simulated scan results (structured similarly to the Q-CAPS scanner's JSON output), compile them into a structured cryptographic inventory with dependency notes.\n- Unlocks: `E3 — Quantum Readiness Assessment`."
     }
   },
   {

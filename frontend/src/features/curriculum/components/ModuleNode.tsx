@@ -7,14 +7,12 @@ import { CurriculumModule, ModuleStatus } from '../curriculumTypes';
 interface ModuleNodeProps {
   module: CurriculumModule;
   status: ModuleStatus;
-  score?: number;
   prevModuleTitle?: string;
 }
 
 export const ModuleNode: React.FC<ModuleNodeProps> = ({
   module,
   status,
-  score,
   prevModuleTitle
 }) => {
   const navigate = useNavigate();

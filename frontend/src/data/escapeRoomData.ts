@@ -1,4 +1,4 @@
-// Generated from Content-Security/Labs/escape_room_scenarios.json
+// Generated from content/Labs/escape_room_scenarios.json
 export interface EscapeScenarioChoice {
   id: string;
   text: string;
@@ -22,7 +22,7 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
   {
     "id": "escape-1-hndl",
     "title": "The Patient Records Leak",
-    "module_id": "module_3_pqc_mitigation",
+    "module_id": "track_a_a8_pqc_mitigation",
     "difficulty": "novice",
     "setup": "You're the security lead at a hospital. Your patient records are encrypted with RSA-2048 and must remain confidential for 25 years per regulation. An intelligence report indicates a foreign actor has been silently intercepting and storing your encrypted traffic for the past year.",
     "prompt": "A threat actor has stolen your encrypted data today and will decrypt it in 5-10 years using a quantum computer. Which mitigation strategy do you apply?",
@@ -52,7 +52,7 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
   {
     "id": "escape-2-cert-chain",
     "title": "The Cracked Chain of Trust",
-    "module_id": "module_3_pqc_mitigation",
+    "module_id": "track_a_a8_pqc_mitigation",
     "difficulty": "professional",
     "setup": "Your organization's root CA still signs certificates using RSA-2048. A Q-CAPS scan flags this as a long-term migration risk across 40 downstream systems.",
     "prompt": "You have limited migration budget this quarter. What's the most crypto-agile first move?",
@@ -82,7 +82,7 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
   {
     "id": "escape-3-symmetric",
     "title": "The Overlooked AES Key",
-    "module_id": "module_3_pqc_mitigation",
+    "module_id": "track_a_a8_pqc_mitigation",
     "difficulty": "novice",
     "setup": "A Q-CAPS scan of your file storage system shows AES-128 encryption protecting archived financial records with a 10-year retention requirement.",
     "prompt": "Grover's algorithm roughly halves effective symmetric key strength against a quantum attacker. What should you do?",
@@ -166,7 +166,7 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
         "feedback": "Incorrect. This ignores Harvest-Now-Decrypt-Later risk — migration must start well before the threat fully materializes, given how long enterprise migration takes."
       }
     ],
-    "badge_awarded": "Threat Modeler",
+    "badge_awarded": "Risk Prioritizer",
     "mission_xp_awarded": 70
   },
   {
@@ -196,7 +196,7 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
         "feedback": "Overcorrection. This abandons crypto-agility and PQC readiness rather than fixing the actual combiner issue — the correct move is analyzing and fixing the combiner, not abandoning the migration."
       }
     ],
-    "badge_awarded": "Defense Engineer",
+    "badge_awarded": "Hybrid Mode Auditor",
     "mission_xp_awarded": 90
   },
   {
@@ -226,7 +226,7 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
         "feedback": "Overstates the case in a way that undermines credibility — the accurate claim is about future decryption risk on already-harvested data, not an active breach today."
       }
     ],
-    "badge_awarded": "Risk Strategist",
+    "badge_awarded": "Executive Communicator",
     "mission_xp_awarded": 70
   }
 ];

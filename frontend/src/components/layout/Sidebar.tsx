@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { NavLink, useNavigate } from 'react-router-dom';
 import {
   BarChart3,
@@ -12,11 +12,13 @@ import {
   Trophy,
   LogOut,
   Compass,
-  Zap
+  Settings2,
+  ScrollText
 } from 'lucide-react';
 import qcapsLogo from '@/assets/brand/qcaps-logo.png';
 import { useAuthStore } from '@/features/auth/authStore';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
+import { useAdminStatus } from '@/features/admin/adminStatus';
 
 interface SidebarProps {
   isMobile?: boolean;
@@ -25,7 +27,13 @@ interface SidebarProps {
 
 export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onCloseMobile }) => {
   const navigate = useNavigate();
-  const { userName, logout } = useAuthStore();
+  const { userName, userId, logout } = useAuthStore();
+  const { role, load: loadAdminStatus, reset: resetAdminStatus } = useAdminStatus();
+
+  // Only decides whether to show the Admin link; the backend enforces the role itself.
+  useEffect(() => {
+    void loadAdminStatus(userId);
+  }, [userId, loadAdminStatus]);
   const { clearLocalProgress } = useCurriculumStore();
 
   const handleLinkClick = () => {
@@ -36,6 +44,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onCloseMobil
 
   const handleLogout = () => {
     logout();
+    resetAdminStatus();
     clearLocalProgress();
     navigate('/login');
     if (isMobile && onCloseMobile) {
@@ -104,14 +113,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onCloseMobil
           <span>Practical Labs</span>
         </NavLink>
 
-        <NavLink
-          to="/sandbox"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-          onClick={handleLinkClick}
-        >
-          <Zap size={18} />
-          <span>PQ Sandbox</span>
-        </NavLink>
 
         <div className="nav-divider">Community</div>
 
@@ -132,6 +133,8 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onCloseMobil
           <ShieldCheck size={18} />
           <span>Crypto Scanner</span>
         </NavLink>
+
+
 
 
         {/* Metrics Group */}
@@ -174,6 +177,29 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onCloseMobil
           <Trophy size={18} />
           <span>Leaderboard</span>
         </NavLink>
+
+        {role === 'admin' && (
+          <>
+            <div className="nav-divider">Admin</div>
+            <NavLink
+              to="/admin"
+              end
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+              onClick={handleLinkClick}
+            >
+              <Settings2 size={18} />
+              <span>Course management</span>
+            </NavLink>
+            <NavLink
+              to="/admin/audit"
+              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+              onClick={handleLinkClick}
+            >
+              <ScrollText size={18} />
+              <span>Audit log</span>
+            </NavLink>
+          </>
+        )}
       </nav>
 
       {/* Footer Links */}

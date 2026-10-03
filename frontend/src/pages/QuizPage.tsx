@@ -10,36 +10,40 @@ import {
   ArrowRight,
   ShieldAlert
 } from 'lucide-react';
-import { quizzesData } from '@/data/quizzesData';
 import { curriculumModules } from '@/data/curriculumData';
 import { badgesData } from '@/data/badgesData';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import {
+  startQuizAttempt,
+  answerQuizQuestion,
+  finishQuizAttempt,
+  QuizApiError,
+  type QuizAttempt,
+  type QuizAnswerFeedback,
+  type QuizAttemptResult,
+} from '@/services/backendService';
 
-interface ShuffledOption {
+interface DisplayOption {
   text: string;
-  originalIndex: number;
-}
-
-function shuffleArray<T>(array: T[]): T[] {
-  const arr = [...array];
-  for (let i = arr.length - 1; i > 0; i--) {
-    const j = Math.floor(Math.random() * (i + 1));
-    [arr[i], arr[j]] = [arr[j], arr[i]];
-  }
-  return arr;
+  position: number; // position shown to the learner; the server maps it to the real option
 }
 
 export const QuizPage: React.FC = () => {
   const { moduleId } = useParams<{ moduleId: string }>();
   const navigate = useNavigate();
   const { completeQuiz } = useCurriculumStore();
+  const completedModules = useCurriculumStore((s) => s.completedModules);
 
-  const quiz = moduleId ? quizzesData[moduleId] : null;
   const currentMod = moduleId
     ? curriculumModules.find((m) => m.id === moduleId)
     : null;
+  // Same rule as the module overview: a quiz opens once its prerequisite modules are complete.
+  const missingPrereqs = currentMod
+    ? currentMod.prerequisites.filter((p) => !completedModules.includes(p))
+    : [];
+  const locked = !!currentMod && !completedModules.includes(currentMod.id) && missingPrereqs.length > 0;
 
   // Find badge for this quiz
   const matchingBadge = badgesData.find((b) =>
@@ -53,30 +57,54 @@ export const QuizPage: React.FC = () => {
   const [answersHistory, setAnswersHistory] = useState<
     Array<{ selected: number; isCorrect: boolean }>
   >([]);
-  const [shuffledOptionsList, setShuffledOptionsList] = useState<ShuffledOption[][]>([]);
+  const [attempt, setAttempt] = useState<QuizAttempt | null>(null);
+  const [attemptNonce, setAttemptNonce] = useState(0);
+  const [loadState, setLoadState] = useState<'loading' | 'ready' | 'error'>('loading');
+  const [loadError, setLoadError] = useState<{ status: number; message: string } | null>(null);
+  const [feedback, setFeedback] = useState<QuizAnswerFeedback | null>(null);
+  const [result, setResult] = useState<QuizAttemptResult | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [actionError, setActionError] = useState<string | null>(null);
 
-  const questions = quiz?.questions || [];
+  const questions = attempt?.questions || [];
   const currentQuestion = questions[currentIndex];
   const totalQuestions = questions.length;
-  const passingScorePercent = quiz?.passingScorePercent || 70;
+  const passingScorePercent = attempt?.passing_score_percent ?? 70;
 
-  // Reset & re-shuffle options if moduleId or quiz changes
+  // Ask the server for a fresh form whenever the module changes or the learner retries.
   useEffect(() => {
+    if (!moduleId || locked) return;
+    let cancelled = false;
     setCurrentIndex(0);
     setSelectedOption(null);
     setIsAnswerSubmitted(false);
     setQuizFinished(false);
     setAnswersHistory([]);
-    if (quiz?.questions) {
-      setShuffledOptionsList(
-        quiz.questions.map((q) =>
-          shuffleArray(q.options.map((text, originalIndex) => ({ text, originalIndex })))
-        )
-      );
-    }
-  }, [moduleId, quiz]);
+    setFeedback(null);
+    setResult(null);
+    setActionError(null);
+    setAttempt(null);
+    setLoadState('loading');
+    startQuizAttempt(moduleId)
+      .then((a) => {
+        if (cancelled) return;
+        setAttempt(a);
+        setLoadState('ready');
+      })
+      .catch((e) => {
+        if (cancelled) return;
+        setLoadError({
+          status: e instanceof QuizApiError ? e.status : 0,
+          message: e instanceof Error ? e.message : 'Could not load the quiz.',
+        });
+        setLoadState('error');
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [moduleId, attemptNonce, locked]);
 
-  if (!quiz || !currentMod) {
+  if (!currentMod) {
     return (
       <div style={{ maxWidth: '720px', margin: '60px auto', textAlign: 'center' }}>
         <Card variant="glass" padding="large">
@@ -95,68 +123,121 @@ export const QuizPage: React.FC = () => {
     );
   }
 
-  const currentOptions: ShuffledOption[] =
-    shuffledOptionsList[currentIndex] ||
-    (currentQuestion
-      ? currentQuestion.options.map((text, originalIndex) => ({ text, originalIndex }))
-      : []);
+  if (locked) {
+    const titleOf = (id: string) => {
+      const m = curriculumModules.find((x) => x.id === id);
+      return m ? `${m.code} ${m.title}` : id;
+    };
+    return (
+      <div style={{ maxWidth: '720px', margin: '60px auto', textAlign: 'center' }}>
+        <Card variant="glass" padding="large">
+          <ShieldAlert size={48} color="#f59e0b" style={{ margin: '0 auto 16px' }} />
+          <h2 style={{ fontSize: '22px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+            {currentMod.code} quiz is locked
+          </h2>
+          <p style={{ color: 'var(--color-text-secondary)', marginTop: '8px' }}>Complete the prerequisite modules first:</p>
+          <ul style={{ listStyle: 'none', padding: 0, margin: '12px 0 24px' }}>
+            {missingPrereqs.map((p) => (
+              <li key={p} style={{ margin: '4px 0' }}>
+                <Link to={`/learning/${p}`} style={{ color: 'var(--color-primary)' }}>{titleOf(p)}</Link>
+              </li>
+            ))}
+          </ul>
+          <Button variant="secondary" onClick={() => navigate('/curriculum')}>
+            Back to curriculum
+          </Button>
+        </Card>
+      </div>
+    );
+  }
+
+  if (loadState !== 'ready' || !attempt) {
+    const needsLogin = loadState === 'error' && loadError?.status === 401;
+    return (
+      <div style={{ maxWidth: '720px', margin: '60px auto', textAlign: 'center' }}>
+        <Card variant="glass" padding="large">
+          {loadState === 'loading' ? (
+            <p style={{ color: 'var(--color-text-secondary)' }}>Preparing your quiz…</p>
+          ) : (
+            <>
+              <ShieldAlert size={48} color="#f59e0b" style={{ margin: '0 auto 16px' }} />
+              <h2 style={{ fontSize: '22px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
+                {needsLogin ? 'Sign in to take this quiz' : 'Quiz unavailable'}
+              </h2>
+              <p style={{ color: 'var(--color-text-secondary)', marginTop: '8px', marginBottom: '24px' }}>
+                {needsLogin
+                  ? 'Quizzes are graded on the server so your results count. Please sign in and try again.'
+                  : loadError?.message}
+              </p>
+              <div style={{ display: 'flex', gap: '12px', justifyContent: 'center' }}>
+                <Button variant="primary" onClick={() => (needsLogin ? navigate('/login') : setAttemptNonce((n) => n + 1))}>
+                  {needsLogin ? 'Go to Sign In' : 'Try Again'}
+                </Button>
+                <Button variant="secondary" onClick={() => navigate('/learning')}>
+                  Back to Curriculum
+                </Button>
+              </div>
+            </>
+          )}
+        </Card>
+      </div>
+    );
+  }
+
+  const currentOptions: DisplayOption[] = currentQuestion
+    ? currentQuestion.options.map((text, position) => ({ text, position }))
+    : [];
 
   const handleSelectOption = (idx: number) => {
     if (isAnswerSubmitted) return;
     setSelectedOption(idx);
   };
 
-  const handleSubmitAnswer = () => {
-    if (selectedOption === null || isAnswerSubmitted || !currentQuestion) return;
-    const selectedOriginalIndex = currentOptions[selectedOption]?.originalIndex;
-    const isCorrect = selectedOriginalIndex === currentQuestion.correctIndex;
-    setIsAnswerSubmitted(true);
-    setAnswersHistory((prev) => [...prev, { selected: selectedOption, isCorrect }]);
+  const handleSubmitAnswer = async () => {
+    if (selectedOption === null || isAnswerSubmitted || !currentQuestion || busy) return;
+    setBusy(true);
+    setActionError(null);
+    try {
+      const fb = await answerQuizQuestion(attempt.attempt_id, currentQuestion.item_id, selectedOption);
+      setFeedback(fb);
+      setIsAnswerSubmitted(true);
+      setAnswersHistory((prev) => [...prev, { selected: selectedOption, isCorrect: fb.correct === true }]);
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Could not record your answer.');
+    } finally {
+      setBusy(false);
+    }
   };
 
-  const handleNextQuestion = () => {
+  const handleNextQuestion = async () => {
+    if (busy) return;
     if (currentIndex < totalQuestions - 1) {
       setCurrentIndex((prev) => prev + 1);
       setSelectedOption(null);
       setIsAnswerSubmitted(false);
-    } else {
-      // Finished! correctCount may not yet include the last answer due to async setState,
-      // so we check the last entry in answersHistory to get the true final count.
-      // Actually: correctCount IS already updated because handleSubmitAnswer called
-      // setCorrectCount before this function runs (same render cycle completes setState).
-      // But to be safe, recalculate from answersHistory which is the source of truth:
-      const trueCorrect = answersHistory.filter(a => a.isCorrect).length;
-      const scorePercent = Math.round((trueCorrect / totalQuestions) * 100);
+      setFeedback(null);
+      return;
+    }
+    setBusy(true);
+    setActionError(null);
+    try {
+      // The server grades the attempt; the page only displays what it returns.
+      const res = await finishQuizAttempt(attempt.attempt_id);
+      setResult(res);
       setQuizFinished(true);
-
-      // Trigger store completion
-      completeQuiz(
-        quiz.moduleId,
-        scorePercent,
-        matchingBadge?.name,
-        currentMod.xp
-      );
+      completeQuiz(attempt.module_id, res.score_percent, matchingBadge?.name, currentMod.xp);
+    } catch (e) {
+      setActionError(e instanceof Error ? e.message : 'Could not submit the quiz.');
+    } finally {
+      setBusy(false);
     }
   };
 
-  const handleRetry = () => {
-    setCurrentIndex(0);
-    setSelectedOption(null);
-    setIsAnswerSubmitted(false);
-    setQuizFinished(false);
-    setAnswersHistory([]);
-    if (quiz?.questions) {
-      setShuffledOptionsList(
-        quiz.questions.map((q) =>
-          shuffleArray(q.options.map((text, originalIndex) => ({ text, originalIndex })))
-        )
-      );
-    }
-  };
+  const handleRetry = () => setAttemptNonce((n) => n + 1);
 
-  const displayCorrectCount = answersHistory.filter(a => a.isCorrect).length;
-  const finalScorePercent = Math.round((displayCorrectCount / totalQuestions) * 100);
-  const isPassed = finalScorePercent >= passingScorePercent;
+  const displayCorrectCount = result?.correct_answers ?? 0;
+  const finalScorePercent = result ? Math.round(result.score_percent) : 0;
+  const isPassed = result?.passed ?? false;
 
   // Find next module
   const currentModIndex = curriculumModules.findIndex((m) => m.id === currentMod.id);
@@ -232,16 +313,6 @@ export const QuizPage: React.FC = () => {
                 >
                   {currentMod.code} Knowledge Check · Question {currentIndex + 1} of {totalQuestions}
                 </span>
-                <div
-                  style={{
-                    fontSize: '12px',
-                    fontFamily: 'var(--font-mono)',
-                    color: '#94a3b8',
-                    marginTop: '2px'
-                  }}
-                >
-                  id: <code>{currentQuestion.id}</code>
-                </div>
               </div>
 
               {/* Progress Dots */}
@@ -291,7 +362,7 @@ export const QuizPage: React.FC = () => {
               <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
                 {currentOptions.map((opt, optIdx) => {
                   const isSelected = selectedOption === optIdx;
-                  const isCorrectAnswer = opt.originalIndex === currentQuestion.correctIndex;
+                  const isCorrectAnswer = isAnswerSubmitted && feedback?.correct_position === opt.position;
 
                   let rowBorder = '1px solid var(--color-border, #e2e8f0)';
                   let rowBg = 'var(--color-surface, #ffffff)';
@@ -314,10 +385,17 @@ export const QuizPage: React.FC = () => {
                   }
 
                   return (
-                    <div
+                    <button
+                      type="button"
                       key={optIdx}
                       onClick={() => handleSelectOption(optIdx)}
+                      disabled={isAnswerSubmitted}
+                      aria-pressed={isSelected}
                       style={{
+                        width: '100%',
+                        textAlign: 'left',
+                        font: 'inherit',
+                        color: 'inherit',
                         padding: '16px 20px',
                         borderRadius: '10px',
                         backgroundColor: rowBg,
@@ -348,7 +426,7 @@ export const QuizPage: React.FC = () => {
                           {isSelected && !isCorrectAnswer && <XCircle size={20} color="#ef4444" />}
                         </div>
                       )}
-                    </div>
+                    </button>
                   );
                 })}
               </div>
@@ -370,16 +448,22 @@ export const QuizPage: React.FC = () => {
                   style={{
                     fontSize: '13px',
                     fontWeight: 600,
-                    color: '#0369a1',
+                    color: 'var(--color-primary, #0369a1)',
                     marginBottom: '4px'
                   }}
                 >
                   Explanation
                 </div>
                 <div style={{ fontSize: '14px', color: 'var(--color-text-primary, #1e293b)', lineHeight: 1.5 }}>
-                  {currentQuestion.explanation}
+                  {feedback?.explanation}
                 </div>
               </div>
+            )}
+
+            {actionError && (
+              <p role="alert" style={{ color: '#b91c1c', fontSize: '14px', marginBottom: '12px', textAlign: 'right' }}>
+                {actionError}
+              </p>
             )}
 
             {/* Action Buttons */}
@@ -387,7 +471,7 @@ export const QuizPage: React.FC = () => {
               {!isAnswerSubmitted ? (
                 <Button
                   variant="primary"
-                  disabled={selectedOption === null}
+                  disabled={selectedOption === null || busy}
                   onClick={handleSubmitAnswer}
                   style={{ minWidth: '140px' }}
                 >
@@ -396,6 +480,7 @@ export const QuizPage: React.FC = () => {
               ) : (
                 <Button
                   variant="primary"
+                  disabled={busy}
                   onClick={handleNextQuestion}
                   style={{ minWidth: '140px', display: 'flex', alignItems: 'center', gap: '6px' }}
                 >
@@ -477,14 +562,17 @@ export const QuizPage: React.FC = () => {
                   <Award size={24} />
                 </div>
                 <div>
-                  <div style={{ fontSize: '12px', color: '#065f46', fontWeight: 600, textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-primary)', fontWeight: 600, textTransform: 'uppercase' }}>
                     Badge Unlocked!
                   </div>
-                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-surface)' }}>
+                  <div style={{ fontSize: '16px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
                     {matchingBadge.name}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#64748b', marginTop: '2px' }}>
-                    +{currentMod.xp} XP added to your Common User Profile
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '2px' }}>
+                    {/* XP is awarded by the server (first correct answer per question), not the module's nominal XP. */}
+                    {result && result.xp_awarded > 0
+                      ? `+${result.xp_awarded} XP added to your profile`
+                      : 'No new XP: you already earned it for these questions'}
                   </div>
                 </div>
               </div>

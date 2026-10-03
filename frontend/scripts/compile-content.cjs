@@ -2,15 +2,27 @@
 const fs = require('fs');
 const path = require('path');
 
-const CS_ROOT = path.resolve(__dirname, '../../Content-Security');
-const FRONTEND_DATA = path.resolve(__dirname, '../src/data');
+const { validate } = require('./curriculum-validation.cjs');
+const { validateCompetencyModel } = require('./competency-validation.cjs');
 
-if (!fs.existsSync(FRONTEND_DATA)) {
-  fs.mkdirSync(FRONTEND_DATA, { recursive: true });
-}
+// Usage: node scripts/compile-content.cjs [--check]
+//   --check  compile and validate in memory; write nothing.
+// Env: QCAPS_CONTENT_ROOT (default ../../content), QCAPS_OUT_DIR (default ../src/data)
+const CHECK_ONLY = process.argv.includes('--check');
+const CS_ROOT = path.resolve(process.env.QCAPS_CONTENT_ROOT || path.join(__dirname, '../../content'));
+const FRONTEND_DATA = path.resolve(process.env.QCAPS_OUT_DIR || path.join(__dirname, '../src/data'));
+
+// Nothing is written until the whole curriculum has validated.
+const pending = [];
+const writeOut = (file, text) => pending.push([file, text]);
+
+// Structural metadata (prerequisites, domain, topic) lives in one manifest, not in this script.
+const manifest = JSON.parse(fs.readFileSync(path.join(CS_ROOT, 'curriculum_manifest.json'), 'utf8'));
 
 // -------------------------------------------------------------
-// 1. COMPILE QUIZZES
+// 1. QUIZ INVENTORY (validation only)
+// Quizzes are NOT compiled into the frontend. Answer keys live server-side and are
+// loaded by backend/main_api/seed_quizzes.py; here we only check that every module has one.
 // -------------------------------------------------------------
 const quizDirs = [
   'Track-A-Foundations',
@@ -19,41 +31,24 @@ const quizDirs = [
   'Track-D-Enterprise'
 ];
 
-const quizzes = {};
-
+const quizModuleIds = [];
+const quizItems = []; // id + curriculum tags only; answer keys are never read into compiled output
 for (const qDir of quizDirs) {
   const dirPath = path.join(CS_ROOT, 'Quizzes', qDir);
   if (!fs.existsSync(dirPath)) continue;
-  const files = fs.readdirSync(dirPath).filter(f => f.endsWith('.json'));
-  for (const file of files) {
-    const filePath = path.join(dirPath, file);
+  for (const file of fs.readdirSync(dirPath).filter((f) => f.endsWith('.json'))) {
     try {
-      const data = JSON.parse(fs.readFileSync(filePath, 'utf8'));
-      const moduleId = data.module_id;
-      quizzes[moduleId] = {
-        moduleId: data.module_id,
-        title: data.title,
-        difficulty: data.difficulty || 'intermediate',
-        passingScorePercent: data.passing_score_percent || 70,
-        questions: (data.questions || []).map(q => ({
-          id: q.id,
-          prompt: q.prompt,
-          options: q.options || [],
-          correctIndex: q.correct_index,
-          explanation: q.explanation || ''
-        }))
-      };
+      const quiz = JSON.parse(fs.readFileSync(path.join(dirPath, file), 'utf8'));
+      quizModuleIds.push(quiz.module_id);
+      for (const q of quiz.questions || []) {
+        quizItems.push({ id: q.id, competency_id: q.competency_id ?? null, depth: q.depth ?? null, lesson_id: q.lesson_id ?? null });
+      }
     } catch (err) {
       console.error(`Error parsing quiz ${file}:`, err);
+      process.exitCode = 1;
     }
   }
 }
-
-fs.writeFileSync(
-  path.join(FRONTEND_DATA, 'quizzesData.ts'),
-  `// Generated from Content-Security/Quizzes\nimport { ModuleQuiz } from '@/features/curriculum/curriculumTypes';\n\nexport const quizzesData: Record<string, ModuleQuiz> = ${JSON.stringify(quizzes, null, 2)};\n`
-);
-console.log(`Saved ${Object.keys(quizzes).length} quizzes.`);
 
 // -------------------------------------------------------------
 // 2. COMPILE COURSE MODULES
@@ -141,7 +136,8 @@ for (const tConfig of trackConfigs) {
   const moduleIdsInTrack = [];
 
   for (const file of files) {
-    const content = fs.readFileSync(path.join(trackFolder, file), 'utf8');
+    // Normalise line endings: checkouts on Windows have CRLF, which would leave a stray CR in the text.
+    const content = fs.readFileSync(path.join(trackFolder, file), 'utf8').replace(/\r\n/g, '\n');
     const lines = content.split('\n');
 
     // Parse header
@@ -240,18 +236,9 @@ for (const tConfig of trackConfigs) {
       sections.push(currentSection);
     }
 
-    // Determine prerequisites and unlocks based on track progression
-    let prerequisites = [];
-    const prevInTrack = moduleIdsInTrack[moduleIdsInTrack.length - 1];
-    if (prevInTrack) {
-      prerequisites = [prevInTrack];
-    } else if (tConfig.trackId === 'track-b') {
-      prerequisites = ['track_a_a8_pqc_mitigation'];
-    } else if (tConfig.trackId === 'track-c') {
-      prerequisites = ['track_b_b11_intermediate_pqc_labs'];
-    } else if (tConfig.trackId === 'track-d') {
-      prerequisites = ['track_c_c11_pqc_defense_engineering'];
-    }
+    // Prerequisites, domain and topic come from content/curriculum_manifest.json.
+    const entry = manifest.modules[moduleId];
+    const prerequisites = entry ? entry.prerequisites : [];
 
     // XP allocation
     const xpByLevel = { Novice: 100, Beginner: 120, Intermediate: 160, Advanced: 200, Enterprise: 250 };
@@ -263,6 +250,8 @@ for (const tConfig of trackConfigs) {
       id: moduleId,
       trackId: tConfig.trackId,
       code,
+      domain: entry?.domain,
+      recommendationTopic: entry?.recommendationTopic,
       title,
       level,
       estimatedMinutes,
@@ -302,9 +291,9 @@ for (let i = 0; i < allModules.length; i++) {
   }
 }
 
-fs.writeFileSync(
+writeOut(
   path.join(FRONTEND_DATA, 'curriculumData.ts'),
-  `// Generated from Content-Security/Course\nimport { CurriculumModule, CurriculumTrack } from '@/features/curriculum/curriculumTypes';\n\nexport const curriculumTracks: CurriculumTrack[] = ${JSON.stringify(tracks, null, 2)};\n\nexport const curriculumModules: CurriculumModule[] = ${JSON.stringify(allModules, null, 2)};\n`
+  `// Generated from content/Course\nimport { CurriculumModule, CurriculumTrack } from '@/features/curriculum/curriculumTypes';\n\nexport const curriculumTracks: CurriculumTrack[] = ${JSON.stringify(tracks, null, 2)};\n\nexport const curriculumModules: CurriculumModule[] = ${JSON.stringify(allModules, null, 2)};\n`
 );
 console.log(`Saved ${allModules.length} curriculum modules across ${tracks.length} tracks.`);
 
@@ -365,7 +354,11 @@ const badges = [
   { id: 'b_lab_2', name: 'Crypto-Agility Architect', trackId: 'lab', category: 'lab', unlockTrigger: 'Solve Cracked Chain of Trust Scenario', iconName: 'RefreshCw', xpAward: 75, isUnlocked: false },
   { id: 'b_lab_3', name: 'Symmetric Defender', trackId: 'lab', category: 'lab', unlockTrigger: 'Solve Overlooked AES Key Scenario', iconName: 'Key', xpAward: 40, isUnlocked: false },
   { id: 'b_lab_4', name: 'Hybrid Deployer', trackId: 'lab', category: 'lab', unlockTrigger: 'Complete Enterprise PQC Migration Stage 3', iconName: 'Boxes', xpAward: 80, isUnlocked: false },
-  { id: 'b_lab_5', name: 'QKD Channel Verifier', trackId: 'lab', category: 'lab', unlockTrigger: 'Complete BB84 Diplomatic Channel Mission without compromise', iconName: 'Radio', xpAward: 100, isUnlocked: false }
+  { id: 'b_lab_5', name: 'QKD Channel Verifier', trackId: 'lab', category: 'lab', unlockTrigger: 'Complete BB84 Diplomatic Channel Mission without compromise', iconName: 'Radio', xpAward: 100, isUnlocked: false },
+  { id: 'b_lab_6', name: 'Quantum Beginner', trackId: 'lab', category: 'lab', unlockTrigger: 'Solve Superposition Panic Scenario', iconName: 'Atom', xpAward: 30, isUnlocked: false },
+  { id: 'b_lab_7', name: 'Risk Prioritizer', trackId: 'lab', category: 'lab', unlockTrigger: 'Solve Grover vs Shor Budget Scenario', iconName: 'AlertTriangle', xpAward: 70, isUnlocked: false },
+  { id: 'b_lab_8', name: 'Hybrid Mode Auditor', trackId: 'lab', category: 'lab', unlockTrigger: 'Solve Hybrid Mode Flaw Scenario', iconName: 'ShieldCheck', xpAward: 90, isUnlocked: false },
+  { id: 'b_lab_9', name: 'Executive Communicator', trackId: 'lab', category: 'lab', unlockTrigger: 'Solve Executive Buy-in Scenario', iconName: 'Target', xpAward: 70, isUnlocked: false },
 ];
 
 const certificates = [
@@ -416,9 +409,9 @@ const certificates = [
   }
 ];
 
-fs.writeFileSync(
+writeOut(
   path.join(FRONTEND_DATA, 'badgesData.ts'),
-  `// Generated from Content-Security/Badges/master_badges_and_certificates.md\nimport { BadgeItem, CertificateItem } from '@/features/curriculum/curriculumTypes';\n\nexport const badgesData: BadgeItem[] = ${JSON.stringify(badges, null, 2)};\n\nexport const certificatesData: CertificateItem[] = ${JSON.stringify(certificates, null, 2)};\n`
+  `// Generated from content/Badges/master_badges_and_certificates.md\nimport { BadgeItem, CertificateItem } from '@/features/curriculum/curriculumTypes';\n\nexport const badgesData: BadgeItem[] = ${JSON.stringify(badges, null, 2)};\n\nexport const certificatesData: CertificateItem[] = ${JSON.stringify(certificates, null, 2)};\n`
 );
 console.log(`Saved ${badges.length} badges and ${certificates.length} certificates.`);
 
@@ -440,9 +433,9 @@ for (const mFile of missionFiles) {
   }
 }
 
-fs.writeFileSync(
+writeOut(
   path.join(FRONTEND_DATA, 'missionsData.ts'),
-  `// Generated from Content-Security/Mission\nexport interface MissionData {\n  mission_id: string;\n  title: string;\n  type: 'simulation' | 'decision_scenario';\n  linked_module_id: string;\n  role: string;\n  objective: string;\n  environment: string;\n  state_variables: Record<string, any>;\n  stages: any[];\n  resolution?: any;\n  replayability_note?: string;\n  rewards?: any;\n  [key: string]: any;\n}\n\nexport const missionsData: MissionData[] = ${JSON.stringify(missions, null, 2)};\n`
+  `// Generated from content/Mission\nexport interface MissionData {\n  mission_id: string;\n  title: string;\n  type: 'simulation' | 'decision_scenario';\n  linked_module_id: string;\n  role: string;\n  objective: string;\n  environment: string;\n  state_variables: Record<string, unknown>;\n  stages: Record<string, unknown>[];\n  resolution?: Record<string, unknown>;\n  replayability_note?: string;\n  rewards?: Record<string, unknown>;\n  [key: string]: unknown;\n}\n\nexport const missionsData: MissionData[] = ${JSON.stringify(missions, null, 2)};\n`
 );
 console.log(`Saved ${missions.length} missions.`);
 
@@ -460,9 +453,38 @@ if (fs.existsSync(labPath)) {
   }
 }
 
-fs.writeFileSync(
+writeOut(
   path.join(FRONTEND_DATA, 'escapeRoomData.ts'),
-  `// Generated from Content-Security/Labs/escape_room_scenarios.json\nexport interface EscapeScenarioChoice {\n  id: string;\n  text: string;\n  correct: boolean;\n  feedback: string;\n}\n\nexport interface EscapeRoomScenario {\n  id: string;\n  title: string;\n  module_id: string;\n  difficulty: 'novice' | 'intermediate' | 'professional' | 'expert' | 'quantum_expert';\n  setup: string;\n  prompt: string;\n  choices: EscapeScenarioChoice[];\n  badge_awarded: string;\n  mission_xp_awarded: number;\n}\n\nexport const escapeRoomScenarios: EscapeRoomScenario[] = ${JSON.stringify(escapeRooms, null, 2)};\n`
+  `// Generated from content/Labs/escape_room_scenarios.json\nexport interface EscapeScenarioChoice {\n  id: string;\n  text: string;\n  correct: boolean;\n  feedback: string;\n}\n\nexport interface EscapeRoomScenario {\n  id: string;\n  title: string;\n  module_id: string;\n  difficulty: 'novice' | 'intermediate' | 'professional' | 'expert' | 'quantum_expert';\n  setup: string;\n  prompt: string;\n  choices: EscapeScenarioChoice[];\n  badge_awarded: string;\n  mission_xp_awarded: number;\n}\n\nexport const escapeRoomScenarios: EscapeRoomScenario[] = ${JSON.stringify(escapeRooms, null, 2)};\n`
 );
 console.log(`Saved ${escapeRooms.length} escape room scenarios.`);
-console.log('All Content Security data compiled successfully!');
+
+const problems = validate({ modules: allModules, tracks, manifest, badges, escapeRooms, missions, quizModuleIds });
+
+// Competency model, Track A lesson structure and item tags (content/curriculum/). Optional until
+// the files exist, but once present they must be consistent with the manifest and the quizzes.
+const curriculumDir = path.join(CS_ROOT, 'curriculum');
+const modelPath = path.join(curriculumDir, 'competency_model.json');
+const lessonsPath = path.join(curriculumDir, 'track_a_lessons.json');
+if (fs.existsSync(modelPath) && fs.existsSync(lessonsPath)) {
+  problems.push(...validateCompetencyModel({
+    model: JSON.parse(fs.readFileSync(modelPath, 'utf8')),
+    lessonDoc: JSON.parse(fs.readFileSync(lessonsPath, 'utf8')),
+    manifestModuleIds: Object.keys(manifest.modules),
+    quizItems,
+  }));
+} else if (fs.existsSync(modelPath) !== fs.existsSync(lessonsPath)) {
+  problems.push('content/curriculum needs both competency_model.json and track_a_lessons.json');
+}
+if (problems.length) {
+  console.error(`\nCurriculum validation failed (${problems.length} problem${problems.length === 1 ? '' : 's'}); nothing was written:`);
+  problems.forEach((x) => console.error(`  - ${x}`));
+  process.exit(1);
+}
+if (CHECK_ONLY) {
+  console.log('Check passed: curriculum data is consistent (nothing written).');
+} else {
+  fs.mkdirSync(FRONTEND_DATA, { recursive: true });
+  for (const [file, text] of pending) fs.writeFileSync(file, text);
+  console.log(`Wrote ${pending.length} data files to ${FRONTEND_DATA}.`);
+}

@@ -63,10 +63,27 @@ export const Community: React.FC = () => {
         <Button variant="primary">New Intel Thread</Button>
       </div>
 
-      <div style={{ display: 'grid', gridTemplateColumns: '1fr 300px', gap: '24px' }}>
+      <div
+        role="note"
+        style={{
+          marginBottom: '20px',
+          padding: '10px 14px',
+          borderRadius: '8px',
+          border: '1px solid var(--color-border)',
+          background: 'var(--color-surface-low)',
+          fontSize: '13px',
+          color: 'var(--color-text-secondary)',
+        }}
+      >
+        <strong style={{ fontFamily: 'var(--font-mono)', letterSpacing: '0.04em', color: 'var(--color-text-primary)' }}>DEMO DATA</strong>
+        {' '}— the threads, authors, view counts and mentors below are placeholders. The community feature is not connected to a backend yet.
+      </div>
+
+      {/* Feed + 300px sidebar; the sidebar wraps below the feed when there is not room for both. */}
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: '24px', alignItems: 'flex-start' }}>
         
         {/* Main Feed */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', minWidth: 0, flex: '1 1 420px' }}>
           
           <div style={{ display: 'flex', gap: '12px', marginBottom: '8px' }}>
             <div style={{ 
@@ -113,7 +130,7 @@ export const Community: React.FC = () => {
                   {thread.author.substring(0,2).toUpperCase()}
                 </div>
                 <div style={{ flex: 1 }}>
-                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
+                  <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '4px 12px' }}>
                     <h3 style={{ fontSize: '16px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
                       {thread.title}
                     </h3>
@@ -121,7 +138,7 @@ export const Community: React.FC = () => {
                       {thread.time}
                     </span>
                   </div>
-                  <div style={{ display: 'flex', alignItems: 'center', gap: '16px', marginTop: '8px' }}>
+                  <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '8px 16px', marginTop: '8px' }}>
                     <span style={{ fontSize: '13px', color: 'var(--color-primary)' }}>@{thread.author}</span>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '4px', color: 'var(--color-text-secondary)', fontSize: '13px' }}>
                       <MessageSquare size={14} />
@@ -148,7 +165,7 @@ export const Community: React.FC = () => {
         </div>
 
         {/* Sidebar */}
-        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px' }}>
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '16px', flex: '1 1 260px', maxWidth: '100%' }}>
           <Card variant="glass" padding="normal">
             <h3 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '16px', borderBottom: '1px solid var(--color-border)', paddingBottom: '8px' }}>
               Active Mentors

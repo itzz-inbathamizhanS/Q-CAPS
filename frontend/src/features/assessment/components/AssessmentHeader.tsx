@@ -16,7 +16,7 @@ export const AssessmentHeader: React.FC<AssessmentHeaderProps> = ({
     <div className="assessment-header">
       <div>
         <h2 className="assessment-title">Module assessment</h2>
-        <p className="assessment-subtitle">Baseline Diagnostic v2.4</p>
+        <p className="assessment-subtitle">Baseline Diagnostic</p>
       </div>
 
       <div className="assessment-progress-wrapper">

@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Shield, Fingerprint, Activity, ChevronRight, Lock } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/authStore';
+import { SESSION_EXPIRED_MESSAGE } from '@/features/auth/session';
 import { loginUser, registerUser, fetchUserProfile } from '@/services/backendService';
 import { Button } from '@/components/ui/Button';
 
@@ -12,6 +13,7 @@ export const LoginPage: React.FC = () => {
   const [password, setPassword] = useState('');
   const [isRegisterMode, setIsRegisterMode] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const sessionExpired = useAuthStore((s) => s.sessionExpired);
   const [error, setError] = useState('');
   const navigate = useNavigate();
   const { login } = useAuthStore();
@@ -35,17 +37,20 @@ export const LoginPage: React.FC = () => {
       if (authData && authData.access_token) {
         login(authData.user_id, authData.user_name, authData.access_token);
         
-        // Fetch profile to get progress data
+        // The locally cached progress may belong to whoever used this browser before (a session that
+        // expired is not a logout, so nothing cleared it). Start from empty and load this account's own.
+        const curriculum = useCurriculumStore.getState();
+        curriculum.clearLocalProgress();
         const profile = await fetchUserProfile(authData.user_id);
         if (profile) {
-            useCurriculumStore.getState().rehydrate(profile.progress_data);
+            curriculum.rehydrate(profile.progress_data);
         }
         navigate('/dashboard');
       } else {
         setError('Authentication failed. Invalid response.');
       }
-    } catch (err: any) {
-      setError(err.message || 'An error occurred during authentication.');
+    } catch (err: unknown) {
+      setError(err instanceof Error && err.message ? err.message : 'An error occurred during authentication.');
     } finally {
       setIsLoading(false);
     }
@@ -115,7 +120,7 @@ export const LoginPage: React.FC = () => {
 
         <form onSubmit={handleAuth} style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
           <div>
-            <label style={{
+            <label htmlFor="login-name" style={{
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
@@ -128,7 +133,9 @@ export const LoginPage: React.FC = () => {
               OPERATOR ID (NAME)
             </label>
             <input
+              id="login-name"
               type="text"
+              autoComplete="username"
               value={name}
               onChange={(e) => setName(e.target.value)}
               placeholder="Enter your name (e.g. Alice)"
@@ -137,7 +144,7 @@ export const LoginPage: React.FC = () => {
                 padding: '14px 16px',
                 borderRadius: '12px',
                 border: '1px solid var(--color-border, #e2e8f0)',
-                backgroundColor: 'rgba(248, 250, 252, 0.5)',
+                backgroundColor: 'var(--color-surface-low, #f8fafc)',
                 fontSize: '15px',
                 color: 'var(--color-text-primary)',
                 outline: 'none',
@@ -149,7 +156,7 @@ export const LoginPage: React.FC = () => {
           </div>
 
           <div>
-            <label style={{
+            <label htmlFor="login-password" style={{
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
@@ -162,7 +169,9 @@ export const LoginPage: React.FC = () => {
               ACCESS KEY (PASSWORD)
             </label>
             <input
+              id="login-password"
               type="password"
+              autoComplete={isRegisterMode ? 'new-password' : 'current-password'}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
               placeholder="Enter your password"
@@ -171,7 +180,7 @@ export const LoginPage: React.FC = () => {
                 padding: '14px 16px',
                 borderRadius: '12px',
                 border: '1px solid var(--color-border, #e2e8f0)',
-                backgroundColor: 'rgba(248, 250, 252, 0.5)',
+                backgroundColor: 'var(--color-surface-low, #f8fafc)',
                 fontSize: '15px',
                 color: 'var(--color-text-primary)',
                 outline: 'none',
@@ -179,14 +188,31 @@ export const LoginPage: React.FC = () => {
                 boxSizing: 'border-box'
               }}
             />
+            {isRegisterMode && (
+              <p style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '6px' }}>
+                At least 8 characters.
+              </p>
+            )}
           </div>
 
+          {sessionExpired && !error && (
+            <div role="status" style={{
+              padding: '12px',
+              borderRadius: '8px',
+              backgroundColor: 'rgba(245, 158, 11, 0.12)',
+              color: '#b45309',
+              fontSize: '13px'
+            }}>
+              {SESSION_EXPIRED_MESSAGE}
+            </div>
+          )}
+
           {error && (
-            <div style={{
+            <div role="alert" style={{
               padding: '12px',
               borderRadius: '8px',
               backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              color: '#dc2626',
+              color: 'var(--color-error, #dc2626)',
               fontSize: '13px',
               display: 'flex',
               alignItems: 'center',

@@ -50,9 +50,11 @@ export const ProgressRing: React.FC<ProgressRingProps> = ({
           fill="none"
           stroke={progressColor}
           strokeDasharray={`${clampedProgress} 100`}
-          strokeLinecap="round"
+          strokeLinecap={clampedProgress > 0 ? 'round' : 'butt'}
           strokeWidth={strokeWidth}
           className="progress-ring"
+          // The fill animation ends at this value (it used to end at a hard-coded 68%).
+          style={{ '--ring-dash': `${clampedProgress} 100` } as React.CSSProperties}
         />
       </svg>
     </div>

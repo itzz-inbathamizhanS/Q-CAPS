@@ -1,4 +1,4 @@
-// Generated from Content-Security/Mission
+// Generated from content/Mission
 export interface MissionData {
   mission_id: string;
   title: string;

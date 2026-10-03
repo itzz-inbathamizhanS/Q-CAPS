@@ -1,7 +1,7 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { curriculumModules } from '@/data/curriculumData';
-import { submitQuizScore, syncProgressData } from '@/services/backendService';
+import { syncProgressData } from '@/services/backendService';
 
 interface CurriculumState {
   completedModules: string[];
@@ -25,6 +25,7 @@ interface CurriculumState {
   completeEscape: (escapeId: string, badgeName?: string, xp?: number) => void;
   completeMission: (missionId: string, badgeName?: string, xp?: number) => void;
   completeCapstone: (capstoneId: string, xp?: number) => void;
+  isModuleUnlocked: (moduleId: string) => boolean;
   isModuleCompleted: (moduleId: string) => boolean;
   getRecommendedNextModule: () => string;
   addXp: (amount: number) => void;
@@ -114,15 +115,7 @@ export const useCurriculumStore = create<CurriculumState>()(
         ? [...state.xpAwardedModules, moduleId]
         : state.xpAwardedModules;
 
-      // Use canonical recommendationTopic from module metadata instead of string matching
-      if (isPass) {
-        const topic = mod?.recommendationTopic ?? 'quantum_fundamentals';
-        submitQuizScore({
-          topic: topic,
-          correct_answers: Math.round((scorePercent / 100) * 10),
-          total_questions: 10
-        }).catch(console.error);
-      }
+      // Quiz evidence (score, XP, topic) is recorded by the server when the attempt is graded.
 
       const currentIdx = curriculumModules.findIndex((m) => m.id === moduleId);
       let nextMod = state.currentModuleId;

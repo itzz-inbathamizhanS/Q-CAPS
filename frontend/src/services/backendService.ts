@@ -3,20 +3,65 @@
 // Location: Q-CAPS-vishnu-priya-backend/backend/main.py (Port 8000)
 
 import { useAuthStore } from '../features/auth/authStore';
+import { handleUnauthorized } from '../features/auth/session';
 
-const BACKEND_BASE_URL =
+export const BACKEND_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+
+export const api = {
+  get: async (url: string) => {
+    const { token } = useAuthStore.getState();
+    const res = await fetch(`${BACKEND_BASE_URL}${url}`, {
+      headers: { 'Authorization': `Bearer ${token}` }
+    });
+    if (!res.ok) {
+      if (res.status === 401) handleUnauthorized();
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    return { data };
+  },
+  post: async (url: string, body: unknown) => {
+    const { token } = useAuthStore.getState();
+    const res = await fetch(`${BACKEND_BASE_URL}${url}`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${token}`
+      },
+      body: JSON.stringify(body)
+    });
+    if (!res.ok) {
+      if (res.status === 401) handleUnauthorized();
+      throw new Error(`HTTP ${res.status}`);
+    }
+    const data = await res.json();
+    return { data };
+  }
+};
 
 export interface UserProfile {
   id: number;
   name: string;
   email?: string;
-  readiness_score: number;
+  /** null = no graded quiz evidence yet (unknown, not 0). */
+  readiness_score: number | null;
   xp: number;
   global_rank: number;
   unlocked_badges?: string[];
   recommended_next_module?: string;
   progress_data?: string;
+}
+
+/** One optimized remediation path from the exposure graph (backend graph/optimizer.py). */
+export interface GraphPath {
+  finding_id: string;
+  asset_id: string;
+  competency_id: string;
+  risk_score: number;
+  competency_deficit: number;
+  time_cost_hours: number;
+  proposed_intervention_type: 'LAB_REMEDIATION' | 'THEORY_MODULE';
 }
 
 export interface UserRecommendation {
@@ -28,6 +73,7 @@ export interface UserRecommendation {
   quiz_score: number | null;
   scanner_risk: string | null;
   status: string;
+  graph_paths?: GraphPath[];
 }
 
 export interface LeaderboardEntry {
@@ -37,19 +83,57 @@ export interface LeaderboardEntry {
   rank: number;
 }
 
-export interface QuizSubmissionPayload {
-  user_id: number;
-  topic: string;
-  correct_answers: number;
+export interface QuizAttemptQuestion {
+  item_id: string;
+  prompt: string;
+  options: string[]; // already in the order shown; the server holds the answer key
+}
+
+export interface QuizAttempt {
+  attempt_id: string;
+  module_id: string;
+  title: string;
+  passing_score_percent: number;
   total_questions: number;
+  issued_at: string;
+  expires_at: string;
+  questions: QuizAttemptQuestion[];
+}
+
+export interface QuizAnswerFeedback {
+  item_id: string;
+  recorded: boolean;
+  correct: boolean | null; // null when a module withholds feedback until grading
+  correct_position: number | null;
+  explanation: string | null;
+}
+
+export interface QuizAttemptResult {
+  attempt_id: string;
+  module_id: string;
+  correct_answers: number;
+  score_percent: number;
+  passed: boolean;
+  passing_score_percent: number;
+  xp_awarded: number;
+  graded_at: string;
+}
+
+export class QuizApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
 }
 
 export interface ScannerLogPayload {
   user_id: number;
   endpoint: string;
   status: string;
-  vulnerabilities_found: number;
-  details?: string;
+  /** Signed by the scanner over `details`; the backend rejects logs without it. */
+  receipt?: string;
+  details: string;
 }
 
 export async function syncProgressData(progressData: Record<string, unknown>) {
@@ -93,14 +177,33 @@ export async function checkBackendHealth(): Promise<boolean> {
 /**
  * Register a new user
  */
-export async function registerUser(name: string, password?: string) {
+/** Turn a FastAPI error body ({detail: string} or a 422 list of {msg}) into a sentence for the UI. */
+async function errorMessage(res: Response, fallback: string): Promise<string> {
+  try {
+    const data = await res.json();
+    if (typeof data?.detail === 'string') return data.detail;
+    if (Array.isArray(data?.detail)) {
+      return data.detail
+        .map((d: { loc?: unknown[]; msg?: string }) => {
+          const field = Array.isArray(d.loc) ? d.loc[d.loc.length - 1] : '';
+          return `${field ? `${String(field)}: ` : ''}${(d.msg || '').replace(/^Value error, /, '')}`;
+        })
+        .join('; ');
+    }
+  } catch {
+    /* non-JSON body */
+  }
+  return fallback;
+}
+
+export async function registerUser(name: string, password: string) {
   try {
     const res = await fetch(`${BACKEND_BASE_URL}/auth/register`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, password: password || 'default' }),
+      body: JSON.stringify({ name, password }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await errorMessage(res, `Registration failed (HTTP ${res.status}).`));
     return await res.json(); // schemas.UserOut
   } catch (error) {
     console.warn('Failed to register user:', error);
@@ -111,14 +214,14 @@ export async function registerUser(name: string, password?: string) {
 /**
  * Login a user
  */
-export async function loginUser(name: string, password?: string) {
+export async function loginUser(name: string, password: string) {
   try {
     const res = await fetch(`${BACKEND_BASE_URL}/auth/login`, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ name, password: password || 'default' }),
+      body: JSON.stringify({ name, password }),
     });
-    if (!res.ok) throw new Error(await res.text());
+    if (!res.ok) throw new Error(await errorMessage(res, `Sign-in failed (HTTP ${res.status}).`));
     const data = await res.json();
     return data; // { access_token, user_id, user_name }
   } catch (error) {
@@ -205,29 +308,41 @@ export async function fetchUserRecommendation(userId?: number): Promise<UserReco
 }
 
 
-/**
- * Submit quiz score to calculate XP and update user skill gap model
- */
-export async function submitQuizScore(payload: Omit<QuizSubmissionPayload, 'user_id'>) {
-  const { userId, token } = useAuthStore.getState();
-  if (!userId || !token) return null;
-
-  try {
-    const res = await fetch(`${BACKEND_BASE_URL}/quizzes/submit`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
-      },
-      body: JSON.stringify({ ...payload, user_id: userId }),
-    });
-    if (!res.ok) throw new Error(`HTTP error ${res.status}`);
-    return await res.json();
-  } catch (error) {
-    console.warn('Failed to submit quiz score to backend:', error);
-    return null;
+async function quizRequest<T>(path: string, body: unknown = {}): Promise<T> {
+  const { token } = useAuthStore.getState();
+  if (!token) throw new QuizApiError(401, 'Sign in to take graded quizzes.');
+  const res = await fetch(`${BACKEND_BASE_URL}${path}`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(body),
+  });
+  if (!res.ok) {
+    let detail = `Request failed (HTTP ${res.status})`;
+    try {
+      const data = await res.json();
+      if (typeof data?.detail === 'string') detail = data.detail;
+    } catch {
+      /* keep the generic message */
+    }
+    throw new QuizApiError(res.status, detail);
   }
+  return res.json() as Promise<T>;
 }
+
+/** Ask the server for a shuffled quiz form (no answer keys). */
+export const startQuizAttempt = (moduleId: string) =>
+  quizRequest<QuizAttempt>(`/quizzes/${encodeURIComponent(moduleId)}/attempts`);
+
+/** Record and lock one answer; the server returns feedback. */
+export const answerQuizQuestion = (attemptId: string, itemId: string, selectedPosition: number) =>
+  quizRequest<QuizAnswerFeedback>(`/quizzes/attempts/${attemptId}/answers`, {
+    item_id: itemId,
+    selected_position: selectedPosition,
+  });
+
+/** Finalise the attempt; the score is computed by the server. */
+export const finishQuizAttempt = (attemptId: string) =>
+  quizRequest<QuizAttemptResult>(`/quizzes/attempts/${attemptId}/submit`, { answers: [] });
 
 /**
  * Record a scan log into the backend database to feed the recommendation engine

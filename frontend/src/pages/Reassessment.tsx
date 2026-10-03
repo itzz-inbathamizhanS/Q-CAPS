@@ -65,9 +65,10 @@ export const Reassessment: React.FC = () => {
     .sort((a, b) => a.name.localeCompare(b.name));
 
   const quizCount = Object.keys(quizScores).length;
-  const avgScore = quizCount > 0
+  // No quiz yet means proficiency is unknown, not 0%.
+  const avgScore: number | null = quizCount > 0
     ? Math.round(Object.values(quizScores).reduce((a, b) => a + b, 0) / quizCount)
-    : 0;
+    : null;
 
   if (!userId) {
     return (
@@ -98,7 +99,7 @@ export const Reassessment: React.FC = () => {
             <span style={{ fontSize: '13px', fontWeight: 600 }}>AVERAGE PROFICIENCY</span>
           </div>
           <div style={{ fontSize: '32px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
-            {avgScore}%
+            {avgScore === null ? 'No data' : `${avgScore}%`}
           </div>
         </Card>
         

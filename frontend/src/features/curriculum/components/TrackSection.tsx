@@ -9,7 +9,6 @@ interface TrackSectionProps {
   modules: CurriculumModule[];
   completedModules: string[];
   currentModuleId: string;
-  quizScores: Record<string, number>;
   isExpanded: boolean;
   onToggle: () => void;
   isLockedTrack?: boolean;
@@ -21,7 +20,6 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
   modules,
   completedModules,
   currentModuleId,
-  quizScores,
   isExpanded,
   onToggle,
   isLockedTrack = false,
@@ -83,6 +81,8 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
         style={{
           padding: '20px 24px',
           display: 'flex',
+          flexWrap: 'wrap',
+          gap: '12px',
           alignItems: 'center',
           justifyContent: 'space-between',
           cursor: 'pointer',
@@ -91,7 +91,7 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
           userSelect: 'none'
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '16px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: '16px', minWidth: 0 }}>
           {/* Track Code Pill */}
           <div
             style={{
@@ -121,7 +121,7 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
         </div>
 
         {/* Right side stats & status */}
-        <div style={{ display: 'flex', alignItems: 'center', gap: '18px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap', gap: '10px 18px' }}>
           {/* Certificate Badge Hint */}
           <div
             style={{
@@ -259,7 +259,6 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
                       <ModuleNode
                         module={mod}
                         status={status}
-                        score={quizScores[mod.id]}
                         prevModuleTitle={prevTitle}
                       />
                     </div>
