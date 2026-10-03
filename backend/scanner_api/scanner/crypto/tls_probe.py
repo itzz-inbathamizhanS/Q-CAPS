@@ -22,11 +22,32 @@ def classify_tls12_cipher(cipher_name: str) -> dict:
     return {"kex": kex, "auth": auth, "forward_secrecy": kex in ("ECDHE", "DHE")}
 
 
+def observation_context() -> ssl.SSLContext:
+    """Client context for OBSERVING a server: it accepts legacy cipher suites and protocol versions and skips
+    certificate validation, so weak servers can be assessed instead of failing the handshake.
+
+    Never used to decide trust (probe_tls does that with a strict, verifying handshake) and never to send data
+    beyond one HEAD-like request for headers.
+    """
+    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)
+    ctx.check_hostname = False
+    ctx.verify_mode = ssl.CERT_NONE
+    try:
+        ctx.set_ciphers("ALL:@SECLEVEL=0")
+    except ssl.SSLError:
+        pass  # this OpenSSL build refuses the legacy list: fall back to its defaults
+    try:
+        ctx.minimum_version = ssl.TLSVersion.MINIMUM_SUPPORTED
+    except (ValueError, ssl.SSLError):
+        pass
+    return ctx
+
+
 def _handshake(ips, hostname: str, port: int, verify: bool, timeout: float):
-    ctx = ssl.create_default_context()
-    if not verify:
-        ctx.check_hostname = False
-        ctx.verify_mode = ssl.CERT_NONE
+    if verify:
+        ctx = ssl.create_default_context()
+    else:
+        ctx = observation_context()
     ctx.set_alpn_protocols(["h2", "http/1.1"])
     with connect_pinned(ips, port, timeout) as sock:
         sock.settimeout(timeout)

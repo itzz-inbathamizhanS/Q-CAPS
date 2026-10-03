@@ -14,6 +14,7 @@ import dns.resolver
 import requests
 import urllib3
 
+from scanner.crypto.tls_probe import observation_context
 from scanner.errors import ScannerException, ScannerErrorType
 from scanner.security.target_validator import resolve_target
 
@@ -90,8 +91,8 @@ def analyze_headers(headers) -> dict:
 def _fetch_once(hostname, ips, path="/"):
     """One GET over TLS to a pinned address. The body is never read."""
     pool = urllib3.HTTPSConnectionPool(
-        host=ips[0], port=443, server_hostname=hostname, assert_hostname=False,
-        cert_reqs="CERT_NONE", timeout=urllib3.Timeout(connect=4.0, read=5.0), retries=False)
+        host=ips[0], port=443, server_hostname=hostname, assert_hostname=False, ssl_context=observation_context(),
+        timeout=urllib3.Timeout(connect=4.0, read=5.0), retries=False)
     try:
         resp = pool.request("GET", path, headers={"Host": hostname, "User-Agent": USER_AGENT, "Accept": "*/*"},
                             redirect=False, preload_content=False)

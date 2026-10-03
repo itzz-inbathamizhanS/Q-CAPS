@@ -359,3 +359,16 @@ def test_domain_verification_endpoint(client, headers, monkeypatch):
     assert res.status_code == 200 and body["verified"] is True and body["record_name"] == "_qcaps-verify.app.example.com"
     assert client.post("/api/domain-verification", json={"hostname": "example.com"}).status_code == 401
     assert client.post("/api/domain-verification", json={"hostname": 5}, headers=headers).status_code == 400
+
+
+# ---------------------------------------------------------------- observation client
+
+def test_observation_context_accepts_weak_servers_but_is_not_a_trust_decision():
+    """Regression: a server offering only legacy suites (e.g. static RSA) failed the handshake and was reported as
+    not determined instead of being assessed. The observation client must accept them without validating certificates."""
+    import ssl
+    from scanner.crypto.tls_probe import observation_context
+    ctx = observation_context()
+    assert ctx.verify_mode == ssl.CERT_NONE and ctx.check_hostname is False
+    assert ctx.minimum_version == ssl.TLSVersion.MINIMUM_SUPPORTED
+    assert any("RSA" in c["name"] and "ECDHE" not in c["name"] and "DHE" not in c["name"] for c in ctx.get_ciphers())
