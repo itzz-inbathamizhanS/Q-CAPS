@@ -1,0 +1,1255 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B110",
+      "title": "Qiskit Textbook (GitHub repository Qiskit/textbook, notebooks), accessed 2026-10-04",
+      "authors": "Qiskit community",
+      "edition": "accessed 2026-10-04",
+      "year": 2023,
+      "publisher": "IBM and the Qiskit community"
+    },
+    {
+      "id": "B111",
+      "title": "Qiskit SDK documentation and guides (quantum.cloud.ibm.com/docs), accessed 2026-10-04",
+      "authors": "IBM Quantum",
+      "edition": "accessed 2026-10-04",
+      "year": 2026,
+      "publisher": "IBM"
+    },
+    {
+      "id": "B07",
+      "title": "Mathematical Foundations for Post-Quantum Cryptography (Mathematics for Industry 40)",
+      "authors": "Tsuyoshi Takagi, Masato Wakayama, Noboru Kunihiro, Keisuke Tanaka, Kazufumi Kimoto, Momonari Kudo (eds.)",
+      "edition": "Mathematics for Industry 40",
+      "year": 2026,
+      "publisher": "Springer"
+    },
+    {
+      "id": "B80",
+      "title": "Polynomial-Time Algorithms for Prime Factorization and Discrete Logarithms on a Quantum Computer (arXiv quant-ph/9508027)",
+      "authors": "Peter W. Shor",
+      "edition": "arXiv version, 1995",
+      "year": 1995
+    },
+    {
+      "id": "B121",
+      "title": "A fast quantum mechanical algorithm for database search (arXiv:quant-ph/9605043)",
+      "authors": "Lov K. Grover",
+      "edition": "1996",
+      "year": 1996
+    },
+    {
+      "id": "B122",
+      "title": "Quantum measurements and the Abelian Stabilizer Problem (arXiv:quant-ph/9511026)",
+      "authors": "A. Yu. Kitaev",
+      "edition": "1995",
+      "year": 1995
+    },
+    {
+      "id": "B123",
+      "title": "An approximate Fourier transform useful in quantum factoring (arXiv:quant-ph/0201067, IBM report 1994)",
+      "authors": "D. Coppersmith",
+      "edition": "1994",
+      "year": 1994
+    },
+    {
+      "id": "B124",
+      "title": "Quantum Amplitude Amplification and Estimation (arXiv:quant-ph/0005055)",
+      "authors": "Gilles Brassard, Peter Hoyer, Michele Mosca, Alain Tapp",
+      "edition": "2000",
+      "year": 2000
+    },
+    {
+      "id": "B125",
+      "title": "A variational eigenvalue solver on a quantum processor (arXiv:1304.3061)",
+      "authors": "Alberto Peruzzo et al.",
+      "edition": "2013",
+      "year": 2013
+    },
+    {
+      "id": "B126",
+      "title": "A Quantum Approximate Optimization Algorithm (arXiv:1411.4028)",
+      "authors": "Edward Farhi, Jeffrey Goldstone, Sam Gutmann",
+      "edition": "2014",
+      "year": 2014
+    },
+    {
+      "id": "B127",
+      "title": "Strengths and Weaknesses of Quantum Computing (arXiv:quant-ph/9701001)",
+      "authors": "Charles H. Bennett, Ethan Bernstein, Gilles Brassard, Umesh Vazirani",
+      "edition": "1997",
+      "year": 1997
+    },
+    {
+      "id": "B128",
+      "title": "Barren plateaus in quantum neural network training landscapes (arXiv:1803.11173)",
+      "authors": "Jarrod R. McClean et al.",
+      "edition": "2018",
+      "year": 2018
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_b_b3_quantum_algorithms",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "3.1 Deutsch-Jozsa Algorithm",
+          "summary": "Decide whether a function is constant or balanced with one query, checked exhaustively for 3 bits, and why the classical adversary needs 2^(n-1)+1.",
+          "estimated_minutes": 38,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **Deutsch-Jozsa problem** gives you a black box (an **oracle**) for a function f from n-bit strings to one bit and **promises** that f is either **constant** (the same output for every input) or **balanced** (output 0 for exactly half of the inputs and 1 for the other half). The task is to say which. A deterministic classical algorithm must be prepared for an adversary: after 2^(n−1) queries that all return the same value, the function could still be constant or balanced (balanced functions have exactly 2^(n−1) zeros), so it needs **2^(n−1) + 1 queries** in the worst case. The quantum algorithm needs **one**.\n\nThe circuit is short. Prepare all n qubits in |0⟩, apply Hadamard gates to make a uniform superposition, apply the oracle as a **phase oracle** |x⟩ → (−1)^f(x) |x⟩, and apply Hadamard gates again. The amplitude of the all-zero outcome is the average of (−1)^f(x) over all x: it is ±1 if f is constant (all terms equal) and **0 if f is balanced** (terms cancel). So measuring all zeros means constant, anything else means balanced. This is interference at work, exactly as in B1: the answer is a *global property* extracted from a superposition, with no need to learn any single value of f.\n\nThe listing checks the claim **exhaustively for n = 3**: both constant functions and all C(8,4) = 70 balanced functions. It also shows what happens if the promise is violated, and verifies the classical adversary argument by brute force. The algorithm is a demonstration, not a practical speed-up: the problem is artificial and a randomised classical algorithm solves it with high probability in a few queries. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`). The circuits are simulated exactly, so results are probabilities, not noisy samples, unless a seeded random sample is stated."
+            },
+            {
+              "type": "code",
+              "id": "c-dj",
+              "language": "python",
+              "code": "import itertools\nimport numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.circuit.library import DiagonalGate\nfrom qiskit.quantum_info import Statevector\n\nn = 3\n\ndef probability_of_all_zeros(truth_table):\n    qc = QuantumCircuit(n)\n    qc.h(range(n))\n    qc.append(DiagonalGate([(-1) ** bit for bit in truth_table]), range(n))         # phase oracle |x> -> (-1)^f(x) |x>\n    qc.h(range(n))\n    return float(Statevector(qc).probabilities()[0])\n\nconstants = [[0] * 8, [1] * 8]\nbalanced = [[1 if i in ones else 0 for i in range(8)] for ones in itertools.combinations(range(8), 4)]\nprint(\"constant functions: P(all zeros) =\", sorted({round(probability_of_all_zeros(f), 6) for f in constants}))\nprint(f\"balanced functions ({len(balanced)} of them): P(all zeros) =\", sorted({round(probability_of_all_zeros(f), 6) for f in balanced}))\nprint(\"a function that breaks the promise (three 1s out of 8): P(all zeros) =\", round(probability_of_all_zeros([1, 1, 1, 0, 0, 0, 0, 0]), 4), \"-> neither 0 nor 1: the answer means nothing\")\n\n# Classical adversary: can a deterministic algorithm decide after k queries that all returned 0?\npositions = range(8)\nfor k in (4, 5):\n    undecided = False\n    for queried in itertools.combinations(positions, k):\n        constant_consistent = True                                                    # the all-zero function agrees with the answers\n        balanced_consistent = any(all(f[i] == 0 for i in queried) for f in balanced)\n        if constant_consistent and balanced_consistent:\n            undecided = True\n    print(f\"after {k} queries that all return 0, both 'constant' and 'balanced' remain possible: {undecided}\")\nprint(\"worst-case classical queries for n = 3:\", 2 ** (n - 1) + 1, \"| quantum queries: 1\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-dj",
+              "language": "text",
+              "code": "constant functions: P(all zeros) = [1.0]\nbalanced functions (70 of them): P(all zeros) = [0.0]\na function that breaks the promise (three 1s out of 8): P(all zeros) = 0.0625 -> neither 0 nor 1: the answer means nothing\nafter 4 queries that all return 0, both 'constant' and 'balanced' remain possible: True\nafter 5 queries that all return 0, both 'constant' and 'balanced' remain possible: False\nworst-case classical queries for n = 3: 5 | quantum queries: 1",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The constants give probability exactly 1 and every one of the 70 balanced functions gives exactly 0, so the single query separates them perfectly. A function that violates the promise gives an intermediate value, which is a reminder that **the guarantee applies only under the promise**. The adversary check shows that four queries (2^(n−1)) cannot settle the question but five can, matching the 2^(n−1) + 1 bound.\n\n**How to read the speed-up honestly.** The separation is *exponential for deterministic* classical algorithms (1 query versus 2^(n−1) + 1) but disappears against *randomised* classical algorithms, which decide with small error after a handful of random queries. It is a proof of principle for interference-based speed-ups; the first problem where quantum computers provably beat randomised classical ones in query count is Simon's problem (below)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How many queries does a deterministic classical algorithm need in the worst case for the Deutsch-Jozsa problem with n-bit inputs?",
+              "options": [
+                "2^(n-1) + 1",
+                "n",
+                "1"
+              ],
+              "correct_index": 0,
+              "explanation": "After 2^(n-1) equal answers the function might still be balanced, so one more query is needed."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "In Deutsch-Jozsa, what does measuring the all-zeros string mean?",
+              "options": [
+                "f is constant",
+                "f is balanced",
+                "f is neither"
+              ],
+              "correct_index": 0,
+              "explanation": "The all-zeros amplitude is the average of (-1)^f(x): +/-1 for constant, 0 for balanced."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is a limitation of the Deutsch-Jozsa speed-up?",
+              "options": [
+                "A randomised classical algorithm solves it with a few queries",
+                "It needs 2^n qubits",
+                "It only works for n = 2"
+              ],
+              "correct_index": 0,
+              "explanation": "The exponential gap is against deterministic algorithms only."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-algorithms/deutsch-jozsa.ipynb: sections 1.1 (Problem), 1.2 (Classical Solution), 1.3 (Quantum Solution), 1.4 (Why Does This Work?)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement that randomised classical algorithms solve the problem with few queries is standard but not quoted from the cited notebook."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "3.2 Bernstein-Vazirani Algorithm",
+          "summary": "Recover an n-bit hidden string with one query instead of n, checked for all 16 strings of length 4, and the oracle built from Z gates.",
+          "estimated_minutes": 32,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "In the **Bernstein-Vazirani problem** the oracle computes f(x) = s·x mod 2 (the parity of the bits of x selected by a hidden n-bit string s), and the task is to find s. Classically you need **n queries**: ask for f on the inputs with a single 1 bit, and each answer reveals one bit of s. The quantum circuit is the *same* as Deutsch-Jozsa: Hadamards, the phase oracle, Hadamards. This time the output is not a yes/no property but the string itself: the final state is exactly |s⟩, so a single measurement returns s with certainty.\n\nWhy? After the first layer of Hadamards the state is uniform. The oracle puts the phase (−1)^(s·x) on |x⟩, which is exactly the **Hadamard transform of |s⟩**, and a second Hadamard layer undoes the transform and lands on |s⟩. In gate terms the phase oracle is just a Z gate on every qubit where s has a 1, so the oracle costs at most n single-qubit gates. The listing verifies the algorithm for all 16 strings of length 4, confirms that Z gates reproduce the diagonal oracle, and shows the classical n-query strategy. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`). The circuits are simulated exactly, so results are probabilities, not noisy samples, unless a seeded random sample is stated."
+            },
+            {
+              "type": "code",
+              "id": "c-bv",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.circuit.library import DiagonalGate\nfrom qiskit.quantum_info import Operator, Statevector\n\nn = 4\nparity = lambda x, s: bin(x & s).count(\"1\") % 2\n\ndef run(s):\n    qc = QuantumCircuit(n)\n    qc.h(range(n))\n    qc.append(DiagonalGate([(-1) ** parity(x, s) for x in range(2 ** n)]), range(n))     # phase oracle for f(x) = s.x mod 2\n    qc.h(range(n))\n    return Statevector(qc).probabilities()\n\nresults = []\nfor s in range(2 ** n):\n    p = run(s)\n    results.append((int(np.argmax(p)) == s) and np.isclose(p.max(), 1.0))\nprint(f\"all {2 ** n} hidden strings recovered with probability 1 after a single query:\", all(results))\n\ndef z_oracle(s):\n    qc = QuantumCircuit(n)\n    for i in range(n):\n        if (s >> i) & 1:\n            qc.z(i)                                                                      # one Z gate per 1 in s\n    return qc\ndiagonal_matches = all(np.allclose(np.diag(Operator(z_oracle(s)).data), [(-1) ** parity(x, s) for x in range(2 ** n)]) for s in range(2 ** n))\nprint(\"the phase oracle equals a Z gate on every qubit where s has a 1:\", diagonal_matches)\n\ndef classical_recovery(f):                                                              # n queries: ask for the inputs with a single 1 bit\n    return sum(f(1 << i) << i for i in range(n))\nprint(\"classical n-query recovery works for every string:\", all(classical_recovery(lambda x, s=s: parity(x, s)) == s for s in range(2 ** n)), \"| queries:\", n)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-bv",
+              "language": "text",
+              "code": "all 16 hidden strings recovered with probability 1 after a single query: True\nthe phase oracle equals a Z gate on every qubit where s has a 1: True\nclassical n-query recovery works for every string: True | queries: 4",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "One quantum query does what n classical queries do, and the circuit is exactly the Deutsch-Jozsa circuit, which is worth noticing: the same interference pattern answers different questions depending on the oracle. The gap is **linear (1 versus n)**, so Bernstein-Vazirani is a smaller advantage than Deutsch-Jozsa's in query count, but it recovers *information* rather than a yes/no property, and its structure (the Hadamard transform of a function) is the first appearance of the Fourier-sampling idea that Simon's algorithm and Shor's algorithm generalise.\n\n**Common mistake.** Treating the algorithm as magic that \"reads all of f at once\". It does not: the measurement returns n bits, and the speed-up comes entirely from the oracle having a structure (a linear function) whose Fourier transform is concentrated on a single point."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How many oracle queries does the Bernstein-Vazirani algorithm need to find an n-bit secret?",
+              "options": [
+                "1",
+                "n",
+                "2^n"
+              ],
+              "correct_index": 0,
+              "explanation": "The final state is exactly |s⟩, so one query and one measurement suffice."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "How many queries does the best classical algorithm need?",
+              "options": [
+                "n",
+                "1",
+                "2^n"
+              ],
+              "correct_index": 0,
+              "explanation": "Querying the n unit vectors reveals the n bits of s one at a time; fewer queries cannot determine all n bits."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How can the phase oracle for f(x) = s.x mod 2 be built?",
+              "options": [
+                "A Z gate on each qubit where s has a 1",
+                "A Hadamard on each qubit",
+                "A CNOT between every pair of qubits"
+              ],
+              "correct_index": 0,
+              "explanation": "A Z gate applies (-1)^(x_i) to qubit i, and the product over the selected qubits is (-1)^(s.x)."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-algorithms/bernstein-vazirani.ipynb: sections 1.1 (Problem), 1.2 (Classical Solution), 1.3 (Quantum Solution), 3a (simulators)"
+            }
+          ],
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "3.3 Simon's Algorithm",
+          "summary": "The first exponential separation against randomised algorithms: sample orthogonal vectors, solve a linear system over GF(2), and compare with classical collision search.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Simon's problem** gives an oracle for a function f on n-bit strings that is **2-to-1** with a hidden structure: there is a secret nonzero string s such that f(x) = f(y) exactly when y = x or y = x ⊕ s. The task is to find s. Classically you must find a **collision** (two inputs with the same output), and by the birthday argument that needs about 2^(n/2) queries even for a *randomised* algorithm. Simon's quantum algorithm needs **O(n)** queries, an **exponential separation between quantum and randomised classical algorithms** for a query problem (in the oracle model).\n\nThe circuit: Hadamards on an n-qubit input register, the oracle |x⟩|y⟩ → |x⟩|y ⊕ f(x)> on input and output registers, then Hadamards on the input register, and a measurement of the input register. Each run returns a random string y with **y·s = 0 mod 2**, uniformly over all 2^(n−1) such strings. Collect about n − 1 linearly independent samples and the hidden string is the unique nonzero solution of the linear system y_i·s = 0 over GF(2). The classical part is ordinary linear algebra. The structure is the Fourier-sampling idea of Bernstein-Vazirani again, now over a *group with a hidden subgroup* {0, s}, which is exactly the pattern Shor's algorithm uses with the group Z_N.\n\nThe first listing runs the full circuit for n = 3 with s = 110 and checks the output distribution. The second recovers s from sampled strings and compares the number of queries with classical collision search for n = 12. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`). The circuits are simulated exactly, so results are probabilities, not noisy samples, unless a seeded random sample is stated."
+            },
+            {
+              "type": "code",
+              "id": "c-simon-circuit",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.circuit.library import UnitaryGate\nfrom qiskit.quantum_info import Statevector\n\nn, s = 3, 0b110\nf = lambda x: min(x, x ^ s)                                   # a 2-to-1 function with f(x) = f(x XOR s)\nprint(\"f values:\", [f(x) for x in range(2 ** n)], \"-> every output appears exactly twice:\", sorted(f(x) for x in range(2 ** n)).count(0) == 2)\n\n# Oracle as a permutation of basis states: |x>|y> -> |x>|y XOR f(x)>, input register = qubits 0..n-1, output register = qubits n..2n-1\nsize = 2 ** (2 * n)\noracle = np.zeros((size, size))\nfor y in range(2 ** n):\n    for x in range(2 ** n):\n        oracle[(y ^ f(x)) << n | x, y << n | x] = 1\nqc = QuantumCircuit(2 * n)\nqc.h(range(n))\nqc.append(UnitaryGate(oracle), range(2 * n))\nqc.h(range(n))\nprobabilities = Statevector(qc).probabilities(list(range(n)))                     # distribution of the measured input register\ndot = lambda a, b: bin(a & b).count(\"1\") % 2\nprint(\"measured strings and probabilities:\", {format(y, \"03b\"): round(float(p), 4) for y, p in enumerate(probabilities) if p > 1e-9})\nprint(\"every measured string y satisfies y.s = 0 (mod 2):\", all(dot(y, s) == 0 for y, p in enumerate(probabilities) if p > 1e-9))\nprint(\"the distribution is uniform over the 2^(n-1) = 4 orthogonal strings:\", np.allclose([p for p in probabilities if p > 1e-9], 0.25))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-simon-circuit",
+              "language": "text",
+              "code": "f values: [0, 1, 2, 3, 2, 3, 0, 1] -> every output appears exactly twice: True\nmeasured strings and probabilities: {'000': 0.25, '001': 0.25, '110': 0.25, '111': 0.25}\nevery measured string y satisfies y.s = 0 (mod 2): True\nthe distribution is uniform over the 2^(n-1) = 4 orthogonal strings: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "code",
+              "id": "c-simon-solve",
+              "language": "python",
+              "code": "import numpy as np\n\nrng = np.random.default_rng(2026)\ndot = lambda a, b: bin(a & b).count(\"1\") % 2\n\ndef quantum_queries_until_solved(n, s):\n    # Each run of the quantum circuit returns a uniformly random y with y.s = 0 (shown in the previous listing for n = 3)\n    orthogonal = [y for y in range(2 ** n) if dot(y, s) == 0]\n    samples = []\n    while True:\n        samples.append(int(rng.choice(orthogonal)))\n        candidates = [t for t in range(1, 2 ** n) if all(dot(y, t) == 0 for y in samples)]\n        if len(candidates) == 1:                                   # unique nonzero solution of the linear system over GF(2)\n            return len(samples), candidates[0]\n\ndef classical_queries_until_collision(n, s):\n    f = lambda x: min(x, x ^ s)\n    order = rng.permutation(2 ** n)\n    seen = {}\n    for count, x in enumerate(order, start=1):\n        value = f(int(x))\n        if value in seen:\n            return count\n        seen[value] = x\n\nn = 12\nquantum, classical = [], []\nfor _ in range(100):\n    s = int(rng.integers(1, 2 ** n))\n    queries, found = quantum_queries_until_solved(n, s)\n    assert found == s\n    quantum.append(queries)\n    classical.append(classical_queries_until_collision(n, s))\nprint(f\"n = {n}: hidden string recovered in all 100 trials\")\nprint(f\"quantum queries: mean {np.mean(quantum):.1f}, max {max(quantum)} (n - 1 = {n - 1} independent samples are needed)\")\nprint(f\"classical queries until the first collision: mean {np.mean(classical):.1f} (about sqrt(pi 2^n / 2) = {np.sqrt(np.pi * 2 ** n / 2):.0f} expected), max {max(classical)}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-simon-solve",
+              "language": "text",
+              "code": "n = 12: hidden string recovered in all 100 trials\nquantum queries: mean 12.8, max 18 (n - 1 = 11 independent samples are needed)\nclassical queries until the first collision: mean 85.7 (about sqrt(pi 2^n / 2) = 80 expected), max 214",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The circuit result is exactly what the theory predicts: the measured strings are the four strings orthogonal to s = 110, each with probability ¼. The second listing then solves the problem with a handful of samples (a little more than n − 1, because some samples are linearly dependent) while collision search needs dozens of queries at n = 12 and grows like 2^(n/2): at n = 60 that is about a billion classical queries against about sixty quantum ones.\n\n**Why Simon's problem matters.** It is the first problem with a proven exponential quantum-versus-*randomised* separation in query complexity, and its method (sample from a Fourier transform, then solve a linear system classically) is the template for **Shor's algorithm**. **Caveat.** The separation is for oracle (black-box) queries. It does not by itself say anything about real problems without a cheap oracle, and the oracle here is itself a circuit whose cost is not counted."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does each run of Simon's circuit return?",
+              "options": [
+                "A random string y with y.s = 0 mod 2",
+                "The secret string s",
+                "A collision of f"
+              ],
+              "correct_index": 0,
+              "explanation": "The measured strings are uniform over the subspace orthogonal to s; s is found by solving a linear system."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Roughly how many queries does a randomised classical algorithm need for Simon's problem with n-bit inputs?",
+              "options": [
+                "About 2^(n/2)",
+                "About n",
+                "About 2^n"
+              ],
+              "correct_index": 0,
+              "explanation": "It must find a collision, and the birthday paradox gives about 2^(n/2) queries."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is Simon's problem historically important?",
+              "options": [
+                "It gave the first proven exponential quantum advantage over randomised algorithms (in queries) and inspired Shor's algorithm",
+                "It breaks AES",
+                "It needs no oracle"
+              ],
+              "correct_index": 0,
+              "explanation": "The Fourier-sampling method over a hidden subgroup is the pattern behind the period-finding step of Shor's algorithm."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-algorithms/simon.ipynb: sections 1a (Simon's Problem), 1b (Simon's Algorithm: classical and quantum solutions), 2 (Example) and 4 (Oracle)"
+            },
+            {
+              "book": "B80",
+              "locator": "Section on the quantum algorithm for period finding (the same Fourier-sampling structure)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The remark that Simon's algorithm inspired Shor's algorithm is a widely told historical fact not checked against a source here. The quantum-query counts for n = 12 use sampling from the exactly known output distribution (verified for n = 3 with the full circuit), not a 24-qubit simulation."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "3.4 Grover's Algorithm (Full Treatment)",
+          "summary": "The geometry of amplitude amplification, the exact success probability, overshooting, multiple solutions and what the square-root speed-up means for brute-force search.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Grover's algorithm** (1996) finds a marked item among N = 2^n unsorted items using about (π/4)·√N oracle calls, against about N/2 for any classical algorithm (a quadratic speed-up; B8 showed what it means for symmetric keys). It works by repeating two reflections. The **oracle** flips the sign of the marked state, |w⟩ → −|w⟩. The **diffusion operator** reflects every amplitude about the average amplitude (it is the reflection 2|s⟩⟨s| − I about the uniform state |s⟩). Together the two reflections rotate the state vector in the two-dimensional plane spanned by |w⟩ and the uniform superposition of the unmarked states, by an angle 2θ each time, where sin θ = 1/√N.\n\nThat geometry gives an exact formula. After k iterations the probability of measuring the marked item is **sin²((2k + 1)θ)** with θ = arcsin(√(M/N)) for M marked items. It rises, peaks near k = (π/4)·√(N/M), and then **falls again**: running too many iterations overshoots, so the algorithm needs to know (roughly) M in advance, or estimate it (quantum counting). The listing builds the circuit for n = 4 and a marked item 1011, compares the simulated success probabilities for k = 0 to 7 with the formula, repeats with two marked items, and tabulates the optimal iteration counts for larger N. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`). The circuits are simulated exactly, so results are probabilities, not noisy samples, unless a seeded random sample is stated."
+            },
+            {
+              "type": "code",
+              "id": "c-grover",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.circuit.library import DiagonalGate\nfrom qiskit.quantum_info import Statevector\n\nn = 4\nN = 2 ** n\n\ndef grover_probability(marked, iterations):\n    qc = QuantumCircuit(n)\n    qc.h(range(n))\n    for _ in range(iterations):\n        qc.append(DiagonalGate([-1 if x in marked else 1 for x in range(N)]), range(n))       # oracle: flip the sign of the marked states\n        qc.h(range(n))\n        qc.append(DiagonalGate([-1 if x == 0 else 1 for x in range(N)]), range(n))            # reflection about |0...0> in the Hadamard basis\n        qc.h(range(n))                                                                       # (together: diffusion, up to a global sign)\n    probabilities = Statevector(qc).probabilities()\n    return sum(probabilities[x] for x in marked)\n\nfor marked in ({0b1011}, {0b0011, 0b1100}):\n    theta = np.arcsin(np.sqrt(len(marked) / N))\n    best = int(np.floor(np.pi / (4 * theta)))\n    print(f\"marked items: {[format(m, '04b') for m in sorted(marked)]}, optimal iterations about pi/(4 theta) = {np.pi / (4 * theta):.2f}\")\n    print(f\"{'k':>3} {'simulated':>10} {'sin^2((2k+1)theta)':>20}\")\n    for k in range(0, 8):\n        simulated, formula = grover_probability(marked, k), np.sin((2 * k + 1) * theta) ** 2\n        flag = \"  <- best\" if k == best else \"\"\n        print(f\"{k:>3} {simulated:10.4f} {formula:20.4f}{flag}\")\n\nprint(f\"{'N':>14} {'classical average N/2':>22} {'Grover iterations':>18}\")\nfor bits in (10, 20, 30, 64):\n    size = 2 ** bits\n    print(f\"2^{bits:<12} {size / 2:22.3e} {np.pi / 4 * np.sqrt(float(size)):18.3e}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-grover",
+              "language": "text",
+              "code": "marked items: ['1011'], optimal iterations about pi/(4 theta) = 3.11\n  k  simulated   sin^2((2k+1)theta)\n  0     0.0625               0.0625\n  1     0.4727               0.4727\n  2     0.9084               0.9084\n  3     0.9613               0.9613  <- best\n  4     0.5817               0.5817\n  5     0.1255               0.1255\n  6     0.0204               0.0204\n  7     0.3649               0.3649\nmarked items: ['0011', '1100'], optimal iterations about pi/(4 theta) = 2.17\n  k  simulated   sin^2((2k+1)theta)\n  0     0.1250               0.1250\n  1     0.7812               0.7813\n  2     0.9453               0.9453  <- best\n  3     0.3301               0.3301\n  4     0.0122               0.0122\n  5     0.5480               0.5480\n  6     0.9998               0.9998\n  7     0.5770               0.5770\n             N  classical average N/2  Grover iterations\n2^10                        5.120e+02          2.513e+01\n2^20                        5.243e+05          8.042e+02\n2^30                        5.369e+08          2.574e+04\n2^64                        9.223e+18          3.373e+09",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The simulation matches the formula to four decimals, including the **overshoot**: for a single marked item among 16 the probability reaches 0.961 at k = 3 and then *drops* to 0.58 at k = 4 and 0.13 at k = 5. With two marked items the best k is 2 (probability 0.945). The table shows the scaling that matters: for N = 2^64 the classical average is 9×10^18 queries and Grover needs about 3×10^9.\n\n**What it means for security.** Searching a k-bit key space classically takes ~2^k steps and with Grover ~2^(k/2) *sequential* iterations, so AES-128 drops to roughly 2^64 quantum steps, which is why B8 advises AES-256. Grover's quadratic speed-up is **provably optimal** for unstructured search (the BBBV result), and it does not parallelise well (Zalka), which together make it far less threatening than Shor.\n\n**Common mistakes.** Running \"as many iterations as possible\" (the success probability oscillates), and forgetting that each Grover iteration contains one oracle call which, for a real key search, is an entire cipher evaluation."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How many Grover iterations are about optimal for one marked item among N = 1024?",
+              "options": [
+                "About 25",
+                "About 512",
+                "About 1"
+              ],
+              "correct_index": 0,
+              "explanation": "(pi/4) sqrt(1024) = 25.1; the success probability then exceeds 0.99."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What happens if you run many more Grover iterations than optimal?",
+              "options": [
+                "The success probability falls again and oscillates",
+                "It keeps increasing to 1",
+                "Nothing changes"
+              ],
+              "correct_index": 0,
+              "explanation": "The state vector keeps rotating past the marked state; the probability is sin^2((2k+1)theta)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does a Grover iteration consist of?",
+              "options": [
+                "An oracle sign flip followed by a reflection about the average amplitude",
+                "A Hadamard on every qubit only",
+                "A measurement"
+              ],
+              "correct_index": 0,
+              "explanation": "The two reflections together rotate the state by 2 theta toward the marked state."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B121",
+              "locator": "Abstract: finding an item among N in about sqrt(N) steps versus N/2 classically"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-algorithms/grover.ipynb: sections 1.1 (Algorithm Overview), 1.2 (Grover Step by Step: oracle and diffusion operator)"
+            },
+            {
+              "book": "B124",
+              "locator": "Abstract: amplitude amplification generalises Grover's search"
+            },
+            {
+              "book": "B127",
+              "locator": "Abstract: the O(2^(n/2)) bound for NP relative to a random oracle is tight, since Grover's algorithm achieves it"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The optimality of Grover's quadratic speed-up for unstructured search is stated from the BBBV abstract (a lower bound of 2^(n/2) for NP relative to a random oracle); Zalka's result was verified in B8."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "3.5 Quantum Fourier Transform (QFT)",
+          "summary": "The transform that turns a periodic state into peaks, its circuit and gate count, and Coppersmith's approximation.",
+          "estimated_minutes": 42,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **quantum Fourier transform** on n qubits (N = 2^n) is the unitary that maps |j⟩ to (1/√N) Σ_k e^(2πi·jk/N) |k⟩. It is the discrete Fourier transform acting on the amplitudes of a state, and its key property is that a state with **period r** (equal amplitude on |x₀⟩, |x₀ + r>, |x₀ + 2r>, …) is mapped to a state with **peaks at multiples of N/r**, whatever the offset x₀. That is exactly the information needed to find a period, which is why the QFT is at the heart of phase estimation and Shor's algorithm.\n\nThe remarkable fact is the cost. A classical fast Fourier transform on 2^n numbers needs about n·2^n operations; the QFT **circuit** needs only about n²/2 gates: for each qubit a Hadamard followed by controlled phase rotations of angles π/2, π/4, π/8, … from the qubits below it, and finally swaps that reverse the qubit order. Coppersmith observed that the tiny rotations can be dropped: keeping only rotations down to angle π/2^d gives an **approximate QFT** with O(n·d) gates and an error that shrinks rapidly with d. Remember what is *not* claimed: the QFT does not give you the Fourier transform of a classical data vector (loading the data costs 2^n operations); it transforms the **amplitudes of a quantum state**, and you can only sample from the result.\n\nThe listing checks that Qiskit's QFT gate equals the DFT matrix, shows the peaks for a periodic state, counts gates against the n(n + 1)/2 formula, and measures Coppersmith's approximation error. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`). The circuits are simulated exactly, so results are probabilities, not noisy samples, unless a seeded random sample is stated."
+            },
+            {
+              "type": "code",
+              "id": "c-qft",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit, transpile\nfrom qiskit.circuit.library import QFTGate\nfrom qiskit.quantum_info import Operator, Statevector\n\ndef dft_matrix(n):\n    N = 2 ** n\n    return np.array([[np.exp(2j * np.pi * j * k / N) for k in range(N)] for j in range(N)]) / np.sqrt(N)\n\nn = 4\nprint(\"Qiskit's QFT gate equals the DFT matrix:\", np.allclose(Operator(QFTGate(n)).data, dft_matrix(n)))\nprint(\"it is unitary:\", np.allclose(dft_matrix(n).conj().T @ dft_matrix(n), np.eye(2 ** n)))\n\nN, r = 16, 4\nfor offset in (0, 1, 3):\n    state = np.zeros(N, dtype=complex)\n    state[offset::r] = 1\n    state /= np.linalg.norm(state)                                          # equal amplitude on offset, offset + 4, offset + 8, offset + 12\n    probabilities = np.abs(dft_matrix(4) @ state) ** 2\n    print(f\"period {r}, offset {offset}: peaks at\", [k for k, p in enumerate(probabilities) if p > 1e-9], \"with probabilities\", np.round(probabilities[probabilities > 1e-9], 3).tolist())\n\nprint(f\"{'n':>3} {'H':>4} {'controlled phases':>18} {'n(n-1)/2':>9} {'swaps':>6}\")\nfor n in (3, 5, 8, 12):\n    counts = transpile(QuantumCircuit(n).compose(QFTGate(n)), basis_gates=[\"h\", \"cp\", \"swap\"], optimization_level=0).count_ops()\n    print(f\"{n:>3} {counts.get('h', 0):>4} {counts.get('cp', 0):>18} {n * (n - 1) // 2:>9} {counts.get('swap', 0):>6}\")\n\ndef approximate_qft(n, degree):\n    qc = QuantumCircuit(n)\n    for target in reversed(range(n)):\n        qc.h(target)\n        for control in range(target):\n            if target - control <= degree:                                   # keep only rotations pi / 2^(target - control) with small index\n                qc.cp(np.pi / 2 ** (target - control), control, target)\n    for i in range(n // 2):\n        qc.swap(i, n - 1 - i)\n    return qc\n\nn = 8\nexact = Operator(approximate_qft(n, n)).data\nprint(\"the manual circuit with all rotations equals Qiskit's QFT:\", np.allclose(exact, Operator(QFTGate(n)).data))\nprint(f\"{'rotations kept per qubit':>26} {'controlled phases':>18} {'operator-norm error':>20}\")\nfor d in (1, 2, 3, 4, 6, 8):\n    circuit = approximate_qft(n, d)\n    error = np.linalg.norm(Operator(circuit).data - exact, 2)\n    print(f\"{d:>26} {circuit.count_ops().get('cp', 0):>18} {error:20.4f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-qft",
+              "language": "text",
+              "code": "Qiskit's QFT gate equals the DFT matrix: True\nit is unitary: True\nperiod 4, offset 0: peaks at [0, 4, 8, 12] with probabilities [0.25, 0.25, 0.25, 0.25]\nperiod 4, offset 1: peaks at [0, 4, 8, 12] with probabilities [0.25, 0.25, 0.25, 0.25]\nperiod 4, offset 3: peaks at [0, 4, 8, 12] with probabilities [0.25, 0.25, 0.25, 0.25]\n  n    H  controlled phases  n(n-1)/2  swaps\n  3    3                  3         3      1\n  5    5                 10        10      2\n  8    8                 28        28      4\n 12   12                 66        66      6\nthe manual circuit with all rotations equals Qiskit's QFT: True\n  rotations kept per qubit  controlled phases  operator-norm error\n                         1                  7               1.9999\n                         2                 13               1.9835\n                         3                 18               1.1315\n                         4                 22               0.4142\n                         6                 27               0.0245\n                         8                 28               0.0000",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "A periodic state of period 4 on 16 amplitudes becomes four equal peaks at 0, 4, 8 and 12 (the multiples of N/r = 4) **no matter what the offset is**: the offset changes only the phases, which the measurement does not see. The gate count is n Hadamards and exactly n(n − 1)/2 controlled phases (plus n/2 swaps), so the QFT on 12 qubits needs about 66 rotations to transform 4,096 amplitudes. Coppersmith's approximation trades accuracy for gates: for 8 qubits the worst-case (operator-norm) error is 2, the largest possible, when only the nearest rotation is kept, 0.41 with four rotations per qubit and 0.02 with six, while the gate count falls from 28 to 22 and 27. At this small size the saving is modest and the worst-case error is strict; the approximation pays off as n grows, because the full circuit needs about n²/2 rotations and the approximate one about n·d, which matters on hardware where every two-qubit gate costs fidelity.\n\n**Common mistakes.** Forgetting the final swaps (the output bit order is reversed without them), and assuming the QFT sorts out *which* period: it produces peaks at multiples of N/r, and a classical continued-fraction step (next lessons) recovers r from a measured peak."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "A state with period r on N = 2^n amplitudes is sent by the QFT to peaks at:",
+              "options": [
+                "Multiples of N/r",
+                "Multiples of r",
+                "Only the first basis state"
+              ],
+              "correct_index": 0,
+              "explanation": "The Fourier transform of a period-r comb is a comb with spacing N/r."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Roughly how many gates does the n-qubit QFT circuit need?",
+              "options": [
+                "About n^2/2",
+                "About 2^n",
+                "About n"
+              ],
+              "correct_index": 0,
+              "explanation": "n Hadamards and n(n-1)/2 controlled phase rotations."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does Coppersmith's approximate QFT do?",
+              "options": [
+                "Drops the smallest controlled rotations to save gates at small error",
+                "Adds noise",
+                "Replaces the Hadamards"
+              ],
+              "correct_index": 0,
+              "explanation": "Rotations by tiny angles have little effect on the result and cost real gates on hardware."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-algorithms/quantum-fourier-transform.ipynb: sections 4 (The Quantum Fourier transform), 5 (The Circuit that Implements the QFT) and 8 (Qiskit Implementation)"
+            },
+            {
+              "book": "B123",
+              "locator": "Abstract: an approximate version of the Fourier transform that is computationally attractive for factoring"
+            },
+            {
+              "book": "B80",
+              "locator": "The quantum Fourier transform in the period-finding algorithm"
+            }
+          ],
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "3.6 Phase Estimation",
+          "summary": "Reading an eigenvalue phase out of a unitary: the circuit, exact and inexact cases, and the 4/pi^2 success guarantee, checked against the closed-form distribution.",
+          "estimated_minutes": 42,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Quantum phase estimation (QPE)** answers: given a unitary U and an eigenvector |u⟩ with U|u⟩ = e^(2πiφ)|u⟩, estimate φ. It is the engine behind Shor's algorithm (where U multiplies by a number modulo N) and behind quantum chemistry algorithms (where U is time evolution and φ encodes an energy). Kitaev introduced the idea of measuring an eigenvalue of a unitary, and the circuit below, with the inverse QFT, is the standard form.\n\nThe circuit uses m **counting qubits** and the eigenvector register. Hadamards put the counting qubits in a uniform superposition; counting qubit k then controls U^(2^k) acting on the eigenvector, which by the eigenvalue equation just gives the controlled qubit the phase e^(2πi·2^k·φ) (**phase kickback**). The counting register ends up in the state Σ_x e^(2πi·xφ)|x⟩, a Fourier state, and the **inverse QFT** converts it to a peak at y ≈ 2^m·φ. If φ is exactly an m-bit fraction, the result is exact; otherwise the outcome probability is the closed form sin²(π·2^m·δ) / (2^(2m)·sin²(πδ)) where δ = φ − y/2^m, and the best outcome occurs with probability at least **4/π² ≈ 0.405**, with other outcomes clustered around it. Adding counting qubits improves both accuracy and confidence.\n\nThe listing builds the circuit for the phase gate (eigenvalue e^(2πiφ) on |1⟩), simulates it, and compares with the exact case φ = 5/16, the closed-form distribution for φ = 1/3, and the 4/π² bound for many values of φ. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`). The circuits are simulated exactly, so results are probabilities, not noisy samples, unless a seeded random sample is stated."
+            },
+            {
+              "type": "code",
+              "id": "c-qpe",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.circuit.library import QFTGate\nfrom qiskit.quantum_info import Statevector\n\ndef qpe_distribution(phi, m):\n    qc = QuantumCircuit(m + 1)\n    qc.x(m)                                                       # eigenvector |1> of the phase gate, eigenvalue exp(2 pi i phi)\n    qc.h(range(m))\n    for k in range(m):\n        qc.cp(2 * np.pi * phi * 2 ** k, k, m)                     # controlled-U^(2^k): phase kickback onto counting qubit k\n    qc.append(QFTGate(m).inverse(), range(m))\n    return Statevector(qc).probabilities(list(range(m)))\n\nclosed_form = lambda phi, m, y: 1.0 if np.isclose(phi * 2 ** m, y) else (np.sin(np.pi * 2 ** m * (phi - y / 2 ** m)) ** 2 / (4 ** m * np.sin(np.pi * (phi - y / 2 ** m)) ** 2))\n\np = qpe_distribution(5 / 16, 4)\nprint(\"phi = 5/16 with 4 counting qubits: outcome\", int(np.argmax(p)), \"with probability\", round(float(p.max()), 6), \"(exact: 5/16 * 16 = 5)\")\n\nphi, m = 1 / 3, 6\np = qpe_distribution(phi, m)\nbest = int(np.argmax(p))\nprint(f\"phi = 1/3 with {m} counting qubits: best outcome {best}/{2 ** m} = {best / 2 ** m:.5f} (true phi = {phi:.5f}), probability {p[best]:.4f}\")\nprint(\"matches the closed-form distribution for every outcome:\", all(np.isclose(p[y], closed_form(phi, m, y)) for y in range(2 ** m)))\nprint(f\"probability of an estimate within 1/2^m of phi: {sum(p[y] for y in range(2 ** m) if abs(y / 2 ** m - phi) <= 1 / 2 ** m):.4f}\")\n\nworst = min(qpe_distribution(f, 5).max() for f in np.random.default_rng(1).uniform(0, 1, 40))\nprint(f\"smallest probability of the best outcome over 40 random phases (m = 5): {worst:.4f} >= 4/pi^2 = {4 / np.pi ** 2:.4f}:\", worst >= 4 / np.pi ** 2)\n\nprint(f\"{'counting qubits':>16} {'P(error < 1/2^m)':>18} {'precision 1/2^m':>16}\")\nfor m in (3, 5, 7, 9):\n    p = qpe_distribution(1 / 3, m)\n    within = sum(p[y] for y in range(2 ** m) if abs(y / 2 ** m - 1 / 3) <= 1 / 2 ** m)\n    print(f\"{m:>16} {within:18.4f} {1 / 2 ** m:16.5f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-qpe",
+              "language": "text",
+              "code": "phi = 5/16 with 4 counting qubits: outcome 5 with probability 1.0 (exact: 5/16 * 16 = 5)\nphi = 1/3 with 6 counting qubits: best outcome 21/64 = 0.32812 (true phi = 0.33333), probability 0.6840\nmatches the closed-form distribution for every outcome: True\nprobability of an estimate within 1/2^m of phi: 0.8550\nsmallest probability of the best outcome over 40 random phases (m = 5): 0.4228 >= 4/pi^2 = 0.4053: True\n counting qubits   P(error < 1/2^m)  precision 1/2^m\n               3             0.8628          0.12500\n               5             0.8554          0.03125\n               7             0.8549          0.00781\n               9             0.8549          0.00195",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "For φ = 5/16 four counting qubits give the exact answer with probability 1. For φ = 1/3, which has no finite binary expansion, the best 6-bit estimate (21/64 = 0.328) comes with probability about 0.68, the whole distribution equals the closed form, and across 40 random phases the best outcome never falls below 4/π² ≈ 0.405. Adding counting qubits raises precision exponentially (1/2^m) while the probability of landing within one step of the truth stays high (about 0.85).\n\n**In Shor's algorithm** the phase is s/r for an unknown s, so the measured y/2^m is close to a fraction with denominator r, and continued fractions recover r. **Practical limits.** QPE needs controlled-U^(2^k) with large powers, which is the main circuit cost (for Shor it is modular exponentiation), and on noisy hardware the long, deep circuits are beyond today's devices without error correction.\n\n**Common mistake.** Reading the counting register without the inverse QFT, or in the wrong bit order, which gives garbage instead of the phase."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does phase estimation estimate?",
+              "options": [
+                "The phase phi in U|u⟩ = exp(2 pi i phi)|u⟩ for an eigenvector |u⟩",
+                "The number of qubits",
+                "The inverse of a matrix"
+              ],
+              "correct_index": 0,
+              "explanation": "It reads out an eigenvalue phase of a unitary, which Shor's algorithm and chemistry algorithms use."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the minimum probability that QPE returns the best m-bit approximation of an arbitrary phase?",
+              "options": [
+                "4/pi^2, about 0.405",
+                "1/2^m",
+                "0"
+              ],
+              "correct_index": 0,
+              "explanation": "The probability is sin^2(pi 2^m delta) / (2^(2m) sin^2(pi delta)), at least 4/pi^2 for the nearest outcome."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does adding counting qubits do?",
+              "options": [
+                "Increases the precision of the estimate exponentially",
+                "Reduces the number of gates",
+                "Changes the eigenvector"
+              ],
+              "correct_index": 0,
+              "explanation": "With m counting qubits the phase is resolved to about 1/2^m."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B122",
+              "locator": "Abstract: a procedure for measuring an eigenvalue of a unitary operator, used for the Abelian stabilizer problem including factoring and the discrete logarithm"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-algorithms/quantum-phase-estimation.ipynb: sections 1.1 (Intuition), 1.2 (Mathematical Foundation), 2 (Example: T-gate) and 3 (Getting More Precision)"
+            },
+            {
+              "book": "B80",
+              "locator": "Order finding as phase estimation of modular multiplication"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The 4/pi^2 bound and the closed-form distribution are standard results confirmed numerically in the listing; they are not quoted from the cited notebook text."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "3.7 Shor's Algorithm (Full Treatment)",
+          "summary": "A complete run for N = 15 as a gate-level circuit, the classical post-processing with continued fractions, and the success probability for N = 21.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "You have all the pieces. To factor N, **Shor's algorithm** picks a random a coprime to N and finds its **order** r (the smallest r with a^r ≡ 1 mod N) by phase estimation. The unitary U|y⟩ = |a·y mod N> has eigenvalues e^(2πi·s/r) for s = 0 … r − 1, and the state |1⟩ is an equal superposition of all its eigenvectors, so phase estimation applied to U with the target in |1⟩ returns a random fraction s/r. The measured counting value y approximates 2^m·s/r. A **continued-fraction** expansion of y/2^m finds the fraction s/r with the smallest denominator close to it, which gives r (or a divisor of it, in which case you try small multiples). The rest is classical: if r is even and a^(r/2) ≢ −1 mod N, then gcd(a^(r/2) ± 1, N) are factors.\n\nThe first listing runs the **quantum part as an actual circuit** for N = 15 and a = 7: 8 counting qubits and a 4-qubit target register holding |1⟩, where each controlled-U^(2^k) is the permutation of basis states y → (7^(2^k)·y mod 15). It prints the output peaks and the factors recovered. The second listing checks that the same distribution is obtained from direct linear algebra (the way larger instances can be simulated) and computes the success probability for N = 21, where 2^m/r is not an integer and the peaks are blurred. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`). The circuits are simulated exactly, so results are probabilities, not noisy samples, unless a seeded random sample is stated."
+            },
+            {
+              "type": "code",
+              "id": "c-shor-circuit",
+              "language": "python",
+              "code": "from fractions import Fraction\nfrom math import gcd\nimport numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.circuit.library import QFTGate, UnitaryGate\nfrom qiskit.quantum_info import Statevector\n\nN, a, m, t = 15, 7, 8, 4                                           # modulus, base, counting qubits, target qubits\n\ndef multiply_by(power):                                            # permutation |y> -> |(a^power * y) mod N> on t qubits\n    factor = pow(a, power, N)\n    matrix = np.zeros((2 ** t, 2 ** t))\n    for y in range(2 ** t):\n        matrix[(factor * y) % N if y < N else y, y] = 1\n    return UnitaryGate(matrix)\n\nqc = QuantumCircuit(m + t)\nqc.x(m)                                                            # target register starts in |1>\nqc.h(range(m))\nfor k in range(m):\n    qc.append(multiply_by(2 ** k).control(1), [k] + list(range(m, m + t)))     # counting qubit k controls U^(2^k)\nqc.append(QFTGate(m).inverse(), range(m))\nprobabilities = Statevector(qc).probabilities(list(range(m)))\npeaks = {y: round(float(p), 4) for y, p in enumerate(probabilities) if p > 1e-6}\nprint(\"measured values y and probabilities:\", peaks)\n\ndef recover_order(y):\n    if y == 0:\n        return None\n    denominator = Fraction(y, 2 ** m).limit_denominator(N).denominator          # continued fractions: closest fraction with a small denominator\n    for multiple in range(1, N // denominator + 1):                              # the denominator may be a divisor of the order\n        if pow(a, denominator * multiple, N) == 1:\n            return denominator * multiple\n    return None\n\nfor y in peaks:\n    r = recover_order(y)\n    factors = None\n    if r and r % 2 == 0 and pow(a, r // 2, N) != N - 1:\n        factors = (gcd(pow(a, r // 2) - 1, N), gcd(pow(a, r // 2) + 1, N))\n    print(f\"y = {y:>3}: y/2^m = {Fraction(y, 2 ** m)!s:>4} -> order {r} -> factors of {N}: {factors}\")\nprint(\"probability that a run yields a usable order:\", round(sum(p for y, p in peaks.items() if recover_order(y)), 4))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-shor-circuit",
+              "language": "text",
+              "code": "measured values y and probabilities: {0: 0.25, 64: 0.25, 128: 0.25, 192: 0.25}\ny =   0: y/2^m =    0 -> order None -> factors of 15: None\ny =  64: y/2^m =  1/4 -> order 4 -> factors of 15: (3, 5)\ny = 128: y/2^m =  1/2 -> order 4 -> factors of 15: (3, 5)\ny = 192: y/2^m =  3/4 -> order 4 -> factors of 15: (3, 5)\nprobability that a run yields a usable order: 0.75",
+              "caption": "Expected output"
+            },
+            {
+              "type": "code",
+              "id": "c-shor-linear",
+              "language": "python",
+              "code": "from fractions import Fraction\nimport numpy as np\n\ndef counting_distribution(a, N, m):\n    # Linear-algebra simulation of the counting register: the target holds a^x mod N, so x and x' interfere only if a^x = a^x'\n    Q = 2 ** m\n    r = next(k for k in range(1, N) if pow(a, k, N) == 1)\n    distribution = np.zeros(Q)\n    for j in range(r):\n        xs = np.arange(j, Q, r)                                    # all x with a^x = a^j (mod N)\n        amplitudes = np.exp(2j * np.pi * np.outer(np.arange(Q), xs) / Q).sum(axis=1) / Q\n        distribution += np.abs(amplitudes) ** 2\n    return r, distribution\n\ndef recover_order(y, a, N, m):\n    if y == 0:\n        return None\n    denominator = Fraction(y, 2 ** m).limit_denominator(N).denominator\n    for multiple in range(1, N // denominator + 1):\n        if pow(a, denominator * multiple, N) == 1:\n            return denominator * multiple\n    return None\n\nr, p15 = counting_distribution(7, 15, 8)\nprint(\"N = 15, a = 7: order\", r, \"| the three peaks sum to\", round(float(p15[[64, 128, 192]].sum()), 4), \"plus y = 0 with\", round(float(p15[0]), 4))\nfor N, a, m in ((15, 7, 8), (21, 2, 9), (21, 5, 9), (35, 2, 11)):\n    r, p = counting_distribution(a, N, m)\n    success = sum(p[y] for y in range(2 ** m) if recover_order(y, a, N, m) == r)\n    print(f\"N = {N:>2}, a = {a}: true order {r:>2}, 2^m = {2 ** m:>4}, probability of recovering the order in one run: {success:.3f}\")\n\nprint(\"which bases a work for N = 15 (order found classically by brute force here):\")\nfrom math import gcd\nfor a in range(2, 15):\n    if gcd(a, 15) != 1:\n        print(f\"  a = {a:>2}: shares a factor with 15 -> gcd gives a factor immediately\")\n        continue\n    r = next(k for k in range(1, 15) if pow(a, k, 15) == 1)\n    ok = r % 2 == 0 and pow(a, r // 2, 15) != 14\n    print(f\"  a = {a:>2}: order {r}, usable: {ok}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-shor-linear",
+              "language": "text",
+              "code": "N = 15, a = 7: order 4 | the three peaks sum to 0.75 plus y = 0 with 0.25\nN = 15, a = 7: true order  4, 2^m =  256, probability of recovering the order in one run: 0.750\nN = 21, a = 2: true order  6, 2^m =  512, probability of recovering the order in one run: 0.796\nN = 21, a = 5: true order  6, 2^m =  512, probability of recovering the order in one run: 0.796\nN = 35, a = 2: true order 12, 2^m = 2048, probability of recovering the order in one run: 0.893\nwhich bases a work for N = 15 (order found classically by brute force here):\n  a =  2: order 4, usable: True\n  a =  3: shares a factor with 15 -> gcd gives a factor immediately\n  a =  4: order 2, usable: True\n  a =  5: shares a factor with 15 -> gcd gives a factor immediately\n  a =  6: shares a factor with 15 -> gcd gives a factor immediately\n  a =  7: order 4, usable: True\n  a =  8: order 4, usable: True\n  a =  9: shares a factor with 15 -> gcd gives a factor immediately\n  a = 10: shares a factor with 15 -> gcd gives a factor immediately\n  a = 11: order 2, usable: True\n  a = 12: shares a factor with 15 -> gcd gives a factor immediately\n  a = 13: order 4, usable: True\n  a = 14: order 2, usable: False",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The circuit result is the textbook picture: with N = 15 and a = 7 (order 4) the counting register shows four equal peaks at 0, 64, 128 and 192, the multiples of 2^8/4. The value y = 0 is useless; y = 64 and y = 192 give the denominator 4; y = 128 gives the fraction ½, whose denominator 2 is a *divisor* of the order, and the multiple-trying step turns it into 4. Three of the four outcomes therefore reveal r = 4, and then gcd(7² ± 1, 15) = (3, 5). The linear-algebra simulation reproduces exactly the same distribution without building the circuit, and extends to N = 21 and 35, where the peaks are no longer sharp and a single run recovers the order with probability about 0.8 and 0.89 rather than 1, which is why the algorithm is repeated when a run fails.\n\n**What this does and does not show.** It shows the structure of the algorithm and that every step works. It does not show that factoring *real* keys is near: for a 2048-bit N the circuit needs thousands of error-corrected qubits and billions of operations (B8 quantified this), and the best devices today have none of that. Also note the **classical tail**: continued fractions, gcds and retries are ordinary computation.\n\n**Common mistakes.** Using a base a that is not coprime to N, ignoring that r may be odd (retry with another a), and taking the denominator from y/2^m without checking that a^r ≡ 1."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In Shor's algorithm, what does the quantum computer compute?",
+              "options": [
+                "The order of a modulo N (via phase estimation)",
+                "The gcd of two numbers",
+                "The prime factors directly"
+              ],
+              "correct_index": 0,
+              "explanation": "Everything else (continued fractions, gcds) is classical post-processing."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "For N = 15 and a = 7 the order is 4. Where are the peaks of the 8-bit counting register?",
+              "options": [
+                "0, 64, 128, 192",
+                "0, 4, 8, 12",
+                "Only at 128"
+              ],
+              "correct_index": 0,
+              "explanation": "The peaks are at multiples of 2^m / r = 256 / 4 = 64."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why might a run of Shor's algorithm fail even though the circuit is correct?",
+              "options": [
+                "The measured value may be 0, or r may be odd, or a^(r/2) may equal -1 mod N",
+                "Quantum computers sometimes lie",
+                "The QFT is approximate"
+              ],
+              "correct_index": 0,
+              "explanation": "The algorithm is probabilistic; failed runs are simply repeated with new random values."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B80",
+              "locator": "Sections on order finding with the quantum Fourier transform and on the reduction of factoring to order finding"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-algorithms/shor.ipynb: sections 1 (Period Finding), 2 (The Solution), 5 (Factoring from Period Finding) and the example of factoring 15"
+            },
+            {
+              "book": "B122",
+              "locator": "Abstract: measuring an eigenvalue of a unitary gives a polynomial algorithm for the Abelian stabilizer problem including factoring"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The continued-fraction and 'try small multiples of the denominator' post-processing is the standard textbook procedure; both listings were verified to agree with each other for N = 15, which is the check for the circuit."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "3.8 Amplitude Amplification (General Framework)",
+          "summary": "Grover's idea for any starting state: the rotation picture, the exact formula, and the 1/a versus 1/sqrt(a) cost.",
+          "estimated_minutes": 38,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Grover's algorithm assumes you start from a *uniform* superposition and search for one marked item. **Amplitude amplification** (Brassard, Høyer, Mosca and Tapp) removes both restrictions. Suppose a quantum algorithm A prepares a state |ψ⟩ = A|0⟩ in which the probability of finding a **good** element (one with χ(x) = 1) is a. Classically, you would run A, measure, check, and repeat about **1/a** times. Amplitude amplification finds a good element after a number of applications of A and its inverse proportional to **1/√a**, assuming A makes no measurements. Grover's algorithm is the special case where A is a layer of Hadamards.\n\nThe mechanism is the same rotation. Write |ψ⟩ = sin θ |good⟩ + cos θ |bad⟩ with sin²θ = a. One amplification step is Q = −A S₀ A† S_χ, where S_χ flips the sign of good states and S₀ flips the sign of |0…0⟩; it rotates the state by 2θ in the plane of |good⟩ and |bad⟩. After k steps the success probability is **sin²((2k + 1)θ)**, maximal at k ≈ π/(4θ) − ½. The listing builds A as a non-uniform starting state, applies Q numerically, compares with the formula, and tabulates the cost for small success probabilities. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`). The circuits are simulated exactly, so results are probabilities, not noisy samples, unless a seeded random sample is stated."
+            },
+            {
+              "type": "code",
+              "id": "c-amplitude-amplification",
+              "language": "python",
+              "code": "import numpy as np\n\nrng = np.random.default_rng(4)\ndimension = 32\namplitudes = rng.random(dimension) ** 3                                   # a deliberately lopsided starting distribution\namplitudes /= np.linalg.norm(amplitudes)\ngood = np.zeros(dimension, dtype=bool); good[[3, 17, 29]] = True            # three good elements\na = float(np.sum(amplitudes[good] ** 2))\ntheta = np.arcsin(np.sqrt(a))\n\n# An orthogonal matrix A whose first column is the starting state: A|0> = |psi>\nA = np.linalg.qr(np.column_stack([amplitudes, rng.normal(size=(dimension, dimension - 1))]))[0]\nA *= np.sign(A[:, 0] @ amplitudes)\nassert np.allclose(A[:, 0], amplitudes)\n\nS_chi = np.diag(np.where(good, -1.0, 1.0))                                  # flip the sign of good elements\nS_zero = np.eye(dimension); S_zero[0, 0] = -1                                  # flip the sign of |0...0>\nQ = -A @ S_zero @ A.T @ S_chi                                                  # one amplification step\n\nprint(f\"success probability of the starting state a = {a:.4f}, theta = arcsin(sqrt(a)) = {theta:.4f}\")\nprint(f\"{'k':>3} {'simulated':>10} {'sin^2((2k+1)theta)':>20}\")\nstate = amplitudes.copy()\nfor k in range(0, 9):\n    print(f\"{k:>3} {np.sum(state[good] ** 2):10.4f} {np.sin((2 * k + 1) * theta) ** 2:20.4f}\")\n    state = Q @ state\n\nprint(f\"{'a':>10} {'classical repetitions 1/a':>26} {'amplification steps ~ pi/(4 theta)':>36}\")\nfor a_value in (1e-2, 1e-4, 1e-6, 1e-12):\n    print(f\"{a_value:>10.0e} {1 / a_value:>26,.0f} {np.pi / (4 * np.arcsin(np.sqrt(a_value))):>36,.0f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-amplitude-amplification",
+              "language": "text",
+              "code": "success probability of the starting state a = 0.0866, theta = arcsin(sqrt(a)) = 0.2987\n  k  simulated   sin^2((2k+1)theta)\n  0     0.0866               0.0866\n  1     0.6098               0.6098\n  2     0.9940               0.9940\n  3     0.7531               0.7531\n  4     0.1919               0.1919\n  5     0.0206               0.0206\n  6     0.4560               0.4560\n  7     0.9471               0.9471\n  8     0.8724               0.8724\n         a  classical repetitions 1/a   amplification steps ~ pi/(4 theta)\n     1e-02                        100                                    8\n     1e-04                     10,000                                   79\n     1e-06                  1,000,000                                  785\n     1e-12          1,000,000,000,000                              785,398",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The simulated success probability follows sin²((2k + 1)θ) exactly even though the starting state is lopsided: starting from a ≈ 0.07 the probability climbs to about 0.99 within a few steps and then falls again if you continue. The cost table shows the quadratic saving: for a success probability of 10⁻¹² (one in a trillion), classical repetition needs 10¹² runs while amplification needs about 800,000 applications of A and A†.\n\n**Why this is the most reusable idea in the module.** Any algorithm with a small success probability that does not measure internally can be amplified quadratically, so Grover search, quantum counting, and speed-ups of heuristic search all follow. **Two cautions**: each step applies A and A† once, so the useful comparison counts calls to A, and amplification only helps if A can be run *coherently* (no measurement inside), which is not the case for many practical randomised algorithms."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "If a quantum algorithm A succeeds with probability a, roughly how many calls to A and its inverse does amplitude amplification need?",
+              "options": [
+                "About 1/sqrt(a)",
+                "About 1/a",
+                "About log(1/a)"
+              ],
+              "correct_index": 0,
+              "explanation": "A classical repetition needs about 1/a runs; amplitude amplification gives a quadratic improvement."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is Grover's algorithm in terms of amplitude amplification?",
+              "options": [
+                "The case where A is a layer of Hadamards",
+                "A different algorithm",
+                "The case a = 1"
+              ],
+              "correct_index": 0,
+              "explanation": "Grover assumes a uniform starting superposition and (typically) one marked item."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "After k amplification steps, the success probability is:",
+              "options": [
+                "sin^2((2k+1) theta) with sin^2(theta) = a",
+                "a^k",
+                "1 - a^k"
+              ],
+              "correct_index": 0,
+              "explanation": "Each step rotates the state by 2 theta toward the good subspace."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B124",
+              "locator": "Abstract: amplitude amplification finds a good element after an expected number of applications of A and its inverse proportional to 1/sqrt(a); generalisation of Grover's algorithm"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-algorithms/quantum-counting.ipynb: section 1.2 (A Closer Look), which uses the Grover iteration as the rotation"
+            },
+            {
+              "book": "B121",
+              "locator": "Grover's algorithm as the special case with a uniform starting state"
+            }
+          ],
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "3.9 Quantum Walks",
+          "summary": "The Hadamard walk on a line: ballistic spreading versus the classical square-root spreading, checked against the published probabilities at time 4.",
+          "estimated_minutes": 38,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **random walk** moves a walker left or right according to a coin flip, and after t steps its position has a spread (standard deviation) of √t. A **quantum walk** replaces the coin by a quantum **coin** (a qubit, with the two basis states standing for \"left\" and \"right\") and the random step by a unitary: apply a coin operator such as the Hadamard gate to the coin qubit, then **shift** the walker left or right conditional on the coin state. Because amplitudes interfere, the walker is in a superposition of many positions, and the spread grows linearly in t: **ballistic** rather than diffusive. The standard deviation of the Hadamard walk grows like 0.54·t, so after 100 steps it is far wider than the classical √100 = 10.\n\nQuantum walks are a tool for algorithm design (the quantum walk search algorithm on graphs, with quantum speed-ups over random-walk search), and they are also a model of computation in their own right. The survey chapter by Saigo and Sugiyama in the Takagi et al. volume contrasts the normal distribution of the random walk with the **Konno distribution** of the Hadamard walk and gives the probabilities of the Hadamard walk at time 4: with an initial coin state (1, i)/√2, the chance to be at positions −4, −2, 0, 2, 4 is 1/16, 6/16, 2/16, 6/16, 1/16, against 1/16, 4/16, 6/16, 4/16, 1/16 for the random walk. The listing implements the walk exactly, checks those numbers, and compares the spread with the classical walk. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`). The circuits are simulated exactly, so results are probabilities, not noisy samples, unless a seeded random sample is stated."
+            },
+            {
+              "type": "code",
+              "id": "c-walk",
+              "language": "python",
+              "code": "import numpy as np\n\ndef hadamard_walk(steps):\n    size = 2 * steps + 1\n    amplitude = np.zeros((2, size), dtype=complex)                  # row 0: coin \"left\", row 1: coin \"right\"; column = position + steps\n    amplitude[:, steps] = np.array([1, 1j]) / np.sqrt(2)            # start at the origin with coin state (1, i)/sqrt(2)\n    H = np.array([[1, 1], [1, -1]]) / np.sqrt(2)\n    for _ in range(steps):\n        amplitude = H @ amplitude                                    # coin operator\n        moved = np.zeros_like(amplitude)\n        moved[0, :-1] = amplitude[0, 1:]                             # coin \"left\" moves one step left\n        moved[1, 1:] = amplitude[1, :-1]                             # coin \"right\" moves one step right\n        amplitude = moved\n    return np.sum(np.abs(amplitude) ** 2, axis=0)\n\nprobabilities = hadamard_walk(4)\npositions = np.arange(-4, 5)\nprint(\"Hadamard walk, time 4:  \", {int(x): round(float(p) * 16, 3) for x, p in zip(positions, probabilities) if p > 1e-12}, \"(in sixteenths)\")\nclassical = np.array([1, 0, 4, 0, 6, 0, 4, 0, 1]) / 16\nprint(\"random walk, time 4:    \", {int(x): round(float(p) * 16, 3) for x, p in zip(positions, classical) if p > 1e-12}, \"(in sixteenths)\")\n\nprint(f\"{'steps':>6} {'quantum std':>12} {'std / steps':>12} {'classical std = sqrt(steps)':>28}\")\nfor steps in (25, 50, 100, 200, 400):\n    p = hadamard_walk(steps)\n    x = np.arange(-steps, steps + 1)\n    sigma = np.sqrt(np.sum(p * x ** 2) - np.sum(p * x) ** 2)\n    print(f\"{steps:>6} {sigma:12.2f} {sigma / steps:12.4f} {np.sqrt(steps):28.2f}\")\nprint(f\"predicted limit of std / steps for the Hadamard walk: sqrt(1 - 1/sqrt(2)) = {np.sqrt(1 - 1 / np.sqrt(2)):.4f}\")\n\np = hadamard_walk(100)\ncentre = slice(100 - 10, 100 + 11)\nfrom math import comb\nclassical_within = sum(comb(100, k) for k in range(101) if abs(2 * k - 100) <= 10) / 2 ** 100\nprint(\"probability of being within 10 steps of the origin after 100 steps: quantum\", round(float(p[centre].sum()), 3), \"| classical\", round(classical_within, 3))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-walk",
+              "language": "text",
+              "code": "Hadamard walk, time 4:   {-4: 1.0, -2: 6.0, 0: 2.0, 2: 6.0, 4: 1.0} (in sixteenths)\nrandom walk, time 4:     {-4: 1.0, -2: 4.0, 0: 6.0, 2: 4.0, 4: 1.0} (in sixteenths)\n steps  quantum std  std / steps  classical std = sqrt(steps)\n    25        13.55       0.5421                         5.00\n    50        27.07       0.5414                         7.07\n   100        54.12       0.5412                        10.00\n   200       108.24       0.5412                        14.14\n   400       216.48       0.5412                        20.00\npredicted limit of std / steps for the Hadamard walk: sqrt(1 - 1/sqrt(2)) = 0.5412\nprobability of being within 10 steps of the origin after 100 steps: quantum 0.07 | classical 0.729",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The first two lines reproduce the published table at time 4. The walk is symmetric because the initial coin state (1, i)/√2 balances left and right (a state like (1, 0) would drift to one side). The spread table shows the linear growth: the standard deviation divided by the number of steps settles near 0.54, matching the predicted limit √(1 − 1/√2), while the random walk's spread is only √t. The quantum walker is rarely near the origin, because the probability is pushed out to two **fronts** moving at a constant speed, with a gap in the middle.\n\n**Applications and caution.** Walks on graphs give quantum search algorithms with provable speed-ups over random-walk search (see the textbook's quantum walk search chapter), and the coin-and-shift framework underlies several algorithm designs. As with every algorithm in this module, the speed-up depends on the structure of the problem and the oracle model; \"ballistic spreading\" is a property of the walk, not a general claim about faster computing."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How does the spread of a Hadamard quantum walk grow with the number of steps t?",
+              "options": [
+                "Linearly (ballistic)",
+                "Like sqrt(t)",
+                "It does not grow"
+              ],
+              "correct_index": 0,
+              "explanation": "Interference pushes the probability toward fronts moving at a constant speed; the classical walk spreads only like sqrt(t)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does a quantum walk need a coin?",
+              "options": [
+                "The coin state decides the direction of the conditional shift and interferes across paths",
+                "To make the walk random",
+                "To measure the walker"
+              ],
+              "correct_index": 0,
+              "explanation": "A unitary coin followed by a coin-controlled shift gives a reversible, interfering dynamics."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "In the Hadamard walk at time 4 with initial coin (1, i)/sqrt2, what is the probability of position 0?",
+              "options": [
+                "2/16",
+                "6/16",
+                "1/16"
+              ],
+              "correct_index": 0,
+              "explanation": "The table in the survey (and the listing) gives 1/16, 6/16, 2/16, 6/16, 1/16 for positions -4, -2, 0, 2, 4."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B07",
+              "locator": "Chapter 'Quantum Walks for the Working Mathematician' (Saigo and Sugiyama): Section 3 (Introducing Quantum Walks), Section 4.1 (The Hadamard Walk) and Table 1 (probabilities at time 4)"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-algorithms/quantum-walk-search-algorithm.ipynb: sections 2.A (Coined quantum walks) and 4 (Quantum walk search algorithm)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The asymptotic ratio sqrt(1 - 1/sqrt(2)) for the Hadamard walk's spread is the known result and is confirmed numerically in the listing; the survey's Konno distribution is mentioned but its formula was not reproduced."
+          },
+          "after": "sec-8"
+        },
+        {
+          "slug": "sec-10",
+          "action": "replace",
+          "title": "3.10 Variational Algorithms (Introduction)",
+          "summary": "Hybrid quantum-classical optimisation with VQE and QAOA on small exact examples, and the barren-plateau problem measured.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Fault-tolerant machines are not available, so much research targets **variational algorithms**, which use a *shallow* parameterised circuit and a classical optimiser. In the **variational quantum eigensolver (VQE)**, introduced by Peruzzo and colleagues, a parameterised circuit prepares |ψ(θ)⟩, the quantum computer estimates the energy ⟨ψ(θ)|H|ψ(θ)⟩, and a classical optimiser updates θ; the variational principle (B1) guarantees the result never undercuts the true ground energy. In the **quantum approximate optimisation algorithm (QAOA)** of Farhi, Goldstone and Gutmann, the circuit alternates a *cost* unitary e^(−iγC) and a *mixer* e^(−iβB) p times, and the 2p parameters are tuned to maximise the expected value of a combinatorial objective; the approximation improves as p increases.\n\nTwo small exact examples make this concrete. For VQE, the two-qubit transverse-field Ising Hamiltonian H = −ZZ − 0.5(XI + IX) is minimised with a four-parameter circuit (RY rotations, one CNOT, RY rotations) using parameter-shift gradients. For QAOA at p = 1, the maximum cut of a triangle graph (optimum 2 of 3 edges) is attacked with a grid search over (γ, β).\n\nVariational methods have a serious difficulty: **barren plateaus**. McClean and colleagues showed that for a wide class of random parameterised circuits the probability that the gradient is non-zero to fixed precision is exponentially small in the number of qubits, which makes training infeasible. The third listing measures it: the variance of a gradient of a global cost over random circuits shrinks rapidly as qubits are added. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`). The circuits are simulated exactly, so results are probabilities, not noisy samples, unless a seeded random sample is stated."
+            },
+            {
+              "type": "code",
+              "id": "c-vqe-qaoa",
+              "language": "python",
+              "code": "import itertools\nimport numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.quantum_info import SparsePauliOp, Statevector\n\n# --- VQE on H = -ZZ - 0.5 (XI + IX) ---\nH = SparsePauliOp.from_list([(\"ZZ\", -1.0), (\"XI\", -0.5), (\"IX\", -0.5)])\ndef ansatz(theta):\n    qc = QuantumCircuit(2)\n    qc.ry(theta[0], 0); qc.ry(theta[1], 1)\n    qc.cx(0, 1)\n    qc.ry(theta[2], 0); qc.ry(theta[3], 1)\n    return qc\nenergy = lambda theta: Statevector(ansatz(theta)).expectation_value(H).real\ndef gradient(theta):                                                       # parameter-shift rule, one parameter at a time\n    g = np.zeros(4)\n    for i in range(4):\n        shift = np.zeros(4); shift[i] = np.pi / 2\n        g[i] = (energy(theta + shift) - energy(theta - shift)) / 2\n    return g\ntheta = np.array([0.4, -0.3, 0.2, 0.5])\nfor step in range(200):\n    theta -= 0.2 * gradient(theta)\nexact = np.linalg.eigvalsh(H.to_matrix())[0]\nprint(f\"VQE energy after 200 gradient steps: {energy(theta):.6f} | exact ground energy: {exact:.6f} | never below the exact value: {energy(theta) >= exact - 1e-9}\")\n\n# --- QAOA p = 1 for MaxCut on a triangle ---\nedges = [(0, 1), (1, 2), (0, 2)]\ndef cut_value(bits):\n    return sum(bits[i] != bits[j] for i, j in edges)\ncost = np.array([cut_value([(x >> q) & 1 for q in range(3)]) for x in range(8)], dtype=float)   # classical cut value of each bit string\ndef qaoa_expectation(gamma, beta):\n    plus = np.ones(8, dtype=complex) / np.sqrt(8)\n    state = np.exp(-1j * gamma * cost) * plus                               # cost layer: a phase for each basis state\n    qc = QuantumCircuit(3)\n    for q in range(3):\n        qc.rx(2 * beta, q)                                                  # mixer layer exp(-i beta X)\n    state = Statevector(state).evolve(qc).data\n    return float(np.sum(np.abs(state) ** 2 * cost))\nbest = max(((qaoa_expectation(g, b), g, b) for g in np.linspace(0, np.pi, 61) for b in np.linspace(0, np.pi, 61)), key=lambda t: t[0])\nprint(f\"QAOA p=1 triangle: best expected cut {best[0]:.4f} of the optimum {cost.max():.0f} (ratio {best[0] / cost.max():.3f}) at gamma = {best[1]:.3f}, beta = {best[2]:.3f}\")\nprint(\"a uniformly random cut has expected value:\", float(cost.mean()), \"| QAOA at p = 1 improves on it:\", best[0] > cost.mean())"
+            },
+            {
+              "type": "code",
+              "id": "o-c-vqe-qaoa",
+              "language": "text",
+              "code": "VQE energy after 200 gradient steps: -1.414214 | exact ground energy: -1.414214 | never below the exact value: True\nQAOA p=1 triangle: best expected cut 1.9993 of the optimum 2 (ratio 1.000) at gamma = 0.628, beta = 1.885\na uniformly random cut has expected value: 1.5 | QAOA at p = 1 improves on it: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "code",
+              "id": "c-barren",
+              "language": "python",
+              "code": "import itertools\nimport numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.quantum_info import SparsePauliOp, Statevector\n\ndef random_circuit_gradient(n, layers, rng):\n    thetas = rng.uniform(0, 2 * np.pi, size=(layers, n))\n    axes = rng.integers(0, 3, size=(layers, n))                               # random rotation axis for every parameter (0: X, 1: Y, 2: Z)\n    def build(shifted=None):\n        qc = QuantumCircuit(n)\n        for layer in range(layers):\n            for q in range(n):\n                angle = thetas[layer, q] + (np.pi / 2 * shifted if shifted and (layer, q) == (0, 0) else 0)\n                [qc.rx, qc.ry, qc.rz][axes[layer, q]](angle, q)\n            for q in range(n - 1):\n                qc.cz(q, q + 1)\n        return qc\n    labels = [\"\".join(z) for z in itertools.product(\"IZ\", repeat=n)]\n    cost = SparsePauliOp.from_list([(label, 1 / 2 ** n) for label in labels])           # |0...0><0...0| = product of (I + Z) / 2\n    value = lambda qc: Statevector(qc).expectation_value(cost).real\n    return (value(build(+1)) - value(build(-1))) / 2                            # parameter-shift gradient of the first parameter\n\nrng = np.random.default_rng(0)\nprint(f\"{'qubits':<7} {'layers':>7} {'variance of the gradient':>26}\")\nfor n in (2, 3, 4, 5, 6, 7, 8):\n    samples = [random_circuit_gradient(n, n, rng) for _ in range(150)]\n    print(f\"{n:>7} {n:>7} {np.var(samples):26.3e}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-barren",
+              "language": "text",
+              "code": "qubits   layers   variance of the gradient\n      2       2                  2.443e-02\n      3       3                  6.267e-03\n      4       4                  2.727e-03\n      5       5                  5.527e-04\n      6       6                  1.570e-04\n      7       7                  5.143e-05\n      8       8                  5.013e-06",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**VQE** reaches the exact ground energy of this small problem to six digits and never goes below it, as the variational principle demands. **QAOA** at p = 1 reaches an expected cut of 1.9993 against the optimum 2 and the random-guess value of 1.5; the triangle is such a tiny, symmetric instance that one layer nearly solves it, and the published analysis shows that quality improves with p on harder graphs. These are small, noise-free examples chosen to be checkable; they do not demonstrate any advantage.\n\nThe **barren-plateau** table is the sobering part: with a global cost and random circuits as deep as they are wide, the gradient's variance falls by a large factor with each added qubit, so a random starting point on a 50-qubit problem would have gradients so small that estimating them needs an exponential number of shots. Mitigations studied in the literature include local cost functions, structured initial parameters and shallow ansätze, none of which removes the problem in general. **Honest summary:** variational algorithms are an active research direction for noisy devices, but there is currently no established problem on which they outperform the best classical methods, and noise, optimisation difficulty and shot cost are real obstacles."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What guarantees that the energy found by VQE is never below the true ground energy?",
+              "options": [
+                "The variational principle",
+                "The QAOA depth",
+                "Noise"
+              ],
+              "correct_index": 0,
+              "explanation": "Any normalised state has expected energy at least the lowest eigenvalue."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is a barren plateau?",
+              "options": [
+                "A region where gradients vanish exponentially with the number of qubits, making training infeasible",
+                "A flat part of a circuit diagram",
+                "A type of noise"
+              ],
+              "correct_index": 0,
+              "explanation": "For random parameterised circuits the gradient variance shrinks exponentially in the number of qubits."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does the computed QAOA result on the triangle show?",
+              "options": [
+                "An expected cut of about 2, far above the random value 1.5, on a tiny instance that shows no quantum advantage",
+                "That QAOA always finds the optimum on any graph",
+                "That QAOA is worse than random guessing"
+              ],
+              "correct_index": 0,
+              "explanation": "The best expected cut is 1.9993 of the optimum 2 against 1.5 for random cuts; the triangle is far too small to demonstrate an advantage, and larger graphs need more layers."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B125",
+              "locator": "Abstract: a variational eigenvalue solver on a quantum processor, using a classical optimiser with a quantum state-preparation"
+            },
+            {
+              "book": "B126",
+              "locator": "Abstract: the quantum approximate optimisation algorithm depends on a positive integer p and the approximation improves as p increases"
+            },
+            {
+              "book": "B128",
+              "locator": "Abstract: for a wide class of parameterised circuits the probability that the gradient is non-zero to fixed precision is exponentially small in the number of qubits"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-applications/vqe-molecules.ipynb and qaoa.ipynb"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The barren-plateau demonstration uses small random circuits with a global cost and is illustrative of the exponential decay, not a reproduction of the paper's analysis; the QAOA ratio quoted is the computed value for this triangle only."
+          },
+          "after": "sec-9"
+        },
+        {
+          "slug": "sec-11",
+          "action": "replace",
+          "title": "3.11 Complexity Analysis",
+          "summary": "Query counts side by side, what the speed-ups are and are not, and what is known about the power of quantum computers.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Every algorithm in this module is a statement about **resources**. For oracle problems the resource is the number of **queries**; for everything else it is gates and qubits. The table in the listing sets the quantum and classical query counts side by side: Deutsch-Jozsa (1 versus 2^(n−1) + 1 for deterministic classical algorithms), Bernstein-Vazirani (1 versus n), Simon (about n versus about 2^(n/2)), and Grover (about (π/4)√N versus N/2). Reading it correctly requires knowing the **type** of each advantage: exponential only against *deterministic* algorithms (Deutsch-Jozsa), linear (Bernstein-Vazirani), exponential even against *randomised* algorithms (Simon), and polynomial and provably optimal (Grover).\n\nThe standard complexity classes frame what is known. **BPP** is the class of problems a classical randomised algorithm solves in polynomial time with bounded error; **BQP** is the same for quantum computers. P ⊆ BPP ⊆ BQP ⊆ PSPACE, so quantum computers cannot solve anything classical computers could not solve eventually; the question is speed. Shor's algorithm puts **factoring and discrete logarithm in BQP**, while no polynomial-time classical algorithm for them is known (they are believed hard classically, which is the assumption RSA and elliptic-curve cryptography rest on). What is **not** known, and not believed: that quantum computers solve **NP-complete problems** in polynomial time. The Bennett-Bernstein-Brassard-Vazirani result shows that relative to a random oracle, NP cannot be solved by a quantum Turing machine in time o(2^(n/2)), and Grover's algorithm shows this is tight, so for black-box search the best possible gain is quadratic.\n\nThe honest picture for security: quantum computers break *specific structured* problems (factoring, discrete logarithms) and give only modest gains on unstructured ones (key search), which is exactly why PQC replaces the structured problems and symmetric keys are lengthened. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`). The circuits are simulated exactly, so results are probabilities, not noisy samples, unless a seeded random sample is stated."
+            },
+            {
+              "type": "code",
+              "id": "c-complexity",
+              "language": "python",
+              "code": "import math\n\nprint(f\"{'n':>4} {'DJ classical':>16} {'DJ quantum':>11} {'BV classical':>13} {'BV quantum':>11} {'Simon classical ~':>18} {'Simon quantum ~':>16}\")\nfor n in (10, 20, 30, 40, 64):\n    dj = 2 ** (n - 1) + 1\n    simon_classical = math.sqrt(math.pi * 2 ** n / 2)               # expected queries until the first collision (birthday)\n    print(f\"{n:>4} {dj:>16,} {1:>11} {n:>13} {1:>11} {simon_classical:>18,.3g} {n - 1:>16}\")\n\nprint(f\"{'N = 2^n':>10} {'classical N/2':>16} {'Grover (pi/4) sqrt(N)':>24} {'ratio':>10}\")\nfor n in (20, 40, 64, 128):\n    N = 2 ** n\n    grover = math.pi / 4 * math.sqrt(N)\n    print(f\"2^{n:<8} {N / 2:>16.3e} {grover:>24.3e} {N / 2 / grover:>10.2e}\")\n\nprint()\nprint(\"what is established, and what is only believed:\")\nfacts = [\n    (\"P <= BPP <= BQP <= PSPACE\", \"established\"),\n    (\"factoring and discrete logarithm are in BQP (Shor)\", \"established\"),\n    (\"factoring is not in P\", \"NOT proven (believed)\"),\n    (\"quantum computers solve NP-complete problems in polynomial time\", \"NOT known, and not believed\"),\n    (\"black-box search needs about sqrt(N) queries, so Grover is optimal\", \"established in the oracle model\"),\n]\nfor statement, status in facts:\n    print(f\"  {statement:70} {status}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-complexity",
+              "language": "text",
+              "code": "   n     DJ classical  DJ quantum  BV classical  BV quantum  Simon classical ~  Simon quantum ~\n  10              513           1            10           1               40.1                9\n  20          524,289           1            20           1           1.28e+03               19\n  30      536,870,913           1            30           1           4.11e+04               29\n  40  549,755,813,889           1            40           1           1.31e+06               39\n  64 9,223,372,036,854,775,809           1            64           1           5.38e+09               63\n   N = 2^n    classical N/2    Grover (pi/4) sqrt(N)      ratio\n2^20              5.243e+05                8.042e+02   6.52e+02\n2^40              5.498e+11                8.235e+05   6.68e+05\n2^64              9.223e+18                3.373e+09   2.73e+09\n2^128             1.701e+38                1.449e+19   1.17e+19\n\nwhat is established, and what is only believed:\n  P <= BPP <= BQP <= PSPACE                                              established\n  factoring and discrete logarithm are in BQP (Shor)                     established\n  factoring is not in P                                                  NOT proven (believed)\n  quantum computers solve NP-complete problems in polynomial time        NOT known, and not believed\n  black-box search needs about sqrt(N) queries, so Grover is optimal     established in the oracle model",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Compare the columns by *kind*, not only by size. The Deutsch-Jozsa and Bernstein-Vazirani gaps are artefacts of the problem statement. Simon's gap is real in the query model but concerns a problem with no practical use. Grover's gap is modest and **provably the best possible** for unstructured search: a quantum computer offers a square root, not an exponential, which at N = 2^128 still leaves 2^64 iterations (B8). The facts list separates what theory has proven from what is believed: nobody has proved factoring is classically hard, so the case for PQC is built on a *belief* that the classical hardness assumption is the right one, and the case for acting now rests on the uncertainty about when a quantum machine could exist.\n\n**How to evaluate a quantum-speed-up claim.** Ask: against which classical algorithm (deterministic, randomised, best known)? In what model (queries, gates, wall-clock)? Is the oracle cheap to implement? Is data loading counted? What error rate and how many qubits does it assume? These questions will serve you through the rest of the track, from hardware (B5) to error correction (C3)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which statement about Grover's algorithm is established?",
+              "options": [
+                "Its quadratic speed-up is optimal for unstructured (black-box) search",
+                "It solves NP-complete problems in polynomial time",
+                "It breaks RSA"
+              ],
+              "correct_index": 0,
+              "explanation": "The BBBV bound shows no quantum algorithm can do better than about 2^(n/2) queries for NP relative to a random oracle."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does 'factoring is in BQP' mean?",
+              "options": [
+                "A quantum computer can factor in polynomial time with bounded error (Shor)",
+                "Factoring is easy classically",
+                "Factoring is NP-complete"
+              ],
+              "correct_index": 0,
+              "explanation": "Shor's algorithm gives a quantum polynomial-time algorithm; no classical polynomial-time algorithm is known."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is the Deutsch-Jozsa speed-up not a practical advantage?",
+              "options": [
+                "Randomised classical algorithms solve it with a few queries",
+                "It needs too many qubits",
+                "The oracle is secret"
+              ],
+              "correct_index": 0,
+              "explanation": "The exponential gap is only against deterministic classical algorithms."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B127",
+              "locator": "Abstract: relative to a random oracle NP cannot be solved on a quantum Turing machine in time o(2^(n/2)), tight because of Grover's algorithm"
+            },
+            {
+              "book": "B80",
+              "locator": "Abstract and results: factoring and discrete logarithms in quantum polynomial time"
+            },
+            {
+              "book": "B121",
+              "locator": "Abstract: a quantum search algorithm using about sqrt(N) steps"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-algorithms/deutsch-jozsa.ipynb (1.2 classical solution) and simon.ipynb (classical solution)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The inclusions P <= BPP <= BQP <= PSPACE and the non-proof of factoring's classical hardness are standard complexity-theory statements not quoted from the cited sources."
+          },
+          "after": "sec-10"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "b3-n01",
+          "prompt": "How many queries does Deutsch-Jozsa need for n-bit inputs?",
+          "options": [
+            "1",
+            "n",
+            "2^(n-1) + 1"
+          ],
+          "correct_index": 0,
+          "explanation": "A single query with Hadamards before and after decides constant versus balanced.",
+          "source": {
+            "book": "B110",
+            "locator": "deutsch-jozsa.ipynb 1.3"
+          }
+        },
+        {
+          "id": "b3-n02",
+          "prompt": "What does the Bernstein-Vazirani circuit output?",
+          "options": [
+            "The hidden string s",
+            "A collision of f",
+            "The parity of s"
+          ],
+          "correct_index": 0,
+          "explanation": "The final state is |s⟩.",
+          "source": {
+            "book": "B110",
+            "locator": "bernstein-vazirani.ipynb 1.3"
+          }
+        },
+        {
+          "id": "b3-n03",
+          "prompt": "What does each run of Simon's circuit return?",
+          "options": [
+            "A random y with y.s = 0 (mod 2)",
+            "The secret s directly",
+            "Two colliding inputs"
+          ],
+          "correct_index": 0,
+          "explanation": "Linear equations collected from several runs determine s.",
+          "source": {
+            "book": "B110",
+            "locator": "simon.ipynb 1b"
+          }
+        },
+        {
+          "id": "b3-n04",
+          "prompt": "After k Grover iterations on N items with one marked, the success probability is:",
+          "options": [
+            "sin^2((2k+1) theta) with sin theta = 1/sqrt(N)",
+            "k/N",
+            "1 - 1/N^k"
+          ],
+          "correct_index": 0,
+          "explanation": "Each iteration rotates the state by 2 theta.",
+          "source": {
+            "book": "B110",
+            "locator": "grover.ipynb 1.1"
+          }
+        },
+        {
+          "id": "b3-n05",
+          "prompt": "A period-r state on N amplitudes is mapped by the QFT to peaks at:",
+          "options": [
+            "Multiples of N/r",
+            "Multiples of r",
+            "A single point"
+          ],
+          "correct_index": 0,
+          "explanation": "The Fourier transform of a comb of spacing r is a comb of spacing N/r.",
+          "source": {
+            "book": "B110",
+            "locator": "quantum-fourier-transform.ipynb 4"
+          }
+        },
+        {
+          "id": "b3-n06",
+          "prompt": "How many controlled phase gates does an n-qubit QFT circuit use?",
+          "options": [
+            "n(n-1)/2",
+            "2^n",
+            "n"
+          ],
+          "correct_index": 0,
+          "explanation": "Each qubit receives controlled rotations from the qubits below it.",
+          "source": {
+            "book": "B110",
+            "locator": "quantum-fourier-transform.ipynb 5"
+          }
+        },
+        {
+          "id": "b3-n07",
+          "prompt": "What does quantum phase estimation estimate?",
+          "options": [
+            "The eigenvalue phase phi of a unitary U",
+            "The size of a matrix",
+            "The number of solutions of an oracle only"
+          ],
+          "correct_index": 0,
+          "explanation": "U|u⟩ = exp(2 pi i phi)|u⟩.",
+          "source": {
+            "book": "B122",
+            "locator": "Abstract"
+          }
+        },
+        {
+          "id": "b3-n08",
+          "prompt": "Which part of Shor's algorithm is quantum?",
+          "options": [
+            "Finding the order of a modulo N",
+            "The gcd computation",
+            "Continued fractions"
+          ],
+          "correct_index": 0,
+          "explanation": "The rest is classical post-processing.",
+          "source": {
+            "book": "B80",
+            "locator": "Order finding"
+          }
+        },
+        {
+          "id": "b3-n09",
+          "prompt": "Amplitude amplification with success probability a needs about how many calls to A?",
+          "options": [
+            "1/sqrt(a)",
+            "1/a",
+            "log a"
+          ],
+          "correct_index": 0,
+          "explanation": "A quadratic improvement over classical repetition.",
+          "source": {
+            "book": "B124",
+            "locator": "Abstract"
+          }
+        },
+        {
+          "id": "b3-n10",
+          "prompt": "How does the spread of a Hadamard quantum walk grow with steps t?",
+          "options": [
+            "Linearly in t",
+            "Like sqrt(t)",
+            "Not at all"
+          ],
+          "correct_index": 0,
+          "explanation": "Ballistic spreading versus diffusive classical spreading.",
+          "source": {
+            "book": "B07",
+            "locator": "Quantum Walks for the Working Mathematician, Section 3"
+          }
+        },
+        {
+          "id": "b3-n11",
+          "prompt": "What is a barren plateau?",
+          "options": [
+            "Exponentially vanishing gradients with qubit count for random circuits",
+            "A noise model",
+            "A kind of qubit"
+          ],
+          "correct_index": 0,
+          "explanation": "McClean et al. show the gradient variance shrinks exponentially in the number of qubits.",
+          "source": {
+            "book": "B128",
+            "locator": "Abstract"
+          }
+        },
+        {
+          "id": "b3-n12",
+          "prompt": "What is known about solving NP-complete problems with a quantum computer?",
+          "options": [
+            "Not known to be possible in polynomial time; in the black-box model about 2^(n/2) is optimal",
+            "They are all solved by Shor's algorithm",
+            "It is proven impossible in any model"
+          ],
+          "correct_index": 0,
+          "explanation": "BBBV: relative to a random oracle NP cannot be solved in time o(2^(n/2)) and Grover matches it.",
+          "source": {
+            "book": "B127",
+            "locator": "Abstract"
+          }
+        }
+      ],
+      "estimated_minutes": 470,
+      "notes": "Rewrites eleven outline sections as lessons that run each algorithm: exhaustive Deutsch-Jozsa and Bernstein-Vazirani checks, Simon's circuit and solver, Grover and amplitude amplification versus their exact formulas, QFT with gate counts and Coppersmith's approximation, phase estimation versus its closed form, a gate-level Shor circuit for N = 15 cross-checked by linear algebra, the Hadamard walk against a published table, VQE and QAOA on exact examples with a barren-plateau measurement, and a complexity table.",
+      "learning_objectives": [
+        "Run Deutsch-Jozsa and Bernstein-Vazirani and explain the interference that produces their answers and the nature of their speed-ups.",
+        "Explain Simon's algorithm and recover a hidden string by sampling and solving a linear system over GF(2).",
+        "Compute Grover's success probability, optimal iteration counts and amplitude amplification in general.",
+        "Use the QFT and phase estimation, including gate counts, approximation and success probabilities.",
+        "Run Shor's algorithm for N = 15 as a circuit and complete the classical post-processing.",
+        "Describe quantum walks and variational algorithms with their limits, and evaluate speed-up claims using query complexity and complexity classes."
+      ]
+    }
+  ]
+}
