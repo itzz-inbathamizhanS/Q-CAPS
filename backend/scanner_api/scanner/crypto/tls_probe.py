@@ -1,93 +1,68 @@
-import ssl
+"""TLS handshake observation through the Python ssl module, pinned to validated addresses.
+
+The negotiated key exchange GROUP is not visible here; see raw_tls_client.RawTLSProbe for that.
+"""
 import socket
-from datetime import datetime
+import ssl
 
 from scanner.errors import ScannerException, ScannerErrorType
-from scanner.crypto.raw_tls_client import RawTLSProbe
+from scanner.net import connect_pinned
 
-def probe_tls(hostname: str, port: int = 443) -> dict:
-    """
-    Probes the TLS endpoint and extracts protocol metadata.
-    Attempts to gather: tls_version, cipher_suite, certificate.
-    """
-    context = ssl.create_default_context()
-    context.check_hostname = False
-    context.verify_mode = ssl.CERT_NONE
-    
-    # Optional: configure ALPN
-    context.set_alpn_protocols(['h2', 'http/1.1'])
-    
-    result = {
-        "tls_version": {"value": "UNKNOWN", "source": "TLS_HANDSHAKE", "status": "UNKNOWN"},
-        "cipher_suite": {"value": "UNKNOWN", "source": "TLS_HANDSHAKE", "status": "UNKNOWN"},
-        "alpn": {"value": "UNKNOWN", "source": "TLS_HANDSHAKE", "status": "UNKNOWN"},
-        "key_exchange_group": {"value": "UNKNOWN", "source": "TLS_HANDSHAKE", "status": "NOT_TESTED"},
-        "certificate_chain_der": [],
-        "raw_deep_probe": None
-    }
-    
-    # 1. Raw Socket Deep Probe & Downgrade Simulation
+
+def classify_tls12_cipher(cipher_name: str) -> dict:
+    """Key exchange and authentication of an OpenSSL style TLS 1.2 or earlier cipher name."""
+    n = cipher_name.upper()
+    if n.startswith("ECDHE-"):
+        kex = "ECDHE"
+    elif n.startswith("DHE-") or n.startswith("EDH-"):
+        kex = "DHE"
+    else:
+        kex = "RSA"  # plain AES128-SHA style suites use RSA key transport: no forward secrecy
+    auth = "ECDSA" if "ECDSA" in n else ("RSA" if ("RSA" in n or kex == "RSA") else None)
+    return {"kex": kex, "auth": auth, "forward_secrecy": kex in ("ECDHE", "DHE")}
+
+
+def _handshake(ips, hostname: str, port: int, verify: bool, timeout: float):
+    ctx = ssl.create_default_context()
+    if not verify:
+        ctx.check_hostname = False
+        ctx.verify_mode = ssl.CERT_NONE
+    ctx.set_alpn_protocols(["h2", "http/1.1"])
+    with connect_pinned(ips, port, timeout) as sock:
+        sock.settimeout(timeout)
+        with ctx.wrap_socket(sock, server_hostname=hostname) as ssock:
+            chain = []
+            if hasattr(ssock, "get_unverified_chain"):
+                chain = [bytes(c) if isinstance(c, (bytes, bytearray)) else c.public_bytes(ssl._ssl.ENCODING_DER)
+                         for c in ssock.get_unverified_chain()]
+            if not chain:
+                leaf = ssock.getpeercert(binary_form=True)
+                chain = [leaf] if leaf else []
+            return {"version": ssock.version(), "cipher": ssock.cipher()[0], "alpn": ssock.selected_alpn_protocol(),
+                    "chain_der": chain}
+
+
+def probe_tls(ips, hostname: str, port: int = 443, timeout: float = 5.0) -> dict:
+    """Observe version, cipher, ALPN and certificate chain, and separately whether the chain is trusted."""
     try:
-        raw_probe = RawTLSProbe(hostname, port)
-        deep_result = raw_probe.full_deep_probe()
-        result["raw_deep_probe"] = deep_result
-        
-        # We can extract exact key exchange info if the raw probe negotiated
-        if deep_result["standard_probe"].get("status") == "NEGOTIATED":
-            neg_cipher = deep_result["standard_probe"]["data"].get("negotiated_cipher")
-            if neg_cipher:
-                # Map standard cipher back if needed (we'll still rely on standard ssl for exact string)
-                pass
-    except Exception as e:
-        # Silently fallback to standard ssl if raw probe fails (e.g. firewall blocks custom packets)
-        pass
-    
-    # 2. Standard SSL Probe for Certificate and standard cipher string
-    try:
-        with socket.create_connection((hostname, port), timeout=5) as sock:
-            with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-                
-                version = ssock.version()
-                cipher = ssock.cipher()
-                alpn = ssock.selected_alpn_protocol()
-                
-                if version:
-                    result["tls_version"] = {
-                        "value": version,
-                        "source": "TLS_HANDSHAKE",
-                        "status": "OBSERVED",
-                        "confidence": 1.0,
-                        "tool": "python_ssl"
-                    }
-                
-                if cipher:
-                    result["cipher_suite"] = {
-                        "value": cipher[0],
-                        "source": "TLS_HANDSHAKE",
-                        "status": "OBSERVED",
-                        "confidence": 1.0,
-                        "tool": "python_ssl"
-                    }
-                
-                if alpn:
-                    result["alpn"] = {
-                        "value": alpn,
-                        "source": "TLS_HANDSHAKE",
-                        "status": "OBSERVED",
-                        "confidence": 1.0,
-                        "tool": "python_ssl"
-                    }
-                    
-                # Collect certificate
-                der_cert = ssock.getpeercert(binary_form=True)
-                if der_cert:
-                    result["certificate_chain_der"].append(der_cert)
-                
+        observed = _handshake(ips, hostname, port, verify=False, timeout=timeout)
+    except ScannerException:
+        raise
     except ssl.SSLError as e:
-        raise ScannerException(ScannerErrorType.TLS_NEGOTIATION_FAILURE, f"SSL Handshake failed: {str(e)}")
-    except socket.timeout:
-        raise ScannerException(ScannerErrorType.CONNECTION_TIMEOUT, f"Connection timed out to {hostname}:{port}")
-    except socket.error as e:
-        raise ScannerException(ScannerErrorType.TARGET_UNREACHABLE, f"Socket error connecting to {hostname}:{port} - {str(e)}")
-        
-    return result
+        raise ScannerException(ScannerErrorType.TLS_NEGOTIATION_FAILURE, f"TLS handshake failed: {e.reason or e}")
+    except (socket.timeout, TimeoutError):
+        raise ScannerException(ScannerErrorType.CONNECTION_TIMEOUT, f"TLS handshake to {hostname}:{port} timed out")
+    except OSError as e:
+        raise ScannerException(ScannerErrorType.TARGET_UNREACHABLE, f"TLS connection to {hostname}:{port} failed: {e}")
+
+    trusted, trust_error = None, None
+    try:
+        _handshake(ips, hostname, port, verify=True, timeout=timeout)
+        trusted = True
+    except ssl.SSLCertVerificationError as e:
+        trusted, trust_error = False, e.verify_message or str(e)
+    except (ssl.SSLError, OSError, ScannerException):
+        trusted, trust_error = None, "trust could not be determined"
+    observed["trusted"] = trusted
+    observed["trust_error"] = trust_error
+    return observed

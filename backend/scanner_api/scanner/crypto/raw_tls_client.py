@@ -1,221 +1,173 @@
+"""Minimal TLS ClientHello probe used to observe what a server negotiates.
+
+TLS 1.3 key exchange groups are not exposed by the Python ssl module. A ClientHello that lists the
+groups we support but carries an EMPTY key_share forces a conforming server to answer with a
+HelloRetryRequest that names the group it selected (RFC 8446 4.1.4). No key material is generated
+or exchanged and no handshake is completed.
+
+The result describes the group preference of the server for this hello. For CDN-fronted sites it is
+the behaviour of the edge, not necessarily of the origin.
+"""
+import os
 import socket
 import struct
-import binascii
-import time
 
-from scanner.errors import ScannerException, ScannerErrorType
+from scanner.errors import ScannerException
+from scanner.net import connect_pinned
 
-# --- TLS Constants ---
-TLS_VERSION_1_0 = b"\x03\x01"
-TLS_VERSION_1_2 = b"\x03\x03"
-TLS_VERSION_1_3 = b"\x03\x04"
+# SHA-256 of the string HelloRetryRequest: the fixed ServerHello.random of a HelloRetryRequest.
+HRR_RANDOM = bytes.fromhex("CF21AD74E59A6111BE1D8C021E65B891C2A211167ABB8C5E079E09E2C8A8339C")
 
-HANDSHAKE_CLIENT_HELLO = 1
-HANDSHAKE_SERVER_HELLO = 2
+# Offered in order; the server chooses by its own preference among them.
+HYBRID_GROUPS = [0x11EC, 0x11EB, 0x11ED, 0x6399]  # X25519MLKEM768, SecP256r1MLKEM768, SecP384r1MLKEM1024, Kyber draft
+CLASSICAL_GROUPS = [0x001D, 0x0017, 0x0018, 0x0019, 0x001E]  # X25519, P-256, P-384, P-521, X448
 
-# CIPHER SUITES (Selected mix of Classical and PQC if defined, mostly classical for baseline)
-CIPHER_SUITES = [
-    0x1301, # TLS_AES_128_GCM_SHA256 (TLS 1.3)
-    0x1302, # TLS_AES_256_GCM_SHA384 (TLS 1.3)
-    0x1303, # TLS_CHACHA20_POLY1305_SHA256 (TLS 1.3)
-    0xc02b, # TLS_ECDHE_ECDSA_WITH_AES_128_GCM_SHA256
-    0xc02f, # TLS_ECDHE_RSA_WITH_AES_128_GCM_SHA256
-    0x009e, # TLS_DHE_RSA_WITH_AES_128_GCM_SHA256
-]
+TLS13_SUITES = [0x1301, 0x1302, 0x1303]
+LEGACY_SUITES = [0xC013, 0xC014, 0xC009, 0xC00A, 0x002F, 0x0035]
+SIG_ALGS = [0x0403, 0x0503, 0x0804, 0x0805, 0x0806, 0x0401, 0x0501, 0x0807]
+
+ALERT_PROTOCOL_VERSION = 70
+LEGACY_TLS10 = b"\x03\x01"
+LEGACY_TLS11 = b"\x03\x02"
+
+
+def _ext(ext_type: int, data: bytes) -> bytes:
+    return struct.pack("!HH", ext_type, len(data)) + data
+
+
+def _sni(hostname: str) -> bytes:
+    name = hostname.encode("ascii")
+    entry = b"\x00" + struct.pack("!H", len(name)) + name
+    return _ext(0x0000, struct.pack("!H", len(entry)) + entry)
+
+
+def _groups(groups) -> bytes:
+    body = b"".join(struct.pack("!H", g) for g in groups)
+    return _ext(0x000A, struct.pack("!H", len(body)) + body)
+
+
+def build_client_hello(hostname: str, groups, legacy_version: bytes = None) -> bytes:
+    """A TLS 1.3 hello with an empty key_share, or (with legacy_version) a TLS 1.0/1.1 hello."""
+    sig = b"".join(struct.pack("!H", s) for s in SIG_ALGS)
+    exts = _sni(hostname) + _groups(groups) + _ext(0x000D, struct.pack("!H", len(sig)) + sig)
+    if legacy_version is None:
+        version, suites = b"\x03\x03", TLS13_SUITES
+        exts += _ext(0x002B, b"\x02\x03\x04") + _ext(0x0033, b"\x00\x00")
+    else:
+        version, suites = legacy_version, LEGACY_SUITES
+        exts += _ext(0x000B, b"\x01\x00")  # ec_point_formats: uncompressed
+    cipher_bytes = b"".join(struct.pack("!H", c) for c in suites)
+    body = (version + os.urandom(32) + b"\x20" + os.urandom(32)
+            + struct.pack("!H", len(cipher_bytes)) + cipher_bytes + b"\x01\x00"
+            + struct.pack("!H", len(exts)) + exts)
+    handshake = b"\x01" + len(body).to_bytes(3, "big") + body
+    return b"\x16\x03\x01" + struct.pack("!H", len(handshake)) + handshake
+
+
+def parse_response(data: bytes) -> dict:
+    """Interpret the first TLS record a server sent back to our hello."""
+    if len(data) < 7:
+        return {"outcome": "error", "reason": "short or empty response"}
+    if data[0] == 21:  # alert
+        return {"outcome": "rejected", "alert": data[6]}
+    if data[0] != 22 or data[5] != 2:
+        return {"outcome": "error", "reason": "response was not a ServerHello"}
+    p = data[5:5 + struct.unpack("!H", data[3:5])[0]]
+    try:
+        legacy_version = struct.unpack("!H", p[4:6])[0]
+        random = p[6:38]
+        i = 38
+        i += 1 + p[i]          # session id
+        cipher = struct.unpack("!H", p[i:i + 2])[0]
+        i += 3                 # cipher + compression
+        selected_version, group = legacy_version, None
+        if i + 2 <= len(p):
+            end = i + 2 + struct.unpack("!H", p[i:i + 2])[0]
+            i += 2
+            while i + 4 <= min(end, len(p)):
+                t, ln = struct.unpack("!HH", p[i:i + 4])
+                body = p[i + 4:i + 4 + ln]
+                if t == 0x002B and len(body) >= 2:
+                    selected_version = struct.unpack("!H", body[:2])[0]
+                elif t == 0x0033 and len(body) >= 2:
+                    group = struct.unpack("!H", body[:2])[0]
+                i += 4 + ln
+    except (IndexError, struct.error):
+        return {"outcome": "error", "reason": "malformed ServerHello"}
+    return {"outcome": "selected", "version": selected_version, "cipher": cipher,
+            "group": group, "hello_retry_request": random == HRR_RANDOM}
+
+
+def _read_record(sock: socket.socket) -> bytes:
+    data = b""
+    while len(data) < 5:
+        chunk = sock.recv(4096)
+        if not chunk:
+            return data
+        data += chunk
+    need = 5 + struct.unpack("!H", data[3:5])[0]
+    while len(data) < need and len(data) < 20000:
+        chunk = sock.recv(4096)
+        if not chunk:
+            break
+        data += chunk
+    return data
+
 
 class RawTLSProbe:
-    """
-    Bypasses python's ssl module to send raw ClientHello packets
-    and parse ServerHello responses for deep protocol inspection.
-    """
-    
-    def __init__(self, hostname: str, port: int = 443, timeout: float = 3.0):
+    def __init__(self, hostname: str, ips, port: int = 443, timeout: float = 4.0):
         self.hostname = hostname
+        self.ips = ips
         self.port = port
         self.timeout = timeout
 
-    def _build_sni_extension(self) -> bytes:
-        hostname_bytes = self.hostname.encode('utf-8')
-        server_name_list = struct.pack("!H", len(hostname_bytes) + 3) + b"\x00" + struct.pack("!H", len(hostname_bytes)) + hostname_bytes
-        ext_data = struct.pack("!H", len(server_name_list)) + server_name_list
-        return struct.pack("!H", 0x0000) + ext_data  # SNI is type 0x0000
-
-    def _build_supported_groups_extension(self, groups: list) -> bytes:
-        # groups is list of 16-bit ints
-        group_bytes = b"".join([struct.pack("!H", g) for g in groups])
-        ext_data = struct.pack("!H", len(group_bytes)) + group_bytes
-        return struct.pack("!H", 0x000a) + struct.pack("!H", len(ext_data)) + ext_data  # Supported Groups is type 0x000a
-
-    def _build_supported_versions_extension(self) -> bytes:
-        versions = TLS_VERSION_1_3 + TLS_VERSION_1_2
-        ext_data = struct.pack("!B", len(versions)) + versions
-        return struct.pack("!H", 0x002b) + struct.pack("!H", len(ext_data)) + ext_data # Supported Versions is type 0x002b
-
-    def _build_client_hello(self, custom_groups: list = None) -> bytes:
-        # 1. Handshake header
-        # Version 1.2 in record layer (0x0301 or 0x0303 often used for compatibility)
-        client_version = TLS_VERSION_1_2
-        
-        # Random bytes (32 bytes)
-        import os
-        random_bytes = os.urandom(32)
-        
-        # Session ID (0 bytes for fresh connection)
-        session_id = b"\x00"
-        
-        # Cipher Suites
-        cipher_bytes = b"".join([struct.pack("!H", c) for c in CIPHER_SUITES])
-        cipher_len = struct.pack("!H", len(cipher_bytes))
-        ciphers = cipher_len + cipher_bytes
-        
-        # Compression Methods (1 byte length, 0x00 for null)
-        compressions = b"\x01\x00"
-        
-        # Extensions
-        exts = self._build_sni_extension()
-        exts += self._build_supported_versions_extension()
-        
-        # Determine Groups to offer
-        # Standard: X25519 (0x001d), SECP256R1 (0x0017)
-        # PQC Hybrid Drafts (e.g., X25519Kyber768Draft00 = 0x6399, X25519MLKEM768 = 0x11ec)
-        groups_to_offer = custom_groups if custom_groups else [0x11ec, 0x6399, 0x001d, 0x0017]
-        exts += self._build_supported_groups_extension(groups_to_offer)
-        
-        exts_len = struct.pack("!H", len(exts))
-        extensions = exts_len + exts
-        
-        # Client Hello Payload
-        payload = client_version + random_bytes + session_id + ciphers + compressions + extensions
-        payload_len = len(payload)
-        
-        # Handshake Header (Type 1 for ClientHello, 3-byte length)
-        handshake_header = b"\x01" + payload_len.to_bytes(3, byteorder='big')
-        
-        # Record Layer Header (Type 22 for Handshake, Version 1.0, 2-byte length)
-        record = b"\x16" + TLS_VERSION_1_0 + struct.pack("!H", len(handshake_header) + payload_len)
-        
-        return record + handshake_header + payload
-
-    def _parse_server_hello(self, data: bytes) -> dict:
-        """
-        Minimal ServerHello parser to extract negotiated cipher and extensions.
-        """
-        result = {
-            "negotiated_cipher": None,
-            "tls_version": None,
-            "extensions_found": []
-        }
-        
-        if len(data) < 5:
-            return result
-            
-        record_type = data[0]
-        if record_type != 22: # Not Handshake
-            return result
-            
-        record_len = struct.unpack("!H", data[3:5])[0]
-        payload = data[5:5+record_len]
-        
-        if len(payload) < 4:
-            return result
-            
-        msg_type = payload[0]
-        if msg_type != 2: # Not ServerHello
-            return result
-            
-        # Parse ServerHello
-        # Version (2), Random (32), Session ID len (1), Session ID (var), Cipher (2), Compression (1), Extensions len (2), Extensions (var)
-        idx = 4
-        if idx + 2 > len(payload): return result
-        
-        srv_version = payload[idx:idx+2]
-        result["tls_version"] = srv_version.hex()
-        idx += 2
-        
-        idx += 32 # Skip Random
-        
-        if idx >= len(payload): return result
-        session_id_len = payload[idx]
-        idx += 1 + session_id_len
-        
-        if idx + 2 > len(payload): return result
-        cipher = struct.unpack("!H", payload[idx:idx+2])[0]
-        result["negotiated_cipher"] = hex(cipher)
-        idx += 2
-        
-        idx += 1 # Skip Compression
-        
-        # Extensions
-        if idx + 2 <= len(payload):
-            ext_len = struct.unpack("!H", payload[idx:idx+2])[0]
-            idx += 2
-            end_idx = idx + ext_len
-            while idx < end_idx and idx + 4 <= len(payload):
-                ext_type = struct.unpack("!H", payload[idx:idx+2])[0]
-                e_len = struct.unpack("!H", payload[idx+2:idx+4])[0]
-                result["extensions_found"].append(hex(ext_type))
-                idx += 4 + e_len
-                
-        return result
-
-    def probe_custom_groups(self, groups: list) -> dict:
-        """
-        Sends a ClientHello with ONLY the specified groups.
-        Returns the parsed ServerHello or connection error.
-        """
-        client_hello = self._build_client_hello(custom_groups=groups)
-        
+    def _exchange(self, hello: bytes) -> dict:
         try:
-            with socket.create_connection((self.hostname, self.port), timeout=self.timeout) as sock:
-                sock.sendall(client_hello)
-                response = sock.recv(4096)
-                
-                if not response:
-                    return {"status": "CONNECTION_DROPPED", "reason": "No response"}
-                    
-                parsed = self._parse_server_hello(response)
-                
-                if parsed["negotiated_cipher"]:
-                    return {"status": "NEGOTIATED", "data": parsed}
-                else:
-                    return {"status": "HANDSHAKE_FAILED", "data": response.hex()[:100]}
-                    
-        except socket.timeout:
-            return {"status": "TIMEOUT"}
-        except ConnectionResetError:
-            return {"status": "CONNECTION_RESET"}
-        except Exception as e:
-            return {"status": "ERROR", "message": str(e)}
+            with connect_pinned(self.ips, self.port, self.timeout) as sock:
+                sock.settimeout(self.timeout)
+                sock.sendall(hello)
+                return parse_response(_read_record(sock))
+        except ScannerException as e:
+            return {"outcome": "error", "reason": e.message}
+        except (socket.timeout, TimeoutError):
+            return {"outcome": "error", "reason": "timed out"}
+        except OSError as e:
+            return {"outcome": "error", "reason": str(e)}
 
-    def simulate_downgrade_attack(self) -> dict:
-        """
-        Attempts to force the server into a classical-only negotiation.
-        If the server allows it (i.e. it isn't enforcing strict PQC), it is vulnerable.
-        """
-        # Classical-only groups (e.g. SECP256R1)
-        classical_groups = [0x0017, 0x0018]
-        result = self.probe_custom_groups(classical_groups)
-        
-        is_vulnerable = False
-        if result["status"] == "NEGOTIATED":
-            is_vulnerable = True # The server accepted a classical-only downgrade!
-            
-        return {
-            "downgrade_attempted": True,
-            "server_accepted_classical": is_vulnerable,
-            "probe_result": result
-        }
+    def probe_groups(self, groups) -> dict:
+        return self._exchange(build_client_hello(self.hostname, groups))
 
-    def full_deep_probe(self) -> dict:
-        # 1. PQC / Hybrid Supported Probe
-        hybrid_groups = [0x11ec, 0x6399, 0x001d, 0x0017] # ML-KEM, Kyber, X25519, P-256
-        standard_result = self.probe_custom_groups(hybrid_groups)
-        
-        # 2. Downgrade Attack
-        downgrade_result = self.simulate_downgrade_attack()
-        
-        return {
-            "raw_probe_supported": True,
-            "standard_probe": standard_result,
-            "downgrade_simulation": downgrade_result
-        }
+    def probe_legacy_version(self, version: bytes) -> dict:
+        """Does the server accept a TLS 1.0 or 1.1 hello? accepted is True, False or None (unknown)."""
+        res = self._exchange(build_client_hello(self.hostname, [0x001D, 0x0017, 0x0018], legacy_version=version))
+        if res["outcome"] == "selected":
+            return {"accepted": res["version"] == struct.unpack("!H", version)[0], "detail": res}
+        if res["outcome"] == "rejected":
+            return {"accepted": False, "detail": res}
+        return {"accepted": None, "detail": res}
+
+    def probe_key_exchange(self) -> dict:
+        """Observe the TLS 1.3 key exchange group the server prefers, and whether it supports hybrid PQC.
+
+        Two hellos at most: all groups, then (only if the first choice was classical) hybrid groups alone.
+        """
+        first = self.probe_groups(HYBRID_GROUPS + CLASSICAL_GROUPS)
+        out = {"first": first, "hybrid_only": None, "hybrid_pqc_supported": None,
+               "preferred_group": None, "tls13_supported": None}
+        if first["outcome"] == "selected" and first["version"] == 0x0304 and first.get("group") is not None:
+            out["tls13_supported"] = True
+            out["preferred_group"] = first["group"]
+            if first["group"] in HYBRID_GROUPS:
+                out["hybrid_pqc_supported"] = True
+            else:
+                second = self.probe_groups(HYBRID_GROUPS)
+                out["hybrid_only"] = second
+                if second["outcome"] == "selected" and second.get("group") in HYBRID_GROUPS:
+                    out["hybrid_pqc_supported"] = True
+                elif second["outcome"] == "rejected":
+                    out["hybrid_pqc_supported"] = False
+        elif (first["outcome"] == "rejected" and first.get("alert") == ALERT_PROTOCOL_VERSION) or \
+                (first["outcome"] == "selected" and first["version"] != 0x0304):
+            out["tls13_supported"] = False
+            out["hybrid_pqc_supported"] = False  # no TLS 1.3, so no hybrid key exchange
+        return out

@@ -9,6 +9,8 @@ class PQCDetector:
             data = json.load(f)
             self.registry_version = data.get("registry_version", "unknown")
             self.algorithms = data.get("algorithms", {})
+            self.groups = data.get("groups", {})
+            self.signature_oids = data.get("signature_oids", {})
 
     def _determine_class(self, name_str: str) -> str:
         """Helper to match string against registry."""
@@ -69,3 +71,19 @@ class PQCDetector:
             "confidence": 0.95 if classification != "UNKNOWN" else 0.5,
             "registry_version": self.registry_version
         }
+
+
+    # ---- v2: classification by observed codepoint / OID rather than by substring ----
+
+    def classify_group(self, group_id):
+        """Classify a TLS supported_groups codepoint (int). Returns name, class and a stable key."""
+        if group_id is None:
+            return {"name": None, "class": "UNKNOWN"}
+        meta = self.groups.get("0x%04x" % group_id)
+        if not meta:
+            return {"name": "0x%04x" % group_id, "class": "UNKNOWN"}
+        return {"name": meta["name"], "class": meta["class"], "note": meta.get("note")}
+
+    def classify_signature_oid(self, dotted_oid: str):
+        meta = self.signature_oids.get(dotted_oid)
+        return {"name": meta["name"], "class": "PQC"} if meta else {"name": None, "class": "CLASSICAL"}

@@ -1,301 +1,202 @@
-import ssl
-import socket
+"""Q-CAPS scanner engine (result schema v2).
+
+Every value in a result was observed by one of the checks below. A check that fails or is skipped is
+reported in `checks` with its reason, and nothing is inferred or invented to fill the gap. The target
+is resolved and validated once (scanner.security.target_validator); all connections are pinned to
+those addresses.
+"""
 import json
 import sys
-import whois
-import requests
-import dns.resolver
-from datetime import datetime
-from cryptography import x509
-from cryptography.hazmat.backends import default_backend
+import time
+from concurrent.futures import ThreadPoolExecutor, wait
+from datetime import datetime, timezone
 
-def check_data_leaks(hostname):
-    """
-    No real breach-intelligence source is integrated, so no result can be verified.
-    Never fabricate breach data; report that explicitly.
-    """
-    return {
-        "status": "no_verified_result",
-        "message": "No verified result available",
-        "breaches_found": None,
-        "breaches": []
+from scanner import checks
+from scanner.crypto.certificate_probe import parse_certificate
+from scanner.crypto.pqc_detector import PQCDetector
+from scanner.crypto.raw_tls_client import RawTLSProbe, LEGACY_TLS10, LEGACY_TLS11
+from scanner.crypto.tls_probe import probe_tls, classify_tls12_cipher
+from scanner.errors import ScannerException
+from scanner.findings import derive_findings
+from scanner.security.target_validator import resolve_target
+
+SCANNER_VERSION = "2.0.0"
+SCHEMA_VERSION = 2
+DEADLINE_SECONDS = 25.0
+
+_detector = PQCDetector()
+
+
+def _now() -> str:
+    return datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+
+
+def _error(target: str, message: str) -> dict:
+    """A scan that could not run. Not a result: there is nothing to score, list or award XP for."""
+    return {"target_url": target, "scan_timestamp": _now(), "error": message}
+
+
+def _timed(fn):
+    start = time.monotonic()
+    try:
+        value = fn()
+        status, reason = "ok", None
+    except ScannerException as e:
+        value, status, reason = None, "failed", e.message
+    except Exception as e:  # a third-party library failing must not abort the scan
+        value, status, reason = None, "failed", f"{type(e).__name__}: {str(e)[:120]}"
+    return {"status": status, "reason": reason, "value": value, "duration_ms": int((time.monotonic() - start) * 1000)}
+
+
+def _probe_legacy(host, ips) -> dict:
+    probe = RawTLSProbe(host, ips)
+    return {"tls1_0": probe.probe_legacy_version(LEGACY_TLS10)["accepted"],
+            "tls1_1": probe.probe_legacy_version(LEGACY_TLS11)["accepted"]}
+
+
+def _key_exchange(handshake, probe) -> dict:
+    """Combine the handshake and the HelloRetryRequest probe into one honest key-exchange statement."""
+    kex = {"classification": "unknown", "preferred_group": None, "preferred_group_name": None,
+           "hybrid_pqc_supported": None, "forward_secrecy": None, "kex": None, "method": None, "evidence": []}
+    cipher = (handshake or {}).get("cipher")
+    version = (handshake or {}).get("version")
+    if probe and probe.get("preferred_group") is not None:
+        group = _detector.classify_group(probe["preferred_group"])
+        kex.update(preferred_group="0x%04x" % probe["preferred_group"], preferred_group_name=group["name"],
+                   hybrid_pqc_supported=probe["hybrid_pqc_supported"], forward_secrecy=True, kex="TLS 1.3 key share",
+                   method="tls13_hello_retry_request")
+        kex["preferred_group"] = group["name"] or kex["preferred_group"]
+        if group["class"] == "HYBRID_PQC":
+            kex["classification"] = "hybrid_pqc"
+        elif group["class"] == "CLASSICAL":
+            kex["classification"] = "hybrid_pqc_available" if probe["hybrid_pqc_supported"] else "classical"
+        kex["evidence"].append(f"Server selected group {group['name']} from a ClientHello listing hybrid and classical groups")
+        if probe["hybrid_pqc_supported"] is False:
+            kex["evidence"].append("A ClientHello offering only hybrid ML-KEM groups was rejected")
+        elif kex["classification"] == "hybrid_pqc_available":
+            kex["evidence"].append("Hybrid ML-KEM groups are accepted when offered alone, but are not the first choice")
+    elif cipher and version in ("TLSv1.2", "TLSv1.1", "TLSv1"):
+        info = classify_tls12_cipher(cipher)
+        kex.update(classification="classical", hybrid_pqc_supported=False, forward_secrecy=info["forward_secrecy"],
+                   kex=info["kex"], method="tls12_cipher_suite")
+        kex["evidence"].append(f"{version} cipher suite {cipher} uses {info['kex']} key exchange; TLS before 1.3 has no hybrid PQC groups")
+    else:
+        kex["evidence"].append("The key exchange group could not be observed")
+    kex["evidence"].append("Observed at the endpoint that answered; for CDN-fronted sites this is the edge, not necessarily the origin")
+    return kex
+
+
+def _posture(kex, cert) -> dict:
+    cls = kex["classification"]
+    kx_label = {"hybrid_pqc": "hybrid post-quantum", "hybrid_pqc_available": "classical preferred, hybrid post-quantum accepted",
+                "classical": "classical only", "unknown": "not determined"}[cls]
+    auth = (cert or {}).get("signature_class") or "unknown"
+    group = kex.get("preferred_group_name")
+    auth_detail = ""
+    if cert:
+        size = cert.get("curve") or cert.get("key_size")
+        auth_detail = f" ({cert.get('public_key_algorithm')} {size})" if size else f" ({cert.get('public_key_algorithm')})"
+    summary = f"Key exchange: {kx_label}" + (f" ({group})" if group else "") + f". Certificate authentication: {auth}{auth_detail if cert else ''}."
+    return {"key_exchange": cls, "authentication": auth, "summary": summary}
+
+
+def analyze_domain(target: str, mode: str = "standard", authorization: dict = None) -> dict:
+    """Scan `target`. mode is standard (passive checks) or full (adds active checks; needs verified ownership)."""
+    authorization = authorization or {}
+    try:
+        host, ips = resolve_target(target)
+    except ScannerException as e:
+        return _error(target, e.message)
+    full = mode == "full"
+    if full and not authorization.get("ownership_verified"):
+        return _error(host, "Full scans require verified ownership of the domain")
+
+    jobs = {
+        "dns": lambda: checks.check_dns(host),
+        "whois": lambda: checks.check_whois(host),
+        "http_headers": lambda: checks.check_http(host, ips),
+        "tls_handshake": lambda: probe_tls(ips, host),
+        "tls_key_exchange": lambda: RawTLSProbe(host, ips).probe_key_exchange(),
+        "ct_subdomains": lambda: checks.check_ct_subdomains(host),
     }
+    if full:
+        jobs.update({"ports": lambda: checks.check_ports(ips),
+                     "dns_wordlist": lambda: checks.check_wordlist_subdomains(host),
+                     "legacy_tls": lambda: _probe_legacy(host, ips)})
 
-# PROBLEM 1: IP Geolocation Tracking
-def get_geolocation(hostname, enable_geo=False):
-    """
-    Geolocation requires sending IP to a third-party service (ip-api.com).
-    For privacy, it is disabled by default. Set enable_geo=True to use.
-    """
-    data = {"ip": "Unknown", "country": "Unknown", "isp": "Unknown"}
-    if not enable_geo:
-        return data
-    try:
-        ip = socket.gethostbyname(hostname)
-        data["ip"] = ip
-        response = requests.get(f"http://ip-api.com/json/{ip}", timeout=3).json()
-        if response.get("status") == "success":
-            data["country"] = f"{response.get('city', '')}, {response.get('country', '')}"
-            data["isp"] = response.get("isp", "Unknown")
-    except Exception:
-        pass
-    return data
+    pool = ThreadPoolExecutor(max_workers=10)
+    futures = {name: pool.submit(_timed, fn) for name, fn in jobs.items()}
+    wait(futures.values(), timeout=DEADLINE_SECONDS)
+    pool.shutdown(wait=False, cancel_futures=True)  # stragglers are bounded by their own socket timeouts
 
-def enumerate_subdomains(hostname):
-    subdomains = set()
-    
-    # 1. Quick DNS dictionary check (guarantees results for common setups)
-    common_prefixes = ['www', 'mail', 'blog', 'api', 'dev', 'staging', 'test']
-    for prefix in common_prefixes:
-        sub = f"{prefix}.{hostname}"
+    outcomes = {}
+    for name, fut in futures.items():
+        if fut.done():
+            outcomes[name] = fut.result()
+        else:
+            outcomes[name] = {"status": "failed", "reason": "timed out", "value": None, "duration_ms": int(DEADLINE_SECONDS * 1000)}
+    val = lambda n: (outcomes[n]["value"] if n in outcomes and outcomes[n]["status"] == "ok" else None)  # noqa: E731
+
+    handshake, probe = val("tls_handshake"), val("tls_key_exchange")
+    cert, chain, cert_check = None, [], {"status": "failed", "reason": "no TLS handshake", "duration_ms": 0}
+    if handshake and handshake["chain_der"]:
+        started = time.monotonic()
         try:
-            # Quick resolve, if it has an A record, it exists
-            dns.resolver.resolve(sub, 'A', lifetime=1.0)
-            subdomains.add(sub)
-        except Exception:
-            pass
+            parsed = [parse_certificate(d) for d in handshake["chain_der"][:5]]
+            cert, chain = parsed[0], [{k: c[k] for k in ("subject_cn", "issuer_cn", "public_key_algorithm", "signature_algorithm")} for c in parsed]
+            cert_check = {"status": "ok", "reason": None}
+        except ScannerException as e:
+            cert_check = {"status": "failed", "reason": e.message}
+        cert_check["duration_ms"] = int((time.monotonic() - started) * 1000)
+    elif handshake:
+        cert_check["reason"] = "the server sent no certificate"
 
-    try:
-        # 2. Try Hackertarget (often rate-limited but fast if it works)
-        response = requests.get(f"https://api.hackertarget.com/hostsearch/?q={hostname}", timeout=3)
-        if response.status_code == 200:
-            lines = response.text.split('\n')
-            for line in lines:
-                if ',' in line:
-                    sub = line.split(',')[0].strip().lower()
-                    if sub.endswith(hostname) and sub != hostname:
-                        subdomains.add(sub)
-    except Exception:
-        pass
-        
-    if not subdomains:
-        try:
-            # Fallback to crt.sh if Hackertarget fails or is rate-limited
-            response = requests.get(f"https://crt.sh/?q=%25.{hostname}&output=json", timeout=10)
-            if response.status_code == 200:
-                data = response.json()
-                for entry in data:
-                    name_value = entry.get('name_value', '')
-                    for name in name_value.split('\n'):
-                        name = name.strip().lower()
-                        if name.endswith(hostname) and name != hostname and '*' not in name:
-                            subdomains.add(name)
-        except Exception:
-            pass
+    kex = _key_exchange(handshake, probe) if (handshake or probe) else None
+    tls = None
+    if handshake or probe:
+        tls = {"version": (handshake or {}).get("version"), "cipher_suite": (handshake or {}).get("cipher"),
+               "alpn": (handshake or {}).get("alpn"), "trusted": (handshake or {}).get("trusted"),
+               "trust_error": (handshake or {}).get("trust_error"), "key_exchange": kex,
+               "certificate": cert and {**cert, "chain": chain}, "legacy_protocols": val("legacy_tls")}
+        if tls["version"] is None and probe and probe.get("tls13_supported"):
+            tls["version"] = "TLSv1.3"
 
-    return list(subdomains)[:20]
+    subdomains = {}
+    for name in ("ct_subdomains", "dns_wordlist"):
+        for entry in val(name) or []:
+            subdomains.setdefault(entry["name"], entry)
 
-def scan_ports(hostname):
-    ports_to_scan = [21, 22, 25, 53, 80, 443, 3306, 8080]
-    results = {}
-    try:
-        ip = socket.gethostbyname(hostname)
-        for port in ports_to_scan:
-            try:
-                with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as s:
-                    s.settimeout(0.5)
-                    if s.connect_ex((ip, port)) == 0:
-                        results[str(port)] = "OPEN"
-                    else:
-                        results[str(port)] = "CLOSED"
-            except Exception:
-                 results[str(port)] = "CLOSED"
-    except Exception:
-        pass
-    return results
+    check_report = {n: {"status": o["status"], **({"reason": o["reason"]} if o["reason"] else {}), "duration_ms": o["duration_ms"]}
+                    for n, o in outcomes.items() if n != "tls_handshake"}
+    check_report["tls_handshake"] = {"status": outcomes["tls_handshake"]["status"], "duration_ms": outcomes["tls_handshake"]["duration_ms"],
+                                     **({"reason": outcomes["tls_handshake"]["reason"]} if outcomes["tls_handshake"]["reason"] else {})}
+    check_report["certificate"] = cert_check
+    if not full:
+        for name in ("ports", "dns_wordlist", "legacy_tls"):
+            check_report[name] = {"status": "requires_verification", "reason": "Active checks need verified ownership of the domain", "duration_ms": 0}
 
-# PROBLEM 2: DNS Record Enumeration
-def enumerate_dns(hostname):
-    records = {"A": [], "MX": [], "TXT": []}
-    try:
-        for rdata in dns.resolver.resolve(hostname, 'A'):
-            records["A"].append(rdata.to_text())
-    except Exception: pass
-    
-    try:
-        for rdata in dns.resolver.resolve(hostname, 'MX'):
-            records["MX"].append(rdata.to_text())
-    except Exception: pass
-    
-    try:
-        for rdata in dns.resolver.resolve(hostname, 'TXT'):
-            records["TXT"].append(rdata.to_text())
-    except Exception: pass
-    
-    return records
-
-# PROBLEM 3: HTTP Security Header Inspection
-def analyze_headers(hostname):
-    headers = {"hsts": False, "x_frame_options": False, "content_security_policy": False}
-    try:
-        response = requests.head(f"https://{hostname}", timeout=3)
-        h = response.headers
-        headers["hsts"] = "strict-transport-security" in h.lower()
-        headers["x_frame_options"] = "x-frame-options" in h.lower()
-        headers["content_security_policy"] = "content-security-policy" in h.lower()
-    except Exception:
-        pass
-    return headers
-
-import ipaddress
-
-# PROBLEM 4: Combine Solutions
-def analyze_domain(hostname, port=443, enable_geo=False):
-    
-    # 0. SSRF Protection & Validation
-    try:
-        # Validate every resolved address (IPv4 and IPv6), not just the first A record.
-        cgnat = ipaddress.ip_network("100.64.0.0/10")
-        infos = socket.getaddrinfo(hostname, None)
-        for info in infos:
-            ip = info[4][0].split("%")[0]
-            ip_obj = ipaddress.ip_address(ip)
-            if (ip_obj.is_private or ip_obj.is_loopback or ip_obj.is_link_local or ip_obj.is_multicast
-                    or ip_obj.is_reserved or ip_obj.is_unspecified
-                    or (ip_obj.version == 4 and ip_obj in cgnat)):
-                raise ValueError(f"Scan target '{hostname}' resolves to a restricted IP address ({ip}).")
-    except Exception as e:
-        return {
-            "target_url": hostname,
-            "scan_timestamp": datetime.utcnow().isoformat() + "Z",
-            "error": f"Invalid or restricted domain: {str(e)}",
-            "crypto": {
-                "encryption_detected": "Unknown",
-                "quantum_status": "inconclusive",
-                # An error is not a finding: nothing was assessed, so there is nothing to list here.
-                "vulnerabilities_found": [],
-                "mission_xp_awarded": 0
-            }
-        }
-
-    # 1. OSINT / WHOIS Scanning
-    osint_data = {
-        "registrar": "Unknown",
-        "creation_date": "Unknown",
-        "expiration_date": "Unknown",
-        "owner_organization": "Unknown"
-    }
-    
-    try:
-        domain_info = whois.whois(hostname)
-        
-        def parse_date(date_val):
-            if isinstance(date_val, list):
-                return date_val[0].isoformat() if hasattr(date_val[0], 'isoformat') else str(date_val[0])
-            return date_val.isoformat() if hasattr(date_val, 'isoformat') else str(date_val)
-            
-        if domain_info.registrar:
-            osint_data["registrar"] = domain_info.registrar
-        if domain_info.creation_date:
-            osint_data["creation_date"] = parse_date(domain_info.creation_date)
-        if domain_info.expiration_date:
-            osint_data["expiration_date"] = parse_date(domain_info.expiration_date)
-        if domain_info.org:
-            osint_data["owner_organization"] = domain_info.org
-    except Exception as e:
-        osint_data["error"] = f"WHOIS lookup failed: {str(e)}"
-
-    # Add Advanced OSINT Features
-    geo_data = get_geolocation(hostname, enable_geo)
-    dns_data = enumerate_dns(hostname)
-    header_data = analyze_headers(hostname)
-    subdomains = enumerate_subdomains(hostname)
-    ports = scan_ports(hostname)
-
-    # 2. Cryptographic Scanning
-    context = ssl.create_default_context()
-    context.check_hostname = False
-    context.verify_mode = ssl.CERT_NONE
-    
-    osint_data["data_leaks"] = check_data_leaks(hostname)
-    
     result = {
-        "target_url": hostname,
-        "scan_timestamp": datetime.utcnow().isoformat() + "Z",
-        "osint": osint_data,
-        "infrastructure": {
-            "geo": geo_data,
-            "dns": dns_data,
-            "security_headers": header_data,
-            "ports": ports,
-            "subdomains": subdomains
-        },
-        "crypto": {
-            "encryption_detected": "Unknown",
-            "quantum_status": "inconclusive",
-            "vulnerabilities_found": [],
-            # Assessment limitations (connection failures, inconclusive results). Not findings.
-            "notes": [],
-            "mission_xp_awarded": 0,
-            "certificate": None
-        }
+        "target_url": host,
+        "scan_timestamp": _now(),
+        "schema_version": SCHEMA_VERSION,
+        "scanner_version": SCANNER_VERSION,
+        "authorization": {"mode": "full" if full else "standard", "ownership_verified": bool(authorization.get("ownership_verified")),
+                          "verified_domain": authorization.get("verified_domain")},
+        "resolved_addresses": ips,
+        "checks": check_report,
+        "dns": val("dns"),
+        "whois": val("whois"),
+        "http": val("http_headers"),
+        "tls": tls,
+        "pqc_posture": _posture(kex, cert) if kex else None,
+        "subdomains": sorted(subdomains.values(), key=lambda s: s["name"]),
     }
-
-    try:
-        with socket.create_connection((hostname, port), timeout=5) as sock:
-            with context.wrap_socket(sock, server_hostname=hostname) as ssock:
-                cipher = ssock.cipher()
-                cipher_name = cipher[0]
-                result["crypto"]["encryption_detected"] = cipher_name
-                
-                # X.509 Certificate Extraction
-                try:
-                    der_cert = ssock.getpeercert(binary_form=True)
-                    if der_cert:
-                        cert = x509.load_der_x509_certificate(der_cert, default_backend())
-                        sig_alg = cert.signature_algorithm_oid._name
-                        issuer = cert.issuer.rfc4514_string()
-                        
-                        # Handle timezone-aware deprecations in cryptography
-                        expires = cert.not_valid_after_utc.isoformat() if hasattr(cert, 'not_valid_after_utc') else cert.not_valid_after.isoformat()
-                        
-                        result["crypto"]["certificate"] = {
-                            "signature_algorithm": sig_alg,
-                            "issuer": issuer,
-                            "expires": expires
-                        }
-                        
-                        # Check certificate signature algorithm for quantum vulnerabilities
-                        if "rsa" in (sig_alg or "").lower():
-                            result["crypto"]["vulnerabilities_found"].append(f"X.509 Cert signed with legacy RSA ({sig_alg}) - Vulnerable to Shor's Algorithm")
-                            result["crypto"]["mission_xp_awarded"] += 50
-                        elif "ecdsa" in (sig_alg or "").lower() or "ecdhe" in (sig_alg or "").lower():
-                            result["crypto"]["vulnerabilities_found"].append(f"X.509 Cert signed with legacy ECC ({sig_alg}) - Vulnerable to Shor's Algorithm")
-                            result["crypto"]["mission_xp_awarded"] += 25
-                except Exception as cert_err:
-                    pass
-                
-                # Heuristic analysis
-                if "RSA" in cipher_name:
-                    result["crypto"]["vulnerabilities_found"].append("Public-key crypto vulnerable to Shor's Algorithm (Classical RSA detected)")
-                    result["crypto"]["mission_xp_awarded"] += 50
-                elif "ECDHE" in cipher_name or "ECDSA" in cipher_name:
-                    result["crypto"]["vulnerabilities_found"].append("Public-key crypto vulnerable to Shor's Algorithm (Classical ECC detected)")
-                    result["crypto"]["mission_xp_awarded"] += 25
-                
-                # Check for PQC
-                if "KYBER" in cipher_name or "ML-KEM" in cipher_name or "DILITHIUM" in cipher_name:
-                    result["crypto"]["quantum_status"] = "quantum_safe"
-                    result["crypto"]["mission_xp_awarded"] += 10
-                    
-                # Note about symmetric
-                if "AES" in cipher_name or "CHACHA20" in cipher_name:
-                    # Symmetric is generally quantum-safe against Shor's, susceptible to Grover's but not critically if 256-bit
-                    # Conservative crypto classification: We only classify as quantum_safe if PQC is explicitly detected
-                    pass
-                    
-                if not result["crypto"]["vulnerabilities_found"] and result["crypto"]["quantum_status"] == "inconclusive":
-                    result["crypto"]["notes"].append("Could not conclusively determine quantum safety from cipher string")
-
-    except Exception as e:
-        # Nothing was assessed, so this is a limitation of the scan, not a vulnerability of the target.
-        result["crypto"]["notes"].append(f"TLS connection failed: {str(e)}")
-
+    if val("ports"):
+        result["ports"] = val("ports")
+    result["findings"] = derive_findings(result)
     return result
 
+
 if __name__ == "__main__":
-    target = sys.argv[1] if len(sys.argv) > 1 else "example.com"
-    target = target.replace("https://", "").replace("http://", "").split("/")[0]
-    
-    analysis = analyze_domain(target)
-    print(json.dumps(analysis, indent=2))
+    args = [a for a in sys.argv[1:] if not a.startswith("--")]
+    print(json.dumps(analyze_domain(args[0] if args else "example.com"), indent=2))

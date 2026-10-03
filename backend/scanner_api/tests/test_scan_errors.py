@@ -20,6 +20,7 @@ import scanner_engine
 @pytest.fixture
 def client():
     api._history.clear()
+    api._active_users.clear()
     return api.app.test_client()
 
 
@@ -32,8 +33,8 @@ def headers():
 def test_unresolvable_target_is_an_error_without_findings():
     result = scanner_engine.analyze_domain("qcaps-nonexistent-test.invalid")
     assert "error" in result
-    assert result["crypto"]["vulnerabilities_found"] == []
-    assert result["crypto"]["mission_xp_awarded"] == 0
+    # An error is not a result: no findings, checks or posture are attached to it.
+    assert "findings" not in result and "crypto" not in result
 
 
 def test_api_returns_4xx_for_a_scan_that_could_not_run(client, headers):
@@ -45,7 +46,7 @@ def test_api_returns_4xx_for_a_scan_that_could_not_run(client, headers):
 
 def test_successful_scan_is_passed_through_with_a_receipt(client, headers, monkeypatch):
     fake = {"target_url": "example.com", "crypto": {"vulnerabilities_found": ["real finding"], "score": 1.0}}
-    monkeypatch.setattr(api, "analyze_domain", lambda host: dict(fake))
+    monkeypatch.setattr(api, "analyze_domain", lambda host, **kw: dict(fake))
     res = client.post("/api/scan", json={"url": "example.com"}, headers=headers)
     assert res.status_code == 200
     body = res.get_json()

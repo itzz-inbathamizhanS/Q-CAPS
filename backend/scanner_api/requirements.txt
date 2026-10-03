@@ -5,3 +5,4 @@ python-whois
 dnspython
 requests
 cryptography
+urllib3
