@@ -547,7 +547,7 @@ export const curriculumModules: CurriculumModule[] = [
     "code": "A7",
     "domain": "PQC Fundamentals",
     "recommendationTopic": "quantum_fundamentals",
-    "title": "A 1-qubit circuit",
+    "title": "First Quantum Programming",
     "level": "Beginner",
     "estimatedMinutes": 150,
     "xp": 120,

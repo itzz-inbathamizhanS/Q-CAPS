@@ -147,7 +147,14 @@ for (const tConfig of trackConfigs) {
     let level = 'Beginner';
     let estimatedMinutes = 90;
 
+    // Lines inside a code fence (for example a Python comment starting with "# ") are not headings.
+    let headerFence = false;
     for (const l of lines) {
+      if (l.startsWith('```')) {
+        headerFence = !headerFence;
+        continue;
+      }
+      if (headerFence) continue;
       if (l.startsWith('# ')) {
         const parts = l.replace('# ', '').split('—');
         if (parts.length > 1) {
@@ -179,8 +186,15 @@ for (const tConfig of trackConfigs) {
     const sections = [];
     let currentSection = null;
 
+    let sectionFence = false;
     for (let i = 0; i < lines.length; i++) {
       const line = lines[i];
+      if (line.startsWith('```')) sectionFence = !sectionFence;
+      // A "## " line inside a code fence is code, not a section heading; keep it as content.
+      if (sectionFence || line.startsWith('```')) {
+        if (currentSection) currentSection.content += line + '\n';
+        continue;
+      }
 
       if (line.startsWith('## Learning Objectives')) {
         inObjectives = true;
