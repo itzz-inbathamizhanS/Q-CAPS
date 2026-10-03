@@ -150,14 +150,8 @@ def test_report_text_states_failed_checks_and_has_no_breach_claims(db, learner):
     user, _ = learner
     log = models.ScannerLog(id=1, user_id=user.id, endpoint="example.com", status="success", details=json.dumps(make_result()),
                             created_at=datetime.now(timezone.utc))
-    captured = []
-    original = scan_report._Writer.line
-    scan_report._Writer.line = lambda self, text, *a, **k: (captured.append(str(text)), original(self, text, *a, **k))[1]
-    try:
-        scan_report.render_report(log)
-    finally:
-        scan_report._Writer.line = original
-    text = "\n".join(captured)
-    assert "ct_subdomains: failed - timed out" in text
-    assert "Recommendation: Enable a hybrid group." in text
+    text = scan_report.story_text(scan_report.build_story(log))
+    assert scan_report.render_report(log).startswith(b"%PDF")
+    assert "Certificate Transparency subdomains" in text and "Failed" in text and "timed out" in text
+    assert "Enable a hybrid group." in text
     assert "dark-web" in text and "No breach" in text  # stated as a limitation, never as a finding
