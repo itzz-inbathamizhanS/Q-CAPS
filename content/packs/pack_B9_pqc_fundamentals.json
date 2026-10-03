@@ -1,0 +1,1057 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B01",
+      "title": "Understanding Cryptography: From Established Symmetric and Asymmetric Ciphers to Post-Quantum Algorithms",
+      "authors": "Christof Paar, Jan Pelzl, Tim Güneysu",
+      "edition": "2nd edition",
+      "year": 2024,
+      "publisher": "Springer"
+    },
+    {
+      "id": "B02",
+      "title": "A Graduate Course in Applied Cryptography",
+      "authors": "Dan Boneh, Victor Shoup",
+      "edition": "Version 0.6",
+      "year": 2023
+    },
+    {
+      "id": "B03",
+      "title": "A Tutorial on Post-quantum Cryptography (lecture slides)",
+      "authors": "Douglas R. Stinson",
+      "edition": "11 August 2025",
+      "year": 2025
+    },
+    {
+      "id": "B04",
+      "title": "FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B90",
+      "title": "kyber-py: a pure Python implementation of ML-KEM (FIPS 203), version 1.2.0 (PyPI package metadata)",
+      "authors": "Package authors",
+      "edition": "1.2.0",
+      "year": 2025
+    },
+    {
+      "id": "B91",
+      "title": "dilithium-py: a pure Python implementation of ML-DSA (FIPS 204), version 1.4.0 (PyPI package metadata)",
+      "authors": "Package authors",
+      "edition": "1.4.0",
+      "year": 2025
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_b_b9_pqc_fundamentals",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "9.1 PQC vs. Quantum Cryptography",
+          "summary": "Post-quantum cryptography runs on ordinary computers; quantum cryptography uses quantum effects. The five families and what each can do.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Two similar names describe very different things. **Post-quantum cryptography (PQC)** means ordinary algorithms, running on ordinary computers and networks, that are believed to withstand attacks by quantum computers. **Quantum cryptography (QC)**, such as quantum key distribution (QKD), uses real quantum effects on special hardware to exchange keys (covered later, in the quantum key distribution module). Everything in this module is PQC: you will run all of it on a laptop.\n\nThe reason PQC is needed is the quantum threat you studied in B8: Shor's algorithm breaks RSA, finite-field Diffie-Hellman and elliptic curves in polynomial time. A replacement must be based on a different hard problem. Five approaches have been studied seriously; Stinson lists them as lattice-based, code-based, multivariate, hash-based and isogeny-based cryptography. They differ in a way that matters for engineers: **most families do only one job**. Hash-based schemes can only sign. Code-based schemes mostly encrypt (more precisely, encapsulate keys). Only lattices come close to the all-round versatility of RSA or elliptic curves, which is one reason they dominate the standards.\n\nAn important caution runs through the whole module. None of the PQC families is **proven** secure against quantum computers. They rely on problems for which no efficient quantum algorithm is *currently known*. Several candidates have already been broken, as you will see in the last lessons. The listing below records the families and what each supports, using the book's classification, and asks which can both establish keys and sign."
+            },
+            {
+              "type": "code",
+              "id": "c-families",
+              "language": "python",
+              "code": "# (family, example schemes, services, status as described in the sources)\nFAMILIES = [\n    (\"lattice\",      \"LWE, Kyber, Dilithium, Falcon, NTRU\", {\"key encapsulation\", \"signatures\"}, \"standardized (ML-KEM, ML-DSA)\"),\n    (\"code-based\",   \"McEliece, Niederreiter, BIKE, HQC\",   {\"key encapsulation\"},               \"HQC selected March 2025; Classic McEliece, BIKE candidates\"),\n    (\"hash-based\",   \"Lamport, Winternitz, Merkle, SPHINCS+\", {\"signatures\"},                    \"standardized (SLH-DSA); stateful LMS/XMSS approved\"),\n    (\"multivariate\", \"Oil and Vinegar, Rainbow, HFE\",       {\"signatures\"},                      \"HFE and Rainbow broken; UOV under evaluation\"),\n    (\"isogeny\",      \"SIDH, SIKE\",                          {\"key encapsulation\"},               \"SIKE broken in August 2022\"),\n]\nfor family, schemes, services, status in FAMILIES:\n    print(f\"{family:13} {', '.join(sorted(services)):30} {status}\")\nboth = [family for family, _, services, _ in FAMILIES if {\"key encapsulation\", \"signatures\"} <= services]\nprint(\"families that can both establish keys and sign:\", both)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-families",
+              "language": "text",
+              "code": "lattice       key encapsulation, signatures  standardized (ML-KEM, ML-DSA)\ncode-based    key encapsulation              HQC selected March 2025; Classic McEliece, BIKE candidates\nhash-based    signatures                     standardized (SLH-DSA); stateful LMS/XMSS approved\nmultivariate  signatures                     HFE and Rainbow broken; UOV under evaluation\nisogeny       key encapsulation              SIKE broken in August 2022\nfamilies that can both establish keys and sign: ['lattice']",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "Do not mix up the two terms",
+              "text": "If someone says a product is \"quantum safe\" you should ask which they mean: PQC algorithms running in software (the topic of this track), or QKD hardware. They have different costs, threat models and deployment constraints."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is post-quantum cryptography?",
+              "options": [
+                "Algorithms that run on conventional computers and are designed to withstand quantum attacks.",
+                "Cryptography that needs a quantum computer to run.",
+                "Key distribution over quantum channels."
+              ],
+              "correct_index": 0,
+              "explanation": "That description fits quantum cryptography such as QKD. PQC means classical algorithms designed to resist quantum and combined quantum-classical attacks."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which family can only be used for digital signatures?",
+              "options": [
+                "Hash-based cryptography",
+                "Code-based cryptography",
+                "Lattice-based cryptography"
+              ],
+              "correct_index": 0,
+              "explanation": "Hash-based schemes sign; they cannot encrypt or encapsulate keys. Lattices support both services."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Section 12.1.2 (Quantum-Secure Asymmetric Cryptosystems), Table 12.1 and the distinction between PQC and quantum cryptography"
+            },
+            {
+              "book": "B03",
+              "locator": "Section 1 (Introduction), slide 'Techniques for Post-quantum Cryptography'"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Status entries are the situation described in the cited sources (Stinson, 11 August 2025). Statuses change; check the NIST PQC project page before quoting them."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "9.2 KEMs (Key Encapsulation Mechanisms)",
+          "summary": "The three-function interface that replaces RSA key transport and Diffie-Hellman, shown with a toy RSA-KEM and a real ML-KEM.",
+          "estimated_minutes": 25,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **key encapsulation mechanism (KEM)** generalises key agreement and hybrid encryption. It has three functions. **KeyGen** produces an encapsulation (public) key and a decapsulation (private) key. **Encaps**, given the public key, outputs a random **shared secret** and a **ciphertext** that carries it. **Decaps**, given the private key and the ciphertext, recovers the same shared secret. The two parties then use the shared secret as a symmetric key.\n\nStinson explains the idea with RSA. To send a random AES key, Alice could pad it to 2048 bits and encrypt it. The cleaner approach is to pick a random 2048-bit number x, encrypt x with RSA, and derive the AES key from x with a hash-based key derivation function. Nobody has to choose the key; it falls out of the random x. That is exactly the shape of a KEM. The first listing builds this textbook RSA-KEM with only Python's standard library (it is for illustration, not production: real RSA key transport adds padding and careful validation).\n\nThe second listing uses **ML-KEM-768**, the lattice-based KEM standardised in FIPS 203, through the pure-Python `kyber-py` package (version 1.2.0; install it with `pip install kyber-py==1.2.0`). The call pattern is the same three functions. Compare the sizes with FIPS 203 Table 3: encapsulation key 1184 bytes, decapsulation key 2400 bytes, ciphertext 1088 bytes, shared secret 32 bytes. A pure-Python implementation is meant for learning: it is slow and makes no constant-time guarantees, so do not use it to protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-rsakem",
+              "language": "python",
+              "code": "import hashlib, math, secrets\n\nSMALL_PRIMES = [p for p in range(3, 2000) if all(p % d for d in range(2, int(p ** 0.5) + 1))]\n\ndef probably_prime(n, rounds=40):\n    if any(n % p == 0 for p in SMALL_PRIMES):\n        return n in SMALL_PRIMES\n    d, r = n - 1, 0\n    while d % 2 == 0:\n        d, r = d // 2, r + 1\n    for _ in range(rounds):                              # Miller-Rabin\n        x = pow(secrets.randbelow(n - 3) + 2, d, n)\n        if x in (1, n - 1):\n            continue\n        for _ in range(r - 1):\n            x = x * x % n\n            if x == n - 1:\n                break\n        else:\n            return False\n    return True\n\ndef random_prime(bits):\n    while True:\n        candidate = secrets.randbits(bits) | (3 << (bits - 2)) | 1      # top two bits set so n has exactly 2*bits bits\n        if probably_prime(candidate):\n            return candidate\n\ndef keygen():\n    e = 65537\n    while True:\n        p, q = random_prime(1024), random_prime(1024)\n        if p != q and math.gcd(e, (p - 1) * (q - 1)) == 1:\n            return (p * q, e), pow(e, -1, (p - 1) * (q - 1))          # (public key), private exponent\n\ndef derive(x, n):\n    return hashlib.sha3_256(x.to_bytes((n.bit_length() + 7) // 8, \"big\")).digest()\n\ndef encaps(public_key):\n    n, e = public_key\n    x = secrets.randbelow(n - 3) + 2                    # random element, never chosen by a person\n    return derive(x, n), pow(x, e, n)                   # (shared secret, ciphertext)\n\ndef decaps(public_key, d, ciphertext):\n    n, _ = public_key\n    return derive(pow(ciphertext, d, n), n)\n\npublic_key, d = keygen()\nshared_a, ciphertext = encaps(public_key)\nshared_b = decaps(public_key, d, ciphertext)\nprint(\"modulus bits:\", public_key[0].bit_length())\nprint(\"ciphertext bytes:\", (ciphertext.bit_length() + 7) // 8, \"(at most 256)\")\nprint(\"shared secret bytes:\", len(shared_a))\nprint(\"both sides derived the same secret:\", shared_a == shared_b)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-rsakem",
+              "language": "text",
+              "code": "modulus bits: 2048\nciphertext bytes: 256 (at most 256)\nshared secret bytes: 32\nboth sides derived the same secret: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "code",
+              "id": "c-mlkem",
+              "language": "python",
+              "code": "from importlib.metadata import version\nfrom kyber_py.ml_kem import ML_KEM_768\n\nencapsulation_key, decapsulation_key = ML_KEM_768.keygen()                 # KeyGen\nshared_secret_sender, ciphertext = ML_KEM_768.encaps(encapsulation_key)    # Encaps\nshared_secret_receiver = ML_KEM_768.decaps(decapsulation_key, ciphertext)  # Decaps\n\nprint(\"library: kyber-py\", version(\"kyber-py\"))\nprint(\"encapsulation key bytes:\", len(encapsulation_key))\nprint(\"decapsulation key bytes:\", len(decapsulation_key))\nprint(\"ciphertext bytes:\", len(ciphertext))\nprint(\"shared secret bytes:\", len(shared_secret_sender))\nprint(\"same shared secret:\", shared_secret_sender == shared_secret_receiver)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-mlkem",
+              "language": "text",
+              "code": "library: kyber-py 1.2.0\nencapsulation key bytes: 1184\ndecapsulation key bytes: 2400\nciphertext bytes: 1088\nshared secret bytes: 32\nsame shared secret: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "tip",
+              "title": "Why KEMs and not 'encrypt a key'",
+              "text": "Many PQC schemes cannot directly encrypt a chosen message efficiently or safely. Letting the algorithm generate the secret and return it together with the ciphertext avoids both problems, and it fits every protocol that only needs a fresh shared key."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the Encaps function return?",
+              "options": [
+                "A shared secret and the ciphertext that carries it",
+                "Only a ciphertext of a chosen message",
+                "A new public key"
+              ],
+              "correct_index": 0,
+              "explanation": "Encaps generates the shared secret itself and returns it together with the ciphertext; Decaps recovers the secret from the ciphertext."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the ML-KEM-768 ciphertext size according to FIPS 203?",
+              "options": [
+                "1088 bytes",
+                "32 bytes",
+                "2400 bytes"
+              ],
+              "correct_index": 0,
+              "explanation": "FIPS 203 Table 3 lists 1184 bytes for the encapsulation key, 2400 for the decapsulation key, 1088 for the ciphertext and 32 for the shared secret."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B03",
+              "locator": "Section 1 (Introduction), slides 'Key Encapsulation Mechanisms' (RSA example and the KEM figure)"
+            },
+            {
+              "book": "B04",
+              "locator": "Table 3 (sizes in bytes of ML-KEM keys and ciphertexts)"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 12.1.2 (key transport and KEM terminology)"
+            },
+            {
+              "book": "B90",
+              "locator": "Package metadata: pure Python ML-KEM implementation, version 1.2.0",
+              "note": "Used only to demonstrate the interface."
+            }
+          ],
+          "needs_verification": {
+            "reason": "The textbook RSA-KEM listing is a teaching construction written for this lesson (not a standardised scheme). kyber-py was run, not security-reviewed."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "9.3 Digital Signatures (PQC)",
+          "summary": "How a signature can rest only on a hash function, built from scratch with Lamport's scheme, and why that key must never sign twice.",
+          "estimated_minutes": 28,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Post-quantum signatures come from several families (lattice-based ML-DSA and Falcon, hash-based SLH-DSA and the stateful XMSS and LMS, plus multivariate and others still being evaluated). To see the simplest idea, start with the oldest: the **Lamport one-time signature** (1979). It needs nothing but a one-way function, such as a hash, which is why it is believed to resist quantum attack (Grover's algorithm only roughly halves a hash's security in bits).\n\nFor a message of k bits, the private key is 2k random values y(i,0), y(i,1). The public key is their hashes z(i,j) = f(y(i,j)). To sign, hash the message and, for each bit i of the digest, reveal y(i,b) where b is that bit. To verify, hash each revealed value and compare it with the matching public-key entry. The cost is size: with SHA-256, k = 256, so the keys and signature are measured in kilobytes. The listing implements it, checks the sizes, shows that a tampered message fails, and measures the central weakness: **each signature reveals half of the private key**, so a second signature with the same key reveals more."
+            },
+            {
+              "type": "code",
+              "id": "c-lamport",
+              "language": "python",
+              "code": "import hashlib, secrets\n\ndef H(data):\n    return hashlib.sha256(data).digest()\n\ndef digest_bits(message):\n    d = H(message)\n    return [(d[i // 8] >> (7 - i % 8)) & 1 for i in range(256)]\n\ndef keygen():\n    private = [[secrets.token_bytes(32), secrets.token_bytes(32)] for _ in range(256)]\n    public = [[H(y0), H(y1)] for y0, y1 in private]\n    return private, public\n\ndef sign(private, message):\n    return [private[i][bit] for i, bit in enumerate(digest_bits(message))]\n\ndef verify(public, message, signature):\n    return all(H(value) == public[i][bit] for i, (value, bit) in enumerate(zip(signature, digest_bits(message))))\n\nprivate, public = keygen()\nsignature = sign(private, b\"transfer 100 to alice\")\nprint(\"private key bytes:\", sum(len(y) for pair in private for y in pair))\nprint(\"public key bytes: \", sum(len(z) for pair in public for z in pair))\nprint(\"signature bytes:  \", sum(len(v) for v in signature))\nprint(\"valid message verifies:\", verify(public, b\"transfer 100 to alice\", signature))\nprint(\"changed message verifies:\", verify(public, b\"transfer 900 to alice\", signature))\n\nrevealed = set()\nfor n in range(1, 6):\n    message = f\"message number {n}\".encode()\n    revealed |= {(i, bit) for i, bit in enumerate(digest_bits(message))}\n    print(f\"after {n} signature(s) with the same key: {len(revealed) / 512:.1%} of the private key is revealed\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-lamport",
+              "language": "text",
+              "code": "private key bytes: 16384\npublic key bytes:  16384\nsignature bytes:   8192\nvalid message verifies: True\nchanged message verifies: False\nafter 1 signature(s) with the same key: 50.0% of the private key is revealed\nafter 2 signature(s) with the same key: 77.7% of the private key is revealed\nafter 3 signature(s) with the same key: 89.1% of the private key is revealed\nafter 4 signature(s) with the same key: 94.1% of the private key is revealed\nafter 5 signature(s) with the same key: 96.7% of the private key is revealed",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The last lines show why the scheme is **one-time**. After one signature half the private key is public; after two, about three quarters; after five, almost all. An attacker who has seen several signatures can often assemble a valid signature for a message the signer never approved. The task at the end of this module has you do exactly that, on a toy-sized digest. The consequence for real systems is that every hash-based scheme must track which one-time keys are already used, which is the topic of the hash-based lesson."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In the Lamport scheme with a 256-bit digest, how much of the private key does one signature reveal?",
+              "options": [
+                "About half of it (256 of the 512 values)",
+                "All of it",
+                "None of it"
+              ],
+              "correct_index": 0,
+              "explanation": "For each of the 256 digest bits one of the two private values is revealed, so half of the 512 values become public."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is Lamport's scheme called one-time?",
+              "options": [
+                "Each signature reveals part of the private key, so further signatures with the same key can be forged.",
+                "It can only verify once.",
+                "The public key expires after one day."
+              ],
+              "correct_index": 0,
+              "explanation": "Verification can be repeated any number of times; it is signing more than once with the same key that is unsafe."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B03",
+              "locator": "Section 2 (Hash-based signature schemes), slides 'Lamport Signature Scheme' and 'Few-times Signature Scheme'"
+            },
+            {
+              "book": "B02",
+              "locator": "Section 14.1 (Basic Lamport signatures) and 14.2 (A general Lamport framework)"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 12.4.1 (One-Time Signatures)"
+            }
+          ],
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "9.4 Lattice-Based Cryptography",
+          "summary": "Learning With Errors from a worked toy example, why noise is the whole point, and how rings and modules shrink the keys.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **lattice** is like a vector space except that only **integer** combinations of the basis vectors are allowed. Two problems on lattices are believed hard even for quantum computers: finding the shortest nonzero vector (SVP) and the vector closest to a given point (CVP). The famous LLL algorithm finds a *reduced* basis and sometimes solves small instances, which is why parameters must be large.\n\nMost practical lattice schemes use **Learning With Errors (LWE)**, introduced by Regev in 2005. Solving a system of linear equations modulo a prime q is easy. Give each equation a small random error, so you only know b = A·s + e (mod q), and recovering the secret s becomes believed-hard. Stinson's example uses m = n = 3, q = 11, secret s = (1, 2, 3), the matrix A below and error e = (0, 1, −1). The public key is (A, b). To encrypt one bit x, pick a random 0/1 vector r and send (r·A, r·b + x·⌊q/2⌋). The receiver computes z = y2 − y1·s; the result is close to 0 for a zero bit and close to q/2 for a one bit. The listing reproduces every number in the slides, then checks all choices of r and shows what happens when the noise is too large: a **decryption failure**. Real schemes choose parameters so failures are astronomically rare (Paar's tables list this probability)."
+            },
+            {
+              "type": "code",
+              "id": "c-regev",
+              "language": "python",
+              "code": "q = 11\nA = [[5, 8, 10], [4, 9, 1], [3, 6, 0]]\ns = [1, 2, 3]\ne = [0, 1, -1]\n\ndef mat_vec(M, v):\n    return [sum(a * b for a, b in zip(row, v)) % q for row in M]\n\nb = [(x + err) % q for x, err in zip(mat_vec(A, s), e)]                       # public key is (A, b)\n\ndef encrypt(bit, r):\n    y1 = [sum(r[i] * A[i][j] for i in range(3)) % q for j in range(3)]       # r A\n    y2 = (sum(ri * bi for ri, bi in zip(r, b)) + bit * (q // 2)) % q          # r b + bit * floor(q/2)\n    return y1, y2\n\ndef decrypt(y1, y2):\n    z = (y2 - sum(a * c for a, c in zip(y1, s))) % q\n    return 0 if (z < q / 4 or z >= 3 * q / 4) else 1                          # nearer 0 than q/2 -> 0\n\nprint(\"b =\", b)\ny1, y2 = encrypt(1, [1, 0, 1])\nprint(\"ciphertext for bit 1 with r=(1,0,1):\", (y1, y2), \"-> decrypts to\", decrypt(y1, y2))\nok = all(decrypt(*encrypt(bit, [r0, r1, r2])) == bit for bit in (0, 1) for r0 in (0, 1) for r1 in (0, 1) for r2 in (0, 1))\nprint(\"all 16 (bit, r) combinations decrypt correctly with e=(0,1,-1):\", ok)\ne = [1, 1, 1]                                                                  # too much noise\nb = [(x + err) % q for x, err in zip(mat_vec(A, s), e)]\nprint(\"with e=(1,1,1) and r=(1,1,1), bit 0 decrypts to\", decrypt(*encrypt(0, [1, 1, 1])), \"(decryption failure)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-regev",
+              "language": "text",
+              "code": "b = [7, 4, 3]\nciphertext for bit 1 with r=(1,0,1): ([8, 3, 10], 4) -> decrypts to 1\nall 16 (bit, r) combinations decrypt correctly with e=(0,1,-1): True\nwith e=(1,1,1) and r=(1,1,1), bit 0 decrypts to 1 (decryption failure)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The slide's numbers appear exactly: public vector b = (7, 4, 3), ciphertext ((8, 3, 10), 4), and a decrypted bit of 1. Now the role of the noise. Without e, the equations A·s = b can be solved by ordinary Gaussian elimination modulo q, so the secret falls out immediately. With the error, the same elimination returns the wrong answer. The next listing shows both, and then shows the other side of the coin: with only n = 3 equations many secrets fit the noise bound, but a few more samples (m larger than n) pin down the real secret. Brute force finds it here because there are only 11^3 = 1331 candidates; for Kyber-sized dimensions the naive search space is astronomically large, although the real security level is set by lattice-reduction attacks, not by counting candidates."
+            },
+            {
+              "type": "code",
+              "id": "c-noise",
+              "language": "python",
+              "code": "import itertools, math, random\n\nq, n = 11, 3\nA = [[5, 8, 10], [4, 9, 1], [3, 6, 0]]\ns = [1, 2, 3]\nclean = [sum(a * x for a, x in zip(row, s)) % q for row in A]\nnoisy = [(c + err) % q for c, err in zip(clean, [0, 1, -1])]\n\ndef solve_mod(M, rhs):\n    M = [row[:] + [v] for row, v in zip(M, rhs)]\n    for col in range(n):\n        pivot = next(r for r in range(col, n) if M[r][col] % q)\n        M[col], M[pivot] = M[pivot], M[col]\n        inv = pow(M[col][col], -1, q)\n        M[col] = [x * inv % q for x in M[col]]\n        for r in range(n):\n            if r != col:\n                factor = M[r][col]\n                M[r] = [(x - factor * y) % q for x, y in zip(M[r], M[col])]\n    return [M[r][n] for r in range(n)]\n\nprint(\"secret:\", s)\nprint(\"solving without noise gives:\", solve_mod(A, clean))\nprint(\"solving with the noisy b gives:\", solve_mod(A, noisy), \"(wrong)\")\n\ndef consistent(rows, values):\n    return [t for t in itertools.product(range(q), repeat=n)\n            if all(min((v - sum(a * x for a, x in zip(row, t))) % q, (sum(a * x for a, x in zip(row, t)) - v) % q) <= 1\n                   for row, v in zip(rows, values))]\n\nprint(\"secrets consistent with an error bound of 1, using 3 equations:\", len(consistent(A, noisy)))\nrng = random.Random(7)\nrows = [[rng.randrange(q) for _ in range(n)] for _ in range(12)]\nvalues = [(sum(a * x for a, x in zip(row, s)) + rng.choice([-1, 0, 1])) % q for row in rows]\nleft = consistent(rows, values)\nprint(\"secrets consistent using 12 equations:\", len(left), left)\nprint(\"naive search space for n=768, q=3329 is about 2^%d\" % (768 * math.log2(3329)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-noise",
+              "language": "text",
+              "code": "secret: [1, 2, 3]\nsolving without noise gives: [1, 2, 3]\nsolving with the noisy b gives: [5, 9, 2] (wrong)\nsecrets consistent with an error bound of 1, using 3 equations: 27\nsecrets consistent using 12 equations: 1 [(1, 2, 3)]\nnaive search space for n=768, q=3329 is about 2^8986",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "**Rings and modules.** A plain LWE public key is a whole n × n matrix, which is large. **Ring-LWE** replaces the matrix by one polynomial: you work in Z_q[x]/(x^n + 1), where x^n = −1, and the matrix A is determined by its first row, because every other row is a shifted copy with a sign flip. Keys shrink dramatically and polynomial multiplication can be made fast. The price, as Paar explains, is that the extra structure might help an attacker, and the security proofs for plain LWE do not carry over directly. **Module-LWE** is the compromise used by Kyber (ML-KEM) and Dilithium (ML-DSA): small matrices of polynomials. FIPS 203 fixes n = 256 and q = 3329 and varies the matrix size k = 2, 3, 4 for the three parameter sets.\n\nStinson's examples show the ring arithmetic. In the NTRU ring Z[x]/(x^3 − 1) the product (x² + 3x + 1)(2x² + x − 4) equals x² − 9x + 3. In the ring-LWE ring Z_11[x]/(x^3 + 1), (3x² + 7x + 5)(4x² + 7) equals 8x² + 4x + 7, and the same answer comes from multiplying a matrix by a vector, where the matrix wraps around with a sign change. The listing checks both."
+            },
+            {
+              "type": "code",
+              "id": "c-ring",
+              "language": "python",
+              "code": "def ring_mul(a, b, n, wrap_sign, modulus=None):\n    # coefficient lists, lowest degree first; x^n = wrap_sign (+1 for x^n - 1, -1 for x^n + 1)\n    out = [0] * n\n    for i, ai in enumerate(a):\n        for j, bj in enumerate(b):\n            k = i + j\n            sign = 1\n            while k >= n:\n                k -= n\n                sign *= wrap_sign\n            out[k] += sign * ai * bj\n    return [c % modulus for c in out] if modulus else out\n\nprint(\"NTRU ring Z[x]/(x^3-1):\", ring_mul([1, 3, 1], [-4, 1, 2], 3, +1), \"= 3 - 9x + x^2\")\npoly = ring_mul([5, 7, 3], [7, 0, 4], 3, -1, 11)\nprint(\"ring-LWE ring Z_11[x]/(x^3+1):\", poly, \"= 7 + 4x + 8x^2\")\n\nq = 11\nA = [[5, 7, 3], [8, 5, 7], [4, 8, 5]]                     # first row is a(x) low-to-high; others wrap with a sign change\ns = [4, 0, 7]                                            # s(x) = 4x^2 + 7 written high-to-low\nprint(\"matrix product A*s mod 11:\", [sum(x * y for x, y in zip(row, s)) % q for row in A], \"(high-to-low, the same polynomial)\")\nn, k = 256, 3\nprint(\"one 256x256 matrix needs\", n * n, \"coefficients; one polynomial needs\", n, \"; a 3x3 module matrix needs\", k * k * n)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-ring",
+              "language": "text",
+              "code": "NTRU ring Z[x]/(x^3-1): [3, -9, 1] = 3 - 9x + x^2\nring-LWE ring Z_11[x]/(x^3+1): [7, 4, 8] = 7 + 4x + 8x^2\nmatrix product A*s mod 11: [8, 4, 7] (high-to-low, the same polynomial)\none 256x256 matrix needs 65536 coefficients; one polynomial needs 256 ; a 3x3 module matrix needs 2304",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "A parameter set is part of the security argument",
+              "text": "Paar reports a ring-LWE instance (n = 128, q = 16411) thought in early 2015 to give about 71 bits of security, which new cryptanalysis lowered to about 48 bits two years later. Never invent or tweak lattice parameters yourself: use the standardised sets."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the noise term e do in LWE?",
+              "options": [
+                "It turns an easy linear system into an approximate one that is believed hard to solve.",
+                "It makes decryption impossible.",
+                "It encrypts the message."
+              ],
+              "correct_index": 0,
+              "explanation": "Without e, Gaussian elimination recovers the secret instantly. With small random errors, no efficient (classical or quantum) algorithm is known."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the main benefit of Ring-LWE over plain LWE?",
+              "options": [
+                "Keys are far smaller because the matrix is defined by one polynomial, at the price of extra structure an attacker might use.",
+                "It needs no randomness.",
+                "It is proven unbreakable."
+              ],
+              "correct_index": 0,
+              "explanation": "Only the first row of A must be stored, shrinking the public key. The structure means the security proofs for plain LWE do not simply carry over."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B03",
+              "locator": "Section 4 (Lattices and lattice-based cryptography): lattices, SVP/CVP, LLL, NTRU, Learning with errors, Regev cryptosystem, Ring LWE, Kyber-PKE and Dilithium"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 12.2 (Lattice-Based Cryptography), 12.2.1 to 12.2.6, including the parameter discussion in 12.2.5"
+            },
+            {
+              "book": "B04",
+              "locator": "Table 2 (approved ML-KEM parameter sets: n = 256, q = 3329, k = 2, 3, 4)"
+            }
+          ],
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "9.5 Hash-Based Cryptography",
+          "summary": "Winternitz hash chains with a checksum, Merkle trees that authenticate many one-time keys, and the stateful-versus-stateless trade-off.",
+          "estimated_minutes": 38,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Lamport signatures are large. The **Winternitz** scheme shrinks them by signing several bits at once with a **hash chain**: starting from a secret value y₀, apply the hash repeatedly, y₁ = f(y₀), y₂ = f(y₁), and so on up to a public end value z after 2^w steps. To sign a w-bit chunk with value x, reveal the chain element at position x. The verifier hashes it forward the remaining 2^w − x steps and checks that it reaches z.\n\nThere is a trap. Anyone who sees the element at position x can compute every later element, so the chunk can be raised to any larger value and the signature on a different message forged. The fix is a **checksum**: sign also C = Σ (2^w − 1 − x_i), the total *distance from the top*. Raising one chunk then lowers the checksum, which would require moving a chain backwards, i.e. inverting the hash. The first listing follows Stinson's example (w = 3, message 011101001) and tests both the attack and the fix."
+            },
+            {
+              "type": "code",
+              "id": "c-winternitz",
+              "language": "python",
+              "code": "import hashlib\n\nw, top = 3, 7                                                  # chunk size in bits; 2^w - 1\ndef f(value):\n    return hashlib.sha256(value).digest()\ndef chain(value, steps):\n    for _ in range(steps):\n        value = f(value)\n    return value\n\ndef chunks(bits):\n    return [int(bits[i:i + w], 2) for i in range(0, len(bits), w)]\ndef with_checksum(bits):\n    x = chunks(bits)\n    checksum = sum(top - v for v in x)\n    return x, checksum, x + chunks(format(checksum, \"06b\"))     # checksum padded to two 3-bit chunks\n\nx, checksum, signed = with_checksum(\"011101001\")\nprint(\"message chunks:\", x, \"checksum:\", checksum, \"-> signed values:\", signed)\n\nprivate = [f(bytes([i])) for i in range(len(signed))]           # demonstration seeds\npublic = [chain(y, 2 ** w) for y in private]                    # z_i = f^8(y_i)\nsignature = [chain(y, v) for y, v in zip(private, signed)]\nprint(\"signature verifies:\", all(chain(a, 2 ** w - v) == z for a, v, z in zip(signature, signed, public)))\n\nforged_x, forged_checksum, forged_signed = with_checksum(\"101110100\")\nprint(\"forged message chunks:\", forged_x, \"needs checksum\", forged_checksum, \"-> chunks\", forged_signed[3:])\nreachable = [t >= r for t, r in zip(forged_signed, signed)]      # a chain can only be advanced, never rewound\nprint(\"without checksum, forgery reachable on the message chains:\", all(reachable[:3]))\nprint(\"with checksum, reachable on all five chains:\", all(reachable), \"(the checksum chain would have to move backwards)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-winternitz",
+              "language": "text",
+              "code": "message chunks: [3, 5, 1] checksum: 12 -> signed values: [3, 5, 1, 1, 4]\nsignature verifies: True\nforged message chunks: [5, 6, 4] needs checksum 6 -> chunks [0, 6]\nwithout checksum, forgery reachable on the message chains: True\nwith checksum, reachable on all five chains: False (the checksum chain would have to move backwards)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The listing reproduces the slide exactly: chunks (3, 5, 1), checksum 12 (binary 1100, padded to chunks 1 and 4), and the forged message 101110100 reachable on the three message chains. With the checksum chains included the forgery needs a chain value that is *earlier* than the one already revealed, which is impossible without inverting the hash.\n\nOne-time keys are still one-time. **Merkle trees** (1979) extend them to many signatures without growing the public key. Take 2^d one-time public keys K₁ … K_(2^d) and hash them into the leaves of a binary tree, then hash each pair upward to a single root. The root is the public key. A signature on the i-th message contains the one-time signature, the one-time public key K_i, and the **authentication path**, the sibling hash at every level, so that the verifier can recompute the root. The listing builds Stinson's depth-4 tree with 16 leaves, numbered 1 to 31 with leaf K_i at node i + 15, and authenticates K₁₁ using the siblings of nodes 26, 13, 6 and 3, namely nodes 27, 12, 7 and 2."
+            },
+            {
+              "type": "code",
+              "id": "c-merkle",
+              "language": "python",
+              "code": "import hashlib\n\ndef h(data):\n    return hashlib.sha256(data).digest()\n\nd = 4\nkeys = {i: f\"one-time public key {i}\".encode() for i in range(1, 2 ** d + 1)}     # stand-ins for real one-time public keys\nV = {}\nfor j in range(2 ** d, 2 ** (d + 1)):\n    V[j] = h(keys[j - 2 ** d + 1])                                 # leaf node j holds h(K_(j-15))\nfor j in range(2 ** d - 1, 0, -1):\n    V[j] = h(V[2 * j] + V[2 * j + 1])                              # inner node: hash of its two children\nroot = V[1]                                                         # the public key\n\ndef auth_path(i):\n    node, path = i + 2 ** d - 1, []\n    while node > 1:\n        path.append(node ^ 1)                                       # sibling: node +/- 1\n        node //= 2\n    return path\n\ndef verify(i, key, siblings):\n    node, value = i + 2 ** d - 1, h(key)\n    for sibling_node, sibling_value in siblings:\n        value = h(value + sibling_value) if node % 2 == 0 else h(sibling_value + value)\n        node //= 2\n    return value == root\n\npath = auth_path(11)\nprint(\"leaf node for K11:\", 11 + 2 ** d - 1, \" sibling nodes in the authentication path:\", path)\nsiblings = [(node, V[node]) for node in path]\nprint(\"K11 authenticates against the root:\", verify(11, keys[11], siblings))\nprint(\"a different key at position 11 authenticates:\", verify(11, b\"another key\", siblings))\nprint(\"hash operations to verify:\", len(path) + 1, \"; leaves in the tree:\", 2 ** d)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-merkle",
+              "language": "text",
+              "code": "leaf node for K11: 26  sibling nodes in the authentication path: [27, 12, 7, 2]\nK11 authenticates against the root: True\na different key at position 11 authenticates: False\nhash operations to verify: 5 ; leaves in the tree: 16",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "**Stateful and stateless.** The Merkle construction is **stateful**: the signer must remember which leaf was used last and never reuse one. If the state is lost, rolled back (for example by restoring a virtual machine snapshot) or copied to two servers, a one-time key can sign twice and forgeries become possible. Stateful schemes (LMS and XMSS, approved by NIST in SP 800-208) are therefore limited to settings with disciplined state management, such as firmware signing in a controlled facility. **Stateless** schemes remove the burden: a multi-level tree (the *hypertree*) is so large that a leaf can be chosen at random for each signature and reuse is overwhelmingly unlikely, and the leaves use **few-times** signatures so that an accidental repeat is survivable. This is the design of SPHINCS+, standardised as **FIPS 205 (SLH-DSA)**. The cost is bigger and slower signatures than the stateful schemes."
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "State is a security-critical resource",
+              "text": "With a stateful scheme, backups, cloning, rollback and failover are all potential key-reuse events. If you cannot guarantee a single, monotonically increasing counter, use a stateless scheme."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What problem does the Winternitz checksum solve?",
+              "options": [
+                "Without it, a revealed chain value can be advanced to forge a signature on a message with larger chunk values.",
+                "It makes the signature smaller.",
+                "It replaces the hash function."
+              ],
+              "correct_index": 0,
+              "explanation": "Advancing a hash chain is easy and rewinding is impossible, so the checksum forces any forgery to move some chain backwards."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "How many sibling hashes does an authentication path need in a Merkle tree of depth 4 (16 leaves)?",
+              "options": [
+                "4",
+                "16",
+                "1"
+              ],
+              "correct_index": 0,
+              "explanation": "One sibling per level: nodes 27, 12, 7 and 2 for leaf K11 in Stinson's example."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is a stateful hash-based signature scheme risky to run on virtual machines that can be restored from snapshots?",
+              "options": [
+                "A restored snapshot can reuse an already-used one-time key, which allows forgery.",
+                "Snapshots delete the public key.",
+                "Hashing is slower in virtual machines."
+              ],
+              "correct_index": 0,
+              "explanation": "State rollback is a key-reuse event. Stateless schemes such as SLH-DSA avoid this at the price of larger signatures."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B03",
+              "locator": "Section 2 (Hash-based signature schemes), slides 'Hash Chains' to 'Verifying a Signature Using a Two-level Merkle Tree' and 'Stateful vs Stateless Signatures'"
+            },
+            {
+              "book": "B02",
+              "locator": "Section 14.3 (Winternitz one-time signatures), 14.4 (HORS) and 14.6 (From one-time signatures to many-time signatures)"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 12.4 (Hash-Based Cryptography), including 12.4.3 on statefulness"
+            }
+          ],
+          "needs_verification": {
+            "reason": "SP 800-208 is cited from Paar (adopted by NIST in 2020) and Stinson's slides; the two sources date the approval differently (2020 versus 2018), so the date is not stated here. The Merkle listing uses placeholder strings in place of real one-time public keys."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "9.6 Code-Based Cryptography",
+          "summary": "Error-correcting codes as a cryptosystem: syndromes, a toy McEliece you can break by hand, BIKE's circulant algebra, and why keys are large.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "An **error-correcting code** lets a receiver repair random bit flips. A binary linear [n, k] code is a k-dimensional subspace of n-bit vectors, generated by a k × n **generator matrix** G; a message x becomes the codeword y = xG. A **parity-check matrix** H satisfies G·Hᵀ = 0, and the **syndrome** of a received vector r is s = H·rᵀ. A codeword has syndrome zero; if exactly one bit was flipped, the syndrome equals the matching **column of H**, which tells you which bit to fix. The first listing reproduces Stinson's examples: the [7, 4, 3] Hamming code (it corrects one error) and the [6, 3] code whose eight codewords have minimum distance 3."
+            },
+            {
+              "type": "code",
+              "id": "c-hamming",
+              "language": "python",
+              "code": "from itertools import product\n\nG = [[1,0,0,0,1,1,0], [0,1,0,0,1,0,1], [0,0,1,0,0,1,1], [0,0,0,1,1,1,1]]\nH = [[1,1,0,1,1,0,0], [1,0,1,1,0,1,0], [0,1,1,1,0,0,1]]\n\ndef encode(x, G):\n    return [sum(x[i] * G[i][j] for i in range(len(G))) % 2 for j in range(len(G[0]))]\ndef syndrome(r, H):\n    return [sum(h * v for h, v in zip(row, r)) % 2 for row in H]\n\nprint(\"G * H^T is zero:\", all(sum(g * h for g, h in zip(grow, hrow)) % 2 == 0 for grow in G for hrow in H))\ny = encode([1, 0, 1, 1], G)\nprint(\"codeword for x=(1,0,1,1):\", y)\nr = y[:]\nr[1] ^= 1                                                          # one transmission error, in position 2\ns = syndrome(r, H)\ncolumn = [[H[0][j], H[1][j], H[2][j]] for j in range(7)].index(s) + 1\nprint(\"received:\", r, \"syndrome:\", s, \"-> equals column\", column, \"of H\")\nr[column - 1] ^= 1\nprint(\"corrected word equals codeword:\", r == y)\n\nG63 = [[1,0,0,0,1,1], [0,1,1,0,1,0], [0,0,1,1,0,1]]\nwords = sorted(tuple(encode(x, G63)) for x in product([0, 1], repeat=3))\nslide = sorted([(0,0,0,0,0,0), (1,0,0,0,1,1), (0,1,1,0,1,0), (0,0,1,1,0,1), (1,1,1,0,0,1), (1,0,1,1,1,0), (0,1,0,1,1,1), (1,1,0,1,0,0)])\nprint(\"[6,3] code has the 8 codewords listed on the slide:\", words == slide)\nprint(\"minimum distance:\", min(sum(w) for w in words if any(w)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-hamming",
+              "language": "text",
+              "code": "G * H^T is zero: True\ncodeword for x=(1,0,1,1): [1, 0, 1, 1, 0, 1, 0]\nreceived: [1, 1, 1, 1, 0, 1, 0] syndrome: [1, 0, 1] -> equals column 2 of H\ncorrected word equals codeword: True\n[6,3] code has the 8 codewords listed on the slide: True\nminimum distance: 3",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**McEliece (1978)** turns this into encryption. Start with a code that has a fast decoder (McEliece used binary Goppa codes), then **disguise** it: multiply the generator matrix by a random invertible matrix S and a permutation matrix P to get the public key G' = S·G·P. Encryption is y = x·G' + e with a secret random error vector e of weight t. Only the owner, who knows S, P and the structure of G, can undo the disguise and decode; an attacker faces what looks like a random linear code, and decoding such a code is a hard problem. **Niederreiter** is the equivalent using the parity-check matrix, and Classic McEliece is in fact a Niederreiter-type KEM.\n\nThe next listing is a **toy** McEliece using the Hamming code with t = 1. It encrypts and decrypts all 16 messages with every possible single-bit error. It also shows why the toy is worthless: with only 16 possible messages an attacker simply tries them all. Real parameters make that enumeration impossible, and the best known attacks are **information-set decoding (ISD)**, generic algorithms that never use the hidden structure. Prange's 1962 algorithm guesses k positions that happen to be error-free; the chance of a lucky guess is C(n − t, k) / C(n, k). The second part of the listing evaluates this for a small code and for Classic McEliece's smallest parameter set (n = 3488, k = 2720, t = 64). This counts only the expected number of guesses of the simplest ISD variant; it is **not** a security level, because it ignores the cost of each guess and the cleverer variants."
+            },
+            {
+              "type": "code",
+              "id": "c-mceliece",
+              "language": "python",
+              "code": "import math\n\nG = [[1,0,0,0,1,1,0], [0,1,0,0,1,0,1], [0,0,1,0,0,1,1], [0,0,0,1,1,1,1]]\nH = [[1,1,0,1,1,0,0], [1,0,1,1,0,1,0], [0,1,1,1,0,0,1]]\nS = [[1,1,0,0], [0,1,1,0], [0,0,1,1], [0,0,0,1]]                   # secret invertible 4x4 matrix over GF(2)\nS_inv = [[1,1,1,1], [0,1,1,1], [0,0,1,1], [0,0,0,1]]\nperm = [3, 0, 6, 1, 5, 2, 4]                                        # secret column permutation P\n\ndef mat_mul(A, B):\n    return [[sum(a * b for a, b in zip(row, col)) % 2 for col in zip(*B)] for row in A]\nassert mat_mul(S, S_inv) == [[int(i == j) for j in range(4)] for i in range(4)]\n\nSG = mat_mul(S, G)\nG_pub = [[row[perm[j]] for j in range(7)] for row in SG]            # public key  G' = S G P\n\ndef encode_pub(x):\n    return [sum(x[i] * G_pub[i][j] for i in range(4)) % 2 for j in range(7)]\n\ndef encrypt(x, error_position):\n    y = encode_pub(x)\n    y[error_position] ^= 1                                          # secret error of weight t = 1\n    return y\n\ndef decrypt(y):\n    y1 = [0] * 7\n    for j in range(7):\n        y1[perm[j]] = y[j]                                          # undo the permutation\n    s = [sum(h * v for h, v in zip(row, y1)) % 2 for row in H]\n    if any(s):\n        y1[[[H[0][j], H[1][j], H[2][j]] for j in range(7)].index(s)] ^= 1   # Hamming decoder removes the error\n    x0 = y1[:4]                                                     # systematic code: message is the first 4 bits\n    return [sum(x0[i] * S_inv[i][j] for i in range(4)) % 2 for j in range(4)]\n\nmessages = [[(m >> k) & 1 for k in range(4)] for m in range(16)]\nprint(\"all 16 messages x 7 error positions decrypt correctly:\",\n      all(decrypt(encrypt(x, e)) == x for x in messages for e in range(7)))\n\nc = encrypt([1, 0, 1, 1], 4)\nbroken = [x for x in messages if sum(a != b for a, b in zip(encode_pub(x), c)) <= 1]\nprint(\"attacker without the private key, trying all 16 messages, finds:\", broken)\n\ndef log2_prange_iterations(n, k, t):\n    return math.log2(math.comb(n, k)) - math.log2(math.comb(n - t, k))\nprint(\"toy [7,4] code with t=1: expected guesses = %.1f\" % 2 ** log2_prange_iterations(7, 4, 1))\nprint(\"Classic McEliece n=3488, k=2720, t=64: expected Prange guesses about 2^%.0f (a count of guesses only, not a security level)\" % log2_prange_iterations(3488, 2720, 64))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-mceliece",
+              "language": "text",
+              "code": "all 16 messages x 7 error positions decrypt correctly: True\nattacker without the private key, trying all 16 messages, finds: [[1, 0, 1, 1]]\ntoy [7,4] code with t=1: expected guesses = 2.3\nClassic McEliece n=3488, k=2720, t=64: expected Prange guesses about 2^143 (a count of guesses only, not a security level)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "**The cost: key size.** To resist ISD the hidden code must be large and look random, and the public key is a matrix. Paar's Table 12.3 lists Classic McEliece parameter sets with public keys of 2040 kbit (about 255 KiB) for the AES-128 level up to several megabits for the AES-256 level. Structured codes shrink the key: **BIKE** uses quasi-cyclic moderate-density parity-check (QC-MDPC) codes built from circulant blocks (every row is a cyclic shift of the previous one), giving public keys of 12 to 40 kbit, at the price of more structure for an attacker to exploit and a decoder that can fail. **HQC** (Hamming quasi-cyclic) follows another route: its error-correcting code is *not disguised* and the error is intentionally too large to decode directly; a second ciphertext component, derived from a quasi-cyclic code, lets the owner remove part of the error. NIST selected HQC for standardisation in March 2025.\n\nBIKE's algebra is easy to check. Work in R = Z₂[x]/(x^r − 1) with r = 11 and secret h₀ = x⁹ + x⁵ + x⁴, h₁ = x¹⁰ + x + 1. The public key is h = h₁·h₀⁻¹. A plaintext is a pair (e₀, e₁) of total weight t, the ciphertext is s = e₀ + e₁·h, and the owner computes m = s·h₀, which equals e₀h₀ + e₁h₁, the syndrome under the secret matrix, and then runs a bit-flipping decoder. The listing verifies Stinson's example numbers."
+            },
+            {
+              "type": "code",
+              "id": "c-bike",
+              "language": "python",
+              "code": "r = 11\nMASK = (1 << r) - 1\n\ndef poly(*exponents):\n    return sum(1 << e for e in exponents)\ndef show(p):\n    terms = [(\"1\" if e == 0 else \"x\" if e == 1 else f\"x^{e}\") for e in range(r - 1, -1, -1) if p >> e & 1]\n    return \" + \".join(terms)\ndef mul(a, b):                                                       # product in GF(2)[x]/(x^r - 1)\n    out = 0\n    for i in range(r):\n        if a >> i & 1:\n            out ^= ((b << i) | (b >> (r - i))) & MASK\n    return out\ndef inverse(a):\n    return next(c for c in range(1, 1 << r) if mul(a, c) == 1)\n\nh0, h1 = poly(9, 5, 4), poly(10, 1, 0)\nh0_inv = inverse(h0)\nh = mul(h1, h0_inv)                                                  # public key\nprint(\"h0^-1 =\", show(h0_inv))\nprint(\"h     =\", show(h))\n\ne0, e1 = poly(3), poly(4, 7, 10)                                     # plaintext of total weight t = 4\ns = e0 ^ mul(e1, h)                                                  # ciphertext\nprint(\"s     =\", show(s))\nm = mul(s, h0)\nprint(\"s*h0  =\", show(m))\nprint(\"equals e0*h0 + e1*h1:\", m == mul(e0, h0) ^ mul(e1, h1))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-bike",
+              "language": "text",
+              "code": "h0^-1 = x^9 + x^8 + x^7 + x^6 + x^5 + x^2 + 1\nh     = x^8 + x^7 + x^6 + x^4 + x^3 + x^2 + 1\ns     = x^10 + x^9 + x^8 + x^7 + x^5 + x^3\ns*h0  = x^10 + x^9 + x^6 + x^5 + x^4 + x^3 + x + 1\nequals e0*h0 + e1*h1: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "With the Hamming code, a received word has syndrome (1, 0, 1). What does this mean?",
+              "options": [
+                "A single error in the position whose column of H equals (1, 0, 1).",
+                "The word is a valid codeword.",
+                "At least three errors occurred."
+              ],
+              "correct_index": 0,
+              "explanation": "A zero syndrome means a codeword. For one error the syndrome equals the corresponding column of H, which identifies the bit to flip."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is information-set decoding?",
+              "options": [
+                "A generic attack on code-based schemes that does not use the hidden structure of the code.",
+                "A way to encrypt long messages.",
+                "A key-agreement protocol."
+              ],
+              "correct_index": 0,
+              "explanation": "ISD (introduced by Prange in 1962) is the main generic attack and the basis for choosing parameters."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the main practical drawback of Classic McEliece?",
+              "options": [
+                "Very large public keys (hundreds of kilobytes).",
+                "It is broken by Shor's algorithm.",
+                "It cannot be implemented in software."
+              ],
+              "correct_index": 0,
+              "explanation": "Resisting information-set decoding requires large hidden codes, so the public key is a large matrix; Paar lists 2040 kbit for the smallest parameter set."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B03",
+              "locator": "Section 3 (Code-based cryptography): Linear codes, McEliece, Niederreiter, Information-set decoding, BIKE and HQC"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 12.3 (Code-Based Cryptography), 12.3.1 to 12.3.5, Tables 12.3 and 12.4"
+            },
+            {
+              "book": "B03",
+              "locator": "NIST standardization slides: HQC selected for standardization on 11 March 2025 (NIST IR 8545)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The toy McEliece was written for this lesson and checked only by exhaustive round trips. HQC status is as of Stinson's 11 August 2025 slides; the Prange figure is a guess count for the simplest ISD variant, not a security estimate."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "9.7 Multivariate Approaches",
+          "summary": "Oil and Vinegar signatures worked through Stinson's tiny example, and why the multivariate family has a record of breaks.",
+          "estimated_minutes": 28,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **multivariate quadratic (MQ)** problem asks for a solution to a system of quadratic equations in many variables over a finite field. It is NP-hard in general, and the usual design strategy matches the other families: start with a special system that is **easy to solve**, then **disguise** it with an invertible linear map so it looks like a random hard system. The public key is the disguised system, the private key is the disguise.\n\nIn **Oil and Vinegar** (Patarin, 1997) there are 2n variables: n *vinegar* variables and n *oil* variables. The secret quadratic polynomials never multiply two oil variables together, so after you choose values for all vinegar variables the system becomes **linear in the oil variables** and is easy to solve. An affine map S mixes oil and vinegar, which produces the public polynomials f_pub = f(S(x)). To sign a message (m₁ … m_n), solve f(x) = m with random vinegar values, then apply S⁻¹; to verify, evaluate the public polynomials at the signature. The listing runs Stinson's example over the two-element field: f₁ = x₁x₂ + x₂x₃ + x₄ and f₂ = x₁x₃ + x₂x₄ + x₂, signing the message (0, 1)."
+            },
+            {
+              "type": "code",
+              "id": "c-ov",
+              "language": "python",
+              "code": "from itertools import product\n\ndef f(x):\n    x1, x2, x3, x4 = x\n    return (x1 * x2 ^ x2 * x3 ^ x4, x1 * x3 ^ x2 * x4 ^ x2)           # secret system: no product of two oil variables (x3, x4)\n\ndef S(x):\n    x1, x2, x3, x4 = x\n    return (x2 ^ x4 ^ 1, x1 ^ x4 ^ 1, x2 ^ x3 ^ x4, x1 ^ x2 ^ x3 ^ x4)\ndef S_inverse(y):\n    y1, y2, y3, y4 = y\n    return (y3 ^ y4, y1 ^ y2 ^ y3 ^ y4, y1 ^ y3 ^ 1, y2 ^ y3 ^ y4 ^ 1)\n\ndef f_pub(x):\n    return f(S(x))                                                    # the public key is the disguised system\n\npoints = list(product((0, 1), repeat=4))\nprint(\"S_inverse really inverts S:\", all(S_inverse(S(p)) == p for p in points))\n\ndef slide_f1(x1, x2, x3, x4): return x1 * x3 ^ x3 * x4 ^ x2 ^ 1\ndef slide_f2(x1, x2, x3, x4): return x1 * x2 ^ x1 * x3 ^ x2 * x3 ^ x2 * x4 ^ x1 ^ x2 ^ x4 ^ 1\nprint(\"public polynomials equal the ones printed on the slide:\", all(f_pub(p) == (slide_f1(*p), slide_f2(*p)) for p in points))\n\ndef sign(message):\n    for vinegar in product((0, 1), repeat=2):                          # guess the vinegar variables\n        for oil in product((0, 1), repeat=2):                          # with vinegar fixed the system is linear in the oil variables\n            if f(vinegar + oil) == message:\n                return S_inverse(vinegar + oil)\n    return None\n\nsignature = sign((0, 1))\nprint(\"signature for message (0,1):\", signature)\nprint(\"public verification f_pub(signature) =\", f_pub(signature))\nprint(\"signatures that would verify for (0,1) (found by exhaustive search):\", [p for p in points if f_pub(p) == (0, 1)])"
+            },
+            {
+              "type": "code",
+              "id": "o-c-ov",
+              "language": "text",
+              "code": "S_inverse really inverts S: True\npublic polynomials equal the ones printed on the slide: True\nsignature for message (0,1): (0, 1, 1, 0)\npublic verification f_pub(signature) = (0, 1)\nsignatures that would verify for (0,1) (found by exhaustive search): [(0, 1, 1, 0), (1, 0, 1, 0)]",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The listing reproduces the slide: signature (0, 1, 1, 0), and the public polynomials computed as f∘S match the printed ones. The exhaustive search at the end only works because there are 16 inputs.\n\n**The record.** Multivariate cryptography has fared badly. Stinson notes that the original Oil and Vinegar scheme was broken by the Kipnis-Shamir attack, which uses linear algebra; Rainbow, a layered extension that was a NIST finalist, was broken; and Hidden Field Equations, an encryption scheme, was also broken. The surviving idea is **Unbalanced Oil and Vinegar (UOV)**, with many more vinegar variables than oil variables (Kipnis, Patarin and Goubin, 1999). One parameter set under consideration in the second round of NIST's additional-signature evaluation uses 256 elements per variable with 44 oil and 68 vinegar variables. Gröbner-basis algorithms are another way to attack MQ schemes. As a result, **no multivariate scheme was standardised in the first round**, and the family is only a candidate for additional signatures."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is special about the secret Oil and Vinegar polynomials?",
+              "options": [
+                "No term multiplies two oil variables, so fixing the vinegar variables leaves a linear system in the oil variables.",
+                "They are all linear.",
+                "They have no variables."
+              ],
+              "correct_index": 0,
+              "explanation": "This structure makes signing easy for the key owner while the public, disguised system looks like a random MQ instance."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which multivariate signature scheme was a NIST finalist but was subsequently broken?",
+              "options": [
+                "Rainbow",
+                "SPHINCS+",
+                "Dilithium"
+              ],
+              "correct_index": 0,
+              "explanation": "Stinson lists Rainbow among the extensions of Oil and Vinegar that were broken; no multivariate scheme survived to standardisation."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B03",
+              "locator": "Section 5 (Other approaches), slides 'Multivariate Quadratic Equations', 'Oil-and-Vinegar' (set-up, signing and verification, example, comments)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The family status (UOV under evaluation, parameter set 44 oil and 68 vinegar variables) is as described in Stinson's 11 August 2025 slides and may have changed."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "9.8 Security Assumptions and Tradeoffs",
+          "summary": "What each family rests on, which assumptions have already failed, and the measured size cost of replacing RSA and elliptic curves.",
+          "estimated_minutes": 35,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Choosing a PQC algorithm means choosing a **security assumption** and a **cost profile**. Lattices (LWE, module-LWE, SIS) give the best all-round performance and both services, but they are a single mathematical basis and parameters need care. Code-based schemes rest on the hardness of decoding random linear codes, a problem studied since the 1970s, but have large public keys. Hash-based signatures rest only on hash-function properties, the most conservative assumption, at the cost of large signatures and either state management or slower stateless signing. Multivariate and isogeny schemes offer small sizes in some cases but have a record of attacks.\n\nThe record matters because **nothing here is proven**. These problems are \"currently believed hard\" and have already surprised their designers:\n\n- **SIKE** (isogeny-based KEM) reached NIST's fourth round and was broken in August 2022 by an efficient key-recovery attack (Castryck and Decru).\n- **Rainbow** and **Hidden Field Equations** (multivariate) were broken, as was the original Oil and Vinegar scheme.\n- The **Merkle-Hellman knapsack** cryptosystem (1978) was based on an NP-complete problem and still fell to Shamir, because random instances need not be hard. Paar uses it to explain why \"NP-complete\" alone is not enough.\n- A **ring-LWE parameter set** once rated at about 71 bits of security was later re-evaluated at about 48 bits.\n- **Code-based signatures** (for example CFS) proved insecure or inefficient.\n\nStinson also points out a lack of diversity among the NIST selections: three lattice-based algorithms, one code-based and one hash-based, with no multivariate or isogeny scheme surviving. If a serious weakness were found in lattice problems, the standards would be in trouble. This is the argument for **crypto-agility** and for keeping a non-lattice option available, such as SLH-DSA for signatures and HQC as a second KEM."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The listing quantifies the size cost. It *measures* the ML-KEM-768 and ML-DSA-65 sizes with `kyber-py` 1.2.0 and `dilithium-py` 1.4.0 (install both with pip), computes the classical sizes from their definitions (an RSA-2048 signature is one modulus long, 256 bytes; an uncompressed P-256 point is 65 bytes; an ECDSA P-256 signature is two 32-byte numbers), and converts Paar's code-based table from kbit to bytes. ML-DSA-65 is shown as an example parameter set. Sizes of other parameter sets and of SLH-DSA come from the standards, not from this listing."
+            },
+            {
+              "type": "code",
+              "id": "c-sizes",
+              "language": "python",
+              "code": "from importlib.metadata import version\nfrom kyber_py.ml_kem import ML_KEM_768\nfrom dilithium_py.ml_dsa import ML_DSA_65\n\nprint(\"kyber-py\", version(\"kyber-py\"), \"| dilithium-py\", version(\"dilithium-py\"))\nek, dk = ML_KEM_768.keygen()\n_, ct = ML_KEM_768.encaps(ek)\npk, sk = ML_DSA_65.keygen()\nsig = ML_DSA_65.sign(sk, b\"size measurement\")\n\nKIB = 1024 / 8                                                       # Paar's tables give sizes in kbit (1024 bits)\nrows = [   # (what, public key bytes, ciphertext or signature bytes)\n    (\"ECDH / ECDSA P-256 (computed)\",      1 + 2 * 32,         64),\n    (\"RSA-2048 (computed)\",                256,                256),\n    (\"ML-KEM-768 (measured)\",              len(ek),            len(ct)),\n    (\"ML-DSA-65 (measured)\",               len(pk),            len(sig)),\n    (\"Classic McEliece 348864 (Paar)\",     round(2040 * KIB),  None),\n    (\"BIKE Level 1 (Paar, approx.)\",       round(12 * KIB),    None),\n]\nprint(f\"{'scheme':36} {'public key':>11} {'ciphertext/signature':>22}\")\nfor name, public_key, other in rows:\n    print(f\"{name:36} {public_key:>11,} {'-' if other is None else format(other, ','):>22}\")\nprint(f\"ML-DSA-65 signature is {len(sig) / 64:.0f}x an ECDSA P-256 signature; ML-KEM-768 public key is {len(ek) / 65:.0f}x a P-256 point\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-sizes",
+              "language": "text",
+              "code": "kyber-py 1.2.0 | dilithium-py 1.4.0\nscheme                                public key   ciphertext/signature\nECDH / ECDSA P-256 (computed)                 65                     64\nRSA-2048 (computed)                          256                    256\nML-KEM-768 (measured)                      1,184                  1,088\nML-DSA-65 (measured)                       1,952                  3,309\nClassic McEliece 348864 (Paar)           261,120                      -\nBIKE Level 1 (Paar, approx.)               1,536                      -\nML-DSA-65 signature is 52x an ECDSA P-256 signature; ML-KEM-768 public key is 18x a P-256 point",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "Read the two columns separately",
+              "text": "A KEM is judged by its public key and ciphertext, a signature scheme by its public key and signature. For TLS, a certificate chain carries several public keys and signatures, which is why PQC signatures hurt handshake size more than PQC key exchange does."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is 'based on an NP-complete problem' not enough to make a cryptosystem secure?",
+              "options": [
+                "Hardness is guaranteed only in the worst case, and the instances actually used may be easy, as the broken knapsack cryptosystem showed.",
+                "NP-complete problems are always easy.",
+                "Quantum computers solve all NP-complete problems."
+              ],
+              "correct_index": 0,
+              "explanation": "Paar's example is the Merkle-Hellman knapsack scheme, broken by Shamir although the knapsack problem is NP-complete."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does the diversity of the selected algorithms matter?",
+              "options": [
+                "If a flaw were found in lattice problems, most of the standards would be affected, so a non-lattice alternative is valuable.",
+                "Diverse algorithms are always faster.",
+                "NIST requires one algorithm per family."
+              ],
+              "correct_index": 0,
+              "explanation": "Stinson notes that three of the five selections are lattice-based. Keeping a hash-based or code-based option supports migration if one assumption fails."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which statement about sizes is supported by the measurements?",
+              "options": [
+                "PQC keys and signatures are typically much larger than their classical counterparts.",
+                "PQC signatures are smaller than ECDSA signatures.",
+                "Sizes do not differ."
+              ],
+              "correct_index": 0,
+              "explanation": "ML-DSA-65 signatures are over 3000 bytes versus 64 for ECDSA P-256; the ML-KEM-768 encapsulation key is 1184 bytes versus a 65-byte point."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Section 12.1.2 (NP-complete problems and the Merkle-Hellman knapsack), 12.2.5 (ring-LWE parameters), 12.3.4 and 12.3.5 (code-based sizes and signatures), Tables 12.3 and 12.4"
+            },
+            {
+              "book": "B03",
+              "locator": "Section 1 (NIST standardization process: Round 4, SIKE broken, lack of diversity) and Section 5 (SIDH/SIKE)"
+            },
+            {
+              "book": "B04",
+              "locator": "Table 3 (ML-KEM sizes, matches the measured values)"
+            },
+            {
+              "book": "B90",
+              "locator": "Package metadata, version 1.2.0",
+              "note": "Measurement tool."
+            },
+            {
+              "book": "B91",
+              "locator": "Package metadata, version 1.4.0",
+              "note": "Measurement tool."
+            }
+          ],
+          "needs_verification": {
+            "reason": "ML-DSA-65 sizes were measured with dilithium-py and agree with the values in FIPS 204, which is not among the books checked here. Classical sizes are computed from definitions. Paar's kbit values are taken as 1024-bit units, which reproduces Classic McEliece's published 261,120-byte key for 348864."
+          },
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "new",
+          "title": "Task: Reuse a one-time key and forge a signature",
+          "summary": "Break a Lamport key that signs more than once, then fix it with state, and write down what a stateful signer must guarantee.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Objective.** See for yourself why hash-based one-time keys must never sign twice, then make the signer safe.\n\n**Scenario.** A small service signs short status messages with a Lamport key. To keep the attack fast we shorten the digest to **16 bits** (the first two bytes of SHA-256); real deployments use the full digest, which makes forgery harder but follows the same logic as signatures accumulate. This is a lab on your own code and toy data.\n\n**Steps.** (1) Implement signing and verification for the 16-bit digest. (2) Sign n messages with the *same* key for n = 1 to 4. (3) After each, search for a new message whose 16 digest bits are all covered by the values already revealed, and count the attempts. (4) Build a signer that refuses to reuse a key and show that it raises an error on the second signature. The reference solution below does all four."
+            },
+            {
+              "type": "code",
+              "id": "c-forge",
+              "language": "python",
+              "code": "import hashlib, secrets\n\nBITS = 16                                                            # toy digest length: first 2 bytes of SHA-256\ndef digest_bits(message):\n    d = hashlib.sha256(message).digest()\n    return [(d[i // 8] >> (7 - i % 8)) & 1 for i in range(BITS)]\ndef hash_(value):\n    return hashlib.sha256(value).digest()\n\nprivate = [[secrets.token_bytes(32), secrets.token_bytes(32)] for _ in range(BITS)]\npublic = [[hash_(a), hash_(b)] for a, b in private]\n\ndef sign(message):\n    return [private[i][bit] for i, bit in enumerate(digest_bits(message))]\ndef verify(message, signature):\n    return all(hash_(v) == public[i][bit] for i, (v, bit) in enumerate(zip(signature, digest_bits(message))))\n\nrevealed = {}                                                        # (position, bit) -> value an eavesdropper has seen\nfor n in range(1, 5):\n    message = f\"status update {n}\".encode()\n    for i, v in enumerate(sign(message)):\n        revealed[(i, digest_bits(message)[i])] = v\n\n    attempts, target = 0, None\n    while target is None:\n        attempts += 1\n        candidate = f\"forged message {attempts}\".encode()\n        if all((i, bit) in revealed for i, bit in enumerate(digest_bits(candidate))):\n            target = candidate\n    forged = [revealed[(i, bit)] for i, bit in enumerate(digest_bits(target))]\n    print(f\"{n} signed message(s): forged {target.decode()!r} after {attempts:>6} attempts, verifies: {verify(target, forged)}\")\n\nclass OneTimeSigner:\n    def __init__(self):\n        self.used = False\n    def sign(self, message):\n        if self.used:\n            raise RuntimeError(\"one-time key already used: refuse to sign\")\n        self.used = True\n        return sign(message)\n\nsigner = OneTimeSigner()\nsigner.sign(b\"first message\")\ntry:\n    signer.sign(b\"second message\")\nexcept RuntimeError as error:\n    print(\"stateful signer:\", error)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-forge",
+              "language": "text",
+              "code": "1 signed message(s): forged 'forged message 216208' after 216208 attempts, verifies: True\n2 signed message(s): forged 'forged message 876' after    876 attempts, verifies: True\n3 signed message(s): forged 'forged message 9' after      9 attempts, verifies: True\n4 signed message(s): forged 'forged message 9' after      9 attempts, verifies: True\nstateful signer: one-time key already used: refuse to sign",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Verify.** The forgery verifies in every row. With one signed message the attacker must find another message with the *same* 16-bit digest, which is just a second-preimage search on a truncated hash: about 65,000 attempts on average, and the run above needed 216,208 for these particular messages. Each additional signature makes it far cheaper. If the signed messages' digests agree in a positions, a random new message is covered with probability 2^-a; averaged over random message sets the expected number of attempts is (1 + 2^(1-n))^16, which is about 656 with two signatures, 36 with three and 7 with four. The counts you see depend on the particular messages, so a single run can be far from the average (876 for two messages here).\n\n**Troubleshooting.** If the first row takes very long, remember it is searching a 2^16 space; that is expected. If a forgery does not verify, check that you stored revealed values by (position, bit) rather than by message.\n\n**Cleanup.** Nothing persists. Discard the toy key.\n\n**Reflection.** Write three sentences. What must a stateful signer guarantee about its counter? Name one operational event (restore, clone, failover) that could break that guarantee. Which design (stateless SLH-DSA, or a lattice signature) would you use if you cannot guarantee it?"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does each extra signature with the same Lamport key make forgery easier?",
+              "options": [
+                "Each signature reveals more private values, so more digest bit patterns are covered by values the attacker already holds.",
+                "The hash function gets weaker.",
+                "The public key changes."
+              ],
+              "correct_index": 0,
+              "explanation": "After n signatures a fraction 1 - 2^-n of the private key is revealed, so a new message's digest is covered with higher and higher probability."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which operational event can silently cause key reuse in a stateful scheme?",
+              "options": [
+                "Restoring a virtual machine snapshot taken before some signatures were made.",
+                "Rotating the TLS certificate.",
+                "Changing the hash output format."
+              ],
+              "correct_index": 0,
+              "explanation": "A rollback makes the signer forget which one-time keys were used, so it can sign again with one already revealed."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B03",
+              "locator": "Section 2 (Hash-based signature schemes): 'Few-times Signature Scheme' (attack on reuse) and 'Stateful vs Stateless Signatures'"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 12.4.3 (Final Remarks), the disadvantage of stateful schemes"
+            }
+          ],
+          "after": "sec-8"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "b9-n01",
+          "prompt": "What is the main difference between post-quantum cryptography and quantum key distribution?",
+          "options": [
+            "PQC runs on conventional computers; QKD needs quantum hardware and channels.",
+            "PQC needs quantum hardware.",
+            "They are the same."
+          ],
+          "correct_index": 0,
+          "explanation": "PQC algorithms are classical software designed to resist quantum attacks; QKD uses quantum effects on special hardware.",
+          "source": {
+            "book": "B01",
+            "locator": "Section 12.1.2"
+          }
+        },
+        {
+          "id": "b9-n02",
+          "prompt": "Which PQC family offers both key encapsulation and signatures with efficiency comparable to classical schemes?",
+          "options": [
+            "Lattice-based",
+            "Hash-based",
+            "Code-based"
+          ],
+          "correct_index": 0,
+          "explanation": "Paar notes lattices are the only family with versatility and efficiency similar to classical asymmetric schemes.",
+          "source": {
+            "book": "B01",
+            "locator": "Section 12.1.2"
+          }
+        },
+        {
+          "id": "b9-n03",
+          "prompt": "In a KEM, who generates the shared secret?",
+          "options": [
+            "The Encaps function, which also outputs the ciphertext",
+            "The receiver before the protocol starts",
+            "A certificate authority"
+          ],
+          "correct_index": 0,
+          "explanation": "Encaps returns the random shared secret and the ciphertext that carries it.",
+          "source": {
+            "book": "B03",
+            "locator": "Key Encapsulation Mechanisms slides"
+          }
+        },
+        {
+          "id": "b9-n04",
+          "prompt": "What is the ML-KEM-768 encapsulation key size?",
+          "options": [
+            "1184 bytes",
+            "800 bytes",
+            "1568 bytes"
+          ],
+          "correct_index": 0,
+          "explanation": "FIPS 203 Table 3 lists 1184 bytes for ML-KEM-768 (800 for 512 and 1568 for 1024).",
+          "source": {
+            "book": "B04",
+            "locator": "Table 3"
+          }
+        },
+        {
+          "id": "b9-n06",
+          "prompt": "What does the Winternitz checksum prevent?",
+          "options": [
+            "Forging by advancing revealed hash-chain values",
+            "Hash collisions",
+            "Key theft"
+          ],
+          "correct_index": 0,
+          "explanation": "Raising a chunk lowers the checksum, which would require moving a chain backwards.",
+          "source": {
+            "book": "B03",
+            "locator": "Winternitz Signature Scheme: Fixing the Problem"
+          }
+        },
+        {
+          "id": "b9-n08",
+          "prompt": "Why is SPHINCS+ (SLH-DSA) called stateless?",
+          "options": [
+            "Leaf keys are chosen at random in a very large hypertree, so no counter is needed.",
+            "It has no keys.",
+            "It uses no hash function."
+          ],
+          "correct_index": 0,
+          "explanation": "A large multilevel tree plus few-times signatures removes the need to track used keys.",
+          "source": {
+            "book": "B03",
+            "locator": "Stateful vs Stateless Signatures"
+          }
+        },
+        {
+          "id": "b9-n09",
+          "prompt": "In LWE, what is the role of the small error vector e?",
+          "options": [
+            "It makes the linear system approximate and hard to solve",
+            "It encodes the message",
+            "It is the public key"
+          ],
+          "correct_index": 0,
+          "explanation": "Without errors the secret is recovered by Gaussian elimination.",
+          "source": {
+            "book": "B03",
+            "locator": "Learning with Errors"
+          }
+        },
+        {
+          "id": "b9-n10",
+          "prompt": "Why does Ring-LWE give smaller keys than plain LWE?",
+          "options": [
+            "The matrix is determined by one polynomial (its first row).",
+            "It uses a smaller modulus only.",
+            "It removes the secret key."
+          ],
+          "correct_index": 0,
+          "explanation": "Only the first row must be stored; other rows are signed shifts of it.",
+          "source": {
+            "book": "B03",
+            "locator": "Ring learning with errors"
+          }
+        },
+        {
+          "id": "b9-n12",
+          "prompt": "What is information-set decoding used for?",
+          "options": [
+            "Generic attacks on code-based schemes",
+            "Signing documents",
+            "Hashing"
+          ],
+          "correct_index": 0,
+          "explanation": "ISD (Prange, 1962) attacks McEliece-type systems without exploiting the hidden structure.",
+          "source": {
+            "book": "B03",
+            "locator": "Information-set decoding"
+          }
+        },
+        {
+          "id": "b9-n13",
+          "prompt": "Which family's schemes (Oil and Vinegar, Rainbow, HFE) have repeatedly been broken?",
+          "options": [
+            "Multivariate",
+            "Hash-based",
+            "Lattice-based"
+          ],
+          "correct_index": 0,
+          "explanation": "Stinson notes the attacks on OV, Rainbow and HFE.",
+          "source": {
+            "book": "B03",
+            "locator": "Oil-and-Vinegar: Comments"
+          }
+        },
+        {
+          "id": "b9-n14",
+          "prompt": "What happened to SIKE in August 2022?",
+          "options": [
+            "An efficient key-recovery attack was published",
+            "It was standardized",
+            "It was merged into ML-KEM"
+          ],
+          "correct_index": 0,
+          "explanation": "A fatal attack was described in August 2022 (Castryck and Decru).",
+          "source": {
+            "book": "B03",
+            "locator": "SIDH slides"
+          }
+        },
+        {
+          "id": "b9-n15",
+          "prompt": "Which statement about the NIST selections does Stinson make?",
+          "options": [
+            "They lack diversity: three lattice-based, one code-based and one hash-based.",
+            "They are all hash-based.",
+            "They are all multivariate."
+          ],
+          "correct_index": 0,
+          "explanation": "This lack of diversity motivates keeping non-lattice alternatives.",
+          "source": {
+            "book": "B03",
+            "locator": "NIST Standardization Process, Comments"
+          }
+        }
+      ],
+      "estimated_minutes": 294,
+      "notes": "Rewrites eight outline sections as lessons with executed implementations of Lamport, Winternitz, Merkle, toy LWE/Regev, Hamming/McEliece/BIKE and Oil-and-Vinegar reproducing the published examples, measured ML-KEM/ML-DSA sizes, and a key-reuse forgery task.",
+      "learning_objectives": [
+        "Distinguish post-quantum from quantum cryptography and name the five PQC families with what each supports.",
+        "Use the KEM interface (KeyGen, Encaps, Decaps) and relate ML-KEM sizes to FIPS 203.",
+        "Explain and implement Lamport, Winternitz and Merkle-tree hash-based signatures and the stateful/stateless trade-off.",
+        "Explain Learning With Errors, Ring-LWE and Module-LWE with worked toy examples.",
+        "Explain code-based (McEliece, BIKE, HQC) and multivariate (Oil and Vinegar) designs and their weaknesses.",
+        "Compare security assumptions, break history and size costs, and demonstrate key-reuse forgery on a toy scheme."
+      ]
+    }
+  ]
+}
