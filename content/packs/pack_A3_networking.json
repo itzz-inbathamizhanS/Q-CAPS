@@ -1,0 +1,1065 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B02",
+      "title": "A Graduate Course in Applied Cryptography",
+      "authors": "Dan Boneh, Victor Shoup",
+      "edition": "Version 0.6",
+      "year": 2023
+    },
+    {
+      "id": "B06",
+      "title": "Cyber Security Using Modern Technologies: Artificial Intelligence, Blockchain and Quantum Cryptography",
+      "authors": "Om Pal, Vinod Kumar, Rijwan Khan, Bashir Alam, Mansaf Alam (eds.)",
+      "edition": "1st edition",
+      "year": 2024,
+      "publisher": "CRC Press"
+    },
+    {
+      "id": "B34",
+      "title": "The Python Standard Library (Python 3.14 documentation)",
+      "authors": "Python Software Foundation",
+      "edition": "3.14, accessed 2026-10-04",
+      "publisher": "docs.python.org"
+    },
+    {
+      "id": "B50",
+      "title": "IETF Request for Comments (RFC) series: RFC 768, 791, 1035, 1122, 1918, 2131, 4291, 4632, 5737, 8200, 9110, 9112, 9293, 9846",
+      "authors": "Internet Engineering Task Force",
+      "edition": "rfc-editor.org, accessed 2026-10-04",
+      "publisher": "IETF"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_a_a3_networking_foundations",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "Networks, LANs and WANs",
+          "summary": "Packets, hosts, and the difference between a local network and the internet.",
+          "estimated_minutes": 15,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **network** is a set of devices (**hosts**) that can exchange data. A **local area network (LAN)** covers a limited area such as a home, office or campus; a **wide area network (WAN)** connects LANs across larger distances, and the internet is the largest WAN, a network of networks. Devices on a LAN are joined by **switches**; separate networks are joined by **routers**.\n\nNetworks do not send a message as one continuous stream. They break data into small units called **packets** (or datagrams), each carrying the addresses of its source and destination. This is **packet switching**. Different packets of the same message can take different routes, can arrive out of order, and can be lost. Higher-level protocols, above all TCP, exist to put the pieces back in order and to resend what went missing.\n\nEverything you do online follows the **client-server** pattern: a client (your browser) sends a request to a server, which sends a response. Every scan that the Q-CAPS scanner runs is a series of such exchanges: a DNS lookup, a TCP connection, a TLS handshake and an HTTPS request."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The toy listing below shows why sequence numbers matter. A message is split into numbered chunks, the chunks arrive in a fixed jumbled order, and the receiver restores the message by sorting on the sequence number. This is a model of the idea, not real network code."
+            },
+            {
+              "type": "code",
+              "id": "c-packets",
+              "language": "python",
+              "code": "message = \"Packets can arrive out of order\"\nchunks = [(i, message[i:i + 8]) for i in range(0, len(message), 8)]    # (sequence number, data)\narrival = [chunks[2], chunks[0], chunks[3], chunks[1]]                  # a fixed, jumbled arrival order\nprint(\"arrived in order of sequence number:\", [seq for seq, _ in arrival])\nprint(\"rebuilt:\", \"\".join(data for _, data in sorted(arrival)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-packets",
+              "language": "text",
+              "code": "arrived in order of sequence number: [16, 0, 24, 8]\nrebuilt: Packets can arrive out of order",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What device joins separate networks together and forwards packets between them?",
+              "options": [
+                "A switch",
+                "A router",
+                "A repeater"
+              ],
+              "correct_index": 1,
+              "explanation": "Routers forward packets between networks using IP addresses. Switches connect devices within one local network."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why do packets carry sequence numbers in protocols such as TCP?",
+              "options": [
+                "So the receiver can restore the original order and detect missing pieces.",
+                "So packets travel faster.",
+                "So routers can read the message."
+              ],
+              "correct_index": 0,
+              "explanation": "Packets can arrive out of order or be lost; sequence numbers let the receiver reassemble the data and ask for anything missing."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B50",
+              "locator": "RFC 1122, Section 1.1.3 (Internet Protocol Suite): hosts, networks and the layers of the protocol suite"
+            },
+            {
+              "book": "B06",
+              "locator": "Chapter 4, Section 4.1 (Introduction to Modern Networks)"
+            }
+          ]
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "Layered models and encapsulation",
+          "summary": "The OSI and TCP/IP models, and a real IPv4 header built and checked in Python.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Network communication is organised in **layers**, each doing one job and relying on the one below. The **OSI model** has seven: Physical, Data Link, Network, Transport, Session, Presentation and Application. The **TCP/IP model** that the internet actually uses groups them into four: **Link** (moving frames across one network), **Internet** (addressing and routing with IP), **Transport** (end-to-end delivery with TCP or UDP) and **Application** (protocols such as HTTP and DNS). People use the OSI numbers when talking (\"a layer 3 problem\" is about IP, \"layer 7\" is the application).\n\nLayering works through **encapsulation**. The application hands data to the transport layer, which adds a **header** (ports and sequence information). The internet layer adds its own header (source and destination IP addresses) and the link layer adds another (hardware addresses). The receiver strips them off in reverse. Each layer reads only its own header."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The listing builds a real **IPv4 header** and a real **UDP header** around a 5-byte payload, exactly as the standards define them (RFC 791 and RFC 768), then reads the fields back. The IP header is 20 bytes and ends with a **checksum**, computed by adding 16-bit words with end-around carry and inverting the result. A receiver recomputes it over the whole header; a valid header gives zero. The addresses are from ranges reserved for documentation, so they identify no real host."
+            },
+            {
+              "type": "code",
+              "id": "c-ip",
+              "language": "python",
+              "code": "import struct\n\ndef checksum(data):\n    total = sum(struct.unpack(f\"!{len(data) // 2}H\", data))\n    while total >> 16:\n        total = (total & 0xFFFF) + (total >> 16)          # end-around carry\n    return ~total & 0xFFFF\n\ndef ip4(address):\n    return bytes(int(part) for part in address.split(\".\"))\n\npayload = b\"hello\"\nudp = struct.pack(\"!HHHH\", 40000, 53, 8 + len(payload), 0) + payload      # source port, destination port, length, checksum (0 = not used)\nheader = struct.pack(\"!BBHHHBBH4s4s\", 0x45, 0, 20 + len(udp), 0x1234, 0, 64, 17, 0, ip4(\"192.0.2.1\"), ip4(\"198.51.100.2\"))\nheader = header[:10] + struct.pack(\"!H\", checksum(header)) + header[12:]    # insert the real checksum\npacket = header + udp\n\nprint(len(packet), \"bytes = 20 (IP header) + 8 (UDP header) +\", len(payload), \"(payload)\")\nprint(header.hex(\" \"))\nprint(\"header checksum valid:\", checksum(packet[:20]) == 0)\n\nversion_ihl, _, total, _, _, ttl, proto, _, src, dst = struct.unpack(\"!BBHHHBBH4s4s\", packet[:20])\nprint(\"version\", version_ihl >> 4, \"| ttl\", ttl, \"| protocol\", proto, \"(17 = UDP) |\", \".\".join(map(str, src)), \"->\", \".\".join(map(str, dst)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-ip",
+              "language": "text",
+              "code": "33 bytes = 20 (IP header) + 8 (UDP header) + 5 (payload)\n45 00 00 21 12 34 00 00 40 11 7c 61 c0 00 02 01 c6 33 64 02\nheader checksum valid: True\nversion 4 | ttl 64 | protocol 17 (17 = UDP) | 192.0.2.1 -> 198.51.100.2",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "Why this matters for security",
+              "text": "Each layer is a place where things can go wrong or be attacked: spoofed addresses at the IP layer, malformed headers, unencrypted payloads. It is also where defences sit: a firewall inspects layers 3 and 4, and TLS protects the payload between the transport and application layers."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which layer of the TCP/IP model is responsible for IP addressing and routing across networks?",
+              "options": [
+                "Link",
+                "Internet",
+                "Application"
+              ],
+              "correct_index": 1,
+              "explanation": "The Internet layer (OSI layer 3, the Network layer) carries IP addresses and gets packets across networks. The Link layer works within one network."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does encapsulation mean?",
+              "options": [
+                "Each layer wraps the data from the layer above with its own header.",
+                "Encrypting the data at the application layer.",
+                "Compressing packets to save bandwidth."
+              ],
+              "correct_index": 0,
+              "explanation": "Encapsulation is the nesting of headers: data, then transport header, then IP header, then link header. Each layer reads only its own."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B50",
+              "locator": "RFC 1122, Section 1.1.3 (Internet Protocol Suite): the layers"
+            },
+            {
+              "book": "B50",
+              "locator": "RFC 791, Section 3.1 (Internet Header Format) and RFC 768 (User Datagram Protocol): header layouts and the checksum"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, struct module"
+            }
+          ],
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "IP addressing and subnetting",
+          "summary": "IPv4 addresses, CIDR notation, subnets, private ranges, and Python's ipaddress module.",
+          "estimated_minutes": 25,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Every device on an IP network needs an **IP address**. An IPv4 address is 32 bits, written as four decimal numbers from 0 to 255 (`192.168.10.5`). Part of the address identifies the **network** and the rest identifies the **host** on it. **CIDR notation** states how many leading bits are the network part: `192.168.10.0/24` means 24 network bits and 8 host bits. The same information can be written as a **subnet mask** (`255.255.255.0`).\n\nA subnet with 8 host bits has 2^8 = 256 addresses, but two are reserved: the **network address** (all host bits zero) and the **broadcast address** (all host bits one), leaving 254 usable hosts. Each extra network bit halves the size, so `/25` has 128 addresses and `/26` has 64. **Subnetting** splits a network into smaller ones, which lets organisations separate departments and decide exactly which addresses are \"in scope\" for a security assessment.\n\nSome ranges are special. **Private** ranges (RFC 1918) are not routed on the public internet: `10.0.0.0/8`, `172.16.0.0/12` and `192.168.0.0/16`. `127.0.0.0/8` is **loopback** (the machine itself). The blocks `192.0.2.0/24`, `198.51.100.0/24` and `203.0.113.0/24` are reserved for **documentation** (RFC 5737), which is why this course uses them in examples."
+            },
+            {
+              "type": "code",
+              "id": "c-subnet",
+              "language": "python",
+              "code": "import ipaddress\n\nnet = ipaddress.ip_network(\"192.168.10.0/26\")\nprint(\"network:\", net.network_address, \" mask:\", net.netmask, \" broadcast:\", net.broadcast_address)\nprint(\"addresses:\", net.num_addresses, \" usable hosts:\", net.num_addresses - 2)\nprint(\"first and last host:\", next(net.hosts()), list(net.hosts())[-1])\nprint(\"split into /28:\", [str(s) for s in net.subnets(new_prefix=28)])\nprint(\"192.168.10.70 in this subnet?\", ipaddress.ip_address(\"192.168.10.70\") in net)\nprint(\"10.4.5.6 private?\", ipaddress.ip_address(\"10.4.5.6\").is_private, \"| 8.8.8.8 private?\", ipaddress.ip_address(\"8.8.8.8\").is_private)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-subnet",
+              "language": "text",
+              "code": "network: 192.168.10.0  mask: 255.255.255.192  broadcast: 192.168.10.63\naddresses: 64  usable hosts: 62\nfirst and last host: 192.168.10.1 192.168.10.62\nsplit into /28: ['192.168.10.0/28', '192.168.10.16/28', '192.168.10.32/28', '192.168.10.48/28']\n192.168.10.70 in this subnet? False\n10.4.5.6 private? True | 8.8.8.8 private? False",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Read the output as a worked example. `192.168.10.0/26` has 6 host bits, so 64 addresses and 62 usable hosts; the last address (`.63`) is the broadcast. Splitting it with `/28` gives four subnets of 16 addresses. The address `192.168.10.70` is **not** in the subnet, because the subnet ends at `.63`. Getting a boundary wrong by one is a classic way to scan or firewall the wrong machines."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How many usable host addresses does a /24 IPv4 subnet have?",
+              "options": [
+                "256",
+                "254",
+                "255"
+              ],
+              "correct_index": 1,
+              "explanation": "A /24 has 8 host bits, so 256 addresses. The network address and the broadcast address are reserved, leaving 254."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which of these is a private IPv4 address?",
+              "options": [
+                "172.20.4.9",
+                "8.8.4.4",
+                "198.18.0.1"
+              ],
+              "correct_index": 0,
+              "explanation": "172.16.0.0/12 (172.16.0.0 to 172.31.255.255) is private under RFC 1918, so 172.20.4.9 is private. 8.8.4.4 is a public address."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Is 192.168.10.70 inside 192.168.10.0/26?",
+              "options": [
+                "Yes",
+                "No, the subnet covers .0 to .63",
+                "Only if it is a broadcast address"
+              ],
+              "correct_index": 1,
+              "explanation": "A /26 spans 64 addresses starting at .0, so it ends at .63. .70 belongs to the next /26."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B50",
+              "locator": "RFC 4632 (CIDR); RFC 1918, Section 3 (Private Address Space); RFC 5737, Section 3 (Documentation Address Blocks)"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, ipaddress module"
+            }
+          ],
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "IPv4 and IPv6",
+          "summary": "Why IPv6 exists, how its addresses are written, and the address types you will meet.",
+          "estimated_minutes": 18,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "IPv4's 32-bit addresses allow about 4.3 billion addresses, which the growth of the internet exhausted. **IPv6** uses **128-bit** addresses, a number so large that every subnet can be given enormous room. Both are in everyday use together, so you must be able to read both.\n\nAn IPv6 address is written as eight groups of four hexadecimal digits separated by colons. Leading zeros in a group can be dropped, and **one** run of all-zero groups can be replaced by `::`. For example `2001:0db8:0000:0000:0000:0000:0000:0001` is `2001:db8::1`. Important types (RFC 4291) include **global unicast** (`2000::/3`, routable on the internet), **link-local** (`fe80::/10`, valid only on one link), **unique local** (`fc00::/7`, the IPv6 counterpart of private addresses) and **loopback** (`::1`). `2001:db8::/32` is reserved for documentation.\n\nIPv6 has no broadcast: hosts find each other with multicast and the Neighbor Discovery protocol. Because there are so many addresses, IPv6 usually needs no NAT, which restores end-to-end addressing. That makes **firewalls matter more**, since a device with a public IPv6 address is directly reachable unless filtered."
+            },
+            {
+              "type": "code",
+              "id": "c-ipv6",
+              "language": "python",
+              "code": "import ipaddress\n\nfull = ipaddress.ip_address(\"2001:0db8:0000:0000:0000:0000:0000:0001\")\nprint(\"compressed:\", full.compressed)\nprint(\"exploded:  \", full.exploded)\nfor text in (\"::1\", \"fe80::1\", \"fd12:3456:789a::1\", \"2001:db8::1\"):\n    a = ipaddress.ip_address(text)\n    print(f\"{text:20} loopback={a.is_loopback!s:5} link-local={a.is_link_local!s:5} private={a.is_private}\")\nprint(\"addresses in a /64:\", 2 ** (128 - 64))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-ipv6",
+              "language": "text",
+              "code": "compressed: 2001:db8::1\nexploded:   2001:0db8:0000:0000:0000:0000:0000:0001\n::1                  loopback=True  link-local=False private=True\nfe80::1              loopback=False link-local=True  private=True\nfd12:3456:789a::1    loopback=False link-local=False private=True\n2001:db8::1          loopback=False link-local=False private=True\naddresses in a /64: 18446744073709551616",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Notice that `is_private` is `True` for **every** address in the output, not only for the unique-local one. Python counts a number of special-purpose ranges as \"private\": loopback, link-local and the documentation prefix as well as unique-local addresses. It is a quick check, not a statement that an address belongs to an internal corporate network. When you need the exact type, use the specific properties (`is_loopback`, `is_link_local`) or test membership of a named network. The last line shows the scale of IPv6: a single `/64` subnet, the standard size for one network, holds 2^64, about 1.8 × 10^19 addresses, which is exactly the square of the entire IPv4 address space (2^32 × 2^32)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How many bits are in an IPv6 address?",
+              "options": [
+                "32",
+                "64",
+                "128"
+              ],
+              "correct_index": 2,
+              "explanation": "IPv6 addresses are 128 bits long, compared with 32 for IPv4."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does :: mean in an IPv6 address?",
+              "options": [
+                "One run of consecutive all-zero groups, written compactly (allowed once per address).",
+                "The loopback address only.",
+                "A broadcast address."
+              ],
+              "correct_index": 0,
+              "explanation": "The double colon replaces a single run of zero groups. It may appear only once, otherwise the address would be ambiguous."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B50",
+              "locator": "RFC 8200, Section 3 (IPv6 Header Format); RFC 4291, Section 2.2 (Text Representation of Addresses) and Section 2.5 (Unicast Addresses)"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, ipaddress module"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The documentation prefix 2001:db8::/32 (RFC 3849) and unique-local range fc00::/7 (RFC 4193) were confirmed to exist in the RFC index but their section text was not re-read for this lesson."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "TCP and UDP",
+          "summary": "Ports, the TCP handshake, reliable delivery, and when UDP is the better choice, shown on the loopback interface.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "IP delivers packets to a **host**. The **transport layer** delivers them to the right **program** on that host using **port numbers** from 0 to 65535. The IANA ranges are 0 to 1023 (well-known, such as 443 for HTTPS), 1024 to 49151 (registered) and 49152 to 65535 (dynamic or ephemeral). A connection is identified by the source address and port plus the destination address and port.\n\n**TCP** (RFC 9293) is **connection-oriented** and provides a **reliable, ordered stream of bytes**. Before any data flows it performs a **three-way handshake**: the client sends **SYN**, the server replies **SYN-ACK**, and the client answers **ACK**. TCP then numbers bytes, acknowledges them, resends anything lost and slows down when the network is congested. Web pages, email and TLS use TCP.\n\n**UDP** (RFC 768) is **connectionless**: it sends individual datagrams with no handshake, no ordering and no retransmission. It is lighter and faster to start, which suits **DNS** lookups, live audio and video, and games where a late packet is worthless. QUIC, the transport behind HTTP/3, is built on UDP and adds its own reliability and encryption."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The listing runs a tiny TCP echo server and a UDP receiver on your own machine's **loopback** address (`127.0.0.1`, traffic that never leaves the computer). Asking for port 0 makes the operating system pick a free port. The TCP handshake happens inside `create_connection`; your program never sees the SYN packets, because the kernel handles them. The UDP datagram is just sent."
+            },
+            {
+              "type": "code",
+              "id": "c-sockets",
+              "language": "python",
+              "code": "import socket, threading\n\nsocket.setdefaulttimeout(5)\n\ndef echo_once(server):\n    connection, _ = server.accept()\n    with connection:\n        connection.sendall(connection.recv(1024).upper())\n\nserver = socket.socket(socket.AF_INET, socket.SOCK_STREAM)\nserver.bind((\"127.0.0.1\", 0))                       # port 0: the OS chooses a free port\nserver.listen(1)\nport = server.getsockname()[1]\nthreading.Thread(target=echo_once, args=(server,), daemon=True).start()\n\nwith socket.create_connection((\"127.0.0.1\", port)) as client:       # the TCP handshake happens here\n    client.sendall(b\"hello over tcp\")\n    print(\"TCP reply:\", client.recv(1024))\n    print(\"client port is not a well-known port:\", client.getsockname()[1] >= 1024)\nserver.close()\n\nreceiver = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)\nreceiver.bind((\"127.0.0.1\", 0))\nsender = socket.socket(socket.AF_INET, socket.SOCK_DGRAM)\nsender.sendto(b\"hello over udp\", receiver.getsockname())             # no connection, no handshake\nprint(\"UDP received:\", receiver.recvfrom(1024)[0])"
+            },
+            {
+              "type": "code",
+              "id": "o-c-sockets",
+              "language": "text",
+              "code": "TCP reply: b'HELLO OVER TCP'\nclient port is not a well-known port: True\nUDP received: b'hello over udp'",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "Why scanners care",
+              "text": "A port is **open** when a program is listening and completes the handshake, **closed** when the host answers with a reset, and **filtered** when a firewall silently drops the probe. The Q-CAPS scanner reports a probe that gets no answer as \"no answer (state unknown)\", not as closed, because silence is not evidence."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which transport protocol would you choose for a DNS query, where speed matters and one lost packet can simply be asked again?",
+              "options": [
+                "TCP",
+                "UDP",
+                "Neither: DNS needs TLS"
+              ],
+              "correct_index": 1,
+              "explanation": "DNS queries are small and typically use UDP: no handshake, one packet each way. TCP is used for large answers and some other cases."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "In what order do the messages of the TCP three-way handshake go?",
+              "options": [
+                "SYN, SYN-ACK, ACK",
+                "ACK, SYN, SYN-ACK",
+                "SYN-ACK, SYN, ACK"
+              ],
+              "correct_index": 0,
+              "explanation": "The client opens with SYN, the server replies SYN-ACK, and the client confirms with ACK; then data can flow."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B50",
+              "locator": "RFC 9293, Section 3.1 (Header Format) and Section 3.5 (Establishing a Connection); RFC 768 (UDP)"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, socket and threading modules"
+            },
+            {
+              "book": "B02",
+              "locator": "Section 21.10 (Case study: TLS session setup), for how TLS runs over a TCP connection",
+              "note": "Context only."
+            }
+          ],
+          "needs_verification": {
+            "reason": "QUIC and the IANA port ranges are mentioned as general background (RFC 9000 and the IANA registry were not re-read for this lesson)."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "DNS and DHCP",
+          "summary": "How names become addresses, the DHCP lease, and a DNS message built and parsed byte by byte.",
+          "estimated_minutes": 25,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "People use **names**; networks use **addresses**. The **Domain Name System (DNS)** translates between them. Names form a hierarchy read right to left: in `www.example.org` the **root** is at the top, `org` is the top-level domain, `example.org` is a domain run by its owner and `www` is a host inside it. A **recursive resolver** (usually run by your ISP or network) does the work for you: it asks a root server, then the TLD servers, then the domain's **authoritative** servers, and **caches** each answer for its **TTL** (time to live). Common record types are **A** (IPv4 address), **AAAA** (IPv6 address), **CNAME** (alias), **MX** (mail), **NS** (name servers) and **TXT** (free text, used for email policy and for proving ownership of a domain, as the Q-CAPS scanner does).\n\n**DHCP** (RFC 2131) gives a device its network settings when it joins: an IP address, subnet mask, default gateway and DNS server. The exchange is **Discover, Offer, Request, Acknowledge**, and the address is **leased** for a limited time and renewed."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "DNS messages have a compact binary format (RFC 1035): a 12-byte header, then the question, then answers. A name is stored as length-prefixed labels (`3www7example3org0`). To save space an answer can refer back to a name with a **compression pointer**. The listing builds a query for an A record, then parses a response **built by hand for illustration** (it is not captured from any real server, and its address is from the documentation range)."
+            },
+            {
+              "type": "code",
+              "id": "c-dns",
+              "language": "python",
+              "code": "import struct\n\ndef dns_query(name, ident=0x2A2A):\n    header = struct.pack(\"!HHHHHH\", ident, 0x0100, 1, 0, 0, 0)               # flags: recursion desired; 1 question\n    qname = b\"\".join(bytes([len(label)]) + label.encode() for label in name.split(\".\")) + b\"\\x00\"\n    return header + qname + struct.pack(\"!HH\", 1, 1)                          # type A, class IN\n\ndef read_name(msg, pos):\n    labels, jumped, end = [], False, None\n    while True:\n        length = msg[pos]\n        if length & 0xC0 == 0xC0:                                              # compression pointer\n            if not jumped:\n                end = pos + 2\n            pos, jumped = ((length & 0x3F) << 8) | msg[pos + 1], True\n        elif length == 0:\n            return \".\".join(labels), (end if jumped else pos + 1)\n        else:\n            labels.append(msg[pos + 1:pos + 1 + length].decode())\n            pos += 1 + length\n\nquery = dns_query(\"www.example.org\")\nprint(len(query), \"byte query:\", query.hex(\" \"))\n\nanswer = b\"\\xc0\\x0c\" + struct.pack(\"!HHIH\", 1, 1, 300, 4) + bytes([192, 0, 2, 10])   # pointer to the name, A, IN, TTL 300, 4 data bytes\nresponse = struct.pack(\"!HHHHHH\", 0x2A2A, 0x8180, 1, 1, 0, 0) + query[12:] + answer     # hand-built, illustrative\n\nident, flags, qdcount, ancount, _, _ = struct.unpack(\"!HHHHHH\", response[:12])\nname, pos = read_name(response, 12)\npos += 4                                                                       # skip QTYPE and QCLASS\nrname, pos = read_name(response, pos)\nrtype, rclass, ttl, rdlength = struct.unpack(\"!HHIH\", response[pos:pos + 10])\naddress = \".\".join(str(b) for b in response[pos + 10:pos + 10 + rdlength])\nprint(f\"{rname}  type={rtype} (1 = A)  ttl={ttl}s  ->  {address}\")\nprint(\"response flag:\", flags >> 15, \"| recursion available:\", (flags >> 7) & 1, \"| answers:\", ancount)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-dns",
+              "language": "text",
+              "code": "33 byte query: 2a 2a 01 00 00 01 00 00 00 00 00 00 03 77 77 77 07 65 78 61 6d 70 6c 65 03 6f 72 67 00 00 01 00 01\nwww.example.org  type=1 (1 = A)  ttl=300s  ->  192.0.2.10\nresponse flag: 1 | recursion available: 1 | answers: 1",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "DNS is trusted more than it should be",
+              "text": "Classic DNS is unauthenticated: a forged answer can send you to the wrong address. DNSSEC adds signatures to DNS data and TLS certificates check that you reached the right server, but ordinary lookups should never be treated as proof of identity."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "A DNS TTL of 300 means:",
+              "options": [
+                "A resolver may cache the answer for 300 seconds before asking again.",
+                "The answer is 300 bytes long.",
+                "The server allows 300 queries per minute."
+              ],
+              "correct_index": 0,
+              "explanation": "TTL is the cache lifetime in seconds. Short TTLs let changes spread quickly; long TTLs reduce lookups."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "In what order are the four DHCP messages sent?",
+              "options": [
+                "Discover, Offer, Request, Acknowledge",
+                "Request, Discover, Acknowledge, Offer",
+                "Offer, Discover, Acknowledge, Request"
+              ],
+              "correct_index": 0,
+              "explanation": "A new device broadcasts Discover, a server answers with Offer, the device sends Request for the offer it chose, and the server confirms with Acknowledge."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B50",
+              "locator": "RFC 1035, Section 4.1 (Format) and Section 4.1.4 (Message compression); RFC 2131, Section 3.1 (Client-server interaction: allocating a network address)"
+            },
+            {
+              "book": "B50",
+              "locator": "RFC 1034 (Domain names: concepts and facilities)",
+              "note": "Background on the hierarchy and resolvers."
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, struct module"
+            }
+          ],
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "HTTP and HTTPS",
+          "summary": "The request and response format, status codes and headers, and where TLS sits.",
+          "estimated_minutes": 25,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**HTTP** is the protocol browsers and servers use. A **client** sends a **request** (a method such as GET or POST, a path and headers) and the server returns a **response** (a status code, headers and a body). HTTP/1.1 is plain text (RFC 9112), which makes it easy to read and to get wrong. Status codes are grouped by their first digit: **2xx** success, **3xx** redirection, **4xx** client error (404 not found, 403 forbidden) and **5xx** server error. Headers carry metadata, and several of them are **security controls**: `Strict-Transport-Security` (always use HTTPS), `Content-Security-Policy` (limit what a page may load) and `X-Content-Type-Options`. The Q-CAPS scanner reports which of them a site sends.\n\n**HTTPS** is HTTP carried inside a **TLS** connection. TLS provides three things: **encryption** (confidentiality), **integrity** (tampering is detected) and **authentication** of the server through its certificate. The browser first opens a TCP connection, then runs the TLS handshake, and only then sends the HTTP request. This is the handshake the whole Q-CAPS project is concerned with, because its key exchange and signatures are what quantum computers threaten."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The listing starts a small web server on your own machine, sends a hand-written HTTP/1.1 request over a raw socket and prints what comes back. Seeing the plain text request and the status line makes the protocol concrete. (A real HTTPS exchange looks identical inside the encrypted channel.)"
+            },
+            {
+              "type": "code",
+              "id": "c-http",
+              "language": "python",
+              "code": "import socket, threading\nfrom http.server import BaseHTTPRequestHandler, HTTPServer\n\nclass Handler(BaseHTTPRequestHandler):\n    protocol_version = \"HTTP/1.1\"\n    def do_GET(self):\n        body = b\"hello from a local test server\"\n        self.send_response(200)\n        self.send_header(\"Content-Type\", \"text/plain\")\n        self.send_header(\"Content-Length\", str(len(body)))\n        self.end_headers()\n        self.wfile.write(body)\n    def log_message(self, *args):\n        pass\n\nserver = HTTPServer((\"127.0.0.1\", 0), Handler)\nthreading.Thread(target=server.serve_forever, daemon=True).start()\nport = server.server_address[1]\n\nrequest = f\"GET /hello HTTP/1.1\\r\\nHost: 127.0.0.1:{port}\\r\\nConnection: close\\r\\n\\r\\n\".encode()\nwith socket.create_connection((\"127.0.0.1\", port), timeout=5) as s:\n    s.sendall(request)\n    raw = b\"\"\n    while chunk := s.recv(4096):\n        raw += chunk\nhead, _, body = raw.partition(b\"\\r\\n\\r\\n\")\nlines = head.decode().split(\"\\r\\n\")\nprint(\"status line:\", lines[0])\nprint(\"selected headers:\", [line for line in lines[1:] if line.lower().startswith(\"content-\")])\nprint(\"body:\", body.decode())\nserver.shutdown()"
+            },
+            {
+              "type": "code",
+              "id": "o-c-http",
+              "language": "text",
+              "code": "status line: HTTP/1.1 200 OK\nselected headers: ['Content-Type: text/plain', 'Content-Length: 30']\nbody: hello from a local test server",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "Now step through the TLS 1.3 handshake itself. It is a simplified illustration of the main messages following the current TLS 1.3 specification (RFC 9846, July 2026, which obsoletes RFC 8446); nothing in it is a real connection."
+            },
+            {
+              "type": "visual",
+              "id": "pilot-tls",
+              "kind": "tls-handshake",
+              "title": "Walk through the TLS 1.3 handshake",
+              "description": "Step through the main messages of a TLS 1.3 handshake, following RFC 9846. Simplified: optional messages are left out, and nothing here is a real connection.",
+              "simulation": true
+            },
+            {
+              "type": "checkpoint",
+              "id": "pilot-cp1",
+              "question": "Which part of the TLS 1.3 handshake lets the browser check that the server really holds the private key for its certificate?",
+              "options": [
+                "The key_share in ClientHello",
+                "The CertificateVerify signature",
+                "The client's Finished message"
+              ],
+              "correct_index": 1,
+              "explanation": "CertificateVerify is a signature over the handshake, made with the private key that matches the certificate's public key, so only the real key holder can produce it. The Certificate message alone only presents the key. With RSA or ECDSA keys, this is also the signature a large quantum computer could forge."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "A browser requests a page and the server answers with status 404. What does that mean?",
+              "options": [
+                "The server could not find the requested resource.",
+                "The server crashed.",
+                "The request was redirected."
+              ],
+              "correct_index": 0,
+              "explanation": "4xx codes are client errors; 404 means not found. A crash would be a 5xx code and a redirect a 3xx code."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "In HTTPS, what is the correct order of events?",
+              "options": [
+                "TCP connection, TLS handshake, then the HTTP request.",
+                "HTTP request, then TLS handshake, then TCP connection.",
+                "TLS handshake, then TCP connection, then HTTP request."
+              ],
+              "correct_index": 0,
+              "explanation": "TLS runs on top of an established TCP connection, and the HTTP request is sent only inside the secured channel."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B50",
+              "locator": "RFC 9110, Section 9 (Methods) and Section 15 (Status Codes); RFC 9112, Section 2 (Message) and Section 3 (Request Line)"
+            },
+            {
+              "book": "B50",
+              "locator": "RFC 9846 (TLS 1.3), which obsoletes RFC 8446",
+              "note": "Specification followed by the handshake visual."
+            },
+            {
+              "book": "B02",
+              "locator": "Section 21.10 (Case study: TLS session setup)"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, http.server, socket and threading modules"
+            }
+          ],
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "Switching and routing",
+          "summary": "How a switch and a router decide where to send traffic, with a longest-prefix-match demonstration.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **switch** works inside one local network. It learns which **MAC address** (the hardware address of a network card) is reachable through which port and forwards each frame only where it needs to go. A **router** works between networks. It looks at the destination **IP address**, consults its **routing table** and forwards the packet to the **next hop**, one router after another until it arrives.\n\nA routing table lists destination networks and where to send traffic for them. Several entries can match one address, for example a specific network and a broad one. The rule is **longest prefix match**: the most specific matching entry wins. Traffic that matches nothing else follows the **default route** `0.0.0.0/0`, which usually points at the ISP. Each router also decrements the packet's **TTL** (hop limit) and discards it when it reaches zero, so a misconfigured loop cannot circulate packets forever.\n\nYou can see all of this on your own machine. `traceroute` (`tracert` on Windows) lists the routers along a path by sending packets with a steadily increasing TTL and noting who reports the expiry. `ip route` on Linux (or `route print` on Windows) shows your machine's own routing table, where the **default gateway** is the router your computer hands everything to that is not on its local network. Between a host and its gateway, **ARP** (for IPv4) or Neighbor Discovery (for IPv6) maps the gateway's IP address to its MAC address so the frame can be delivered."
+            },
+            {
+              "type": "code",
+              "id": "c-route",
+              "language": "python",
+              "code": "import ipaddress\n\nROUTES = [                                    # an illustrative routing table\n    (\"10.0.0.0/8\", \"internal-router\"),\n    (\"10.1.0.0/16\", \"datacenter-gateway\"),\n    (\"192.168.1.0/24\", \"directly connected\"),\n    (\"0.0.0.0/0\", \"isp-gateway (default route)\"),\n]\n\ndef next_hop(destination):\n    ip = ipaddress.ip_address(destination)\n    matches = [(ipaddress.ip_network(net), hop) for net, hop in ROUTES if ip in ipaddress.ip_network(net)]\n    return max(matches, key=lambda match: match[0].prefixlen)          # longest prefix wins\n\nfor destination in (\"10.1.2.3\", \"10.9.9.9\", \"192.168.1.50\", \"198.51.100.7\"):\n    network, hop = next_hop(destination)\n    print(f\"{destination:14} matches {str(network):15} -> {hop}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-route",
+              "language": "text",
+              "code": "10.1.2.3       matches 10.1.0.0/16     -> datacenter-gateway\n10.9.9.9       matches 10.0.0.0/8      -> internal-router\n192.168.1.50   matches 192.168.1.0/24  -> directly connected\n198.51.100.7   matches 0.0.0.0/0       -> isp-gateway (default route)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Two routing entries match a destination: 10.0.0.0/8 and 10.1.0.0/16. Which does the router use?",
+              "options": [
+                "10.1.0.0/16, the longest (most specific) prefix",
+                "10.0.0.0/8, because it was listed first",
+                "Neither: it uses the default route"
+              ],
+              "correct_index": 0,
+              "explanation": "Longest prefix match always prefers the more specific route, which is why a narrow route can override a broad one."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does a switch use to decide where to send a frame inside a LAN?",
+              "options": [
+                "Destination IP address",
+                "Destination MAC address",
+                "Destination port number"
+              ],
+              "correct_index": 1,
+              "explanation": "Switches forward by hardware (MAC) addresses within a local network; routers use IP addresses between networks."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B50",
+              "locator": "RFC 1122, Section 1.1.3 (Internet Protocol Suite) and RFC 791 (time to live and forwarding)"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, ipaddress module"
+            }
+          ],
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "Firewalls, NAT and VPNs",
+          "summary": "Packet filtering, how NAT shares one public address, and what a VPN does and does not protect.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **firewall** filters traffic with rules. A **stateless** filter judges each packet on its own; a **stateful** firewall remembers connections, so it can allow replies to traffic you started while blocking unsolicited packets from outside. Good policy is **default deny**, covered in the cybersecurity module.\n\n**Network address translation (NAT)** lets many devices with private addresses share one public IPv4 address. The NAT device rewrites the source address and port of outgoing packets and remembers the mapping so it can send replies to the right device. Unsolicited incoming packets match no mapping and are dropped, which makes NAT behave a little like a firewall, though that is a side effect, not a security design.\n\nA **virtual private network (VPN)** creates an encrypted **tunnel** between two points across an untrusted network such as the internet. It protects the traffic **inside the tunnel** from eavesdroppers on the path. It does not make you anonymous to the sites you visit, and it moves trust to the VPN provider. The key exchange that sets up a VPN tunnel is exactly the kind of handshake that a future quantum computer could break, which is why recorded VPN traffic is one of the \"harvest now, decrypt later\" concerns you will study."
+            },
+            {
+              "type": "code",
+              "id": "c-nat",
+              "language": "python",
+              "code": "class Nat:\n    def __init__(self, public_ip, first_port=40000):\n        self.public_ip, self.next_port, self.table = public_ip, first_port, {}\n\n    def outbound(self, private_ip, private_port):\n        key = (private_ip, private_port)\n        if key not in self.table:\n            self.table[key] = self.next_port\n            self.next_port += 1\n        return self.public_ip, self.table[key]\n\n    def inbound(self, public_port):\n        for (ip, port), mapped in self.table.items():\n            if mapped == public_port:\n                return ip, port\n        return None                            # no mapping: unsolicited traffic is dropped\n\nnat = Nat(\"203.0.113.5\")\nprint(nat.outbound(\"192.168.1.10\", 51000))\nprint(nat.outbound(\"192.168.1.11\", 51000))     # same private port, different device: different public port\nprint(nat.outbound(\"192.168.1.10\", 51000))     # same flow reuses its mapping\nprint(nat.inbound(40001), nat.inbound(40099))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-nat",
+              "language": "text",
+              "code": "('203.0.113.5', 40000)\n('203.0.113.5', 40001)\n('203.0.113.5', 40000)\n('192.168.1.11', 51000) None",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does NAT allow?",
+              "options": [
+                "Many devices with private addresses to share one public IP address.",
+                "Packets to travel faster.",
+                "DNS names to be encrypted."
+              ],
+              "correct_index": 0,
+              "explanation": "NAT rewrites addresses and ports and tracks the mapping, so many private hosts can share a public address."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "A VPN tunnel protects:",
+              "options": [
+                "Traffic between the two tunnel endpoints from eavesdroppers on the path, but not what happens at the destination.",
+                "Everything you do online from all parties.",
+                "Only the DNS lookups."
+              ],
+              "correct_index": 0,
+              "explanation": "A VPN encrypts the path between its endpoints; it does not hide your activity from the sites you reach, and it makes you trust the VPN operator."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B50",
+              "locator": "RFC 1918 (private address space, the context for NAT) and RFC 4632 (CIDR)"
+            },
+            {
+              "book": "B06",
+              "locator": "Chapter 4, Section 4.4 (Modern Network Security Methods) and Section 4.5 (Network Security Tools)"
+            },
+            {
+              "book": "B34",
+              "locator": "Python language reference for the classes used in the NAT model"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The description of NAT and VPN behaviour is general networking knowledge; the cited RFCs establish private address space and CIDR rather than NAT itself (RFC 3022 describes traditional NAT and was not re-read here)."
+          },
+          "after": "sec-8"
+        },
+        {
+          "slug": "sec-10",
+          "action": "replace",
+          "title": "Network monitoring and packet capture",
+          "summary": "What packet capture shows, how to read a handshake, and a parser for TCP flags.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Monitoring** means watching traffic and device logs to see what is happening. **Packet capture** records the packets themselves; tools such as **Wireshark** (graphical) and **tcpdump** (command line) show every header field. A capture is the ground truth of a network conversation, which is why it is so useful for diagnosing faults and investigating incidents, and why it is **sensitive data**: unencrypted captures can contain passwords and personal data. Capture only networks you own or are authorised to monitor, and handle the files like any other secret.\n\nReading a capture is mostly pattern recognition. A web visit looks like this: a **DNS** query and answer, a **TCP** three-way handshake (SYN, SYN-ACK, ACK), a **TLS ClientHello** that names the server in the SNI field, the server's handshake messages, then encrypted application data. With TLS 1.3 the contents after the handshake are unreadable, but the metadata (addresses, ports, sizes, timing and the server name) is still visible."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The listing builds three **synthetic** packets in memory, using the real IPv4 and TCP header layouts and documentation addresses, then decodes them in the style of `tcpdump`. It is not a real capture. It shows what the three handshake packets look like at the field level: the SYN flag, the SYN-ACK flags together, and the final ACK, with sequence numbers that acknowledge each other (the acknowledgement number is the other side's sequence number plus one)."
+            },
+            {
+              "type": "code",
+              "id": "c-capture",
+              "language": "python",
+              "code": "import struct\n\nFLAGS = {0x02: \"SYN\", 0x10: \"ACK\", 0x08: \"PSH\", 0x01: \"FIN\", 0x04: \"RST\"}\n\ndef ip4(address):\n    return bytes(int(part) for part in address.split(\".\"))\n\ndef packet(src, dst, sport, dport, seq, ack, flags):\n    tcp = struct.pack(\"!HHIIBBHHH\", sport, dport, seq, ack, 5 << 4, flags, 65535, 0, 0)\n    ip = struct.pack(\"!BBHHHBBH4s4s\", 0x45, 0, 20 + len(tcp), 0, 0, 64, 6, 0, ip4(src), ip4(dst))\n    return ip + tcp\n\ncapture = [   # synthetic packets built here, not a real capture\n    packet(\"192.0.2.10\", \"198.51.100.20\", 51234, 443, 1000, 0, 0x02),\n    packet(\"198.51.100.20\", \"192.0.2.10\", 443, 51234, 5000, 1001, 0x12),\n    packet(\"192.0.2.10\", \"198.51.100.20\", 51234, 443, 1001, 5001, 0x10),\n]\n\ndef summarize(pkt):\n    ihl = (pkt[0] & 0x0F) * 4\n    src, dst = \".\".join(map(str, pkt[12:16])), \".\".join(map(str, pkt[16:20]))\n    sport, dport, seq, ack, _, flags = struct.unpack(\"!HHIIBB\", pkt[ihl:ihl + 14])\n    names = \",\".join(name for bit, name in FLAGS.items() if flags & bit)\n    return f\"{src}.{sport} > {dst}.{dport} [{names}] seq={seq} ack={ack}\"\n\nfor pkt in capture:\n    print(summarize(pkt))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-capture",
+              "language": "text",
+              "code": "192.0.2.10.51234 > 198.51.100.20.443 [SYN] seq=1000 ack=0\n198.51.100.20.443 > 192.0.2.10.51234 [SYN,ACK] seq=5000 ack=1001\n192.0.2.10.51234 > 198.51.100.20.443 [ACK] seq=1001 ack=5001",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "Authorisation applies to listening too",
+              "text": "Capturing traffic on a network you do not control can be illegal even if you never use what you see. Practise on your own machine or a lab network, and get written permission before capturing anywhere else."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In the capture above, which packet carries the SYN-ACK?",
+              "options": [
+                "The first packet, from 192.0.2.10",
+                "The second packet, from 198.51.100.20",
+                "The third packet, from 192.0.2.10"
+              ],
+              "correct_index": 1,
+              "explanation": "The server (198.51.100.20) answers the client's SYN with SYN and ACK set together, acknowledging sequence number 1001."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "With TLS 1.3, which of these is still visible to someone capturing the traffic?",
+              "options": [
+                "The HTTP page contents",
+                "The server addresses, ports, packet sizes and timing",
+                "The user's password in a form"
+              ],
+              "correct_index": 1,
+              "explanation": "Encryption hides the content but not the metadata: who talked to whom, when, and how much. The server name is also usually visible in the ClientHello."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B50",
+              "locator": "RFC 9293, Section 3.1 (Header Format) and Section 3.5 (Establishing a Connection); RFC 791, Section 3.1"
+            },
+            {
+              "book": "B06",
+              "locator": "Chapter 4, Section 4.5 (Network Security Tools)"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, struct module"
+            }
+          ],
+          "after": "sec-9"
+        },
+        {
+          "slug": "sec-11",
+          "action": "new",
+          "title": "Task: probe the ports of your own machine",
+          "summary": "A guided practical on loopback: list which ports answer, and reason about open, closed and filtered.",
+          "estimated_minutes": 25,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Objective.** See the difference between an open and a closed port with your own eyes, on a machine you own, and connect it to how scanners report results.\n\n**Prerequisites.** Python 3 and the lessons on TCP and UDP and on network monitoring. **Everything below touches only your own computer's loopback address (127.0.0.1).** Never run port probes against a system you do not own or have written permission to test.\n\n**Steps.** (1) Start a server that listens on a port chosen by the operating system. (2) Find a port that is free by binding to it and releasing it. (3) Write a function `is_open(port)` that tries to connect to `127.0.0.1` and reports whether the connection succeeds. (4) Probe both ports and explain the results. The solution is below; try it before reading."
+            },
+            {
+              "type": "code",
+              "id": "c-probe",
+              "language": "python",
+              "code": "import socket\n\ndef is_open(port):\n    with socket.socket() as s:\n        s.settimeout(1)\n        return s.connect_ex((\"127.0.0.1\", port)) == 0      # 0 means the TCP handshake completed\n\nserver = socket.socket()\nserver.bind((\"127.0.0.1\", 0))\nserver.listen(1)\nopen_port = server.getsockname()[1]\n\nprobe = socket.socket()\nprobe.bind((\"127.0.0.1\", 0))\nfree_port = probe.getsockname()[1]\nprobe.close()                                              # nobody is listening on this port now\n\nprint(\"port with a listener is open:\", is_open(open_port))\nprint(\"port with no listener is open:\", is_open(free_port))\nserver.close()"
+            },
+            {
+              "type": "code",
+              "id": "o-c-probe",
+              "language": "text",
+              "code": "port with a listener is open: True\nport with no listener is open: False",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Verify.** The first line must say `True` and the second `False`. For a closed port the machine replies at once with a reset (RST), so `connect_ex` returns an error code immediately. A port behind a firewall that silently drops packets would instead make the probe wait until the timeout, which a scanner must report as **filtered or no answer**, not as closed.\n\n**Troubleshooting.** If both lines say `False`, a firewall on your computer may be blocking even loopback connections or your server did not call `listen`. If the second says `True`, something else grabbed the free port in the meantime; run it again. A `PermissionError` means you tried to bind a port below 1024 without privileges; use port 0.\n\n**Cleanup.** Close the sockets (the script does) and do not leave listeners running.\n\n**Stretch.** Extend `is_open` to probe a list of ports in a loop with a short timeout and print the open ones. Then read how the Q-CAPS scanner treats this activity: its port probe is an **active check** and runs only for a domain whose ownership has been verified, precisely because probing other people's ports without permission is not acceptable."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does it mean when a probe to a port is answered immediately with a reset (RST)?",
+              "options": [
+                "The port is closed: the host is reachable but nothing is listening.",
+                "The port is filtered by a firewall.",
+                "The port is open."
+              ],
+              "correct_index": 0,
+              "explanation": "A reset means the host actively refused the connection, so it is up and nothing listens there. A filtered port typically gives no answer at all."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is it acceptable to run the probe in this task but not against a stranger's server?",
+              "options": [
+                "It only touches your own machine; probing other systems needs written permission.",
+                "Loopback traffic is encrypted.",
+                "Port probes never cause any harm."
+              ],
+              "correct_index": 0,
+              "explanation": "Authorisation is the dividing line. You may test systems you own; anything else needs explicit written permission and an agreed scope."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B50",
+              "locator": "RFC 9293, Section 3.5 (Establishing a Connection) and the description of connection refusal (reset)"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, socket module: connect_ex"
+            }
+          ],
+          "after": "sec-10"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "a3-n01",
+          "prompt": "Which device forwards packets between different networks using IP addresses?",
+          "options": [
+            "Switch",
+            "Router",
+            "Hub"
+          ],
+          "correct_index": 1,
+          "explanation": "Routers forward between networks by IP address; switches forward within one LAN by MAC address.",
+          "source": {
+            "book": "B50",
+            "locator": "RFC 1122, Section 1.1.3"
+          },
+          "competency_id": "NET.1",
+          "depth": "Explain",
+          "lesson_id": "A3.L1"
+        },
+        {
+          "id": "a3-n02",
+          "prompt": "Which TCP/IP layer does TCP belong to?",
+          "options": [
+            "Link",
+            "Internet",
+            "Transport"
+          ],
+          "correct_index": 2,
+          "explanation": "TCP and UDP are the transport layer protocols.",
+          "source": {
+            "book": "B50",
+            "locator": "RFC 1122, Section 1.1.3"
+          },
+          "competency_id": "NET.1",
+          "depth": "Explain",
+          "lesson_id": "A3.L1"
+        },
+        {
+          "id": "a3-n03",
+          "prompt": "How many usable host addresses does a /26 IPv4 subnet have?",
+          "options": [
+            "62",
+            "64",
+            "30"
+          ],
+          "correct_index": 0,
+          "explanation": "A /26 has 6 host bits, 64 addresses, minus the network and broadcast addresses.",
+          "source": {
+            "book": "B50",
+            "locator": "RFC 4632"
+          },
+          "competency_id": "NET.1",
+          "depth": "Apply",
+          "lesson_id": "A3.L2"
+        },
+        {
+          "id": "a3-n04",
+          "prompt": "Which of these IPv6 addresses is the loopback address?",
+          "options": [
+            "::1",
+            "fe80::1",
+            "2001:db8::1"
+          ],
+          "correct_index": 0,
+          "explanation": "::1 is the IPv6 loopback address; fe80::/10 is link-local and 2001:db8::/32 is for documentation.",
+          "source": {
+            "book": "B50",
+            "locator": "RFC 4291, Section 2"
+          },
+          "competency_id": "NET.1",
+          "depth": "Apply",
+          "lesson_id": "A3.L2"
+        },
+        {
+          "id": "a3-n05",
+          "prompt": "What are the three messages of the TCP connection setup, in order?",
+          "options": [
+            "SYN, SYN-ACK, ACK",
+            "ACK, ACK, SYN",
+            "SYN, ACK, FIN"
+          ],
+          "correct_index": 0,
+          "explanation": "The three-way handshake is SYN, SYN-ACK, ACK.",
+          "source": {
+            "book": "B50",
+            "locator": "RFC 9293, Section 3.5"
+          },
+          "competency_id": "NET.1",
+          "depth": "Explain",
+          "lesson_id": "A3.L3"
+        },
+        {
+          "id": "a3-n06",
+          "prompt": "Why is UDP a good fit for DNS queries?",
+          "options": [
+            "Small request and reply, no handshake needed, and a lost query can be repeated",
+            "It guarantees delivery",
+            "It encrypts the query"
+          ],
+          "correct_index": 0,
+          "explanation": "UDP avoids connection setup, which suits small request-response exchanges.",
+          "source": {
+            "book": "B50",
+            "locator": "RFC 768"
+          },
+          "competency_id": "NET.1",
+          "depth": "Explain",
+          "lesson_id": "A3.L3"
+        },
+        {
+          "id": "a3-n07",
+          "prompt": "Which DNS record type holds an IPv6 address?",
+          "options": [
+            "A",
+            "AAAA",
+            "MX"
+          ],
+          "correct_index": 1,
+          "explanation": "AAAA records hold IPv6 addresses; A records hold IPv4 addresses.",
+          "source": {
+            "book": "B50",
+            "locator": "RFC 1035"
+          },
+          "competency_id": "NET.2",
+          "depth": "Explain",
+          "lesson_id": "A3.L4"
+        },
+        {
+          "id": "a3-n08",
+          "prompt": "In HTTPS, what happens before the HTTP request is sent?",
+          "options": [
+            "A TCP connection is opened and the TLS handshake completes",
+            "Only a DNS lookup",
+            "The server sends its private key"
+          ],
+          "correct_index": 0,
+          "explanation": "TLS runs over TCP; the HTTP request is sent inside the secured channel.",
+          "source": {
+            "book": "B50",
+            "locator": "RFC 9846; RFC 9112"
+          },
+          "competency_id": "NET.2",
+          "depth": "Explain",
+          "lesson_id": "A3.L5"
+        },
+        {
+          "id": "a3-n09",
+          "prompt": "A router's table contains 10.0.0.0/8 and 10.1.0.0/16. Where does it send a packet for 10.1.4.4?",
+          "options": [
+            "Via the /16 route",
+            "Via the /8 route",
+            "Via the default route"
+          ],
+          "correct_index": 0,
+          "explanation": "Longest prefix match selects the most specific route.",
+          "source": {
+            "book": "B50",
+            "locator": "RFC 1122; RFC 791"
+          },
+          "competency_id": "NET.3",
+          "depth": "Aware",
+          "lesson_id": "A3.L6"
+        },
+        {
+          "id": "a3-n10",
+          "prompt": "A probe to a port gets no reply at all before the timeout. How should a scanner report it?",
+          "options": [
+            "Closed",
+            "Open",
+            "Filtered or no answer (state unknown)"
+          ],
+          "correct_index": 2,
+          "explanation": "Silence is not proof the port is closed; a closed port normally answers with a reset.",
+          "source": {
+            "book": "B50",
+            "locator": "RFC 9293, Section 3.5"
+          },
+          "competency_id": "NET.2",
+          "depth": "Apply",
+          "lesson_id": "A3.L7"
+        }
+      ],
+      "estimated_minutes": 239,
+      "notes": "Rewrites ten outline sections as lessons built around real packet-level code, preserves the TLS 1.3 handshake visual and its graded checkpoint, and adds a port-probing task on loopback. Sources are RFC sections checked against the RFC texts, plus two books.",
+      "learning_objectives": [
+        "Explain the OSI and TCP/IP models and how encapsulation nests headers.",
+        "Read and calculate IPv4 and IPv6 addresses, CIDR subnets and private ranges.",
+        "Explain TCP, UDP, ports and the three-way handshake, and when each protocol is used.",
+        "Trace a DNS resolution and a DHCP lease, and read a DNS message at byte level.",
+        "Read an HTTP exchange, name key response headers and place TLS in an HTTPS connection.",
+        "Explain routing, switching, firewalls, NAT and VPNs, and read a packet capture of a handshake."
+      ]
+    }
+  ]
+}
