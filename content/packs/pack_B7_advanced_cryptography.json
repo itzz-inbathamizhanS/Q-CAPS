@@ -1,0 +1,1157 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B01",
+      "title": "Understanding Cryptography: From Established Symmetric and Asymmetric Ciphers to Post-Quantum Algorithms",
+      "authors": "Christof Paar, Jan Pelzl, Tim Güneysu",
+      "edition": "2nd edition",
+      "year": 2024,
+      "publisher": "Springer"
+    },
+    {
+      "id": "B02",
+      "title": "A Graduate Course in Applied Cryptography",
+      "authors": "Dan Boneh, Victor Shoup",
+      "edition": "Version 0.6",
+      "year": 2023
+    },
+    {
+      "id": "B50",
+      "title": "IETF RFCs: 3394, 4303, 5280, 5869, 6960, 7296, 8017, 8448, 8555, 9846",
+      "authors": "Internet Engineering Task Force",
+      "edition": "rfc-editor.org, accessed 2026-10-04",
+      "publisher": "IETF"
+    },
+    {
+      "id": "B70",
+      "title": "SP 800-57 Part 1 Rev. 5, Recommendation for Key Management: Part 1 - General",
+      "authors": "Elaine Barker",
+      "edition": "May 2020, accessed 2026-10-04",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B71",
+      "title": "Baseline Requirements for the Issuance and Management of Publicly-Trusted TLS Server Certificates",
+      "authors": "CA/Browser Forum",
+      "edition": "current version, accessed 2026-10-04",
+      "publisher": "CA/Browser Forum"
+    },
+    {
+      "id": "B72",
+      "title": "WireGuard: Next Generation Kernel Network Tunnel",
+      "authors": "Jason A. Donenfeld",
+      "edition": "whitepaper, accessed 2026-10-04",
+      "publisher": "wireguard.com"
+    },
+    {
+      "id": "B73",
+      "title": "FIPS 140-3, Security Requirements for Cryptographic Modules",
+      "authors": "NIST",
+      "edition": "final, accessed 2026-10-04",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B74",
+      "title": "pyca/cryptography documentation (cryptography 50.x)",
+      "authors": "The Python Cryptographic Authority",
+      "edition": "accessed 2026-10-04",
+      "publisher": "cryptography.io"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_b_b7_advanced_cryptography",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "RSA and ECC security in practice",
+          "summary": "Key sizes and security levels, what padding is for, and why textbook RSA is broken.",
+          "estimated_minutes": 25,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "RSA and elliptic-curve cryptography (ECC) are the public-key workhorses behind almost every certificate and key exchange you use today. To use them well you need two numbers in your head: how big the keys are, and what security level they give.\n\nNIST's key-management guidance (SP 800-57 Part 1 Rev. 5, Table 2) compares them. **RSA-2048** and ECC keys of 224 to 255 bits give about **112 bits** of classical security. **RSA-3072** and ECC keys of 256 to 383 bits (such as P-256) give about **128 bits**. **RSA-7680** and 384-bit curves give about **192 bits**. The pattern matters: ECC reaches a given strength with much shorter keys and signatures. NIST adds a footnote that these estimates will change significantly when quantum computing becomes practical, which is the subject of the next modules.\n\nKey size is only half the story. **Textbook RSA**, raw modular exponentiation of the message, must never be used. It is **deterministic** (the same message always gives the same ciphertext, so an attacker can test guesses) and **malleable** (ciphertexts can be combined to produce valid ciphertexts of related messages). Real systems apply **padding**: **OAEP** for encryption and **PSS** for signatures. The standard that defines them is PKCS #1 (RFC 8017)."
+            },
+            {
+              "type": "code",
+              "id": "c-sizes",
+              "language": "python",
+              "code": "from cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import ec, padding, rsa, utils\n\nrsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)\nec_key = ec.generate_private_key(ec.SECP256R1())\nder = lambda key: key.public_key().public_bytes(serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo)\n\npss = padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH)\nrsa_sig = rsa_key.sign(b\"example\", pss, hashes.SHA256())\nr, s = utils.decode_dss_signature(ec_key.sign(b\"example\", ec.ECDSA(hashes.SHA256())))\n\nprint(f\"RSA-2048: public key {len(der(rsa_key))} bytes (DER), signature {len(rsa_sig)} bytes\")\nprint(f\"ECDSA P-256: public key {len(der(ec_key))} bytes (DER), signature {len(r.to_bytes(32, 'big') + s.to_bytes(32, 'big'))} bytes (r and s)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-sizes",
+              "language": "text",
+              "code": "RSA-2048: public key 294 bytes (DER), signature 256 bytes\nECDSA P-256: public key 91 bytes (DER), signature 64 bytes (r and s)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The second listing shows why padding exists, using a tiny **textbook key** (n = 3233, from p = 61 and q = 53). Two properties appear at once: encrypting the same message twice gives the same ciphertext, and multiplying two ciphertexts gives a valid ciphertext of the product of the messages. An attacker who sees E(2) and E(3) can produce E(6) without the key. The numbers are far too small to be secure; they are used so you can follow the arithmetic."
+            },
+            {
+              "type": "code",
+              "id": "c-textbook",
+              "language": "python",
+              "code": "n, e, d = 3233, 17, 2753                      # a tiny textbook key: p = 61, q = 53\nencrypt = lambda m: pow(m, e, n)\ndecrypt = lambda c: pow(c, d, n)\n\nprint(\"E(2) * E(3) mod n =\", encrypt(2) * encrypt(3) % n, \"  and E(6) =\", encrypt(6))\nprint(\"an attacker who multiplies the ciphertexts gets a message that decrypts to\", decrypt(encrypt(2) * encrypt(3) % n))\nprint(\"same message, same ciphertext:\", encrypt(65) == encrypt(65))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-textbook",
+              "language": "text",
+              "code": "E(2) * E(3) mod n = 824   and E(6) = 824\nan attacker who multiplies the ciphertexts gets a message that decrypts to 6\nsame message, same ciphertext: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "Use library defaults for padding and sizes",
+              "text": "Choose RSA-OAEP or RSA-PSS (never PKCS #1 v1.5 encryption in new designs), at least 2048-bit keys (3072 for long-lived data), and let a vetted library do the work. Bleichenbacher-style padding attacks have broken real systems for decades."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which statement about RSA-2048 and P-256 is correct, according to NIST SP 800-57 Part 1 Rev. 5?",
+              "options": [
+                "RSA-2048 is about 112-bit security and P-256 is about 128-bit.",
+                "Both give about 256 bits.",
+                "RSA-2048 is stronger than P-256."
+              ],
+              "correct_index": 0,
+              "explanation": "Table 2 lists RSA-2048 at 112 bits and ECC with 256-383 bit keys at 128 bits. ECC achieves higher strength with far shorter keys."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why must textbook RSA (no padding) not be used?",
+              "options": [
+                "It is deterministic and malleable, so ciphertexts can be guessed and combined.",
+                "It is too slow.",
+                "It only works for 8-bit messages."
+              ],
+              "correct_index": 0,
+              "explanation": "Without padding, equal plaintexts give equal ciphertexts and ciphertexts can be multiplied into valid new ones. OAEP and PSS add randomness and structure."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Section 7.7 (RSA in Practice: Padding) and Section 7.9 (Attacks)"
+            },
+            {
+              "book": "B02",
+              "locator": "Section 12.8 (Case study: PKCS1, OAEP, OAEP+ and SAEP)"
+            },
+            {
+              "book": "B70",
+              "locator": "Table 2: Comparable security strengths of symmetric block cipher and asymmetric-key algorithms"
+            },
+            {
+              "book": "B50",
+              "locator": "RFC 8017 (PKCS #1 v2.2): RSAES-OAEP and RSASSA-PSS"
+            },
+            {
+              "book": "B74",
+              "locator": "Asymmetric cryptography: RSA, elliptic curve and padding"
+            }
+          ]
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "ECDH and ECDSA",
+          "summary": "Key agreement on a curve, how signatures use a secret nonce, and what happens when the nonce is reused.",
+          "estimated_minutes": 28,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Elliptic-curve Diffie-Hellman (ECDH)** lets two parties agree on a shared secret over an open channel. Each side generates a key pair on the same curve and sends its public key; each combines its own private key with the other's public key and arrives at the **same** shared secret. Eavesdroppers see only the public keys. The raw shared secret is not used directly as an encryption key; it is fed through a **key derivation function** such as HKDF, which turns it into one or more uniformly random keys. **X25519** is a widely used curve designed for fast, safe ECDH, and it is the classical half of the hybrid post-quantum key exchange you will meet in later modules.\n\nAn **ECDSA** signature is a pair of numbers (r, s) computed from the private key, the message hash and a fresh secret random number called the **nonce** k. The nonce must be **unique and unpredictable for every signature**. Verification needs only the public key."
+            },
+            {
+              "type": "code",
+              "id": "c-ecdh",
+              "language": "python",
+              "code": "from cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import ec, x25519\nfrom cryptography.hazmat.primitives.kdf.hkdf import HKDF\n\nalice, bob = ec.generate_private_key(ec.SECP256R1()), ec.generate_private_key(ec.SECP256R1())\nsecret_a = alice.exchange(ec.ECDH(), bob.public_key())\nsecret_b = bob.exchange(ec.ECDH(), alice.public_key())\nprint(\"ECDH P-256 shared secrets equal:\", secret_a == secret_b, \"| length:\", len(secret_a), \"bytes\")\n\nkey = HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b\"demo session key\").derive(secret_a)\nprint(\"derived key length:\", len(key), \"bytes\")\n\nxa, xb = x25519.X25519PrivateKey.generate(), x25519.X25519PrivateKey.generate()\nprint(\"X25519 shared secrets equal:\", xa.exchange(xb.public_key()) == xb.exchange(xa.public_key()))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-ecdh",
+              "language": "text",
+              "code": "ECDH P-256 shared secrets equal: True | length: 32 bytes\nderived key length: 32 bytes\nX25519 shared secrets equal: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "What happens if the nonce repeats? Look at the algebra. With the same k, two signatures share the same r, and their s values satisfy s₁ − s₂ = k⁻¹(z₁ − z₂) (mod n), where z is the message hash. Anyone can then solve for k, and once k is known the private key follows from a single equation. **Two signatures made with one nonce are enough to recover the private key.** This is not a theoretical weakness: repeated or biased nonces have exposed real signing keys in deployed products.\n\nThe listing implements textbook ECDSA on P-256 in a few lines of Python so you can see it happen. To prove the code is a correct implementation, the real `cryptography` library **verifies the signatures it produces**. The private key and nonce are throwaway demonstration values. The code is for teaching only: real implementations must be constant-time and must generate nonces with a secure method (modern libraries use random or deterministic nonces per RFC 6979)."
+            },
+            {
+              "type": "code",
+              "id": "c-nonce",
+              "language": "python",
+              "code": "import hashlib\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import ec, utils\n\np = 2**256 - 2**224 + 2**192 + 2**96 - 1                       # NIST P-256 parameters\na = p - 3\nn = 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551\nG = (0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296,\n     0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5)\n\ndef add(P, Q):\n    if P is None: return Q\n    if Q is None: return P\n    (x1, y1), (x2, y2) = P, Q\n    if x1 == x2 and (y1 + y2) % p == 0: return None\n    m = (3 * x1 * x1 + a) * pow(2 * y1, -1, p) % p if P == Q else (y2 - y1) * pow(x2 - x1, -1, p) % p\n    x3 = (m * m - x1 - x2) % p\n    return (x3, (m * (x1 - x3) - y1) % p)\n\ndef mul(k, P):\n    result = None\n    while k:\n        if k & 1: result = add(result, P)\n        P, k = add(P, P), k >> 1\n    return result\n\ndef sign(d, k, message):                                        # textbook ECDSA with a CHOSEN nonce k\n    z = int.from_bytes(hashlib.sha256(message).digest(), \"big\")\n    r = mul(k, G)[0] % n\n    return r, pow(k, -1, n) * (z + r * d) % n, z\n\nd = 0x1F2E3D4C5B6A79880123456789ABCDEF0FEDCBA987654321F00DBABE12345678 % n   # DEMO throwaway private key\nk = 0x2B7E151628AED2A6ABF7158809CF4F3C762E7160F38B4DA56A784D9045190CFE % n   # the SAME nonce, reused on purpose\nm1, m2 = b\"pay Alice 10\", b\"pay Bob 20\"\n(r1, s1, z1), (r2, s2, z2) = sign(d, k, m1), sign(d, k, m2)\n\nQ = mul(d, G)\npublic = ec.EllipticCurvePublicNumbers(Q[0], Q[1], ec.SECP256R1()).public_key()\nfor m, r, s in ((m1, r1, s1), (m2, r2, s2)):\n    public.verify(utils.encode_dss_signature(r, s), m, ec.ECDSA(hashes.SHA256()))       # raises if my maths were wrong\nprint(\"the cryptography library accepts both signatures made by this code: True\")\nprint(\"both signatures have the same r:\", r1 == r2)\n\nk_recovered = (z1 - z2) * pow(s1 - s2, -1, n) % n                # algebra on the two signatures alone\nd_recovered = (s1 * k_recovered - z1) * pow(r1, -1, n) % n\nprint(\"private key recovered from two signatures:\", d_recovered == d)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-nonce",
+              "language": "text",
+              "code": "the cryptography library accepts both signatures made by this code: True\nboth signatures have the same r: True\nprivate key recovered from two signatures: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "danger",
+              "title": "Never roll your own signing code",
+              "text": "The listing deliberately breaks the scheme with a reused nonce to show why. In production use a vetted library, which generates nonces safely. EdDSA schemes such as Ed25519 derive the nonce deterministically from the key and message, which removes this entire class of mistake."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the role of HKDF after an ECDH exchange?",
+              "options": [
+                "It turns the raw shared secret into uniformly random keys of the needed length.",
+                "It encrypts the public keys.",
+                "It authenticates the other party."
+              ],
+              "correct_index": 0,
+              "explanation": "The raw ECDH output is not uniformly random. A key derivation function extracts and expands it into proper keys, and can bind context information."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Two ECDSA signatures are made with the same private key and the same nonce. What can an attacker do?",
+              "options": [
+                "Recover the private key from the two signatures.",
+                "Nothing, the signatures look random.",
+                "Only forge the same message again."
+              ],
+              "correct_index": 0,
+              "explanation": "Equal nonces give equal r, and the difference of the s values reveals k, from which the private key can be computed."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Section 9.3 (Diffie-Hellman Key Exchange with Elliptic Curves) and Section 10.5 (The Elliptic Curve Digital Signature Algorithm), including 10.5.3 (Security)"
+            },
+            {
+              "book": "B50",
+              "locator": "RFC 5869 (HKDF): extract-and-expand key derivation"
+            },
+            {
+              "book": "B74",
+              "locator": "Elliptic curve cryptography: ECDH, ECDSA, utils.encode_dss_signature and HKDF"
+            }
+          ],
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "Key encapsulation mechanisms",
+          "summary": "The three-function KEM interface, built here from X25519, and how it differs from public-key encryption.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **key encapsulation mechanism (KEM)** is the modern way to use public-key cryptography for key establishment. It has three functions. **KeyGen** produces a key pair. **Encaps(public key)** produces two things: a **ciphertext** and a fresh random-looking **shared key**. **Decaps(private key, ciphertext)** recovers the same shared key. The sender then uses that key with fast symmetric encryption (an authenticated cipher). Unlike ordinary public-key encryption, a KEM encrypts nothing of your choosing; it only creates a shared secret.\n\nThe idea is older than post-quantum cryptography: RSA can be turned into a KEM (RSA-KEM), and Diffie-Hellman can too. What makes the interface important now is that **ML-KEM**, the post-quantum standard from NIST, is exactly this three-function KEM. Learning the shape with a classical algorithm first means the later modules only swap the mathematics.\n\nThe listing builds a toy KEM from X25519. Encapsulation generates a one-time key pair and treats the public half as the **ciphertext**; both sides derive the shared key from the Diffie-Hellman result with HKDF, bound to the ciphertext."
+            },
+            {
+              "type": "code",
+              "id": "c-kem",
+              "language": "python",
+              "code": "from cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import x25519\nfrom cryptography.hazmat.primitives.kdf.hkdf import HKDF\n\nRAW = dict(encoding=serialization.Encoding.Raw, format=serialization.PublicFormat.Raw)\n\ndef derive(shared, ciphertext):\n    return HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b\"toy-kem\" + ciphertext).derive(shared)\n\ndef keygen():\n    secret = x25519.X25519PrivateKey.generate()\n    return secret, secret.public_key()\n\ndef encaps(public_key):\n    ephemeral = x25519.X25519PrivateKey.generate()\n    ciphertext = ephemeral.public_key().public_bytes(**RAW)          # the ciphertext is the one-time public key\n    return ciphertext, derive(ephemeral.exchange(public_key), ciphertext)\n\ndef decaps(secret_key, ciphertext):\n    return derive(secret_key.exchange(x25519.X25519PublicKey.from_public_bytes(ciphertext)), ciphertext)\n\nsecret_key, public_key = keygen()\nciphertext, key_sender = encaps(public_key)\nkey_receiver = decaps(secret_key, ciphertext)\nprint(\"ciphertext:\", len(ciphertext), \"bytes | shared key:\", len(key_sender), \"bytes | keys equal:\", key_sender == key_receiver)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-kem",
+              "language": "text",
+              "code": "ciphertext: 32 bytes | shared key: 32 bytes | keys equal: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does Encaps(public key) return?",
+              "options": [
+                "A ciphertext and a fresh shared key.",
+                "Only an encrypted message chosen by the sender.",
+                "A signature."
+              ],
+              "correct_index": 0,
+              "explanation": "A KEM produces its own shared key together with a ciphertext. The holder of the private key can recover the key from the ciphertext."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is the KEM interface relevant to post-quantum cryptography?",
+              "options": [
+                "ML-KEM, the NIST post-quantum key establishment standard, is a KEM with this same interface.",
+                "Quantum computers need KEMs to run.",
+                "KEMs are quantum-proof by definition."
+              ],
+              "correct_index": 0,
+              "explanation": "ML-KEM provides KeyGen, Encaps and Decaps. Only the underlying mathematics changes; it is also what makes the algorithm quantum-resistant, not the interface."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Section 7.8 (Key Encapsulation)"
+            },
+            {
+              "book": "B02",
+              "locator": "Section 11.4 (Encryption based on a trapdoor function scheme) for the idea of encrypting a key and then using symmetric encryption",
+              "note": "General background."
+            },
+            {
+              "book": "B74",
+              "locator": "X25519 key exchange and HKDF"
+            }
+          ],
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "Digital signature systems",
+          "summary": "Signing and verifying with RSA-PSS and Ed25519, what a signature guarantees, and how tampering is detected.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **digital signature scheme** has three algorithms: **KeyGen**, **Sign(private key, message)** and **Verify(public key, message, signature)**. Security is defined as **existential unforgeability under chosen-message attack (EUF-CMA)**: even an attacker who can get signatures on messages of their choice cannot produce a valid signature on any new message. A valid signature gives **authenticity** (it came from the holder of the private key), **integrity** (the message was not changed) and **non-repudiation** (the signer cannot easily deny it), provided the private key stayed secret and the public key really belongs to the signer, which is what certificates are for.\n\nMessages are **hashed first** and the hash is signed, so signatures are small whatever the message size and the hash function's collision resistance becomes part of the security. RSA signatures use **PSS** padding (or the older PKCS #1 v1.5 form, which has a history of implementation flaws). **Ed25519** is a fast EdDSA scheme with 64-byte signatures and deterministic nonces. The listing signs a message, verifies it, and shows that changing a single character makes verification fail."
+            },
+            {
+              "type": "code",
+              "id": "c-signatures",
+              "language": "python",
+              "code": "from cryptography.exceptions import InvalidSignature\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import ed25519, padding, rsa\n\nmessage = b\"transfer 100 to account 42\"\ntampered = b\"transfer 900 to account 42\"\n\nrsa_key = rsa.generate_private_key(public_exponent=65537, key_size=2048)\npss = padding.PSS(mgf=padding.MGF1(hashes.SHA256()), salt_length=padding.PSS.MAX_LENGTH)\nsignature = rsa_key.sign(message, pss, hashes.SHA256())\nrsa_key.public_key().verify(signature, message, pss, hashes.SHA256())\nprint(\"RSA-PSS: genuine message verifies; signature is\", len(signature), \"bytes\")\ntry:\n    rsa_key.public_key().verify(signature, tampered, pss, hashes.SHA256())\nexcept InvalidSignature:\n    print(\"RSA-PSS: tampered message rejected\")\n\ned_key = ed25519.Ed25519PrivateKey.generate()\ned_sig = ed_key.sign(message)\ned_key.public_key().verify(ed_sig, message)\nprint(\"Ed25519: genuine message verifies; signature is\", len(ed_sig), \"bytes; signing twice gives the same signature:\", ed_sig == ed_key.sign(message))\ntry:\n    ed_key.public_key().verify(ed_sig, tampered)\nexcept InvalidSignature:\n    print(\"Ed25519: tampered message rejected\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-signatures",
+              "language": "text",
+              "code": "RSA-PSS: genuine message verifies; signature is 256 bytes\nRSA-PSS: tampered message rejected\nEd25519: genuine message verifies; signature is 64 bytes; signing twice gives the same signature: True\nEd25519: tampered message rejected",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does EUF-CMA security mean?",
+              "options": [
+                "An attacker who can obtain signatures on chosen messages still cannot forge a signature on a new message.",
+                "The signature hides the message.",
+                "Signatures cannot be verified by anyone but the signer."
+              ],
+              "correct_index": 0,
+              "explanation": "Existential unforgeability under chosen-message attack is the standard security definition for signature schemes."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "A signature verifies correctly. What additional thing must you trust before concluding the message came from a particular person?",
+              "options": [
+                "That the public key really belongs to that person, usually established by a certificate.",
+                "That the message is encrypted.",
+                "That the signature is exactly 64 bytes."
+              ],
+              "correct_index": 0,
+              "explanation": "A valid signature only proves the matching private key was used. Binding a public key to an identity needs a trusted certificate or another authentic channel."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Section 10.1.2 (Principles of Digital Signatures) and Section 10.2 (The RSA Signature Scheme)"
+            },
+            {
+              "book": "B02",
+              "locator": "Section 13.1 (Definition of a digital signature), 13.3 (Full domain hash) and 13.6 (Case study: PKCS1 signatures)"
+            },
+            {
+              "book": "B74",
+              "locator": "RSA signing with PSS padding and Ed25519 signing and verification"
+            }
+          ],
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "PKI architecture",
+          "summary": "Roots, intermediates and leaf certificates, and a working three-level chain built and verified in Python.",
+          "estimated_minutes": 28,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **public-key infrastructure (PKI)** solves the problem that a public key alone says nothing about who owns it. A **certificate** (the X.509 format, RFC 5280) binds a public key to a name and is signed by a **certificate authority (CA)**. Trust starts at **root CAs**, whose certificates your operating system or browser ships in a **trust store**. Roots rarely sign end-entity certificates directly. They sign **intermediate CAs**, which sign **leaf certificates** for websites. A client builds the **chain** from the leaf up to a trusted root and checks every signature, validity period and constraint along the way.\n\nImportant constraints include **BasicConstraints**, which says whether a certificate may act as a CA and how many more CAs may sit below it (the path length), and **Key Usage** and **Subject Alternative Name** fields, which limit what a certificate may be used for and which names it covers. A leaf marked as not-a-CA cannot be used to issue other certificates.\n\nThe listing builds a small demonstration hierarchy in memory: a root, an intermediate and a leaf, all using P-256 keys, then verifies each link. The names are made up (`.test` is a reserved domain). Nothing here is trusted by any real system."
+            },
+            {
+              "type": "code",
+              "id": "c-chain",
+              "language": "python",
+              "code": "import datetime\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import ec\nfrom cryptography.x509.oid import NameOID\n\ndef name(common_name):\n    return x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, common_name)])\n\nstart = datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc)\n\ndef issue(subject, subject_key, issuer, issuer_key, days, ca, path_length=None):\n    builder = (x509.CertificateBuilder().subject_name(name(subject)).issuer_name(name(issuer))\n               .public_key(subject_key.public_key()).serial_number(x509.random_serial_number())\n               .not_valid_before(start).not_valid_after(start + datetime.timedelta(days=days))\n               .add_extension(x509.BasicConstraints(ca=ca, path_length=path_length), critical=True))\n    return builder.sign(issuer_key, hashes.SHA256())\n\nroot_key, inter_key, leaf_key = (ec.generate_private_key(ec.SECP256R1()) for _ in range(3))\nroot = issue(\"Demo Root CA\", root_key, \"Demo Root CA\", root_key, 3650, True, 1)\ninter = issue(\"Demo Intermediate CA\", inter_key, \"Demo Root CA\", root_key, 1825, True, 0)\nleaf = issue(\"www.example.test\", leaf_key, \"Demo Intermediate CA\", inter_key, 90, False)\n\nfor cert in (leaf, inter, root):\n    print(f\"{cert.subject.rfc4514_string():26} issued by {cert.issuer.rfc4514_string()}\")\nleaf.verify_directly_issued_by(inter)\ninter.verify_directly_issued_by(root)\nroot.verify_directly_issued_by(root)\nprint(\"every signature in the chain verifies: True\")\nprint(\"leaf may act as a CA:\", leaf.extensions.get_extension_for_class(x509.BasicConstraints).value.ca)\ntry:\n    leaf.verify_directly_issued_by(root)\nexcept Exception as error:\n    print(\"leaf is not directly issued by the root:\", type(error).__name__)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-chain",
+              "language": "text",
+              "code": "CN=www.example.test        issued by CN=Demo Intermediate CA\nCN=Demo Intermediate CA    issued by CN=Demo Root CA\nCN=Demo Root CA            issued by CN=Demo Root CA\nevery signature in the chain verifies: True\nleaf may act as a CA: False\nleaf is not directly issued by the root: ValueError",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "Why this matters for the post-quantum transition",
+              "text": "Every signature in that chain is an elliptic-curve or RSA signature. A quantum computer able to break those schemes could forge certificates, so migrating to post-quantum signatures means changing CAs, trust stores, client libraries and certificate sizes, not just one algorithm. Later modules return to this."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why do CAs usually keep root keys offline and issue leaf certificates through intermediates?",
+              "options": [
+                "So a compromise of an intermediate can be contained and revoked without replacing the root in every trust store.",
+                "Because roots cannot sign anything.",
+                "Because leaf certificates are not signed."
+              ],
+              "correct_index": 0,
+              "explanation": "Roots are embedded in many devices and hard to replace. Intermediates do the day-to-day issuing, so exposing one is a smaller, recoverable event."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does BasicConstraints CA:FALSE on a certificate mean?",
+              "options": [
+                "The certificate cannot be used to issue other certificates.",
+                "The certificate has expired.",
+                "The certificate has no public key."
+              ],
+              "correct_index": 0,
+              "explanation": "CA:FALSE marks an end-entity certificate. Clients must refuse to accept it as the issuer of another certificate."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Section 14.4 (Key Establishment Using Asymmetric Techniques) and Section 14.5 (Public-Key Infrastructures and CAs), including 14.5.1 Certificate Chains"
+            },
+            {
+              "book": "B02",
+              "locator": "Section 13.8 (Certificates and the public-key infrastructure)"
+            },
+            {
+              "book": "B50",
+              "locator": "RFC 5280 (Internet X.509 PKI Certificate and CRL Profile): certificates, BasicConstraints and path validation"
+            },
+            {
+              "book": "B74",
+              "locator": "X.509: CertificateBuilder, BasicConstraints and Certificate.verify_directly_issued_by"
+            }
+          ],
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "Certificate lifecycle",
+          "summary": "Issuance, renewal, revocation and monitoring, and why public certificate lifetimes are getting shorter.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A certificate has a **lifecycle**: a key pair is generated, a request is sent to a CA, the CA validates the applicant and issues the certificate, the certificate is deployed, **monitored**, **renewed** before it expires and eventually **retired** or **revoked**. Most outages caused by certificates are not attacks but expiry that nobody noticed, so inventory and monitoring are as important as the cryptography.\n\n**Revocation** handles certificates that must stop being trusted before they expire, for example after a key compromise. Two mechanisms exist: **certificate revocation lists (CRLs)**, lists of revoked serial numbers published by the CA (RFC 5280), and the **Online Certificate Status Protocol (OCSP)**, a query for one certificate's status (RFC 6960). In practice revocation checking is unreliable, because clients often fail open when the CA's responder is unreachable. That weakness is the main reason the industry is moving to **shorter lifetimes** and **automation**: the ACME protocol (RFC 8555) lets software request and renew certificates automatically, so a short lifetime stops being a burden.\n\nThe CA/Browser Forum Baseline Requirements set a maximum validity for public TLS certificates. According to the version read for this course, the maximum is **200 days from 15 March 2026**, **100 days from 15 March 2027** and **47 days from 15 March 2029**. Short lifetimes also help the post-quantum migration: if certificates are replaced every few weeks, swapping the algorithm is a configuration change, not a project. The listing is a simple expiry monitor on an illustrative inventory with a fixed reference date."
+            },
+            {
+              "type": "code",
+              "id": "c-expiry",
+              "language": "python",
+              "code": "import datetime\n\nTODAY = datetime.date(2026, 10, 4)                     # a fixed reference date so the output is reproducible\nCERTIFICATES = [                                       # illustrative inventory, not real certificates\n    (\"shop.example.test\", datetime.date(2027, 1, 20)),\n    (\"api.example.test\", datetime.date(2026, 10, 12)),\n    (\"legacy.example.test\", datetime.date(2026, 9, 28)),\n]\n\ndef status(not_after):\n    days = (not_after - TODAY).days\n    if days < 0:\n        return days, \"EXPIRED\"\n    if days <= 14:\n        return days, \"RENEW NOW\"\n    if days <= 30:\n        return days, \"renew soon\"\n    return days, \"ok\"\n\nfor host, not_after in CERTIFICATES:\n    days, state = status(not_after)\n    print(f\"{host:22} expires {not_after}  {days:>4} days  {state}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-expiry",
+              "language": "text",
+              "code": "shop.example.test      expires 2027-01-20   108 days  ok\napi.example.test       expires 2026-10-12     8 days  RENEW NOW\nlegacy.example.test    expires 2026-09-28    -6 days  EXPIRED",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the main reason revocation alone is not a dependable safety net?",
+              "options": [
+                "Clients often fail open when they cannot reach the revocation service, so short lifetimes and automation are used as well.",
+                "Revocation is not part of X.509.",
+                "Revoked certificates still verify in every browser."
+              ],
+              "correct_index": 0,
+              "explanation": "If CRL or OCSP checks fail silently, a revoked certificate may still be accepted. Short-lived certificates limit how long such a mistake can last."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Under the Baseline Requirements schedule read for this course, what is the maximum validity of a public TLS certificate issued after 15 March 2027?",
+              "options": [
+                "100 days",
+                "398 days",
+                "10 years"
+              ],
+              "correct_index": 0,
+              "explanation": "The schedule steps down from 200 days (March 2026) to 100 days (March 2027) and 47 days (March 2029). Check the current document before relying on a date."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B50",
+              "locator": "RFC 5280 (CRLs), RFC 6960 (OCSP) and RFC 8555 (ACME)"
+            },
+            {
+              "book": "B71",
+              "locator": "Section 6.3.2 (Certificate operational periods and key pair usage periods): maximum validity of subscriber certificates"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 14.5.2 (Certificate Revocation)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The certificate lifetime schedule (200, 100 and 47 days) was read from the CA/Browser Forum Baseline Requirements on 2026-10-04; it is a policy that can change, so recheck it before relying on any date."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "TLS 1.3 internals: the key schedule",
+          "summary": "How TLS 1.3 turns a Diffie-Hellman result into traffic keys, checked against published test values.",
+          "estimated_minutes": 28,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Earlier lessons showed the TLS 1.3 handshake as messages. Underneath, its security rests on a **key schedule**: a chain of HKDF steps that mixes the secrets of the handshake into the keys that protect the connection. The building blocks are HKDF's two operations, **Extract** (concentrate input keying material into a pseudorandom key) and **Expand** (stretch it into as many bytes as needed, labelled with a string and context so different keys never collide). TLS 1.3 wraps Expand as **HKDF-Expand-Label** and uses a helper, **Derive-Secret**, bound to a hash of the handshake **transcript**, so changing any message changes every later key.\n\nThe schedule starts from the **early secret** (derived from a pre-shared key, or zeros when there is none), mixes in the **(EC)DHE shared secret** to produce the **handshake secret**, and then the **master secret**, from which the traffic keys come. Because the Diffie-Hellman values are ephemeral, deleting them after the handshake gives **forward secrecy**: recording the traffic and stealing a server's long-term key later does not reveal past sessions. This is also exactly the property that a quantum computer breaks if the key exchange is classical, because a recorded handshake can later be solved. Hybrid and post-quantum key exchange protect against that by changing what goes into the schedule, not the schedule itself.\n\nA good way to learn this is to implement it and check it against published values. The listing implements HKDF from the HMAC definition, passes the official RFC 5869 test case, and then reproduces the early secret and the first \"derived\" secret from the TLS 1.3 example traces in RFC 8448. TLS 1.3 is now specified in RFC 9846 (July 2026), which obsoletes RFC 8446; the key schedule is unchanged."
+            },
+            {
+              "type": "code",
+              "id": "c-keyschedule",
+              "language": "python",
+              "code": "import hashlib, hmac, struct\n\ndef hkdf_extract(salt, ikm):\n    return hmac.new(salt, ikm, hashlib.sha256).digest()\n\ndef hkdf_expand(prk, info, length):\n    output, block, counter = b\"\", b\"\", 1\n    while len(output) < length:\n        block = hmac.new(prk, block + info + bytes([counter]), hashlib.sha256).digest()\n        output, counter = output + block, counter + 1\n    return output[:length]\n\n# RFC 5869, Appendix A.1, test case 1\nokm = hkdf_expand(hkdf_extract(bytes(range(13)), bytes([0x0B]) * 22), bytes(range(0xF0, 0xFA)), 42)\nprint(\"HKDF matches RFC 5869 test case 1:\", okm.hex() == \"3cb25f25faacd57a90434f64d0362f2a2d2d0a90cf1a5a4c5db02d56ecc4c5bf34007208d5b887185865\")\n\ndef expand_label(secret, label, context, length):                    # TLS 1.3 HKDF-Expand-Label\n    full = b\"tls13 \" + label.encode()\n    info = struct.pack(\"!H\", length) + bytes([len(full)]) + full + bytes([len(context)]) + context\n    return hkdf_expand(secret, info, length)\n\nearly_secret = hkdf_extract(bytes(32), bytes(32))                      # no pre-shared key: salt and input are zeros\nderived = expand_label(early_secret, \"derived\", hashlib.sha256(b\"\").digest(), 32)\nprint(\"early secret:\", early_secret.hex())\nprint(\"matches the RFC 8448 trace:\", early_secret.hex() == \"33ad0a1c607ec03b09e6cd9893680ce210adf300aa1f2660e1b22e10f170f92a\")\nprint(\"'derived' secret matches RFC 8448:\", derived.hex() == \"6f2615a108c702c5678f54fc9dbab69716c076189c48250cebeac3576c3611ba\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-keyschedule",
+              "language": "text",
+              "code": "HKDF matches RFC 5869 test case 1: True\nearly secret: 33ad0a1c607ec03b09e6cd9893680ce210adf300aa1f2660e1b22e10f170f92a\nmatches the RFC 8448 trace: True\n'derived' secret matches RFC 8448: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In TLS 1.3, why are the Diffie-Hellman keys ephemeral?",
+              "options": [
+                "Deleting them after the handshake gives forward secrecy: recorded traffic stays safe even if long-term keys leak later.",
+                "To make the handshake shorter.",
+                "Because certificates require it."
+              ],
+              "correct_index": 0,
+              "explanation": "Ephemeral keys leave nothing behind that can later decrypt old sessions. A quantum attacker on a classical exchange can still solve a recorded handshake, which motivates hybrid key exchange."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does HKDF-Extract do in the key schedule?",
+              "options": [
+                "Concentrates input keying material into a fixed-size pseudorandom key.",
+                "Encrypts the handshake messages.",
+                "Verifies the server's certificate."
+              ],
+              "correct_index": 0,
+              "explanation": "Extract turns possibly non-uniform input secrets into a uniform key; Expand then derives labelled output keys from it."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B50",
+              "locator": "RFC 5869 (HKDF), Appendix A.1; RFC 8448 (Example Handshake Traces for TLS 1.3), the early-secret and 'derived' computations; RFC 9846 (TLS 1.3) key schedule, which obsoletes RFC 8446"
+            },
+            {
+              "book": "B02",
+              "locator": "Section 21.10 (Case study: TLS session setup) and Section 21.3 (Perfect forward secrecy)"
+            }
+          ],
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "SSH",
+          "summary": "Host keys, key-based login, trust on first use, and a fingerprint verified against ssh-keygen.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**SSH** gives secure remote shell access and file transfer. It solves two authentication problems separately. The **server** proves its identity with a **host key**, and the client decides whether to trust it. The **user** proves identity with a password or, much better, a **key pair**: the private key stays on the client and the server holds only the public key in `authorized_keys`. Key-based login removes the password that attackers can guess.\n\nHow does a client know the host key is genuine the first time? Usually it does not. SSH uses **trust on first use (TOFU)**: it shows a **fingerprint**, a hash of the public key, and remembers it in `known_hosts`. If the key later changes, SSH warns loudly, because that could mean a man-in-the-middle. The safe habit is to check the fingerprint through a second channel the first time you connect to an important host.\n\nA fingerprint is simple to compute: the base64-decoded key blob is hashed with SHA-256 and written in base64 without padding, after the prefix `SHA256:`. The first listing builds an Ed25519 key from fixed bytes (a throwaway demonstration key that anyone could reconstruct, never a real one) and computes its OpenSSH public key line and fingerprint. The second runs the real `ssh-keygen` on the same public key line, and the fingerprints match."
+            },
+            {
+              "type": "code",
+              "id": "c-sshpy",
+              "language": "python",
+              "code": "import base64, hashlib\nfrom cryptography.hazmat.primitives import serialization\nfrom cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey\n\nkey = Ed25519PrivateKey.from_private_bytes(bytes(range(32)))        # DEMO ONLY: a fixed, public, throwaway key\nline = key.public_key().public_bytes(serialization.Encoding.OpenSSH, serialization.PublicFormat.OpenSSH).decode()\nprint(line)\nblob = base64.b64decode(line.split()[1])\nprint(\"SHA256:\" + base64.b64encode(hashlib.sha256(blob).digest()).decode().rstrip(\"=\"))",
+              "caption": "Computing an OpenSSH public key line and its fingerprint"
+            },
+            {
+              "type": "code",
+              "id": "o-c-sshpy",
+              "language": "text",
+              "code": "ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAOhB7/zzhC+HXDdGOdLwJln5NYwm6UNXx3chmQSVTG4\nSHA256:lbmsoA0yIEcEiVDRnMWuzm+nV+3ZEEpVIURqFoeSspg",
+              "caption": "Expected output"
+            },
+            {
+              "type": "code",
+              "id": "c-sshkeygen",
+              "language": "bash",
+              "code": "echo 'ssh-ed25519 AAAAC3NzaC1lZDI1NTE5AAAAIAOhB7/zzhC+HXDdGOdLwJln5NYwm6UNXx3chmQSVTG4' > demo.pub\nssh-keygen -lf demo.pub",
+              "caption": "The same fingerprint from the real ssh-keygen tool"
+            },
+            {
+              "type": "code",
+              "id": "o-c-sshkeygen",
+              "language": "text",
+              "code": "256 SHA256:lbmsoA0yIEcEiVDRnMWuzm+nV+3ZEEpVIURqFoeSspg no comment (ED25519)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "Protect and use private keys properly",
+              "text": "Protect SSH private keys with a passphrase, never share or commit them, and prefer short-lived credentials where you can. Keep `known_hosts` entries and investigate any host-key change warning instead of clicking through it."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "SSH shows a warning that a server's host key has changed since your last connection. What is the right response?",
+              "options": [
+                "Stop and verify the new key through another channel before connecting.",
+                "Delete known_hosts and connect again.",
+                "Ignore it, host keys change all the time."
+              ],
+              "correct_index": 0,
+              "explanation": "A changed host key can indicate an attack or a legitimate rebuild. Confirm it out of band before trusting it."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is key-based SSH login stronger than a password?",
+              "options": [
+                "The private key never leaves the client and cannot be guessed from the server's copy of the public key.",
+                "Keys are shorter than passwords.",
+                "Public keys are secret."
+              ],
+              "correct_index": 0,
+              "explanation": "The server stores only the public key; to log in the client proves possession of the private key without sending it."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Section 14.4 (Key Establishment Using Asymmetric Techniques), including 14.4.1 (Man-in-the-Middle Attack)"
+            },
+            {
+              "book": "B74",
+              "locator": "Serialization: OpenSSH public key format; Ed25519 keys"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The explanation of OpenSSH trust-on-first-use and the fingerprint format is standard behaviour confirmed here by running ssh-keygen; the OpenSSH manual pages were not cited."
+          },
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "VPN cryptography",
+          "summary": "What IPsec and WireGuard use, authenticated encryption with counters, and an anti-replay window.",
+          "estimated_minutes": 25,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A VPN protects packets between two points, and it needs the same ingredients as TLS: an **authenticated key exchange** to agree on keys, and **authenticated encryption** to protect each packet. The two designs you will meet most are **IPsec** and **WireGuard**.\n\n**IPsec** protects IP traffic with the **Encapsulating Security Payload (ESP**, RFC 4303), which encrypts and authenticates packets, and uses the **Internet Key Exchange (IKEv2**, RFC 7296) to authenticate the peers and set up keys. It is flexible, with many algorithm choices, and that flexibility is also a source of configuration mistakes. **WireGuard** takes the opposite approach: a small fixed set of primitives. Its whitepaper describes a handshake built on the Noise framework (the construction string is `Noise_IKpsk2_25519_ChaChaPoly_BLAKE2s`), using **Curve25519** for key exchange, **ChaCha20-Poly1305** for packet encryption and **BLAKE2s** for hashing, with **HKDF** for key derivation. Fewer choices mean fewer ways to misconfigure it, but also that changing an algorithm is a protocol change.\n\nBoth rely on a **packet counter** for two jobs. It serves as the nonce for the cipher, so a nonce is never reused under a key. And the receiver keeps an **anti-replay window**: it accepts a packet number once, rejects numbers it has already seen, and rejects numbers that are too old, so an attacker cannot resend captured packets. The listing shows both with ChaCha20-Poly1305 and a small sliding window; the key is a fixed demonstration value."
+            },
+            {
+              "type": "code",
+              "id": "c-replay",
+              "language": "python",
+              "code": "from cryptography.exceptions import InvalidTag\nfrom cryptography.hazmat.primitives.ciphers.aead import ChaCha20Poly1305\n\naead = ChaCha20Poly1305(bytes(range(32)))                          # DEMO key: real keys come from a key exchange\nseal = lambda counter, payload: aead.encrypt(counter.to_bytes(12, \"big\"), payload, None)    # the counter is the nonce\npacket = seal(7, b\"payload\")\nprint(\"packet 7 opens:\", aead.decrypt((7).to_bytes(12, \"big\"), packet, None))\ntry:\n    aead.decrypt((8).to_bytes(12, \"big\"), packet, None)\nexcept InvalidTag:\n    print(\"wrong counter rejected: InvalidTag\")\n\nclass ReplayWindow:\n    def __init__(self, size=64):\n        self.size, self.highest, self.seen = size, 0, set()\n\n    def check(self, seq):\n        if seq <= self.highest - self.size:\n            return \"rejected: too old\"\n        if seq in self.seen:\n            return \"rejected: replay\"\n        self.seen.add(seq)\n        self.highest = max(self.highest, seq)\n        self.seen = {s for s in self.seen if s > self.highest - self.size}\n        return \"accepted\"\n\nwindow = ReplayWindow()\nfor seq in (1, 2, 5, 3, 3, 70, 6, 7):\n    print(f\"packet {seq:>2}: {window.check(seq)}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-replay",
+              "language": "text",
+              "code": "packet 7 opens: b'payload'\nwrong counter rejected: InvalidTag\npacket  1: accepted\npacket  2: accepted\npacket  5: accepted\npacket  3: accepted\npacket  3: rejected: replay\npacket 70: accepted\npacket  6: rejected: too old\npacket  7: accepted",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "The post-quantum angle",
+              "text": "VPN tunnels are a prime \"harvest now, decrypt later\" target: an adversary can record the handshake and traffic today. Both IKEv2 and WireGuard are being extended with post-quantum or hybrid key exchange, because the packet encryption (AES or ChaCha20 with 256-bit keys) is not the weak part. The key exchange is."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the purpose of an anti-replay window in a VPN?",
+              "options": [
+                "To reject packets whose numbers were already seen or are too old, so captured packets cannot be resent.",
+                "To compress packets.",
+                "To rotate the encryption key."
+              ],
+              "correct_index": 0,
+              "explanation": "The receiver tracks recently accepted packet numbers. A resent packet falls inside the window as a duplicate or outside it as too old."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is the key exchange, not the packet cipher, the main post-quantum concern for VPNs?",
+              "options": [
+                "Recorded handshakes could later be broken by a quantum computer, while 256-bit symmetric ciphers are only weakened modestly.",
+                "Packet ciphers cannot be implemented in hardware.",
+                "Key exchange is not used in VPNs."
+              ],
+              "correct_index": 0,
+              "explanation": "Shor's algorithm threatens the Diffie-Hellman and elliptic-curve key exchange, while Grover's algorithm only reduces the effective strength of symmetric keys."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B50",
+              "locator": "RFC 4303 (ESP) and RFC 7296 (IKEv2)"
+            },
+            {
+              "book": "B72",
+              "locator": "The WireGuard whitepaper: handshake construction and cryptographic primitives (Curve25519, ChaCha20Poly1305, BLAKE2s, HKDF)"
+            },
+            {
+              "book": "B74",
+              "locator": "ChaCha20Poly1305 authenticated encryption"
+            }
+          ],
+          "after": "sec-8"
+        },
+        {
+          "slug": "sec-10",
+          "action": "replace",
+          "title": "Hardware security modules",
+          "summary": "Why keys are kept inside tamper-resistant hardware, and a toy that shows the sign-but-never-reveal interface.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **hardware security module (HSM)** is a tamper-resistant device that generates and stores cryptographic keys and performs operations with them **without ever letting the private key leave**. Software asks it to sign or decrypt; it returns the result. If the application server is compromised, the attacker can ask the HSM to sign things while the compromise lasts, but cannot copy the key and take it away. HSMs protect certificate authority keys, payment keys and the master keys of key-management services. They are accessed through standard interfaces such as **PKCS #11**, and well-run ones are validated against the **FIPS 140-3** standard, which defines security levels for cryptographic modules.\n\nLimits matter. An HSM protects the key, not the **access policy**: whoever can call the signing function can still misuse it, so you need strong authentication, separation of duties, rate limits and audit logs around it. HSMs also have capacity and algorithm limits, and a cloud key-management service is often a managed HSM behind an API.\n\nThe listing is a **toy** that shows only the interface idea: a class that creates a key internally and exposes `sign` and the public key, but no way to read the private key. Python cannot truly hide data, so this is not a security boundary. In a real HSM the boundary is enforced by hardware."
+            },
+            {
+              "type": "code",
+              "id": "c-hsm",
+              "language": "python",
+              "code": "from cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import ec\n\nclass ToyHsm:\n    \"\"\"Interface demonstration only. A real HSM enforces 'the key never leaves' in tamper-resistant hardware.\"\"\"\n    def __init__(self):\n        self._key = ec.generate_private_key(ec.SECP256R1())\n\n    def public_key(self):\n        return self._key.public_key()\n\n    def sign(self, data):\n        return self._key.sign(data, ec.ECDSA(hashes.SHA256()))\n\nhsm = ToyHsm()\nsignature = hsm.sign(b\"transaction 42\")\nhsm.public_key().verify(signature, b\"transaction 42\", ec.ECDSA(hashes.SHA256()))\nprint(\"signature produced by the module verifies with its public key: True\")\nprint(\"public methods:\", [name for name in dir(hsm) if not name.startswith(\"_\")])"
+            },
+            {
+              "type": "code",
+              "id": "o-c-hsm",
+              "language": "text",
+              "code": "signature produced by the module verifies with its public key: True\npublic methods: ['public_key', 'sign']",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does an HSM protect most directly?",
+              "options": [
+                "The private key, which never leaves the device in usable form.",
+                "The application from all bugs.",
+                "The network from eavesdropping."
+              ],
+              "correct_index": 0,
+              "explanation": "An HSM keeps keys inside tamper-resistant hardware and exposes operations, not key material."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "An attacker takes over the server that calls the HSM. What can still go wrong?",
+              "options": [
+                "The attacker can request signatures while access lasts, so access control and audit logging are still required.",
+                "Nothing, an HSM makes misuse impossible.",
+                "The HSM key is copied automatically."
+              ],
+              "correct_index": 0,
+              "explanation": "The key stays safe from theft but the function remains callable. Authentication, quotas and monitoring around the HSM limit the misuse."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B73",
+              "locator": "Security requirements for cryptographic modules and security levels"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 14.6 (Practical Aspects of Key Management)"
+            },
+            {
+              "book": "B70",
+              "locator": "Key management guidance on protection of keys (hardware cryptographic modules)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement about PKCS #11 and FIPS 140-3 security levels is a general summary; the FIPS 140-3 page was confirmed to exist but its level definitions were not quoted here."
+          },
+          "after": "sec-9"
+        },
+        {
+          "slug": "sec-11",
+          "action": "replace",
+          "title": "Key lifecycle and envelope encryption",
+          "summary": "Stages of a key's life, cryptoperiods, and rotating a master key without re-encrypting the data.",
+          "estimated_minutes": 25,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Keys have a **lifecycle**, and NIST SP 800-57 Part 1 describes it in stages: **generation**, **distribution**, **storage**, **use**, **rotation** (replacing with a new key), **archival** where needed, and **destruction**. Each key has a **cryptoperiod**, the time it is authorised for use, chosen from how much data it protects, how exposed it is and what a compromise would cost. Shorter periods limit damage, but only if rotation is routine and safe. Crypto-agility, the ability to change algorithms, is part of the same discipline and is the topic of the enterprise track.\n\nA standard way to make rotation easy is **envelope encryption**. Data is encrypted with a **data encryption key (DEK)**. The DEK is itself encrypted (\"wrapped\") with a **key-encryption key (KEK)** held in a key-management service or HSM, and the wrapped DEK is stored next to the data. To rotate the KEK you unwrap each DEK with the old key and wrap it with the new one; the large data is **not re-encrypted**. AES key wrap (RFC 3394) is a standard wrapping algorithm. The keys in the listing are fixed demonstration values; real keys are generated randomly and never printed or committed."
+            },
+            {
+              "type": "code",
+              "id": "c-envelope",
+              "language": "python",
+              "code": "from cryptography.hazmat.primitives.ciphers.aead import AESGCM\nfrom cryptography.hazmat.primitives.keywrap import aes_key_unwrap, aes_key_wrap\n\nkek_v1, kek_v2 = bytes(range(32)), bytes(range(32, 64))        # DEMO key-encryption keys\ndek = bytes(range(64, 96))                                      # DEMO data-encryption key\nnonce = bytes(12)                                               # DEMO nonce: real code uses a fresh random nonce per message\n\nrecord = AESGCM(dek).encrypt(nonce, b\"customer record\", None)\nwrapped_v1 = aes_key_wrap(kek_v1, dek)\nprint(\"wrapped DEK:\", len(wrapped_v1), \"bytes (key is 32 bytes plus an 8-byte integrity check)\")\n\nwrapped_v2 = aes_key_wrap(kek_v2, aes_key_unwrap(kek_v1, wrapped_v1))      # rotation: re-wrap only the key\nrecovered = aes_key_unwrap(kek_v2, wrapped_v2)\nprint(\"DEK recovered with the new KEK:\", recovered == dek)\nprint(\"stored record unchanged and still decrypts:\", AESGCM(recovered).decrypt(nonce, record, None))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-envelope",
+              "language": "text",
+              "code": "wrapped DEK: 40 bytes (key is 32 bytes plus an 8-byte integrity check)\nDEK recovered with the new KEK: True\nstored record unchanged and still decrypts: b'customer record'",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "Nonce and key hygiene",
+              "text": "The demonstration reuses a fixed nonce because it encrypts one message. In real code every encryption under a key needs its own unique nonce, and keys must come from a cryptographically secure generator and live in a key-management system, not in source code or configuration files."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the main benefit of envelope encryption for key rotation?",
+              "options": [
+                "Rotating the key-encryption key only requires re-wrapping the small data keys, not re-encrypting all the data.",
+                "It makes the data impossible to decrypt.",
+                "It removes the need for keys."
+              ],
+              "correct_index": 0,
+              "explanation": "The large data stays encrypted under its DEK. Only the wrapped DEK is rewrapped under the new KEK."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is a cryptoperiod?",
+              "options": [
+                "The time span during which a key is authorised for use.",
+                "The length of a key in bits.",
+                "The number of times a key may be copied."
+              ],
+              "correct_index": 0,
+              "explanation": "NIST SP 800-57 uses cryptoperiod for the authorised usage period of a key, chosen by risk and data volume."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B70",
+              "locator": "Key lifecycle states and cryptoperiods (Sections on key management life cycle and cryptoperiods)"
+            },
+            {
+              "book": "B50",
+              "locator": "RFC 3394 (AES Key Wrap Algorithm)"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 14.6 (Practical Aspects of Key Management)"
+            },
+            {
+              "book": "B74",
+              "locator": "Key wrapping (aes_key_wrap, aes_key_unwrap) and AES-GCM"
+            }
+          ],
+          "needs_verification": {
+            "reason": "SP 800-57 section numbers for the life-cycle and cryptoperiod discussions were not looked up; the lesson cites the topics rather than section numbers."
+          },
+          "after": "sec-10"
+        },
+        {
+          "slug": "sec-12",
+          "action": "new",
+          "title": "Task: audit a certificate for quantum exposure",
+          "summary": "A guided practical: describe the algorithms in X.509 certificates and flag the ones a quantum computer could break.",
+          "estimated_minutes": 30,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Objective.** Write a small audit function that reads a certificate and reports the public-key algorithm, key size, signature hash, validity period and whether the key is exposed to **Shor's algorithm**. This is the same kind of record a cryptographic inventory (CBOM) collects at scale, and the same evidence the Q-CAPS scanner reports about a server's certificate.\n\n**Prerequisites.** The lessons on RSA and ECC, signatures and PKI. Python 3 with the `cryptography` package.\n\n**Steps.** (1) Generate an RSA-2048 key and a P-256 key. (2) Build a self-signed certificate for each (this is a lab exercise; a self-signed certificate is not trusted by anyone). (3) Write `describe(cert)` using `isinstance` checks on `cert.public_key()`. (4) Print the results as JSON and read them critically. A solution follows; attempt it first."
+            },
+            {
+              "type": "code",
+              "id": "c-audit",
+              "language": "python",
+              "code": "import datetime, json\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import ec, rsa\nfrom cryptography.x509.oid import NameOID\n\ndef self_signed(common_name, key):\n    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, common_name)])\n    start = datetime.datetime(2026, 1, 1, tzinfo=datetime.timezone.utc)\n    return (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key())\n            .serial_number(x509.random_serial_number()).not_valid_before(start)\n            .not_valid_after(start + datetime.timedelta(days=90)).sign(key, hashes.SHA256()))\n\ndef describe(cert):\n    key = cert.public_key()\n    if isinstance(key, rsa.RSAPublicKey):\n        algorithm, size = \"RSA\", key.key_size\n    elif isinstance(key, ec.EllipticCurvePublicKey):\n        algorithm, size = \"ECDSA \" + key.curve.name, key.key_size\n    else:\n        algorithm, size = type(key).__name__, None\n    return {\n        \"subject\": cert.subject.rfc4514_string(),\n        \"public_key\": algorithm,\n        \"key_size_bits\": size,\n        \"signature_hash\": cert.signature_hash_algorithm.name,\n        \"valid_days\": (cert.not_valid_after_utc - cert.not_valid_before_utc).days,\n        \"broken_by_shor\": isinstance(key, (rsa.RSAPublicKey, ec.EllipticCurvePublicKey)),\n    }\n\ncerts = [self_signed(\"rsa.example.test\", rsa.generate_private_key(public_exponent=65537, key_size=2048)),\n         self_signed(\"ecc.example.test\", ec.generate_private_key(ec.SECP256R1()))]\nfor cert in certs:\n    print(json.dumps(describe(cert), sort_keys=True))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-audit",
+              "language": "text",
+              "code": "{\"broken_by_shor\": true, \"key_size_bits\": 2048, \"public_key\": \"RSA\", \"signature_hash\": \"sha256\", \"subject\": \"CN=rsa.example.test\", \"valid_days\": 90}\n{\"broken_by_shor\": true, \"key_size_bits\": 256, \"public_key\": \"ECDSA secp256r1\", \"signature_hash\": \"sha256\", \"subject\": \"CN=ecc.example.test\", \"valid_days\": 90}",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Verify.** Both certificates should show `broken_by_shor: true`, because RSA and elliptic-curve public keys are both vulnerable to a large quantum computer running Shor's algorithm. The hash (`sha256`) is not broken by Shor; Grover's algorithm only halves the effective strength of a hash or symmetric key. So the audit is about the **public-key** algorithm, and a finding here means \"plan a migration\", not \"this server is compromised today\".\n\n**Troubleshooting.** If `cert.not_valid_after_utc` is missing, your `cryptography` version is older than 42; use `not_valid_after` instead. If the key size for an EC key looks odd, remember it is the curve size (256 bits for P-256).\n\n**Cleanup.** The certificates exist only in memory. Never reuse lab keys for anything real.\n\n**Stretch.** Extend `describe` to recognise Ed25519 keys (they are also broken by Shor) and to read a PEM certificate from a file. Then explain why a signature algorithm that is classically secure can still be a migration priority when the certificate protects long-lived data."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which public-key algorithms in a certificate are exposed to Shor's algorithm?",
+              "options": [
+                "RSA and elliptic-curve (ECDSA, EdDSA) keys",
+                "Only RSA keys",
+                "Only SHA-256 hashes"
+              ],
+              "correct_index": 0,
+              "explanation": "Shor's algorithm solves integer factoring and discrete logarithms, which breaks RSA and all elliptic-curve schemes. Hashes are not affected in the same way."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "The audit reports broken_by_shor: true for a certificate. What does that mean for a security team?",
+              "options": [
+                "The key should be on the migration plan; it is a future exposure, not proof of present compromise.",
+                "The server has been hacked.",
+                "The certificate has already been forged."
+              ],
+              "correct_index": 0,
+              "explanation": "It marks an algorithm that a future large quantum computer could break. It is an input to migration planning, prioritised by the lifetime of the data and certificates."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Section 6.2.4 (Key Lengths and Security Levels) and Section 14.5 (Public-Key Infrastructures and CAs)"
+            },
+            {
+              "book": "B50",
+              "locator": "RFC 5280 (X.509 certificates)"
+            },
+            {
+              "book": "B74",
+              "locator": "X.509 reading and building: CertificateBuilder, Certificate.public_key, signature_hash_algorithm"
+            }
+          ],
+          "after": "sec-11"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "b7-n01",
+          "prompt": "Which statement is correct about key strength in NIST SP 800-57 Part 1 Rev. 5?",
+          "options": [
+            "RSA-3072 and 256-bit elliptic curves give about 128-bit security",
+            "RSA-1024 gives 128-bit security",
+            "256-bit curves are weaker than RSA-2048"
+          ],
+          "correct_index": 0,
+          "explanation": "Table 2 lists RSA-3072 and ECC with 256-383 bit keys at 128 bits.",
+          "source": {
+            "book": "B70",
+            "locator": "Table 2"
+          }
+        },
+        {
+          "id": "b7-n02",
+          "prompt": "Why is unpadded (textbook) RSA unsafe?",
+          "options": [
+            "It is deterministic and malleable",
+            "It is too fast",
+            "It cannot encrypt anything"
+          ],
+          "correct_index": 0,
+          "explanation": "Equal messages give equal ciphertexts and ciphertexts can be combined.",
+          "source": {
+            "book": "B01",
+            "locator": "Section 7.7"
+          }
+        },
+        {
+          "id": "b7-n03",
+          "prompt": "Two ECDSA signatures made with the same nonce allow an attacker to:",
+          "options": [
+            "Recover the private key",
+            "Only repeat a message",
+            "Nothing"
+          ],
+          "correct_index": 0,
+          "explanation": "The algebra of two signatures with equal r reveals k and then the private key.",
+          "source": {
+            "book": "B01",
+            "locator": "Section 10.5.3"
+          }
+        },
+        {
+          "id": "b7-n04",
+          "prompt": "A KEM's Encaps function returns:",
+          "options": [
+            "A ciphertext and a shared key",
+            "A signature",
+            "A certificate"
+          ],
+          "correct_index": 0,
+          "explanation": "Encaps outputs the ciphertext to send and the shared key to keep.",
+          "source": {
+            "book": "B01",
+            "locator": "Section 7.8"
+          }
+        },
+        {
+          "id": "b7-n05",
+          "prompt": "Which property does a valid digital signature NOT prove by itself?",
+          "options": [
+            "That the public key belongs to a named person",
+            "That the message was not altered",
+            "That the holder of the private key signed"
+          ],
+          "correct_index": 0,
+          "explanation": "Binding a key to an identity needs a certificate or another authentic channel.",
+          "source": {
+            "book": "B01",
+            "locator": "Section 10.1.2"
+          }
+        },
+        {
+          "id": "b7-n06",
+          "prompt": "What does BasicConstraints CA:FALSE on a certificate mean?",
+          "options": [
+            "It cannot issue other certificates",
+            "It is expired",
+            "It is self-signed"
+          ],
+          "correct_index": 0,
+          "explanation": "CA:FALSE marks an end-entity certificate.",
+          "source": {
+            "book": "B50",
+            "locator": "RFC 5280"
+          }
+        },
+        {
+          "id": "b7-n07",
+          "prompt": "According to the Baseline Requirements schedule read for this course, the maximum validity of public TLS certificates from 15 March 2027 is:",
+          "options": [
+            "100 days",
+            "398 days",
+            "825 days"
+          ],
+          "correct_index": 0,
+          "explanation": "The schedule goes 200 days (2026), 100 days (2027), 47 days (2029).",
+          "source": {
+            "book": "B71",
+            "locator": "Section 6.3.2"
+          }
+        },
+        {
+          "id": "b7-n08",
+          "prompt": "Why are TLS 1.3 key exchanges ephemeral?",
+          "options": [
+            "For forward secrecy",
+            "To shorten certificates",
+            "To avoid hashing"
+          ],
+          "correct_index": 0,
+          "explanation": "Deleting ephemeral keys after the handshake protects recorded sessions from later key theft.",
+          "source": {
+            "book": "B50",
+            "locator": "RFC 9846"
+          }
+        },
+        {
+          "id": "b7-n09",
+          "prompt": "What does an anti-replay window do?",
+          "options": [
+            "Rejects duplicate and too-old packet numbers",
+            "Compresses packets",
+            "Rotates keys"
+          ],
+          "correct_index": 0,
+          "explanation": "It stops an attacker from resending captured packets.",
+          "source": {
+            "book": "B50",
+            "locator": "RFC 4303"
+          }
+        },
+        {
+          "id": "b7-n10",
+          "prompt": "In envelope encryption, rotating the key-encryption key requires:",
+          "options": [
+            "Re-wrapping the data keys only",
+            "Re-encrypting all the data",
+            "Nothing"
+          ],
+          "correct_index": 0,
+          "explanation": "The data stays encrypted under its DEK; only the wrapped DEK changes.",
+          "source": {
+            "book": "B70",
+            "locator": "Key management lifecycle"
+          }
+        },
+        {
+          "id": "b7-n11",
+          "prompt": "Which of these public keys is exposed to Shor's algorithm?",
+          "options": [
+            "ECDSA P-256",
+            "AES-256",
+            "SHA-256"
+          ],
+          "correct_index": 0,
+          "explanation": "Shor breaks elliptic-curve and RSA public-key schemes; AES and SHA-256 are only affected by Grover's weaker speed-up.",
+          "source": {
+            "book": "B01",
+            "locator": "Section 6.2.4"
+          }
+        }
+      ],
+      "estimated_minutes": 297,
+      "notes": "Rewrites eleven outline sections as lessons with executed code that is checked independently (an ECDSA implementation verified by the cryptography library, HKDF and TLS 1.3 values matched to RFC traces, an SSH fingerprint matched to ssh-keygen), adds a certificate-audit task, and states dated policy claims with their sources.",
+      "learning_objectives": [
+        "State NIST's comparable security strengths for RSA and elliptic-curve keys and explain why padding is essential.",
+        "Perform ECDH and HKDF key agreement, and explain how a reused ECDSA nonce reveals a private key.",
+        "Describe the KeyGen, Encaps and Decaps interface of a KEM and the guarantees of a digital signature scheme.",
+        "Build and verify a certificate chain, and describe certificate lifecycle, revocation and shortening lifetimes.",
+        "Explain the TLS 1.3 key schedule and forward secrecy, and the cryptography of SSH and VPNs.",
+        "Explain HSMs, envelope encryption and key rotation, and audit certificates for exposure to Shor's algorithm."
+      ]
+    }
+  ]
+}
