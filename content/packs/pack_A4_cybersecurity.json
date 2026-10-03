@@ -1,0 +1,1150 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B02",
+      "title": "A Graduate Course in Applied Cryptography",
+      "authors": "Dan Boneh, Victor Shoup",
+      "edition": "Version 0.6",
+      "year": 2023
+    },
+    {
+      "id": "B06",
+      "title": "Cyber Security Using Modern Technologies: Artificial Intelligence, Blockchain and Quantum Cryptography",
+      "authors": "Om Pal, Vinod Kumar, Rijwan Khan, Bashir Alam, Mansaf Alam (eds.)",
+      "edition": "1st edition",
+      "year": 2024,
+      "publisher": "CRC Press"
+    },
+    {
+      "id": "B24",
+      "title": "FIPS 199, Standards for Security Categorization of Federal Information and Information Systems",
+      "authors": "NIST",
+      "edition": "final, accessed 2026-10-03",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B25",
+      "title": "SP 800-61 Rev. 3, Incident Response Recommendations and Considerations for Cybersecurity Risk Management: A CSF 2.0 Community Profile",
+      "authors": "Alexander Nelson, Sanjay Rekhi, Murugiah Souppaya, Karen Scarfone",
+      "edition": "April 2025 (supersedes Rev. 2, 2012), accessed 2026-10-03",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B26",
+      "title": "SP 800-30 Rev. 1, Guide for Conducting Risk Assessments",
+      "authors": "Joint Task Force Transformation Initiative",
+      "edition": "September 2012, accessed 2026-10-03",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B27",
+      "title": "SP 800-63B-4, Digital Identity Guidelines: Authentication and Authenticator Management",
+      "authors": "David Temoshok, James Fenton, Yee-Yin Choong, et al.",
+      "edition": "July 2025 (supersedes SP 800-63B, 2020), accessed 2026-10-03",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B28",
+      "title": "SP 800-40 Rev. 4, Guide to Enterprise Patch Management Planning: Preventive Maintenance for Technology",
+      "authors": "NIST",
+      "edition": "April 2022, accessed 2026-10-03",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B29",
+      "title": "SP 800-92, Guide to Computer Security Log Management",
+      "authors": "Karen Kent, Murugiah Souppaya",
+      "edition": "September 2006, accessed 2026-10-03",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B30",
+      "title": "Threats - Microsoft Threat Modeling Tool (the STRIDE model)",
+      "authors": "Microsoft",
+      "edition": "Microsoft Learn, accessed 2026-10-03",
+      "publisher": "Microsoft"
+    },
+    {
+      "id": "B31",
+      "title": "Password Storage Cheat Sheet",
+      "authors": "OWASP Cheat Sheet Series",
+      "edition": "accessed 2026-10-03",
+      "publisher": "OWASP Foundation"
+    },
+    {
+      "id": "B32",
+      "title": "RFC 4226, HOTP: An HMAC-Based One-Time Password Algorithm",
+      "authors": "D. M'Raihi, M. Bellare, F. Hoornaert, D. Naccache, O. Ranen",
+      "edition": "December 2005",
+      "publisher": "IETF"
+    },
+    {
+      "id": "B33",
+      "title": "RFC 6238, TOTP: Time-Based One-Time Password Algorithm",
+      "authors": "D. M'Raihi, S. Machani, M. Pei, J. Rydell",
+      "edition": "May 2011",
+      "publisher": "IETF"
+    },
+    {
+      "id": "B34",
+      "title": "The Python Standard Library (Python 3.14 documentation)",
+      "authors": "Python Software Foundation",
+      "edition": "3.14, accessed 2026-10-03",
+      "publisher": "docs.python.org"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_a_a4_cybersecurity_foundations",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "The CIA triad",
+          "summary": "Confidentiality, integrity and availability: what each protects, how they conflict, and which tools serve which.",
+          "estimated_minutes": 15,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Security work starts by asking what you are protecting and from what. The classic answer has three parts, known as the **CIA triad**.\n\n- **Confidentiality**: only authorised people and systems can read the information. Encryption and access control serve it.\n- **Integrity**: information stays accurate and is not changed without authorisation. Hashes, message authentication codes, digital signatures and permissions on who may write serve it.\n- **Availability**: systems and data can be used when they are needed. Redundancy, backups, capacity planning and protection against denial-of-service attacks serve it.\n\nUS federal standard FIPS 199 uses exactly these three security objectives and rates the impact of losing each one as low, moderate or high. The model is deliberately simple, which makes it useful for classifying an incident: ask which of the three was harmed, and how badly. Two related properties often appear alongside it: **authenticity** (knowing who really sent or created something) and **non-repudiation** (a sender cannot credibly deny an action)."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The three goals can pull against each other. Locking a system down hard protects confidentiality but can hurt availability; making data available everywhere does the reverse. Good security chooses a balance that fits the value of the data and the needs of its users.\n\nIntegrity is easy to see with a hash, a fixed-size fingerprint of data. Change a single character and the fingerprint changes completely, so a mismatch reveals tampering. (A hash alone does not stop an attacker who can replace both the message and its hash; keyed constructions such as MACs fix that, which you will meet in the cryptography module.)"
+            },
+            {
+              "type": "code",
+              "id": "c-integrity",
+              "language": "python",
+              "code": "import hashlib\n\noriginal = b\"Pay Alice 100\"\ntampered = b\"Pay Alice 900\"\nfor label, message in ((\"original\", original), (\"tampered\", tampered)):\n    print(label, hashlib.sha256(message).hexdigest()[:20])\nprint(\"detected tampering:\", hashlib.sha256(original).digest() != hashlib.sha256(tampered).digest())"
+            },
+            {
+              "type": "code",
+              "id": "o-c-integrity",
+              "language": "text",
+              "code": "original 91e16cc53f34131519e8\ntampered 97f2c2deb7641054ed66\ndetected tampering: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "Availability is part of security",
+              "text": "Secrecy is not the only goal. A ransomware attack that encrypts your files mainly harms availability, and a flood of traffic that takes a service offline is a security incident even though no data was stolen. Q-CAPS itself depends on all three: your progress must be private, correct and reachable."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Ransomware encrypts a hospital's patient records so staff cannot open them. Which part of the CIA triad is mainly harmed?",
+              "options": [
+                "Confidentiality",
+                "Integrity",
+                "Availability"
+              ],
+              "correct_index": 2,
+              "explanation": "The data is not necessarily disclosed or altered in a way anyone reads; it is simply unusable when needed. That is a loss of availability (though if the attackers also steal a copy, confidentiality is harmed too)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "An attacker changes the amount in a payment instruction while it travels over the network. Which property is violated?",
+              "options": [
+                "Confidentiality",
+                "Integrity",
+                "Availability"
+              ],
+              "correct_index": 1,
+              "explanation": "The content was modified without authorisation, which is a loss of integrity. A hash or MAC on the message would let the receiver detect the change."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B24",
+              "locator": "Definitions of the three security objectives (confidentiality, integrity, availability) and the low, moderate and high impact levels"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, hashlib module (SHA-256)"
+            }
+          ]
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "Authentication: proving who you are",
+          "summary": "How systems check identity, why passwords must be stored with a salted slow hash, and how to verify one.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Authentication** answers \"who are you?\"; **authorisation**, covered next, answers \"what may you do?\". Authentication relies on one or more **factors**: something you **know** (a password), something you **have** (a phone or hardware key) or something you **are** (a fingerprint). Using two different kinds is called **multi-factor authentication (MFA)**.\n\nPasswords remain the most common factor, so how a service stores them matters. The rule is simple: **never store the password itself, and never use a fast hash**. If the database leaks, an attacker can try billions of guesses per second against a fast hash such as plain SHA-256. A good password store uses a **salt** (random, unique per user, so identical passwords produce different stored values and precomputed tables become useless) and a **deliberately slow, memory-hungry** function such as scrypt, bcrypt or Argon2id, which makes each guess expensive."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The listing derives a key from a password with scrypt, using Python's standard library, and then **verifies** a login attempt by recomputing the hash with the stored salt and comparing in constant time (`hmac.compare_digest`), so the comparison does not leak how many bytes matched. The salts here are fixed **only so that the printed output is reproducible**; a real system generates a fresh random salt for every user with `os.urandom(16)`. The work factor `n=2**14` is also small, to keep the demonstration fast."
+            },
+            {
+              "type": "code",
+              "id": "c-scrypt",
+              "language": "python",
+              "code": "import hashlib, hmac\n\ndef hash_password(password, salt):\n    return hashlib.scrypt(password.encode(), salt=salt, n=2**14, r=8, p=1, dklen=32)\n\nsalt_a = bytes.fromhex(\"00112233445566778899aabbccddeeff\")   # fixed ONLY for reproducible output\nsalt_b = bytes.fromhex(\"ffeeddccbbaa99887766554433221100\")\nstored = hash_password(\"correct horse\", salt_a)\n\nprint(\"same password, different salt, same hash:\", stored == hash_password(\"correct horse\", salt_b))\nprint(\"right password accepted:\", hmac.compare_digest(stored, hash_password(\"correct horse\", salt_a)))\nprint(\"wrong password accepted:\", hmac.compare_digest(stored, hash_password(\"wrong horse\", salt_a)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-scrypt",
+              "language": "text",
+              "code": "same password, different salt, same hash: False\nright password accepted: True\nwrong password accepted: False",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "How slow is slow enough? Current guidance from the OWASP Password Storage Cheat Sheet is to use **Argon2id** with at least 19 MiB of memory, two iterations and one degree of parallelism; if it is unavailable, **scrypt** with a cost parameter of at least 2^17, block size 8 and parallelism 1; and for legacy systems **bcrypt** with a work factor of at least 10. These figures are guidance that changes over time, so check the current version rather than copying numbers from a course. NIST's digital identity guidelines (SP 800-63B-4) add a complementary point: favour long passphrases and screening against lists of known-breached passwords over forced complexity rules and periodic changes."
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "Common mistakes",
+              "text": "Storing passwords in plain text, encrypting them (so the key becomes a single point of failure), hashing with plain SHA-256 or MD5, using one global salt for everyone, and writing your own scheme instead of a vetted library function. Each of these has caused real breaches."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does a password store add a unique random salt to each user's password before hashing?",
+              "options": [
+                "So two users with the same password get different stored values and precomputed tables do not work.",
+                "So the password can be decrypted later if the user forgets it.",
+                "So the hash is shorter."
+              ],
+              "correct_index": 0,
+              "explanation": "A unique salt defeats precomputed (rainbow) tables and hides password reuse across accounts. It does not make the hash reversible, and it does not shorten it."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which choice is best for storing passwords?",
+              "options": [
+                "SHA-256 of the password.",
+                "Encrypting the password with AES.",
+                "A salted, slow, memory-hard function such as Argon2id or scrypt."
+              ],
+              "correct_index": 2,
+              "explanation": "Fast hashes let an attacker test enormous numbers of guesses, and encryption is reversible. A salted memory-hard function makes every guess expensive and cannot be reversed."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B02",
+              "locator": "Section 18.3 (Password protocols), 18.4 (Making dictionary attacks harder: salts, slow hash functions, memory-hard hash functions), 18.8 (hardening password storage)"
+            },
+            {
+              "book": "B31",
+              "locator": "Recommended algorithms and minimum parameters (Argon2id, scrypt, bcrypt)",
+              "note": "Parameters are quoted as of the access date and change over time."
+            },
+            {
+              "book": "B27",
+              "locator": "Authenticator and verifier requirements for memorised secrets (password length and screening)"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, hashlib.scrypt and hmac.compare_digest"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Password-hashing parameters follow the OWASP cheat sheet as read on 2026-10-03 and the SP 800-63B-4 summary is general; confirm both against the current documents before release."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "Authorisation, identity and access control",
+          "summary": "Roles and least privilege, deny by default, and one-time passwords as a second factor.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Once a system knows who you are, **authorisation** decides what you may do. A system can authenticate you perfectly and still authorise you wrongly: a user who can open another user's record by changing a number in a URL has been authenticated but not correctly authorised. This class of bug (broken access control) is among the most common in real applications, so every protected action must be checked on the **server**, on every request. A button hidden in the browser is not a security control.\n\n**Role-based access control (RBAC)** assigns permissions to **roles** and roles to users, instead of managing each user separately. Two principles keep it safe: **least privilege** (give each role only what it needs) and **deny by default** (anything not explicitly allowed is refused). Q-CAPS has two roles, learner and admin, and the server checks the stored role on each request. The listing is a simplified model of that idea; note how an unknown role gets no permissions at all."
+            },
+            {
+              "type": "code",
+              "id": "c-rbac",
+              "language": "python",
+              "code": "ROLE_PERMISSIONS = {\n    \"learner\": {\"read_lesson\", \"take_quiz\", \"run_scan\"},\n    \"admin\": {\"read_lesson\", \"take_quiz\", \"run_scan\", \"edit_course\", \"view_audit_log\"},\n}\n\ndef allowed(role, action):\n    return action in ROLE_PERMISSIONS.get(role, set())   # unknown role: empty set, so deny\n\nfor role, action in ((\"learner\", \"take_quiz\"), (\"learner\", \"edit_course\"), (\"admin\", \"edit_course\"), (\"visitor\", \"read_lesson\")):\n    print(f\"{role:8} {action:14} {'ALLOW' if allowed(role, action) else 'DENY'}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-rbac",
+              "language": "text",
+              "code": "learner  take_quiz      ALLOW\nlearner  edit_course    DENY\nadmin    edit_course    ALLOW\nvisitor  read_lesson    DENY",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "A password alone is a weak defence because passwords are guessed, reused and phished. A second factor helps. The most common is a **one-time password (OTP)** from an authenticator app. **HOTP** (RFC 4226) computes a short code from a shared secret and a counter using HMAC; **TOTP** (RFC 6238) is the same with the counter replaced by the current time divided into 30-second steps, so the code changes every half minute and the server and your phone agree without talking to each other.\n\nThe listing implements HOTP and checks it against the test values published in RFC 4226 itself. When your output matches the RFC for the same secret and counters, you know the implementation is correct. It then shows that TOTP at the RFC 6238 test time of 59 seconds (counter 1, eight digits) gives the published value."
+            },
+            {
+              "type": "code",
+              "id": "c-hotp",
+              "language": "python",
+              "code": "import hmac, hashlib, struct\n\ndef hotp(secret, counter, digits=6):\n    mac = hmac.new(secret, struct.pack(\">Q\", counter), hashlib.sha1).digest()\n    offset = mac[-1] & 0x0F                                    # dynamic truncation\n    number = struct.unpack(\">I\", mac[offset:offset + 4])[0] & 0x7FFFFFFF\n    return str(number % 10**digits).zfill(digits)\n\nsecret = b\"12345678901234567890\"                               # the test secret in RFC 4226, Appendix D\ncodes = [hotp(secret, counter) for counter in range(5)]\nprint(codes)\nprint(\"matches RFC 4226 test values:\", codes == [\"755224\", \"287082\", \"359152\", \"969429\", \"338314\"])\nprint(\"TOTP at t=59 s (8 digits):\", hotp(secret, 59 // 30, 8))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-hotp",
+              "language": "text",
+              "code": "['755224', '287082', '359152', '969429', '338314']\nmatches RFC 4226 test values: True\nTOTP at t=59 s (8 digits): 94287082",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "OTP is better than a password alone, not perfect",
+              "text": "A real-time phishing site can ask for your code and relay it immediately. Hardware security keys that bind the login to the genuine website resist this, which is why guidance favours them for high-value accounts. MFA raises the cost of attack; it does not remove the attack."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "A user is logged in as a normal learner and changes the id in a URL to open another learner's results, and the server returns them. What failed?",
+              "options": [
+                "Authentication: the user was not who they claimed to be.",
+                "Authorisation: the server did not check that this user may see that record.",
+                "Availability: the server was too slow."
+              ],
+              "correct_index": 1,
+              "explanation": "The user was correctly identified, but the server did not verify permission for that specific record. Authorisation must be enforced server-side on every request."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does \"deny by default\" mean in an access-control design?",
+              "options": [
+                "Anything not explicitly allowed is refused.",
+                "Administrators are denied access unless they ask twice.",
+                "Every request is logged but allowed."
+              ],
+              "correct_index": 0,
+              "explanation": "Deny by default means missing or unknown permissions result in refusal, so a mistake fails safe instead of granting access."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B24",
+              "locator": "Security objectives and impact levels (why access control protects confidentiality and integrity)"
+            },
+            {
+              "book": "B32",
+              "locator": "Section 5 (HOTP algorithm) and Appendix D (test values)"
+            },
+            {
+              "book": "B33",
+              "locator": "Section 4 (TOTP algorithm) and Appendix B (test vectors)"
+            },
+            {
+              "book": "B27",
+              "locator": "Authenticator types and multi-factor authentication requirements"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, hmac and struct modules"
+            }
+          ],
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "Threats, vulnerabilities and attacks",
+          "summary": "Three words that are often confused, passive and active attacks, and a real injection flaw with its fix.",
+          "estimated_minutes": 22,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Three terms are easy to mix up. A **vulnerability** is a weakness, such as unpatched software, a weak password or a misconfigured server. A **threat** is a potential cause of harm, such as a criminal group or an accident. **Risk** is the combination: how likely a threat is to exploit a vulnerability, and how bad the result would be. An attack is a threat acting on a vulnerability.\n\nNetwork security texts split attacks into two families. **Passive attacks** observe without changing anything, such as eavesdropping on traffic or learning the contents of messages. They are hard to detect, so the defence is prevention, mainly encryption. **Active attacks** change something or disrupt a service: **masquerade** (pretending to be someone else), **replay** (resending a captured message), **message modification**, and **denial of service**, where a flood of requests makes a service unavailable. When the flood comes from many compromised machines it is a **distributed** denial of service (DDoS). A **zero-day** is a flaw that attackers know about before the vendor does, so no fix exists yet."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Many of the most damaging real attacks exploit ordinary programming mistakes. **Injection** is the clearest example: a program builds a command by pasting user input into text, and the attacker supplies input that changes the command's meaning. Below, a lookup that formats the name straight into an SQL query can be tricked into returning every row, while the **parameterised** version treats the input purely as data. The database here is a throwaway in-memory example created for the demonstration."
+            },
+            {
+              "type": "code",
+              "id": "c-sqli",
+              "language": "python",
+              "code": "import sqlite3\n\ndb = sqlite3.connect(\":memory:\")\ndb.execute(\"CREATE TABLE users (name TEXT, secret TEXT)\")\ndb.executemany(\"INSERT INTO users VALUES (?, ?)\", [(\"alice\", \"a-secret\"), (\"bob\", \"b-secret\")])\n\ndef lookup_unsafe(name):\n    return db.execute(f\"SELECT name FROM users WHERE name = '{name}'\").fetchall()\n\ndef lookup_safe(name):\n    return db.execute(\"SELECT name FROM users WHERE name = ?\", (name,)).fetchall()\n\nattack = \"x' OR '1'='1\"\nprint(\"unsafe:\", lookup_unsafe(attack))\nprint(\"safe:  \", lookup_safe(attack))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-sqli",
+              "language": "text",
+              "code": "unsafe: [('alice',), ('bob',)]\nsafe:   []",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "tip",
+              "title": "The fix is a habit, not a filter",
+              "text": "Never build commands by joining strings with input. Use parameterised queries, validate type and range, and give the database account only the permissions the application needs. The same idea (keep data and instructions separate) applies to shell commands, HTML and many other contexts."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which statement best defines a vulnerability?",
+              "options": [
+                "A person or group who wants to cause harm.",
+                "A weakness that a threat could exploit.",
+                "The cost of a security incident."
+              ],
+              "correct_index": 1,
+              "explanation": "A vulnerability is the weakness. The person or group is the threat, and the cost relates to impact and risk."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "An attacker records a valid login message and sends it again later to be let in. Which attack is this?",
+              "options": [
+                "Replay",
+                "Eavesdropping only",
+                "Denial of service"
+              ],
+              "correct_index": 0,
+              "explanation": "Resending a captured message is a replay attack, an active attack. Defences include nonces, timestamps and session tokens that expire."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B06",
+              "locator": "Chapter 4, Section 4.3 (Types of Security Attacks): passive and active attacks, masquerade, DoS and DDoS, replay, message modification, zero-day"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, sqlite3 module: parameter substitution (the placeholder style)"
+            }
+          ],
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-10",
+          "action": "new",
+          "title": "Threat modelling with STRIDE",
+          "summary": "A structured way to ask what can go wrong, practised on a small data-flow diagram.",
+          "estimated_minutes": 25,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Threat modelling** means thinking about attackers before you build or deploy, while changes are cheap. A simple, repeatable method has four questions: *What are we building?* (draw it), *What can go wrong?* (list threats), *What will we do about it?* (decide mitigations) and *Did we do a good job?* (review).\n\nTo answer the first question, draw a **data-flow diagram** (DFD) with four kinds of element: **external entities** (people or systems outside your control), **processes** (your code), **data stores** (databases, files) and **data flows** between them, with **trust boundaries** drawn where control or privilege changes, such as between the internet and your servers.\n\nTo answer the second, Microsoft's **STRIDE** model gives six prompts: **S**poofing (pretending to be someone else, violating authenticity), **T**ampering (modifying data, violating integrity), **R**epudiation (denying an action without proof), **I**nformation disclosure (violating confidentiality), **D**enial of service (violating availability) and **E**levation of privilege (gaining rights you should not have, violating authorisation). Applying them element by element is called STRIDE-per-element, and it turns a blank page into a checklist."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Not every category applies to every element: an external entity can be spoofed and can repudiate actions, but you cannot tamper with a person. A common simplified mapping is used in the listing. It prints the candidate threats for a small diagram of a learner using a web application. This is a **prompt generator**, not an answer: for each line you must decide whether the threat is real, how serious it is and what mitigates it."
+            },
+            {
+              "type": "code",
+              "id": "c-stride",
+              "language": "python",
+              "code": "STRIDE = {\"S\": \"Spoofing\", \"T\": \"Tampering\", \"R\": \"Repudiation\",\n          \"I\": \"Information disclosure\", \"D\": \"Denial of service\", \"E\": \"Elevation of privilege\"}\nAPPLIES = {\"external entity\": \"SR\", \"process\": \"STRIDE\", \"data store\": \"TID\", \"data flow\": \"TID\"}   # simplified mapping\n\ndfd = [\n    (\"Learner browser\", \"external entity\"),\n    (\"Browser to API over HTTPS\", \"data flow\"),\n    (\"Web API\", \"process\"),\n    (\"API to database\", \"data flow\"),\n    (\"User database\", \"data store\"),\n]\nfor name, kind in dfd:\n    print(f\"{name} ({kind})\")\n    for letter in APPLIES[kind]:\n        print(f\"    {letter}  {STRIDE[letter]}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-stride",
+              "language": "text",
+              "code": "Learner browser (external entity)\n    S  Spoofing\n    R  Repudiation\nBrowser to API over HTTPS (data flow)\n    T  Tampering\n    I  Information disclosure\n    D  Denial of service\nWeb API (process)\n    S  Spoofing\n    T  Tampering\n    R  Repudiation\n    I  Information disclosure\n    D  Denial of service\n    E  Elevation of privilege\nAPI to database (data flow)\n    T  Tampering\n    I  Information disclosure\n    D  Denial of service\nUser database (data store)\n    T  Tampering\n    I  Information disclosure\n    D  Denial of service",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "**Task.** Take the first line for the *User database* data store: *Information disclosure*. Write down (a) one way it could happen (for example, a leaked backup or a SQL injection flaw), (b) one control that reduces it (for example, salted slow password hashes, encryption at rest, least-privilege database accounts) and (c) one way you would **verify** the control works. Repeat for *Elevation of privilege* on the *Web API* process. A good answer names a concrete attack and a concrete, testable control, not just the word \"security\"."
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "Threat modelling ties the module together",
+              "text": "Notice how the earlier lessons reappear: spoofing is an authentication problem, elevation of privilege is an authorisation problem, tampering is an integrity problem, and denial of service is an availability problem. STRIDE is the CIA triad turned into a question list."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "An attacker sends requests with a forged session token so the server treats them as another user's. Which STRIDE category?",
+              "options": [
+                "Spoofing",
+                "Repudiation",
+                "Denial of service"
+              ],
+              "correct_index": 0,
+              "explanation": "Pretending to be another user by presenting stolen or forged credentials is spoofing, a failure of authentication."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "A user performs a sensitive action and later claims they never did, and the system has no record to prove otherwise. Which category, and what is the usual mitigation?",
+              "options": [
+                "Repudiation; secure, tamper-evident logging tied to authenticated identity.",
+                "Tampering; encrypt the database.",
+                "Information disclosure; hash the logs."
+              ],
+              "correct_index": 0,
+              "explanation": "Repudiation is about denying actions without proof. Authenticated, protected audit logs (and sometimes digital signatures) let the system show who did what."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B30",
+              "locator": "The STRIDE model: categories and descriptions (Spoofing, Tampering, Repudiation, Information disclosure, Denial of service, Elevation of privilege)"
+            },
+            {
+              "book": "B25",
+              "locator": "Overview of incident response in a risk-management context (threat modelling is a Govern and Identify activity; see the CSF 2.0 functions)",
+              "note": "Used only to place the activity within CSF 2.0."
+            }
+          ],
+          "needs_verification": {
+            "reason": "The per-element STRIDE mapping used in the listing is a common simplification; the four-question framing comes from general threat-modelling practice rather than a single cited page."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "Network security",
+          "summary": "Firewalls and default deny, segmentation, detection systems and choosing secure protocols.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Network defence applies what you learned about addressing and protocols, defensively. The central idea is **defence in depth**: several independent layers, so that when one fails the next still protects you.\n\nA **firewall** filters traffic by rules about source, destination, protocol and port. Well-run firewalls **deny by default**: only traffic that a rule explicitly allows gets through. **Segmentation** divides a network into zones (for example public web servers, internal applications and databases) with rules between them, so a compromise of one zone does not hand over the whole network. An **intrusion detection system (IDS)** watches traffic or hosts and raises alerts about suspicious activity; an **intrusion prevention system (IPS)** can also block it. **Virtual private networks (VPNs)** protect traffic between sites or users across untrusted networks. Finally, choose secure protocols: prefer HTTPS to HTTP, SSH to Telnet, and disable obsolete TLS versions."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The listing is a **toy model** of a packet filter, written to show how first-match rules and a default-deny rule behave. It uses the `ipaddress` module to test whether a source address is inside a network. The addresses come from documentation ranges reserved for examples, so none is a real host."
+            },
+            {
+              "type": "code",
+              "id": "c-firewall",
+              "language": "python",
+              "code": "import ipaddress\n\nRULES = [   # (action, protocol, port, source network). First match wins; the last rule is the default.\n    (\"allow\", \"tcp\", 443, \"0.0.0.0/0\"),       # HTTPS from anywhere\n    (\"allow\", \"tcp\", 22, \"10.0.0.0/8\"),       # SSH only from the internal network\n    (\"deny\", \"any\", None, \"0.0.0.0/0\"),       # everything else\n]\n\ndef decide(protocol, port, source):\n    for action, rule_proto, rule_port, network in RULES:\n        if rule_proto in (protocol, \"any\") and rule_port in (port, None) and ipaddress.ip_address(source) in ipaddress.ip_network(network):\n            return action\n\nfor packet in ((\"tcp\", 443, \"203.0.113.9\"), (\"tcp\", 22, \"203.0.113.9\"), (\"tcp\", 22, \"10.1.2.3\"), (\"udp\", 53, \"10.1.2.3\")):\n    print(packet, \"->\", decide(*packet))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-firewall",
+              "language": "text",
+              "code": "('tcp', 443, '203.0.113.9') -> allow\n('tcp', 22, '203.0.113.9') -> deny\n('tcp', 22, '10.1.2.3') -> allow\n('udp', 53, '10.1.2.3') -> deny",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "Rule order matters",
+              "text": "Real firewalls also evaluate rules in order. A broad allow placed above a narrow deny silently defeats the deny. Review rule sets regularly, remove rules nobody can explain, and keep the default as deny."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does a default-deny firewall policy mean?",
+              "options": [
+                "Traffic is blocked unless a rule explicitly allows it.",
+                "All traffic is allowed unless it matches a deny rule.",
+                "Only encrypted traffic is logged."
+              ],
+              "correct_index": 0,
+              "explanation": "Default deny fails safe: forgotten services stay blocked. Default allow would leave every unlisted service exposed."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does segmenting a network reduce the damage of a breach?",
+              "options": [
+                "It makes every machine faster.",
+                "A compromise in one zone does not automatically give access to the others.",
+                "It removes the need for passwords."
+              ],
+              "correct_index": 1,
+              "explanation": "Rules between segments limit lateral movement, so an attacker who controls one machine still has to get through further controls."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B06",
+              "locator": "Chapter 4, Section 4.4 (Modern Network Security Methods), Section 4.5 (Network Security Tools) and Section 4.6 (Network Security Challenges)"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, ipaddress module"
+            }
+          ],
+          "after": "sec-10"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "Endpoint security",
+          "summary": "Hardening and patching devices, and a patch-status check that treats unknown as unknown.",
+          "estimated_minutes": 18,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "An **endpoint** is any device that connects to your network: laptops, servers, phones. Attackers often start there because users click links and software has flaws. Three practices cover most of the benefit.\n\n**Patch management** applies vendor fixes promptly. Most successful attacks use flaws that already had a published fix. NIST SP 800-40 Rev. 4 describes patching as routine **preventive maintenance**: know what you run, decide how fast different kinds of systems must be updated, and test and roll out changes in a planned way. **Hardening** removes what you do not need: unused services, default accounts and passwords, open ports. **Endpoint protection** (anti-malware and endpoint detection and response, EDR) detects and contains malicious behaviour, and **backups** that are kept offline or immutable and **tested** let you recover from ransomware or failure."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "You cannot patch what you do not know you have, so an **inventory** comes first. The listing compares an inventory with minimum safe versions. The thresholds and inventory are **illustrative, not real advisories**. Pay attention to the third case: a program with no known baseline is reported as **unknown**, not as fine, because absence of information is not evidence of safety."
+            },
+            {
+              "type": "code",
+              "id": "c-patch",
+              "language": "python",
+              "code": "def parse(version):\n    return tuple(int(part) for part in version.split(\".\"))\n\nMINIMUM_PATCHED = {\"openssl\": \"3.0.13\", \"nginx\": \"1.25.4\"}        # illustrative thresholds, not real advisories\ninventory = {\"openssl\": \"3.0.2\", \"nginx\": \"1.26.1\", \"curl\": \"8.5.0\"}\n\nfor name, installed in inventory.items():\n    if name not in MINIMUM_PATCHED:\n        status = \"UNKNOWN (no baseline)\"\n    elif parse(installed) < parse(MINIMUM_PATCHED[name]):\n        status = \"NEEDS PATCH\"\n    else:\n        status = \"ok\"\n    print(f\"{name:8} {installed:8} {status}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-patch",
+              "language": "text",
+              "code": "openssl  3.0.2    NEEDS PATCH\nnginx    1.26.1   ok\ncurl     8.5.0    UNKNOWN (no baseline)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does the check report \"UNKNOWN\" for a program with no known baseline instead of \"ok\"?",
+              "options": [
+                "Because no information means no evidence it is safe.",
+                "Because curl is always insecure.",
+                "Because unknown programs cannot be installed."
+              ],
+              "correct_index": 0,
+              "explanation": "Reporting unknown as ok would hide gaps. Security tooling should distinguish \"checked and fine\" from \"not checked\"."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which is the most useful first step toward good patch management?",
+              "options": [
+                "Applying every update immediately without testing.",
+                "Keeping an up-to-date inventory of what is installed.",
+                "Disabling updates on servers."
+              ],
+              "correct_index": 1,
+              "explanation": "You cannot decide what to patch without knowing what you run. Testing and prioritising then follow from the inventory."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B28",
+              "locator": "Overview: patching as preventive maintenance; maintenance plans and groups of assets"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, built-in types: tuple comparison"
+            }
+          ],
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "Security monitoring",
+          "summary": "Logs, alerts and a simple detector for repeated failed logins on synthetic log lines.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Prevention fails sometimes, so you also need to **detect**. **Monitoring** means collecting evidence of what systems are doing, mainly **logs**: records of events such as logins, errors and configuration changes. NIST SP 800-92 treats log management as a discipline of its own: decide what to log, collect logs centrally, protect them from tampering, keep them long enough, and actually review them.\n\nRaw logs are too numerous to read, so tools turn them into **alerts** with rules (for example, \"five failed logins from one address in a minute\") or with statistical **anomaly detection**. Every detector has two kinds of error: **false positives** (alerts for harmless activity, which waste time and breed alert fatigue) and **false negatives** (real attacks that raise no alert). Tuning means trading one against the other."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The listing parses a few lines of **synthetic** log (made up for this exercise, using addresses reserved for documentation) and flags any source with three or more failed logins. The rule is crude, but it is the real shape of many detections: parse, group, count, compare with a threshold."
+            },
+            {
+              "type": "code",
+              "id": "c-logs",
+              "language": "python",
+              "code": "from collections import Counter\n\nLOG = \"\"\"2026-10-03T10:00:01Z sshd FAILED password for root from 198.51.100.7\n2026-10-03T10:00:03Z sshd FAILED password for admin from 198.51.100.7\n2026-10-03T10:00:04Z sshd ACCEPTED password for ada from 192.0.2.44\n2026-10-03T10:00:05Z sshd FAILED password for root from 198.51.100.7\n2026-10-03T10:00:09Z sshd FAILED password for ada from 192.0.2.44\"\"\"\n\nfailures = Counter(line.rsplit(\" from \", 1)[1] for line in LOG.splitlines() if \" FAILED \" in line)\nTHRESHOLD = 3\nfor source, count in failures.most_common():\n    print(f\"{source}: {count} failed logins\", \"-> ALERT\" if count >= THRESHOLD else \"\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-logs",
+              "language": "text",
+              "code": "198.51.100.7: 3 failed logins -> ALERT\n192.0.2.44: 1 failed logins ",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "info",
+              "title": "Reading Q-CAPS scan results is the same skill",
+              "text": "Interpreting a scan finding means asking what was observed, how it was observed and what it does not show. The scanner reports a check that could not run as failed rather than as clean, for exactly the reason a log gap must not be read as quiet."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "A detector raises an alert for a legitimate administrator logging in from a new city. What is this called?",
+              "options": [
+                "A false positive",
+                "A false negative",
+                "A true negative"
+              ],
+              "correct_index": 0,
+              "explanation": "An alert on harmless activity is a false positive. Too many of them cause alert fatigue, which can lead real attacks to be missed."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why should logs be protected from modification and kept for a defined period?",
+              "options": [
+                "So they remain trustworthy evidence for investigation and cannot be quietly edited by an attacker.",
+                "So the disk fills up more slowly.",
+                "Because logs are always encrypted by default."
+              ],
+              "correct_index": 0,
+              "explanation": "Attackers often try to erase their traces. Tamper-resistant, retained logs are what let responders reconstruct what happened."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B29",
+              "locator": "Overview: the log management process (generation, transmission, storage, analysis, disposal)"
+            },
+            {
+              "book": "B34",
+              "locator": "The Python Standard Library, collections.Counter"
+            }
+          ],
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "Incident response",
+          "summary": "The phases of handling an incident, what the current NIST guidance changed, and triage.",
+          "estimated_minutes": 20,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "An **incident** is an event that actually or potentially harms the confidentiality, integrity or availability of a system or its data. **Incident response** is the planned way an organisation handles one so that the damage is limited and the lessons are kept. A widely taught mental model has these phases: **prepare** (plans, tools, trained people, contacts), **detect and analyse** (is it real, how big, what is affected), **contain** (stop it spreading, for example by isolating a machine), **eradicate** (remove the cause, such as malware or a stolen credential), **recover** (restore systems and verify they are clean), and **review** (what went wrong, what to change).\n\nThis is the shape of the four phases in the long-standing NIST SP 800-61 Revision 2 (2012). In April 2025 NIST published Revision 3, which supersedes it and recasts incident response as part of **cybersecurity risk management** aligned to the functions of the NIST Cybersecurity Framework 2.0, with incident response activities running through the whole cycle rather than only after a breach. The practical advice is the same: prepare before it happens, and learn after."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "You will rarely have time to deal with every alert at once, so **triage** ranks them. The example policy below combines impact and urgency into a priority. It is one illustrative scheme: every organisation sets its own, based on what it must protect."
+            },
+            {
+              "type": "code",
+              "id": "c-triage",
+              "language": "python",
+              "code": "def priority(impact, urgency):          # each 1 (low) to 3 (high); an example policy, not a standard\n    score = impact * urgency\n    return \"P1 - respond now\" if score >= 6 else \"P2 - same day\" if score >= 3 else \"P3 - schedule\"\n\nalerts = [(\"Ransomware on file server\", 3, 3), (\"Single failed admin login\", 1, 1), (\"Suspicious outbound traffic from laptop\", 2, 3)]\nfor name, impact, urgency in sorted(alerts, key=lambda a: -(a[1] * a[2])):\n    print(f\"{priority(impact, urgency):18} {name}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-triage",
+              "language": "text",
+              "code": "P1 - respond now   Ransomware on file server\nP1 - respond now   Suspicious outbound traffic from laptop\nP3 - schedule      Single failed admin login",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "tip",
+              "title": "Contain first, then investigate",
+              "text": "Preserving evidence matters, but the first priority is usually to stop the damage spreading. Decide in advance who may isolate a system and who must be told, because an incident is a bad time to start asking."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which order of phases best matches the classic incident-response model?",
+              "options": [
+                "Recover, contain, detect, prepare.",
+                "Prepare, detect and analyse, contain, eradicate, recover, review.",
+                "Review, eradicate, prepare, detect."
+              ],
+              "correct_index": 1,
+              "explanation": "Preparation comes first, then detection and analysis, containment, eradication and recovery, and finally a review of what to improve."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the main purpose of the review phase after an incident?",
+              "options": [
+                "To decide who to blame.",
+                "To learn what failed and improve prevention, detection and response.",
+                "To delete the logs."
+              ],
+              "correct_index": 1,
+              "explanation": "A blameless review turns the incident into improvements; deleting logs would destroy the evidence needed for that learning."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B25",
+              "locator": "Overview and Rev. 2 comparison: incident response as part of cybersecurity risk management, aligned to CSF 2.0 functions"
+            },
+            {
+              "book": "B24",
+              "locator": "Security objectives (the harm an incident causes is expressed as loss of confidentiality, integrity or availability)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The four-phase description of SP 800-61 Rev. 2 is stated from the long-standing public document; the Rev. 3 summary rests on the NIST page (April 2025, supersedes Rev. 2) and should be read against the full text before wide release."
+          },
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "Risk fundamentals",
+          "summary": "Likelihood times impact, a ranked risk register, and the limits of the matrix.",
+          "estimated_minutes": 18,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Risk** is the possibility of loss, usually expressed from two questions: **how likely** is it that a threat will exploit a vulnerability, and **how bad** would the impact be? NIST SP 800-30, the standard guide to risk assessment, builds its risk model from exactly these elements: threat, vulnerability, likelihood and impact. Combining the two judgements lets you compare very different risks and decide where to spend limited effort.\n\nA common teaching tool scores both on a small scale (say 1 to 5) and multiplies them. The listing ranks a small **illustrative risk register** this way. The entries and scores are **invented for the exercise**, not measurements of any real organisation. For each risk you can choose to **mitigate** it (add controls), **accept** it (knowingly live with it), **transfer** it (for example through insurance or a contract) or **avoid** it (stop the activity)."
+            },
+            {
+              "type": "code",
+              "id": "c-risk",
+              "language": "python",
+              "code": "register = [   # (risk, likelihood 1-5, impact 1-5): invented values for illustration\n    (\"Phishing leads to account takeover\", 4, 4),\n    (\"Unpatched public web server\", 3, 5),\n    (\"Lost unencrypted laptop\", 2, 4),\n    (\"Office power outage\", 3, 2),\n]\nfor name, likelihood, impact in sorted(register, key=lambda r: -(r[1] * r[2])):\n    print(f\"{likelihood * impact:>2}  L{likelihood} x I{impact}  {name}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-risk",
+              "language": "text",
+              "code": "16  L4 x I4  Phishing leads to account takeover\n15  L3 x I5  Unpatched public web server\n 8  L2 x I4  Lost unencrypted laptop\n 6  L3 x I2  Office power outage",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Treat the numbers with care. Multiplying ordinal labels (a \"4\" is not twice a \"2\") creates a false precision, different people score the same risk differently, and a few high-impact, low-likelihood events can be ranked below frequent minor ones even though they matter more. Use the matrix to start a conversation and to rank roughly, record the reasoning behind each score, and revisit it when facts change. The same discipline applies to the readiness scores in later modules: a number is only as good as the evidence behind it."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In the register above, why is \"Unpatched public web server\" (L3 x I5 = 15) ranked below \"Phishing\" (L4 x I4 = 16)?",
+              "options": [
+                "Because the simple product of scores is 15 versus 16, so phishing scores one point higher.",
+                "Because web servers are never attacked.",
+                "Because impact is ignored in the formula."
+              ],
+              "correct_index": 0,
+              "explanation": "The scheme multiplies likelihood by impact, giving 16 and 15. The close scores also show the weakness of the method: such a small gap should not be read as a firm ranking."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "A team insures against the cost of a data breach instead of adding controls. Which risk treatment is that?",
+              "options": [
+                "Mitigate",
+                "Transfer",
+                "Avoid"
+              ],
+              "correct_index": 1,
+              "explanation": "Insurance shifts some of the financial consequence to another party. It does not reduce the likelihood of the event, so it is usually combined with mitigation."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B26",
+              "locator": "Chapter 2 (The Fundamentals): the risk model of threat, vulnerability, likelihood and impact; risk assessment as determining risk from likelihood and impact"
+            },
+            {
+              "book": "B24",
+              "locator": "Impact levels low, moderate and high"
+            }
+          ],
+          "after": "sec-8"
+        },
+        {
+          "slug": "sec-11",
+          "action": "new",
+          "title": "Ethics, authorisation and legal scope",
+          "summary": "Why written permission and a defined scope come before any scan, and what the Q-CAPS scanner does to enforce that.",
+          "estimated_minutes": 18,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The same techniques that defend a system can attack it, so **authorisation** is what separates a security assessment from a crime. Before you scan, probe or test a system you do not own, you need **written permission from someone entitled to give it** and an agreed **scope**: exactly which systems, which kinds of testing, which dates and times, and who to contact if something goes wrong. Many countries have laws that make unauthorised access a criminal offence even when no harm is intended; examples include the US Computer Fraud and Abuse Act, the UK Computer Misuse Act 1990 and sections of India's Information Technology Act, 2000. This is general information, not legal advice, and the rules differ by country, so check the law that applies to you.\n\nProfessional ethics add more: do no more than the scope allows, do not read or keep data you do not need, report what you find to the owner promptly and privately, and stop if you cause unexpected impact."
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The Q-CAPS scanner is built around these rules. A **standard** scan performs only passive checks of the kind a normal visitor's browser generates (DNS lookups, one TLS handshake, one HTTPS request and public Certificate Transparency records). **Active checks**, such as probing ports, only run for a domain whose **ownership you have proven** by publishing a DNS record, and the proof is checked again on every run. The scanner refuses private and internal addresses, limits how often you can scan, and reports a check that could not run as failed rather than guessing. It never presents invented breach or dark-web data as a finding. Even so, using it does not authorise you to scan a domain you have no permission to assess.\n\nA scope check is a good place to see how small mistakes become big ones. A rule that says \"example.com is in scope\" is often implemented with a string suffix test. The first version below is wrong: it also accepts a different domain that merely ends with the same letters."
+            },
+            {
+              "type": "code",
+              "id": "c-scope",
+              "language": "python",
+              "code": "def naive_in_scope(host, scope):\n    return host.endswith(scope)                       # wrong: matches look-alike domains\n\ndef in_scope(host, scope):\n    return host == scope or host.endswith(\".\" + scope)    # exact domain or a real subdomain\n\nscope = \"example.com\"\nfor host in (\"example.com\", \"api.example.com\", \"notexample.com\", \"example.com.evil.test\"):\n    print(f\"{host:24} naive={naive_in_scope(host, scope)!s:5} correct={in_scope(host, scope)}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-scope",
+              "language": "text",
+              "code": "example.com              naive=True  correct=True\napi.example.com          naive=True  correct=True\nnotexample.com           naive=True  correct=False\nexample.com.evil.test    naive=False correct=False",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "danger",
+              "title": "If in doubt, do not scan",
+              "text": "Get written permission first, keep a copy, and stay inside the agreed scope. Never test a system because it \"looks vulnerable\" or because a lab exercise mentions it; use deliberately provided practice targets or systems you own."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What must you have before running an active scan against a company's servers?",
+              "options": [
+                "Written permission from someone entitled to authorise it, and an agreed scope.",
+                "A fast internet connection.",
+                "Nothing, if you only look and do not change anything."
+              ],
+              "correct_index": 0,
+              "explanation": "Unauthorised scanning can be illegal and can disrupt services even when you intend no harm. Written permission and a defined scope are the baseline."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which check correctly decides that \"api.example.com\" is in scope for \"example.com\" but \"notexample.com\" is not?",
+              "options": [
+                "host.endswith(scope)",
+                "host == scope or host.endswith('.' + scope)",
+                "scope in host"
+              ],
+              "correct_index": 1,
+              "explanation": "Requiring either an exact match or a dot before the scope domain rejects look-alike names. The other tests accept notexample.com (and scope in host also accepts example.com.evil.test)."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B24",
+              "locator": "General: security objectives as the basis for deciding what an assessment may touch",
+              "note": "Used only for the framing of impact on confidentiality, integrity and availability."
+            }
+          ],
+          "needs_verification": {
+            "reason": "Statutes are named only as examples of the kind of law that applies (US CFAA, UK Computer Misuse Act 1990, India IT Act 2000); their exact provisions were not re-read for this lesson and this is not legal advice. The description of the Q-CAPS scanner reflects the implemented behaviour as of 2026-10-04."
+          },
+          "after": "sec-9"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "a4-n01",
+          "prompt": "A web service is taken offline by a flood of requests from thousands of compromised machines. Which property is mainly harmed, and what is the attack called?",
+          "options": [
+            "Confidentiality; eavesdropping",
+            "Availability; distributed denial of service",
+            "Integrity; replay"
+          ],
+          "correct_index": 1,
+          "explanation": "Making a service unreachable harms availability. Using many compromised machines makes it a distributed denial of service (DDoS).",
+          "source": {
+            "book": "B06",
+            "locator": "Chapter 4, Section 4.3"
+          },
+          "competency_id": "SEC.1",
+          "depth": "Explain",
+          "lesson_id": "A4.L1"
+        },
+        {
+          "id": "a4-n02",
+          "prompt": "Which is the best way to store user passwords?",
+          "options": [
+            "Encrypt them with a key stored next to the database.",
+            "Hash them with plain SHA-256.",
+            "Hash each with a unique salt using a slow, memory-hard function such as Argon2id or scrypt."
+          ],
+          "correct_index": 2,
+          "explanation": "Unique salts defeat precomputed tables and slow memory-hard functions make each guess expensive; encryption is reversible and SHA-256 is fast.",
+          "source": {
+            "book": "B02",
+            "locator": "Section 18.4 (Making dictionary attacks harder)"
+          },
+          "competency_id": "SEC.1",
+          "depth": "Explain",
+          "lesson_id": "A4.L2"
+        },
+        {
+          "id": "a4-n03",
+          "prompt": "A logged-in user changes an id in a URL and sees another user's data. What went wrong?",
+          "options": [
+            "The server did not authorise access to that specific record.",
+            "The user's password was too short.",
+            "The network used HTTP instead of HTTPS."
+          ],
+          "correct_index": 0,
+          "explanation": "Authorisation checks must be enforced server-side for every record on every request.",
+          "source": {
+            "book": "B24",
+            "locator": "Security objectives (confidentiality)"
+          },
+          "competency_id": "SEC.1",
+          "depth": "Explain",
+          "lesson_id": "A4.L2"
+        },
+        {
+          "id": "a4-n04",
+          "prompt": "Which statement correctly relates the three terms threat, vulnerability and risk?",
+          "options": [
+            "A vulnerability is a weakness; a threat can exploit it; risk combines likelihood and impact.",
+            "A threat is a weakness; a vulnerability is an attacker; risk is the cost.",
+            "Risk is the same as a vulnerability."
+          ],
+          "correct_index": 0,
+          "explanation": "Vulnerability = weakness, threat = potential cause of harm, risk = likelihood combined with impact.",
+          "source": {
+            "book": "B26",
+            "locator": "Chapter 2 (The Fundamentals)"
+          },
+          "competency_id": "SEC.2",
+          "depth": "Explain",
+          "lesson_id": "A4.L3"
+        },
+        {
+          "id": "a4-n05",
+          "prompt": "A program pastes user input directly into an SQL command and an attacker supplies  x' OR '1'='1 . What is the correct fix?",
+          "options": [
+            "Use parameterised queries so input is treated as data.",
+            "Hide the error messages.",
+            "Make the input field shorter."
+          ],
+          "correct_index": 0,
+          "explanation": "Parameterised queries keep data and instructions separate, so the input cannot change the command.",
+          "source": {
+            "book": "B34",
+            "locator": "sqlite3: parameter substitution"
+          },
+          "competency_id": "SEC.2",
+          "depth": "Explain",
+          "lesson_id": "A4.L3"
+        },
+        {
+          "id": "a4-n06",
+          "prompt": "In STRIDE, which category describes an attacker pretending to be a legitimate user?",
+          "options": [
+            "Tampering",
+            "Spoofing",
+            "Information disclosure"
+          ],
+          "correct_index": 1,
+          "explanation": "Spoofing is impersonation, a failure of authentication.",
+          "source": {
+            "book": "B30",
+            "locator": "The STRIDE model"
+          },
+          "competency_id": "SEC.2",
+          "depth": "Explain",
+          "lesson_id": "A4.L4"
+        },
+        {
+          "id": "a4-n07",
+          "prompt": "What does a default-deny firewall policy do?",
+          "options": [
+            "Blocks all traffic unless a rule explicitly allows it.",
+            "Allows all traffic unless a rule blocks it.",
+            "Only inspects encrypted traffic."
+          ],
+          "correct_index": 0,
+          "explanation": "Default deny fails safe: anything not specifically allowed stays blocked.",
+          "source": {
+            "book": "B06",
+            "locator": "Chapter 4, Section 4.4"
+          },
+          "competency_id": "SEC.1",
+          "depth": "Explain",
+          "lesson_id": "A4.L5"
+        },
+        {
+          "id": "a4-n08",
+          "prompt": "In the classic incident-response model, what comes immediately after containment?",
+          "options": [
+            "Detection",
+            "Eradication of the cause",
+            "Preparation"
+          ],
+          "correct_index": 1,
+          "explanation": "After containing the incident you remove its cause (eradicate), then recover systems and review.",
+          "source": {
+            "book": "B25",
+            "locator": "Overview and Rev. 2 comparison"
+          },
+          "competency_id": "SEC.3",
+          "depth": "Explain",
+          "lesson_id": "A4.L6"
+        },
+        {
+          "id": "a4-n09",
+          "prompt": "A risk is scored likelihood 4 and impact 3 on 1 to 5 scales. What is its score using the likelihood-times-impact rule?",
+          "options": [
+            "7",
+            "12",
+            "34"
+          ],
+          "correct_index": 1,
+          "explanation": "4 x 3 = 12. Remember the scores are ordinal judgements, so use them to rank roughly, not as exact measurements.",
+          "source": {
+            "book": "B26",
+            "locator": "Chapter 2 (The Fundamentals)"
+          },
+          "competency_id": "SEC.4",
+          "depth": "Aware",
+          "lesson_id": "A4.L7"
+        },
+        {
+          "id": "a4-n10",
+          "prompt": "You are asked to check whether a customer's servers are exposed to the internet. What must be in place before you start probing them?",
+          "options": [
+            "Written authorisation from someone entitled to give it, and an agreed scope.",
+            "A verbal agreement from any employee.",
+            "Nothing, as long as you only read information."
+          ],
+          "correct_index": 0,
+          "explanation": "Unauthorised probing can be illegal and disruptive; written permission and a defined scope are the baseline.",
+          "source": {
+            "book": "B24",
+            "locator": "General framing of impact on confidentiality, integrity and availability"
+          },
+          "competency_id": "SEC.5",
+          "depth": "Explain",
+          "lesson_id": "A4.L8"
+        }
+      ],
+      "estimated_minutes": 218,
+      "notes": "Rewrites nine outline sections as lessons, adds threat modelling and an ethics/authorisation lesson, includes verified HOTP and password-hashing code, and cites NIST publications and book chapters actually read.",
+      "learning_objectives": [
+        "Classify an incident by its confidentiality, integrity and availability impact.",
+        "Distinguish authentication from authorisation and explain password storage, MFA, RBAC and least privilege.",
+        "Distinguish threat, vulnerability and risk, name common attack classes, and recognise injection and its fix.",
+        "Apply STRIDE to a simple data-flow diagram to list candidate threats and mitigations.",
+        "Explain layered network and endpoint controls, monitoring and the phases of incident response.",
+        "Rate a risk as likelihood times impact, state the limits of that method, and explain why written authorisation and scope come before any scan."
+      ]
+    }
+  ]
+}
