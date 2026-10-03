@@ -1,0 +1,951 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B110",
+      "title": "Qiskit Textbook (GitHub repository Qiskit/textbook, notebooks), accessed 2026-10-04",
+      "authors": "Qiskit community",
+      "edition": "accessed 2026-10-04",
+      "year": 2023,
+      "publisher": "IBM and the Qiskit community"
+    },
+    {
+      "id": "B111",
+      "title": "Qiskit SDK documentation and guides (quantum.cloud.ibm.com/docs), accessed 2026-10-04",
+      "authors": "IBM Quantum",
+      "edition": "accessed 2026-10-04",
+      "year": 2026,
+      "publisher": "IBM"
+    },
+    {
+      "id": "B112",
+      "title": "Evaluating analytic gradients on quantum hardware (arXiv:1811.11184)",
+      "authors": "Maria Schuld, Ville Bergholm, Christian Gogolin, Josh Izaac, Nathan Killoran",
+      "edition": "2018",
+      "year": 2018
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_b_b1_advanced_math_for_quantum",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "1.1 Linear Algebra (Formal Treatment)",
+          "summary": "Vector spaces, bases and dimension, linear maps and the rank-nullity theorem, and why n qubits need 2^n complex numbers.",
+          "estimated_minutes": 30,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Quantum computing is linear algebra, so it pays to be precise. A **vector space** over a field F (for us, the real numbers R or the complex numbers C) is a set of objects, called vectors, that can be added together and multiplied by scalars from F, with the sum and the scalar multiples staying inside the set. A set of vectors is **linearly independent** if no vector in it can be written as a combination of the others; a **basis** is an independent set that **spans** the whole space (every vector is some combination of it). The number of vectors in a basis is the **dimension**, and it does not depend on which basis you choose.\n\nA **linear map** sends vectors to vectors and respects addition and scaling; once you fix bases, it is a matrix. Two numbers describe a matrix M with n columns: its **rank** (the dimension of the set of outputs) and its **nullity** (the dimension of the set of inputs that map to zero). The **rank-nullity theorem** says rank + nullity = n. Quantum gates are special linear maps (they are *invertible*, so their nullity is 0), but the theorem is a useful check on any matrix you construct.\n\nThe reason this matters for quantum computing is **dimension**. The state of one qubit lives in C², and the state of n qubits lives in C^(2^n): a basis has 2^n vectors and a general state needs 2^n complex amplitudes. The first listing checks independence and spanning with the rank of a matrix, verifies rank-nullity numerically, and then counts what a classical computer must store to hold an n-qubit state (16 bytes per amplitude in double-precision complex numbers). The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`); Qiskit is used only to **cross-check** the NumPy results, so you can see that the mathematics and the software agree."
+            },
+            {
+              "type": "code",
+              "id": "c-vectorspaces",
+              "language": "python",
+              "code": "import numpy as np\n\n# Independence and spanning are questions about rank\na, b, c = np.array([1, 0, 0]), np.array([1, 1, 0]), np.array([1, 1, 1])\nprint(\"rank of {a, b, c}:\", np.linalg.matrix_rank(np.array([a, b, c])), \"-> independent, so they form a basis of C^3\")\nd = a + 2 * b                                                  # a combination of a and b\nprint(\"rank of {a, b, d}:\", np.linalg.matrix_rank(np.array([a, b, d])), \"-> dependent: d lies in the span of a and b\")\n\n# Rank-nullity for a 3x5 matrix with a built-in dependency (fixed seed so the result is reproducible)\nrng = np.random.default_rng(7)\nM = rng.integers(-3, 4, size=(3, 2)) @ rng.integers(-3, 4, size=(2, 5))      # rank at most 2\nrank = np.linalg.matrix_rank(M)\nsingular_values = np.linalg.svd(M, compute_uv=False)\nnullity = 5 - int(np.sum(singular_values > 1e-10))\nprint(f\"rank {rank} + nullity {nullity} = {rank + nullity} = number of columns (5):\", rank + nullity == 5)\n\n# Dimension of the n-qubit state space and the memory a classical simulator needs\nfor n in (10, 20, 30, 40):\n    amplitudes = 2 ** n\n    print(f\"{n:>2} qubits: {amplitudes:>16,} complex amplitudes = {amplitudes * 16 / 2 ** 30:>12,.3f} GiB\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-vectorspaces",
+              "language": "text",
+              "code": "rank of {a, b, c}: 3 -> independent, so they form a basis of C^3\nrank of {a, b, d}: 2 -> dependent: d lies in the span of a and b\nrank 2 + nullity 3 = 5 = number of columns (5): True\n10 qubits:            1,024 complex amplitudes =        0.000 GiB\n20 qubits:        1,048,576 complex amplitudes =        0.016 GiB\n30 qubits:    1,073,741,824 complex amplitudes =       16.000 GiB\n40 qubits: 1,099,511,627,776 complex amplitudes =   16,384.000 GiB",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The memory column is the first honest statement about quantum computing and classical simulation. Thirty qubits already need 16 GiB just to *store* the state, and forty need 16 TiB, which is why classical simulators stop being practical at a few dozen qubits and why simulating a *noisy* quantum computer is harder still. It does not mean a quantum computer can read out all those amplitudes: a measurement returns only n classical bits, which is the central tension the next lessons explore.\n\n**Common mistakes.** Confusing the dimension of the space (2^n) with the number of qubits (n); treating a set of more vectors than the dimension as independent (it never is); and forgetting that \"basis\" depends on a choice while \"dimension\" does not."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How many complex amplitudes describe a general state of 3 qubits?",
+              "options": [
+                "8",
+                "3",
+                "6"
+              ],
+              "correct_index": 0,
+              "explanation": "The state space of n qubits has dimension 2^n, so 3 qubits need 2^3 = 8 amplitudes."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "A 3x5 matrix has rank 2. What is its nullity?",
+              "options": [
+                "3",
+                "2",
+                "5"
+              ],
+              "correct_index": 0,
+              "explanation": "Rank-nullity: rank + nullity equals the number of columns, 5, so the nullity is 3."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Three vectors in C^2 are always:",
+              "options": [
+                "Linearly dependent",
+                "Linearly independent",
+                "A basis"
+              ],
+              "correct_index": 0,
+              "explanation": "A basis of C^2 has two vectors, and no independent set can be larger than the dimension."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-appendix/linear_algebra.ipynb: sections 'Vectors and Vector Spaces', 'Matrices and Matrix Operations' and 'Spanning Sets, Linear Dependence, and Bases'"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-states/representing-qubit-states.ipynb, section 1.1 Statevectors"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The rank-nullity theorem is stated from standard linear algebra, not from a line in the cited notebook. The memory figures are arithmetic (16 bytes per double-precision complex amplitude)."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "1.2 Complex Vector Spaces",
+          "summary": "Complex numbers, state vectors in C^2, the Bloch sphere parametrisation, and why phases matter.",
+          "estimated_minutes": 30,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Quantum amplitudes are **complex numbers**. A complex number z = a + bi has a **modulus** |z| = sqrt(a² + b²), a **conjugate** z* = a − bi, and a **polar form** z = r·e^(iφ) with r = |z| and phase φ. Multiplying by e^(iφ) rotates a number in the complex plane without changing its modulus, and that is exactly what a phase is.\n\nA single-qubit state is a vector in C² with unit length: |ψ⟩ = α|0⟩ + β|1⟩ with |α|² + |β|² = 1. Scaling the whole vector by a phase e^(iγ) (a **global phase**) never changes anything you can measure, so a qubit state really has two real parameters left, which is why it can be drawn as a point on a sphere. Writing the state as cos(θ/2)|0⟩ + e^(iφ)·sin(θ/2)|1⟩, the angles θ and φ are the polar and azimuthal angles of the **Bloch vector** (x, y, z) = (sin θ cos φ, sin θ sin φ, cos θ). The same vector is obtained physically as the expectation values of the three Pauli operators: x = ⟨X⟩, y = ⟨Y⟩, z = ⟨Z⟩.\n\nThe listing builds states from (θ, φ), checks normalisation, computes the Bloch vector from the formula, and cross-checks it against Qiskit's `Statevector.expectation_value` for the three Paulis. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`); Qiskit is used only to **cross-check** the NumPy results, so you can see that the mathematics and the software agree."
+            },
+            {
+              "type": "code",
+              "id": "c-bloch",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit.quantum_info import Pauli, Statevector\n\ndef state(theta, phi):\n    return np.array([np.cos(theta / 2), np.exp(1j * phi) * np.sin(theta / 2)])\n\ndef bloch_vector_formula(theta, phi):\n    return np.array([np.sin(theta) * np.cos(phi), np.sin(theta) * np.sin(phi), np.cos(theta)])\n\ndef bloch_vector_qiskit(vector):\n    sv = Statevector(vector)\n    return np.array([sv.expectation_value(Pauli(p)).real for p in \"XYZ\"])\n\ncases = {\"|0>\": (0, 0), \"|1>\": (np.pi, 0), \"|+>\": (np.pi / 2, 0), \"|->\": (np.pi / 2, np.pi), \"|+i>\": (np.pi / 2, np.pi / 2)}\nprint(f\"{'state':5} {'norm':>5} {'Bloch vector (x, y, z)':>26}  formula = Qiskit\")\nfor label, (theta, phi) in cases.items():\n    psi = state(theta, phi)\n    formula, qiskit = bloch_vector_formula(theta, phi), bloch_vector_qiskit(psi)\n    print(f\"{label:5} {np.linalg.norm(psi):5.2f} {np.round(formula, 3).tolist()!s:>26}  {np.allclose(formula, qiskit)}\")\n\npsi = state(1.1, 0.7)\nglobal_phase = np.exp(1j * 2.3) * psi\nprint(\"a global phase leaves the Bloch vector unchanged:\", np.allclose(bloch_vector_qiskit(psi), bloch_vector_qiskit(global_phase)))\nprint(\"a relative phase changes it:\", not np.allclose(bloch_vector_qiskit(psi), bloch_vector_qiskit(state(1.1, 0.7 + 0.5))))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-bloch",
+              "language": "text",
+              "code": "state  norm     Bloch vector (x, y, z)  formula = Qiskit\n|0>    1.00            [0.0, 0.0, 1.0]  True\n|1>    1.00           [0.0, 0.0, -1.0]  True\n|+>    1.00            [1.0, 0.0, 0.0]  True\n|->    1.00           [-1.0, 0.0, 0.0]  True\n|+i>   1.00            [0.0, 1.0, 0.0]  True\na global phase leaves the Bloch vector unchanged: True\na relative phase changes it: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The table shows the six cardinal states of the Bloch sphere: |0⟩ and |1⟩ at the poles (z = ±1), |+⟩ and |−⟩ on the x-axis, and |+i⟩ on the y-axis. Two takeaways. First, the **global phase** e^(iγ) is invisible, because every observable quantity is built from products like ψ*·ψ in which it cancels. Second, the **relative phase** φ between the |0⟩ and |1⟩ components is real and measurable: it moves the Bloch vector around the equator. Interference, the engine of quantum algorithms, is the manipulation of exactly this relative phase.\n\n**Common mistake.** Treating the Bloch sphere as a picture of *two*-qubit or mixed states. It describes a single pure qubit exactly; for a mixed single-qubit state the vector lies inside the sphere (B2)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which change to a single-qubit state can never be detected by any measurement?",
+              "options": [
+                "Multiplying the whole state by a phase e^(i*gamma)",
+                "Changing the phase between the |0⟩ and |1⟩ components",
+                "Swapping |0⟩ and |1⟩"
+              ],
+              "correct_index": 0,
+              "explanation": "Global phases cancel in every observable; the relative phase between components does not."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "The Bloch vector of |+⟩ is:",
+              "options": [
+                "(1, 0, 0)",
+                "(0, 0, 1)",
+                "(0, 1, 0)"
+              ],
+              "correct_index": 0,
+              "explanation": "|+⟩ lies on the positive x-axis: ⟨X⟩ = 1 and ⟨Y⟩ = ⟨Z⟩ = 0."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-states/representing-qubit-states.ipynb, sections 1.2 Qubit Notation and 3. The Bloch Sphere"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-appendix/linear_algebra.ipynb, section 'Vectors and Vector Spaces' (state vectors and the Bloch sphere)"
+            },
+            {
+              "book": "B111",
+              "locator": "qiskit.quantum_info.Statevector.expectation_value (used for the cross-check)"
+            }
+          ],
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "1.3 Inner Products",
+          "summary": "The inner product, norm, orthogonality and the Cauchy-Schwarz inequality, with Gram-Schmidt orthonormalisation and its link to measurement probabilities.",
+          "estimated_minutes": 32,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **inner product** of two vectors in C^n is ⟨u|v⟩ = Σ u_i* · v_i: the first vector is conjugated. Its properties define a **Hilbert space** (in finite dimensions, simply C^n with this product). The **norm** of a vector is ‖v‖ = sqrt(⟨v|v⟩), so a quantum state is a vector of norm 1. Two vectors are **orthogonal** when ⟨u|v⟩ = 0, and a basis of mutually orthogonal unit vectors is an **orthonormal basis**: the computational basis {|0⟩, |1⟩} and the Hadamard basis {|+⟩, |−⟩} are two examples. The **Cauchy-Schwarz inequality**, |⟨u|v⟩| ≤ ‖u‖·‖v‖, is what guarantees that the quantity below is a probability between 0 and 1.\n\nThe inner product is how quantum mechanics produces numbers you can observe: the probability of finding a system in state |u⟩ when it is prepared in state |v⟩ is **|⟨u|v⟩|²**. The **Gram-Schmidt process** turns any independent set into an orthonormal basis by subtracting from each vector its components along the earlier ones and normalising. The listing implements it for three vectors in C³ and cross-checks the inner products against Qiskit. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`); Qiskit is used only to **cross-check** the NumPy results, so you can see that the mathematics and the software agree."
+            },
+            {
+              "type": "code",
+              "id": "c-inner",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit.quantum_info import Statevector\n\ndef inner(u, v):\n    return np.vdot(u, v)                                       # vdot conjugates its first argument, as the physics convention requires\n\ndef gram_schmidt(vectors):\n    basis = []\n    for v in vectors:\n        w = v - sum(inner(b, v) * b for b in basis)             # remove the components along the earlier basis vectors\n        basis.append(w / np.linalg.norm(w))\n    return np.array(basis)\n\nplus, minus = np.array([1, 1]) / np.sqrt(2), np.array([1, -1]) / np.sqrt(2)\nzero = np.array([1, 0])\nprint(\"<+|->:\", round(inner(plus, minus).real, 12), \"| <0|+>:\", round(inner(zero, plus).real, 4))\nprint(\"probability of finding |0> in |+>:\", round(abs(inner(zero, plus)) ** 2, 4))\nprint(\"Qiskit agrees on <0|+>:\", np.isclose(Statevector(zero).inner(Statevector(plus)), inner(zero, plus)))\n\nu, v = np.array([1 + 2j, 3j, 1]), np.array([2, 1 - 1j, 4j])\nprint(\"Cauchy-Schwarz holds:\", abs(inner(u, v)) <= np.linalg.norm(u) * np.linalg.norm(v))\nprint(\"conjugate symmetry <u|v> = <v|u>*:\", np.isclose(inner(u, v), np.conj(inner(v, u))))\n\nQ = gram_schmidt([np.array([1, 1j, 0]), np.array([1, 0, 1]), np.array([0, 1, 0])])        # an independent set\noverlaps = Q.conj() @ Q.T                                       # entry (i, j) is <q_i|q_j>\nprint(\"Gram-Schmidt output is orthonormal:\", np.allclose(overlaps, np.eye(3)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-inner",
+              "language": "text",
+              "code": "<+|->: 0.0 | <0|+>: 0.7071\nprobability of finding |0> in |+>: 0.5\nQiskit agrees on <0|+>: True\nCauchy-Schwarz holds: True\nconjugate symmetry <u|v> = <v|u>*: True\nGram-Schmidt output is orthonormal: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The first lines reproduce the rule you used in A6: the probability of |0⟩ in |+⟩ is exactly 1/2, because |⟨0|+⟩|² = (1/√2)² = 0.5. The last lines check the structure of the Hilbert space: the inner product is conjugate-symmetric, it obeys Cauchy-Schwarz, and Gram-Schmidt really does produce an orthonormal set (its overlap matrix is the identity).\n\n**Common mistake.** Forgetting to conjugate. With NumPy, `np.dot(u, v)` does **not** conjugate, while `np.vdot(u, v)` does; for real vectors they agree, which hides the error until the first complex amplitude appears."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the probability of measuring |u⟩ when the state is |v⟩?",
+              "options": [
+                "|⟨u|v⟩|^2",
+                "⟨u|v⟩",
+                "|⟨u|v⟩|"
+              ],
+              "correct_index": 0,
+              "explanation": "The Born rule uses the squared modulus of the inner product, which is real and between 0 and 1."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does np.vdot(u, v) rather than np.dot(u, v) compute the quantum inner product?",
+              "options": [
+                "vdot conjugates the first argument, as the definition requires",
+                "dot is slower",
+                "vdot normalises vectors"
+              ],
+              "correct_index": 0,
+              "explanation": "⟨u|v⟩ uses the complex conjugate of the components of u; np.dot omits it."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-appendix/linear_algebra.ipynb, section 'Hilbert Spaces, Orthonormality, and the Inner Product'"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-states/representing-qubit-states.ipynb, section 2.1 A Very Important Rule"
+            },
+            {
+              "book": "B111",
+              "locator": "qiskit.quantum_info.Statevector.inner (used for the cross-check)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Cauchy-Schwarz and the Gram-Schmidt process are stated from standard linear algebra; the numerical checks in the listing are the verification."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "1.4 Matrix Operations",
+          "summary": "Products, adjoints, trace and commutators, with the Pauli algebra checked symbolically and against Qiskit.",
+          "estimated_minutes": 32,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Matrices are the quantum computer's instructions, so the operations must be second nature. The **product** AB applies B first and then A, and it is **not commutative**: AB ≠ BA in general. The **adjoint** (conjugate transpose) A† satisfies (AB)† = B†A†. The **trace** is the sum of the diagonal and is unchanged by cyclic reordering, tr(AB) = tr(BA). The **commutator** [A, B] = AB − BA measures non-commutativity and is zero exactly when the operators commute.\n\nThe most important matrices are the four **Pauli matrices** I, X, Y, Z. They are Hermitian and unitary, each squares to the identity, and they obey a compact algebra: XY = iZ, YZ = iX, ZX = iY, and anticommutation, XY = −YX. Two consequences are used constantly: [X, Y] = 2iZ (so rotations about different axes do not commute) and the fact that every 2×2 matrix is a combination of I, X, Y and Z. The listing checks these identities with NumPy and cross-checks the matrices against Qiskit's `Pauli` class. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`); Qiskit is used only to **cross-check** the NumPy results, so you can see that the mathematics and the software agree."
+            },
+            {
+              "type": "code",
+              "id": "c-pauli",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit.quantum_info import Pauli\n\nI = np.eye(2)\nX = np.array([[0, 1], [1, 0]], dtype=complex)\nY = np.array([[0, -1j], [1j, 0]])\nZ = np.array([[1, 0], [0, -1]], dtype=complex)\ndagger = lambda M: M.conj().T\n\nprint(\"matrices match Qiskit's Pauli class:\", all(np.allclose(M, Pauli(name).to_matrix()) for M, name in ((I, \"I\"), (X, \"X\"), (Y, \"Y\"), (Z, \"Z\"))))\nprint(\"Hermitian and unitary, each squares to I:\", all(np.allclose(M, dagger(M)) and np.allclose(M @ dagger(M), I) and np.allclose(M @ M, I) for M in (X, Y, Z)))\nprint(\"XY = iZ, YZ = iX, ZX = iY:\", np.allclose(X @ Y, 1j * Z), np.allclose(Y @ Z, 1j * X), np.allclose(Z @ X, 1j * Y))\nprint(\"XY = -YX (anticommute):\", np.allclose(X @ Y, -(Y @ X)))\ncommutator = X @ Y - Y @ X\nprint(\"[X, Y] = 2iZ:\", np.allclose(commutator, 2j * Z))\n\nrng = np.random.default_rng(3)\nA, B = (rng.normal(size=(3, 3)) + 1j * rng.normal(size=(3, 3)) for _ in range(2))\nprint(\"(AB)^dagger = B^dagger A^dagger:\", np.allclose(dagger(A @ B), dagger(B) @ dagger(A)))\nprint(\"tr(AB) = tr(BA):\", np.isclose(np.trace(A @ B), np.trace(B @ A)))\nprint(\"AB = BA for random matrices:\", np.allclose(A @ B, B @ A))\n\nM = np.array([[2, 1 - 1j], [1 + 1j, -3]])                         # any 2x2 matrix is a combination of I, X, Y, Z\ncoefficients = [np.trace(P @ M) / 2 for P in (I, X, Y, Z)]\nprint(\"Pauli decomposition rebuilds the matrix:\", np.allclose(M, sum(c * P for c, P in zip(coefficients, (I, X, Y, Z)))))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-pauli",
+              "language": "text",
+              "code": "matrices match Qiskit's Pauli class: True\nHermitian and unitary, each squares to I: True\nXY = iZ, YZ = iX, ZX = iY: True True True\nXY = -YX (anticommute): True\n[X, Y] = 2iZ: True\n(AB)^dagger = B^dagger A^dagger: True\ntr(AB) = tr(BA): True\nAB = BA for random matrices: False\nPauli decomposition rebuilds the matrix: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The last line is a result you will use again in B3 and C1: because {I, X, Y, Z} is a basis for 2×2 matrices, with coefficients tr(P·M)/2, every single-qubit operator and, by tensoring, every multi-qubit operator can be written as a sum of Pauli strings. That is how Hamiltonians are fed to variational algorithms.\n\n**Common mistake.** Assuming operators commute. Applying X then Y gives a different result from Y then X (they differ by a sign), which is why the *order* of gates in a circuit matters and why the matrix for \"gate A then gate B\" is BA, not AB."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Applying gate A then gate B corresponds to the matrix:",
+              "options": [
+                "B times A (BA)",
+                "A times B (AB)",
+                "A plus B"
+              ],
+              "correct_index": 0,
+              "explanation": "The rightmost matrix acts first on the state vector: |psi'⟩ = B A |psi⟩."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is XY?",
+              "options": [
+                "iZ",
+                "Z",
+                "-Z"
+              ],
+              "correct_index": 0,
+              "explanation": "The Pauli products satisfy XY = iZ, and YX = -iZ, which is why X and Y anticommute."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which identity always holds?",
+              "options": [
+                "(AB)^dagger = B^dagger A^dagger",
+                "AB = BA",
+                "tr(A) = tr(A^dagger)"
+              ],
+              "correct_index": 0,
+              "explanation": "The adjoint reverses the order of a product. (The trace identity holds only up to complex conjugation, tr(A^dagger) = conj(tr(A)).)"
+            }
+          ],
+          "sources": [
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-appendix/linear_algebra.ipynb, sections 'Matrices and Matrix Operations' (Hermitian and unitary matrices) and 'Outer Products and Tensor Products'"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-states/single-qubit-gates.ipynb, section 1 The Pauli Gates"
+            },
+            {
+              "book": "B111",
+              "locator": "qiskit.quantum_info.Pauli (used for the cross-check)"
+            }
+          ],
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "1.5 Eigenvectors and Unitary Operators",
+          "summary": "Eigen-decomposition, the spectral theorem, why unitary matrices preserve length, and the matrix exponential that builds rotation gates.",
+          "estimated_minutes": 35,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "An **eigenvector** of a matrix A is a nonzero vector that A only scales, A|v⟩ = λ|v⟩; λ is its **eigenvalue**. Two classes of matrix have especially clean eigen-structure. A **Hermitian** matrix (A = A†) has **real** eigenvalues and an orthonormal basis of eigenvectors: this is the spectral theorem, and it is why a Hermitian matrix is a legitimate **observable**. Measuring it gives one of its eigenvalues, with probability |⟨v|ψ⟩|² for the corresponding eigenvector. A **unitary** matrix (U†U = I) preserves inner products and therefore norms, so it maps states to states; its eigenvalues lie on the **unit circle**, λ = e^(iφ). Every quantum gate is unitary, which is also why every gate is reversible: U† undoes U.\n\nHermitian and unitary matrices are linked by the **matrix exponential**: if H is Hermitian then e^(−iHt) is unitary. A single-qubit rotation about the x-axis is exactly this, RX(θ) = e^(−iθX/2); the same holds for Y and Z. The listing computes the eigen-decomposition of the Hadamard gate (which is both Hermitian and unitary), checks the spectral theorem for the Pauli-based observable H = X + 0.5 Z, verifies that the T gate's eigenvalues are on the unit circle, and confirms that the matrix exponential reproduces Qiskit's RX gate. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`); Qiskit is used only to **cross-check** the NumPy results, so you can see that the mathematics and the software agree."
+            },
+            {
+              "type": "code",
+              "id": "c-eigen",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit.circuit.library import RXGate, TGate\n\nHd = np.array([[1, 1], [1, -1]]) / np.sqrt(2)\nvalues, vectors = np.linalg.eigh(Hd)                                   # eigh is for Hermitian matrices: real eigenvalues, orthonormal vectors\nprint(\"Hadamard eigenvalues:\", np.round(values, 6).tolist())\nfor value, vector in zip(values, vectors.T):\n    print(f\"  eigenvalue {value:+.0f}: A|v> = lambda|v> holds:\", np.allclose(Hd @ vector, value * vector))\n\nX = np.array([[0, 1], [1, 0]]); Z = np.array([[1, 0], [0, -1]])\nobservable = X + 0.5 * Z                                               # a Hermitian observable\nlam, V = np.linalg.eigh(observable)\nprint(\"observable eigenvalues:\", np.round(lam, 6).tolist(), \"= -/+ sqrt(1.25):\", np.allclose(lam, [-np.sqrt(1.25), np.sqrt(1.25)]))\nprint(\"spectral decomposition rebuilds it:\", np.allclose(observable, sum(l * np.outer(v, v.conj()) for l, v in zip(lam, V.T))))\npsi = np.array([1, 0])\nprobabilities = np.abs(V.conj().T @ psi) ** 2\nprint(\"outcome probabilities for |0> sum to 1:\", round(float(probabilities.sum()), 12), \"| expectation = sum(lambda p):\", np.isclose(lam @ probabilities, psi @ observable @ psi))\n\nT = TGate().to_matrix()\nt_eigenvalues = np.linalg.eigvals(T)\nprint(\"T gate eigenvalue moduli:\", np.round(np.abs(t_eigenvalues), 6).tolist(), \"| unitary:\", np.allclose(T.conj().T @ T, np.eye(2)))\n\ntheta = 0.9\nw, U = np.linalg.eigh(X)                                               # exp(-i theta X / 2) via the eigen-decomposition of X\nrx = U @ np.diag(np.exp(-1j * theta * w / 2)) @ U.conj().T\nprint(\"exp(-i theta X / 2) equals Qiskit's RX(theta):\", np.allclose(rx, RXGate(theta).to_matrix()))\nprint(\"it is unitary:\", np.allclose(rx.conj().T @ rx, np.eye(2)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-eigen",
+              "language": "text",
+              "code": "Hadamard eigenvalues: [-1.0, 1.0]\n  eigenvalue -1: A|v> = lambda|v> holds: True\n  eigenvalue +1: A|v> = lambda|v> holds: True\nobservable eigenvalues: [-1.118034, 1.118034] = -/+ sqrt(1.25): True\nspectral decomposition rebuilds it: True\noutcome probabilities for |0> sum to 1: 1.0 | expectation = sum(lambda p): True\nT gate eigenvalue moduli: [1.0, 1.0] | unitary: True\nexp(-i theta X / 2) equals Qiskit's RX(theta): True\nit is unitary: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Three results to remember. The Hadamard gate's eigenvalues are +1 and −1 (it is its own inverse, so applying it twice is the identity, which you will use in Deutsch-Jozsa). The observable X + 0.5·Z has eigenvalues ±√1.25 ≈ ±1.118, which is the ground-state energy you will find again in the optimisation lesson. And exponentiating a Hermitian matrix always yields a unitary, which is how a physical Hamiltonian becomes a gate: **time evolution under H for time t is e^(−iHt)**.\n\n**Common mistakes.** Using `np.linalg.eig` for a Hermitian matrix (it may return non-orthogonal vectors; `eigh` guarantees orthonormal ones), and assuming eigenvalues of a unitary are real (they are phases)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Where do the eigenvalues of a unitary matrix lie?",
+              "options": [
+                "On the unit circle in the complex plane",
+                "On the real line",
+                "At zero"
+              ],
+              "correct_index": 0,
+              "explanation": "A unitary preserves norms, so every eigenvalue satisfies |lambda| = 1."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does measuring a Hermitian observable return?",
+              "options": [
+                "One of its eigenvalues",
+                "The average of its eigenvalues",
+                "Its trace"
+              ],
+              "correct_index": 0,
+              "explanation": "Each outcome is an eigenvalue; the probabilities are the squared overlaps with the eigenvectors."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "If H is Hermitian, then exp(-iHt) is:",
+              "options": [
+                "Unitary",
+                "Hermitian",
+                "Zero"
+              ],
+              "correct_index": 0,
+              "explanation": "Exponentiating -i times a Hermitian matrix gives a matrix with eigenvalues e^(-i lambda t), all on the unit circle, with orthonormal eigenvectors: a unitary."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-appendix/linear_algebra.ipynb, sections 'Eigenvectors and Eigenvalues' and 'Matrix Exponentials'"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-states/single-qubit-gates.ipynb, section 3 The Hadamard Gate"
+            },
+            {
+              "book": "B111",
+              "locator": "qiskit.circuit.library.RXGate and TGate (used for the cross-check)"
+            }
+          ],
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "1.6 Probability Amplitudes (Formal Treatment)",
+          "summary": "The Born rule, normalisation, and interference: why amplitudes add before probabilities are taken.",
+          "estimated_minutes": 30,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A state vector's components are **amplitudes**, complex numbers whose squared moduli are probabilities: for the state Σ c_x |x⟩, the probability of outcome x is |c_x|² (the **Born rule**), and normalisation requires Σ |c_x|² = 1. The key difference from classical probability is that amplitudes **add before they are squared**, and they can be negative or complex, so two routes to the same outcome can **cancel** (destructive interference) or **reinforce** (constructive interference). A classical probabilistic algorithm can only add non-negative numbers, so it can never cancel a wrong answer.\n\nThe simplest experiment shows it. Start in |0⟩, apply a Hadamard gate to get (|0⟩ + |1⟩)/√2, apply a phase gate that multiplies the |1⟩ amplitude by e^(iφ), and apply the Hadamard gate again. The two paths to outcome 0 have amplitudes ½ and ½·e^(iφ), which add to ½(1 + e^(iφ)); the probability of 0 is therefore |½(1 + e^(iφ))|² = cos²(φ/2). With φ = 0 the paths reinforce and the result is always 0; with φ = π they cancel and the result is always 1. The listing computes this analytically, with the matrices, and with Qiskit, and then compares a seeded sample of 10,000 simulated shots with the exact probability. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`); Qiskit is used only to **cross-check** the NumPy results, so you can see that the mathematics and the software agree."
+            },
+            {
+              "type": "code",
+              "id": "c-interference",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.quantum_info import Statevector\n\nH = np.array([[1, 1], [1, -1]]) / np.sqrt(2)\ndef phase(phi):\n    return np.diag([1, np.exp(1j * phi)])\n\nprint(f\"{'phi':>8} {'cos^2(phi/2)':>13} {'matrices':>9} {'Qiskit':>7}\")\nfor phi in (0, np.pi / 2, np.pi, 3 * np.pi / 2):\n    final = H @ phase(phi) @ H @ np.array([1, 0])                        # H, then phase, then H, applied right to left\n    p_matrices = abs(final[0]) ** 2\n    qc = QuantumCircuit(1); qc.h(0); qc.p(phi, 0); qc.h(0)\n    p_qiskit = Statevector(qc).probabilities()[0]\n    print(f\"{phi:8.4f} {np.cos(phi / 2) ** 2:13.4f} {p_matrices:9.4f} {p_qiskit:7.4f}\")\n\nstate = np.array([0.6, 0.8j])                                           # normalised: 0.36 + 0.64 = 1\nprint(\"normalised:\", np.isclose(np.sum(np.abs(state) ** 2), 1))\nrng = np.random.default_rng(2026)\nshots = rng.choice([0, 1], size=10_000, p=np.abs(state) ** 2)\nprint(\"10,000 simulated shots: P(0) =\", np.mean(shots == 0), \"(exact 0.36)\")\nprint(\"a global phase changes no probability:\", np.allclose(np.abs(np.exp(1j * 1.234) * state) ** 2, np.abs(state) ** 2))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-interference",
+              "language": "text",
+              "code": "     phi  cos^2(phi/2)  matrices  Qiskit\n  0.0000        1.0000    1.0000  1.0000\n  1.5708        0.5000    0.5000  0.5000\n  3.1416        0.0000    0.0000  0.0000\n  4.7124        0.5000    0.5000  0.5000\nnormalised: True\n10,000 simulated shots: P(0) = 0.3553 (exact 0.36)\na global phase changes no probability: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The table is interference in four lines. At φ = π/2 the probability is ½: the two paths are a quarter-turn apart. The seeded shot count is close to 0.36 but not equal to it: **measurement is random and the sample frequency fluctuates around the probability**, with a typical error of about 1/√N for N shots, so 10,000 shots pins a probability down to about one percentage point.\n\n**Why it matters for algorithms.** Every algorithm you will meet (Deutsch-Jozsa, Grover, the QFT) is an arrangement of gates that makes wrong answers interfere destructively and the right answer constructively. The state's size is irrelevant to the *measurement result*; interference is what extracts something useful from it."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why can a quantum algorithm cancel a wrong answer when a classical random algorithm cannot?",
+              "options": [
+                "Amplitudes can be negative or complex, so paths to an outcome can cancel before squaring.",
+                "Quantum computers are faster.",
+                "Probabilities can be negative."
+              ],
+              "correct_index": 0,
+              "explanation": "Probabilities are non-negative and only add; amplitudes can interfere destructively."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "H, then a phase of pi, then H applied to |0⟩ gives:",
+              "options": [
+                "|1⟩ with certainty",
+                "|0⟩ with certainty",
+                "A 50/50 result"
+              ],
+              "correct_index": 0,
+              "explanation": "The paths to outcome 0 cancel: cos^2(pi/2) = 0, so the result is |1⟩."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Roughly how large is the statistical error of a probability estimated from N shots?",
+              "options": [
+                "About 1/sqrt(N)",
+                "About 1/N",
+                "Zero"
+              ],
+              "correct_index": 0,
+              "explanation": "The standard deviation of the sample proportion is sqrt(p(1-p)/N), at most 1/(2 sqrt(N))."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-states/representing-qubit-states.ipynb, section 2. The Rules of Measurement (2.1 and 2.2: normalisation and global phase)"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-algorithms/deutsch-jozsa.ipynb (interference through Hadamard layers)"
+            },
+            {
+              "book": "B111",
+              "locator": "qiskit.quantum_info.Statevector.probabilities (used for the cross-check)"
+            }
+          ],
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "1.7 Tensor Products (Formal Treatment)",
+          "summary": "Combining systems with the Kronecker product, Qiskit's qubit ordering, and detecting entanglement with the Schmidt decomposition.",
+          "estimated_minutes": 38,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Two independent quantum systems are combined with the **tensor product**. If |a⟩ lives in C^m and |b⟩ lives in C^n, then |a⟩ ⊗ |b⟩ lives in C^(mn); in coordinates it is the **Kronecker product**. For operators, (A ⊗ B)(|a⟩ ⊗ |b⟩) = A|a⟩ ⊗ B|b⟩. Dimensions multiply, which is the source of the exponential state space: n qubits give 2^n dimensions.\n\n**Ordering matters, and software disagrees.** Written on paper, |q₁ q₀> puts qubit 1 on the left. Qiskit is **little-endian**: qubit 0 is the *rightmost* character in a bit string and the *least significant* bit of the state-vector index (the Qiskit documentation states that by default Qiskit follows little-endian bit ordering). A circuit with an X gate on qubit 0 therefore produces the bit string '01' and amplitude at index 1. Mixing conventions silently swaps qubits, so check it once with a test like the one below.\n\nNot every vector of the product space is a tensor product. A state that is **not** is **entangled**. For two qubits you can tell by arranging the four amplitudes in a 2×2 matrix and computing its **singular values**: the number of nonzero singular values is the **Schmidt rank**. Rank 1 means a product state; rank 2 means entanglement. The squared singular values are probabilities, and their Shannon entropy is the **entanglement entropy**: exactly 1 bit for a Bell state. The listing checks all of this and cross-checks against Qiskit. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`); Qiskit is used only to **cross-check** the NumPy results, so you can see that the mathematics and the software agree."
+            },
+            {
+              "type": "code",
+              "id": "c-tensor",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.quantum_info import Statevector\n\nzero, one = np.array([1, 0]), np.array([0, 1])\nplus = (zero + one) / np.sqrt(2)\n\n# Qiskit ordering: X on qubit 0 gives bit string '01'; the amplitude sits at index 1\nqc = QuantumCircuit(2); qc.x(0)\nsv = Statevector(qc)\nprint(\"circuit with X on qubit 0 -> bit string\", list(sv.probabilities_dict())[0], \"| index of the nonzero amplitude:\", int(np.argmax(np.abs(sv.data))))\nprint(\"np.kron(|0>, |1>) has its 1 at index:\", int(np.argmax(np.kron(zero, one))), \"-> |q1 q0> = |01> with qubit 0 as the LAST factor\")\nprint(\"Statevector(|b>).tensor works the same way:\", np.allclose(Statevector(zero).tensor(Statevector(one)).data, np.kron(zero, one)))\n\nA = np.array([[1, 1], [1, -1]]) / np.sqrt(2); B = np.array([[0, 1], [1, 0]])\nprint(\"(A tensor B)(a tensor b) = A a tensor B b:\", np.allclose(np.kron(A, B) @ np.kron(plus, zero), np.kron(A @ plus, B @ zero)))\n\ndef schmidt_values(state):\n    return np.linalg.svd(state.reshape(2, 2), compute_uv=False)        # singular values of the 2x2 amplitude matrix\n\nstates = {\"|+> tensor |0> (product)\": np.kron(plus, zero), \"Bell state (|00>+|11>)/sqrt2\": (np.kron(zero, zero) + np.kron(one, one)) / np.sqrt(2)}\nfor name, state in states.items():\n    s = schmidt_values(state)\n    probabilities = s[s > 1e-12] ** 2\n    entropy = -np.sum(probabilities * np.log2(probabilities))\n    print(f\"{name:32} Schmidt rank {len(probabilities)}, entanglement entropy {abs(entropy):.3f} bit(s)\")\n\ncnot = np.array([[1, 0, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0], [0, 1, 0, 0]])  # control = qubit 0 in Qiskit's ordering\nbell = cnot @ np.kron(np.eye(2), A) @ np.array([1, 0, 0, 0])                # H on qubit 0 then CNOT(0 -> 1)\nqc = QuantumCircuit(2); qc.h(0); qc.cx(0, 1)\nprint(\"H then CNOT builds the Bell state, matching Qiskit:\", np.allclose(bell, Statevector(qc).data))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-tensor",
+              "language": "text",
+              "code": "circuit with X on qubit 0 -> bit string 01 | index of the nonzero amplitude: 1\nnp.kron(|0>, |1>) has its 1 at index: 1 -> |q1 q0> = |01> with qubit 0 as the LAST factor\nStatevector(|b>).tensor works the same way: True\n(A tensor B)(a tensor b) = A a tensor B b: True\n|+> tensor |0> (product)         Schmidt rank 1, entanglement entropy 0.000 bit(s)\nBell state (|00>+|11>)/sqrt2     Schmidt rank 2, entanglement entropy 1.000 bit(s)\nH then CNOT builds the Bell state, matching Qiskit: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The first two lines are the whole ordering lesson: the same state is index 1, the string '01' and qubit 0 set, because the *rightmost* factor is qubit 0. If you ever see results that look \"reversed\", this is the first thing to check, particularly when comparing Qiskit's output with a textbook that writes qubit 0 on the left, or when reading results from different primitives (the Qiskit guide notes that some return big-endian bit arrays).\n\nThe Schmidt rank separates the two kinds of two-qubit states cleanly: the product state has rank 1 and zero entanglement, and the Bell state has rank 2 and exactly one bit of entanglement. For more than two qubits the same idea applies across any bipartition, and B2 builds on it with density matrices and the partial trace.\n\n**Common mistake.** Concluding that a state is separable because a *single* gate acts on one qubit. Entanglement is a property of the state, not of how you drew the circuit."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In Qiskit's default ordering, which bit string corresponds to the state-vector index 1 of a 2-qubit register?",
+              "options": [
+                "'01' (qubit 0 set)",
+                "'10' (qubit 1 set)",
+                "'11'"
+              ],
+              "correct_index": 0,
+              "explanation": "Qiskit is little-endian: qubit 0 is the least significant bit and the rightmost character of the string."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "A two-qubit state has Schmidt rank 2. What does that mean?",
+              "options": [
+                "It is entangled",
+                "It is a product state",
+                "It is not normalised"
+              ],
+              "correct_index": 0,
+              "explanation": "Product states have exactly one nonzero singular value; rank 2 means the state cannot be written as a tensor product."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How many dimensions does the state space of 5 qubits have?",
+              "options": [
+                "32",
+                "10",
+                "25"
+              ],
+              "correct_index": 0,
+              "explanation": "Dimensions multiply under the tensor product: 2^5 = 32."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-appendix/linear_algebra.ipynb, section 'Outer Products and Tensor Products'"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-gates/multiple-qubits-entangled-states.ipynb, sections 1 (Representing Multi-Qubit States) and 3.2 (Entangled States)"
+            },
+            {
+              "book": "B111",
+              "locator": "Guide 'Bit-ordering in the Qiskit SDK': by default Qiskit follows the little-endian bit ordering convention"
+            }
+          ],
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "1.8 Dirac Notation",
+          "summary": "Kets, bras, outer products and projectors, expectation values and the completeness relation, translated to matrices and checked.",
+          "estimated_minutes": 30,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Dirac (bra-ket) notation** is a compact way to write the linear algebra you have just met. A **ket** |v⟩ is a column vector; a **bra** ⟨v| is its conjugate transpose, a row vector. Then ⟨u|v⟩ is the inner product (a number), and **|u⟩⟨v| is the outer product**, a matrix that sends |w⟩ to ⟨v|w⟩·|u⟩. Special cases are used constantly:\n\n- **Projector.** For a unit vector |v⟩, P = |v⟩⟨v| projects onto |v⟩. It is Hermitian and satisfies P² = P.\n- **Completeness.** For any orthonormal basis {|i⟩}, Σ |i⟩⟨i| = I. Inserting this \"resolution of the identity\" is how most derivations are done.\n- **Expectation value.** The average result of measuring observable A in state |ψ⟩ is ⟨ψ|A|ψ⟩.\n- **Trace.** tr(A) = Σ ⟨i|A|i⟩, and tr(|u⟩⟨v|) = ⟨v|u⟩.\n- **Operators from outer products.** The Hadamard gate can be written H = (|0⟩⟨0| + |0⟩⟨1| + |1⟩⟨0| − |1⟩⟨1|)/√2, and the CNOT as |0⟩⟨0| ⊗ I + |1⟩⟨1| ⊗ X.\n\nThe listing translates each expression into NumPy and checks it. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`); Qiskit is used only to **cross-check** the NumPy results, so you can see that the mathematics and the software agree."
+            },
+            {
+              "type": "code",
+              "id": "c-dirac",
+              "language": "python",
+              "code": "import numpy as np\n\nket = lambda *amplitudes: np.array(amplitudes, dtype=complex).reshape(-1, 1)      # column vector |v>\nbra = lambda k: k.conj().T                                                       # <v|\nzero, one = ket(1, 0), ket(0, 1)\nplus, minus = (zero + one) / np.sqrt(2), (zero - one) / np.sqrt(2)\n\nP = plus @ bra(plus)                                                              # |+><+|\nprint(\"projector is Hermitian and P^2 = P:\", np.allclose(P, bra(P)) and np.allclose(P @ P, P))\nprint(\"P|0> = <+|0>|+>:\", np.allclose(P @ zero, (bra(plus) @ zero)[0, 0] * plus))\nprint(\"completeness |0><0| + |1><1| = I:\", np.allclose(zero @ bra(zero) + one @ bra(one), np.eye(2)))\nprint(\"completeness in the Hadamard basis too:\", np.allclose(plus @ bra(plus) + minus @ bra(minus), np.eye(2)))\n\nH = (zero @ bra(zero) + zero @ bra(one) + one @ bra(zero) - one @ bra(one)) / np.sqrt(2)\nprint(\"Hadamard from outer products:\", np.allclose(H, np.array([[1, 1], [1, -1]]) / np.sqrt(2)))\nX = one @ bra(zero) + zero @ bra(one)\nZ = zero @ bra(zero) - one @ bra(one)\nprint(\"<+|X|+> =\", round((bra(plus) @ X @ plus)[0, 0].real, 6), \"| <+|Z|+> =\", round((bra(plus) @ Z @ plus)[0, 0].real, 6), \"| <0|Z|0> =\", round((bra(zero) @ Z @ zero)[0, 0].real, 6))\n\nCNOT = np.kron(zero @ bra(zero), np.eye(2)) + np.kron(one @ bra(one), X)          # |0><0| (x) I + |1><1| (x) X\nprint(\"CNOT |10> = |11> (control is the left factor here):\", np.allclose(CNOT @ np.kron(one, zero), np.kron(one, one)))\nprint(\"trace of |u><v| equals <v|u>:\", np.isclose(np.trace(zero @ bra(plus)), (bra(plus) @ zero)[0, 0]))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-dirac",
+              "language": "text",
+              "code": "projector is Hermitian and P^2 = P: True\nP|0> = <+|0>|+>: True\ncompleteness |0><0| + |1><1| = I: True\ncompleteness in the Hadamard basis too: True\nHadamard from outer products: True\n<+|X|+> = 1.0 | <+|Z|+> = 0.0 | <0|Z|0> = 1.0\nCNOT |10> = |11> (control is the left factor here): True\ntrace of |u><v| equals <v|u>: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The expectation values show a result you will use repeatedly: in the state |+⟩, the observable X is certain (⟨X⟩ = 1) while Z is completely uncertain (⟨Z⟩ = 0); in |0⟩, the reverse. The two observables cannot both be certain, which is the Pauli commutator of the previous lesson showing up as uncertainty.\n\n**A note on conventions.** The CNOT written here has the *control as the left tensor factor*. In Qiskit's ordering, where qubit 0 is the rightmost factor, a CNOT with control qubit 0 is the matrix with the factors swapped (the previous lesson used it). Dirac notation is only notation: always check which factor is which qubit."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is |u⟩⟨v| applied to |w⟩?",
+              "options": [
+                "⟨v|w⟩ times |u⟩",
+                "⟨u|w⟩ times |v⟩",
+                "A number"
+              ],
+              "correct_index": 0,
+              "explanation": "The outer product maps |w⟩ to the vector |u⟩ scaled by the inner product ⟨v|w⟩."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does the completeness relation say?",
+              "options": [
+                "Summing |i⟩⟨i| over an orthonormal basis gives the identity",
+                "Every vector has norm 1",
+                "All projectors commute"
+              ],
+              "correct_index": 0,
+              "explanation": "For any orthonormal basis the projectors sum to the identity operator."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is ⟨+|Z|+⟩?",
+              "options": [
+                "0",
+                "1",
+                "-1"
+              ],
+              "correct_index": 0,
+              "explanation": "Z flips |+⟩ to |-⟩, which is orthogonal to |+⟩, so the expectation value is zero."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-states/representing-qubit-states.ipynb, section 1.2 Qubit Notation (Reminders)"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-appendix/linear_algebra.ipynb, section 'Outer Products and Tensor Products'"
+            }
+          ],
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "1.9 Basic Optimization",
+          "summary": "The variational principle and the parameter-shift rule: minimising an energy over circuit parameters, with every number checked against exact diagonalisation.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Many near-term quantum algorithms are **optimisation** problems. A parameterised circuit prepares a state |ψ(θ)⟩; a classical computer measures the **cost** C(θ) = ⟨ψ(θ)|H|ψ(θ)⟩ and adjusts θ to minimise it. The justification is the **variational principle**: for any normalised state, the expectation of H is **at least the lowest eigenvalue** of H, with equality at the ground state. So the lowest cost you can reach is an upper bound on the ground-state energy, and it is exact if the circuit can represent the ground state.\n\nGradient descent needs the gradient dC/dθ. For circuits whose parameter enters through a gate e^(−iθP/2) with P a Pauli operator, the gradient can be computed from **two extra evaluations of the same circuit** with the parameter shifted: dC/dθ = [C(θ + π/2) − C(θ − π/2)] / 2. This **parameter-shift rule** holds exactly (not approximately like a finite difference) and works on real hardware, where you can only run circuits and estimate expectation values. The listing minimises the energy of H = Z + 0.5·X with the one-parameter ansatz |ψ(θ)⟩ = RY(θ)|0⟩, verifies the parameter-shift gradient against the analytic derivative and a finite difference, runs gradient descent, and compares the result with the exact lowest eigenvalue. The listings use NumPy and `qiskit` 2.5.2 (`pip install numpy qiskit==2.5.2`); Qiskit is used only to **cross-check** the NumPy results, so you can see that the mathematics and the software agree."
+            },
+            {
+              "type": "code",
+              "id": "c-variational",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.quantum_info import SparsePauliOp, Statevector\n\nH = SparsePauliOp.from_list([(\"Z\", 1.0), (\"X\", 0.5)])                   # the cost operator Z + 0.5 X\n\ndef energy(theta):\n    qc = QuantumCircuit(1)\n    qc.ry(theta, 0)                                                      # ansatz |psi(theta)> = RY(theta)|0>\n    return Statevector(qc).expectation_value(H).real\n\ndef parameter_shift(theta):\n    return (energy(theta + np.pi / 2) - energy(theta - np.pi / 2)) / 2\n\ntheta0 = 0.3\nanalytic = -np.sin(theta0) + 0.5 * np.cos(theta0)                        # E(theta) = cos(theta) + 0.5 sin(theta)\nfinite_difference = (energy(theta0 + 1e-6) - energy(theta0 - 1e-6)) / 2e-6\nprint(\"energy formula cos(t) + 0.5 sin(t) matches Qiskit:\", np.isclose(energy(theta0), np.cos(theta0) + 0.5 * np.sin(theta0)))\nprint(\"parameter-shift gradient equals the analytic one:\", np.isclose(parameter_shift(theta0), analytic))\nprint(\"a finite-difference gradient is close to it (an approximation that depends on the step size):\", np.isclose(finite_difference, analytic, atol=1e-6))\n\ntheta, rate = theta0, 0.5\nfor step in range(60):\n    theta -= rate * parameter_shift(theta)                                # gradient descent using only circuit evaluations\nexact = np.linalg.eigvalsh(H.to_matrix())[0]\nprint(f\"after 60 steps: theta = {theta:.4f}, energy = {energy(theta):.6f}\")\nprint(f\"exact lowest eigenvalue: {exact:.6f} = -sqrt(1.25) = {-np.sqrt(1.25):.6f}\")\nprint(\"variational energy never goes below the exact ground energy:\", energy(theta) >= exact - 1e-12)\n\nshots = 1000\nstandard_error = lambda expectation: np.sqrt((1 - expectation ** 2) / shots)      # std of the mean of N outcomes that are +1 or -1\nprint(f\"on hardware, a Pauli expectation of 0.7 estimated from {shots} shots has standard error about {standard_error(0.7):.3f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-variational",
+              "language": "text",
+              "code": "energy formula cos(t) + 0.5 sin(t) matches Qiskit: True\nparameter-shift gradient equals the analytic one: True\na finite-difference gradient is close to it (an approximation that depends on the step size): True\nafter 60 steps: theta = -2.6779, energy = -1.118034\nexact lowest eigenvalue: -1.118034 = -sqrt(1.25) = -1.118034\nvariational energy never goes below the exact ground energy: True\non hardware, a Pauli expectation of 0.7 estimated from 1000 shots has standard error about 0.023",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The descent converges to θ ≈ −2.678 (the same state as θ ≈ 3.605, since rotation angles repeat every 2π) and an energy of −1.118034, which equals the exact lowest eigenvalue −√1.25: the ansatz can represent the ground state of this one-qubit problem. The variational principle held at every step: the energy never dropped below the true minimum, so a lower number could only come from a mistake or from measurement noise.\n\n**On real hardware** the expectation values are estimated from finite shots, so each cost and each gradient carries **statistical noise** of order 1/√N (last line). That noise, plus gate errors, is why optimisation on real devices is harder than the clean curve here, and why B4 treats noise models and error mitigation. Other practical difficulties are **local minima** and **barren plateaus** (regions where gradients vanish), which grow worse with circuit size.\n\n**Common mistake.** Treating a finite-difference gradient as equivalent. On hardware a small shift is drowned by shot noise, whereas the parameter-shift rule uses large, exact shifts."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the variational principle guarantee?",
+              "options": [
+                "The expected energy of any normalised state is at least the lowest eigenvalue of H.",
+                "Gradient descent always finds the global minimum.",
+                "The ground state has energy zero."
+              ],
+              "correct_index": 0,
+              "explanation": "It gives an upper bound on the ground-state energy for any trial state, exact when the trial state is the ground state."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is the parameter-shift rule preferred to finite differences on hardware?",
+              "options": [
+                "It uses large exact shifts of the circuit parameter, so shot noise does not swamp the gradient.",
+                "It needs no circuit evaluations.",
+                "It removes all noise."
+              ],
+              "correct_index": 0,
+              "explanation": "Finite differences need tiny shifts whose effect is smaller than the sampling noise of the expectation value."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What limits the precision of an expectation value estimated from N shots?",
+              "options": [
+                "Statistical noise of about 1/sqrt(N)",
+                "The speed of light",
+                "Nothing"
+              ],
+              "correct_index": 0,
+              "explanation": "Each shot yields one random outcome; the mean converges at the rate 1/sqrt(N)."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B112",
+              "locator": "Abstract: analytic gradients of quantum circuits from circuit evaluations at shifted parameter values (the parameter-shift rule)"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-applications/vqe-molecules.ipynb and ch-demos/variational-quantum-regression.ipynb (variational optimisation of circuit parameters)"
+            },
+            {
+              "book": "B111",
+              "locator": "qiskit.quantum_info.SparsePauliOp and Statevector.expectation_value (used in the listing)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement that the parameter-shift rule is exact for gates of the form exp(-i theta P / 2) with P a Pauli operator is standard and is confirmed numerically in the listing; the abstract of arXiv:1811.11184 was not re-read for that exact condition."
+          },
+          "after": "sec-8"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "b1-n01",
+          "prompt": "How many complex amplitudes does a general 4-qubit state need?",
+          "options": [
+            "16",
+            "4",
+            "8"
+          ],
+          "correct_index": 0,
+          "explanation": "The state space has dimension 2^4 = 16.",
+          "source": {
+            "book": "B110",
+            "locator": "ch-appendix/linear_algebra.ipynb, Tensor Products"
+          }
+        },
+        {
+          "id": "b1-n02",
+          "prompt": "What does rank-nullity say about an m x n matrix?",
+          "options": [
+            "rank + nullity = n",
+            "rank = nullity",
+            "rank + nullity = m"
+          ],
+          "correct_index": 0,
+          "explanation": "The number of columns n splits into the dimension of the image and the dimension of the kernel.",
+          "source": {
+            "book": "B110",
+            "locator": "ch-appendix/linear_algebra.ipynb, Matrices and Matrix Operations"
+          }
+        },
+        {
+          "id": "b1-n03",
+          "prompt": "Which phase cannot be detected by any measurement?",
+          "options": [
+            "The global phase of the whole state",
+            "The relative phase between amplitudes",
+            "Both"
+          ],
+          "correct_index": 0,
+          "explanation": "Global phases cancel in every observable.",
+          "source": {
+            "book": "B110",
+            "locator": "ch-states/representing-qubit-states.ipynb, 2.2 Global Phase"
+          }
+        },
+        {
+          "id": "b1-n04",
+          "prompt": "What is ⟨0|+⟩ for |+⟩ = (|0⟩+|1⟩)/sqrt(2)?",
+          "options": [
+            "1/sqrt(2)",
+            "1",
+            "0"
+          ],
+          "correct_index": 0,
+          "explanation": "The overlap picks out the |0⟩ amplitude, 1/sqrt(2).",
+          "source": {
+            "book": "B110",
+            "locator": "ch-states/representing-qubit-states.ipynb, section 2.1"
+          }
+        },
+        {
+          "id": "b1-n05",
+          "prompt": "Which relation holds between two operators A and B?",
+          "options": [
+            "(AB)^dagger = B^dagger A^dagger",
+            "AB = BA always",
+            "(AB)^dagger = A^dagger B^dagger"
+          ],
+          "correct_index": 0,
+          "explanation": "The adjoint reverses the order of a product.",
+          "source": {
+            "book": "B110",
+            "locator": "ch-appendix/linear_algebra.ipynb, Matrices and Matrix Operations"
+          }
+        },
+        {
+          "id": "b1-n06",
+          "prompt": "What are the eigenvalues of the Hadamard gate?",
+          "options": [
+            "+1 and -1",
+            "0 and 1",
+            "i and -i"
+          ],
+          "correct_index": 0,
+          "explanation": "The Hadamard gate is Hermitian and unitary and squares to the identity.",
+          "source": {
+            "book": "B110",
+            "locator": "ch-states/single-qubit-gates.ipynb, 3 The Hadamard Gate"
+          }
+        },
+        {
+          "id": "b1-n07",
+          "prompt": "Why is exp(-iHt) unitary when H is Hermitian?",
+          "options": [
+            "Its eigenvalues are phases and its eigenvectors orthonormal",
+            "H is always the identity",
+            "It is always real"
+          ],
+          "correct_index": 0,
+          "explanation": "Each eigenvalue lambda of H becomes e^(-i lambda t) with |.| = 1.",
+          "source": {
+            "book": "B110",
+            "locator": "ch-appendix/linear_algebra.ipynb, Matrix Exponentials"
+          }
+        },
+        {
+          "id": "b1-n08",
+          "prompt": "In Qiskit, the circuit 'X on qubit 0' of a 2-qubit register gives which bit string?",
+          "options": [
+            "'01'",
+            "'10'",
+            "'11'"
+          ],
+          "correct_index": 0,
+          "explanation": "Qiskit uses little-endian bit ordering: qubit 0 is the rightmost bit.",
+          "source": {
+            "book": "B111",
+            "locator": "Guide: Bit-ordering in the Qiskit SDK"
+          }
+        },
+        {
+          "id": "b1-n09",
+          "prompt": "A pure two-qubit state with Schmidt rank 1 is:",
+          "options": [
+            "A product state",
+            "Maximally entangled",
+            "Mixed"
+          ],
+          "correct_index": 0,
+          "explanation": "Schmidt rank 1 means one nonzero singular value, i.e. a tensor product.",
+          "source": {
+            "book": "B110",
+            "locator": "ch-gates/multiple-qubits-entangled-states.ipynb, 3.2 Entangled States"
+          }
+        },
+        {
+          "id": "b1-n10",
+          "prompt": "What is ⟨+|Z|+⟩?",
+          "options": [
+            "0",
+            "1",
+            "-1"
+          ],
+          "correct_index": 0,
+          "explanation": "Z maps |+⟩ to |-⟩, which is orthogonal to |+⟩.",
+          "source": {
+            "book": "B110",
+            "locator": "ch-states/single-qubit-gates.ipynb, 2 The X, Y & Z-Bases"
+          }
+        },
+        {
+          "id": "b1-n11",
+          "prompt": "What does the variational principle guarantee about ⟨psi|H|psi⟩?",
+          "options": [
+            "It is never below the lowest eigenvalue of H",
+            "It equals the lowest eigenvalue",
+            "It is always zero"
+          ],
+          "correct_index": 0,
+          "explanation": "Any trial state gives an upper bound on the ground-state energy.",
+          "source": {
+            "book": "B110",
+            "locator": "ch-applications/vqe-molecules.ipynb"
+          }
+        },
+        {
+          "id": "b1-n12",
+          "prompt": "What is the parameter-shift rule used for?",
+          "options": [
+            "Computing exact gradients of circuit expectation values from shifted circuit runs",
+            "Compressing circuits",
+            "Reducing qubit count"
+          ],
+          "correct_index": 0,
+          "explanation": "dC/dtheta = [C(theta + pi/2) - C(theta - pi/2)]/2 for Pauli-rotation gates.",
+          "source": {
+            "book": "B112",
+            "locator": "Abstract"
+          }
+        }
+      ],
+      "estimated_minutes": 297,
+      "notes": "Rewrites nine outline sections as lessons whose every identity is checked in NumPy and cross-checked against qiskit.quantum_info 2.5.2: rank and dimension, Bloch vectors, Gram-Schmidt, Pauli algebra, eigen-decomposition and matrix exponentials, interference, tensor products with Qiskit's little-endian ordering and Schmidt rank, Dirac notation, and a variational optimisation with the parameter-shift rule.",
+      "learning_objectives": [
+        "Use vector spaces, bases, rank and dimension, and explain why n qubits need 2^n amplitudes.",
+        "Work with complex amplitudes, global versus relative phase, and the Bloch vector.",
+        "Compute inner products, norms and orthonormal bases, and use them to get probabilities.",
+        "Use matrix products, adjoints, commutators and the Pauli algebra.",
+        "Use eigen-decompositions of Hermitian and unitary matrices and the matrix exponential.",
+        "Explain interference, tensor products, Qiskit's qubit ordering, Schmidt rank, Dirac notation and variational optimisation, each verified numerically."
+      ]
+    }
+  ]
+}
