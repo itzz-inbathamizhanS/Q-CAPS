@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Module Overview</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<style>body{margin:0;background:#F5F5FA;font-family:'Inter',sans-serif;color:#171821}</style>
+</helmet>
+<div style="min-height:1120px;background:#F5F5FA;font-family:'Inter',sans-serif;color:#171821;padding:32px 48px 56px;box-sizing:border-box;display:flex;flex-direction:column;gap:28px">
+  <div style="font-size:13px;color:#666978;display:flex;gap:8px;flex-wrap:wrap">
+    <a href="Main.dc.html" style="color:#666978;text-decoration:none">Curriculum</a><span>/</span>
+    <a href="Main.dc.html" style="color:#666978;text-decoration:none">Track A · Foundations</a><span>/</span>
+    <span style="color:#171821;font-weight:600">A3 Networking Foundations</span>
+  </div>
+  <header style="background:#FFFFFF;border:1px solid #E5E5EE;border-radius:16px;padding:32px;display:flex;flex-wrap:wrap;gap:32px;justify-content:space-between;align-items:center">
+    <div style="max-width:620px">
+      <div style="font-size:12px;color:#5427E6;font-weight:600;letter-spacing:0.04em">MODULE A3 · BEGINNER</div>
+      <h1 style="margin:6px 0 10px;font-size:34px;line-height:1.15;font-weight:700">Networking Foundations</h1>
+      <p style="margin:0;font-size:15px;line-height:1.6;color:#484556">How data actually travels: packets, DNS, TCP and the TLS handshake that protects almost every connection you use. By the end you can trace a request from browser to server.</p>
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-top:18px;font-size:13px">
+        <span style="padding:6px 12px;border-radius:999px;background:#EDEDF2;color:#484556">8 sections</span>
+        <span style="padding:6px 12px;border-radius:999px;background:#EDEDF2;color:#484556">About 2 h 10 min</span>
+        <span style="padding:6px 12px;border-radius:999px;background:#E5DEFF;color:#5427E6;font-weight:600">+120 XP</span>
+      </div>
+    </div>
+    <div style="flex:0 0 280px;display:flex;flex-direction:column;gap:12px">
+      <div style="display:flex;justify-content:space-between;font-size:13px"><span style="color:#666978">Your progress</span><span style="font-weight:600">2 of 8 sections</span></div>
+      <div style="height:8px;border-radius:4px;background:#EDEDF2"><div style="width:25%;height:8px;border-radius:4px;background:#5427E6"></div></div>
+      <a href="Section.dc.html" style="margin-top:6px;padding:14px 20px;border-radius:8px;background:#5427E6;color:#FFFFFF;font-size:14px;font-weight:600;text-decoration:none;text-align:center">Continue: 3.3 The TLS handshake</a>
+    </div>
+  </header>
+  <section style="display:flex;flex-direction:column;gap:16px">
+    <div style="display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:12px">
+      <h2 style="margin:0;font-size:20px;font-weight:600">Sections</h2>
+      <div style="display:flex;gap:16px;font-size:12px;color:#666978;flex-wrap:wrap">
+        <span>Video</span><span>Interactive visual</span><span>Reading</span><span>Checkpoint</span>
+      </div>
+    </div>
+    <div style="display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px">
+      <sc-for list="{{sections}}" as="s" hint-placeholder-count="8">
+        <a href="Section.dc.html" style="display:flex;gap:18px;padding:20px;border-radius:14px;background:#FFFFFF;border:1px solid {{s.border}};text-decoration:none;color:#171821">
+          <span style="flex:0 0 112px;height:84px;border-radius:10px;background:{{s.thumb}};display:flex;align-items:center;justify-content:center;color:#FFFFFF;font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500">{{s.runtime}}</span>
+          <span style="display:flex;flex-direction:column;gap:6px;min-width:0">
+            <span style="font-size:12px;color:#666978;font-family:'JetBrains Mono',monospace">SECTION {{s.n}}</span>
+            <span style="font-size:16px;font-weight:600;line-height:1.3">{{s.title}}</span>
+            <span style="font-size:13px;line-height:1.5;color:#666978">{{s.blurb}}</span>
+            <span style="display:flex;gap:6px;flex-wrap:wrap;margin-top:2px">
+              <sc-for list="{{s.chips}}" as="c" hint-placeholder-count="3">
+                <span style="padding:3px 9px;border-radius:6px;background:#EDEDF2;color:#484556;font-size:11px;font-weight:600">{{c}}</span>
+              </sc-for>
+              <span style="padding:3px 9px;border-radius:6px;background:{{s.stBg}};color:{{s.stColor}};font-size:11px;font-weight:600">{{s.status}}</span>
+            </span>
+          </span>
+        </a>
+      </sc-for>
+    </div>
+  </section>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1120}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const d = [
+      ['How data travels','Packets, layers and why networks are built in stages.','8 min',['Video','Reading'],'done'],
+      ['IP addressing and DNS','From a name like example.com to an address a machine can reach.','12 min',['Video','Visual','Checkpoint'],'done'],
+      ['The TLS handshake','Watch ClientHello, certificate and key exchange happen step by step.','14 min',['Video','Visual','Checkpoint'],'current'],
+      ['TCP and UDP','Reliable delivery versus speed, and which protocols use which.','10 min',['Reading','Checkpoint'],'todo'],
+      ['HTTP and the web','Requests, responses, headers and where security headers fit.','12 min',['Video','Reading'],'todo'],
+      ['Firewalls and segmentation','Controlling traffic between zones, and why it limits damage.','11 min',['Visual','Reading'],'todo'],
+      ['Reading packet captures','Inspect real traffic and spot what is and is not encrypted.','18 min',['Lab','Checkpoint'],'todo'],
+      ['Module wrap-up','Trace one request end to end, then take the knowledge check.','10 min',['Visual','Quiz'],'todo']
+    ];
+    return {
+      sections: d.map(([title,blurb,runtime,chips,st], i) => ({
+        n: '0' + (i+1), title, blurb, runtime, chips,
+        border: st==='current' ? '#5427E6' : '#E5E5EE',
+        thumb: st==='done' ? '#10B981' : st==='current' ? '#5427E6' : '#797588',
+        status: st==='done' ? 'Completed' : st==='current' ? 'In progress' : 'Not started',
+        stBg: st==='done' ? '#D1FAE5' : st==='current' ? '#E5DEFF' : '#F3F3F8',
+        stColor: st==='done' ? '#065F46' : st==='current' ? '#5427E6' : '#484556'
+      }))
+    };
+  }
+}
+</script>
+</body>
+</html>

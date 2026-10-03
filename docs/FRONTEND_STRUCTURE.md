@@ -230,4 +230,5 @@ The frontend communicates with **two independent microservices**:
 2. **Analytics & Scoring Backend (`http://127.0.0.1:8000/api`)**:
    - Managed via `src/services/backendService.ts`.
    - Fetches live `UserProfile`, global rankings (`/leaderboard`), and algorithmic course recommendations (`/users/1/recommendation`).
-   - Receives scan findings (`/scanner/log`) and quiz submissions (`/quizzes/submit`) to calculate user readiness and update skill gap priorities.
+   - Receives scan results (`/scanner/log`) and server-graded quiz attempts (`/quizzes/{module_id}/attempts`) to calculate user readiness and update skill gap priorities.
+   - `/scanner/log` only accepts a result together with the scanner's signed `receipt` (issued by the scanner per scan, verified by `backend/main_api/scan_receipts.py`). The backend counts findings and awards XP from the verified result; a client-sent `vulnerabilities_found` is ignored, and replays are rejected (409).

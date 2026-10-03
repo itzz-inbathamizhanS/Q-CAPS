@@ -1,0 +1,139 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Section Lesson</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<style>body{margin:0;background:#F5F5FA;font-family:'Inter',sans-serif;color:#171821}</style>
+</helmet>
+<div style="min-height:1700px;background:#F5F5FA;font-family:'Inter',sans-serif;color:#171821">
+  <div style="display:flex;flex-wrap:wrap;gap:16px;justify-content:space-between;align-items:center;padding:14px 32px;background:#FFFFFF;border-bottom:1px solid #E5E5EE">
+    <a href="Overview.dc.html" style="font-size:14px;font-weight:600;color:#5427E6;text-decoration:none">Back to A3 Networking Foundations</a>
+    <div style="display:flex;gap:14px;align-items:center;font-size:13px;color:#666978">
+      <span>Section 3 of 8</span>
+      <div style="width:200px;height:6px;border-radius:3px;background:#EDEDF2"><div style="width:25%;height:6px;border-radius:3px;background:#5427E6"></div></div>
+    </div>
+  </div>
+  <div style="display:flex;flex-wrap:wrap;gap:32px;padding:32px;align-items:flex-start;box-sizing:border-box">
+    <aside style="flex:0 0 260px;background:#FFFFFF;border:1px solid #E5E5EE;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:4px;box-sizing:border-box">
+      <div style="font-size:12px;font-weight:600;letter-spacing:0.04em;color:#666978;padding:4px 8px 10px">SECTIONS</div>
+      <sc-for list="{{rail}}" as="r" hint-placeholder-count="8">
+        <a href="#" style="display:flex;gap:10px;align-items:center;padding:10px 8px;border-radius:8px;font-size:13px;text-decoration:none;color:{{r.color}};background:{{r.bg}};font-weight:{{r.weight}}">
+          <span style="flex:0 0 22px;height:22px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;background:{{r.dot}};color:{{r.dotText}}">{{r.mark}}</span>{{r.title}}
+        </a>
+      </sc-for>
+    </aside>
+    <main style="flex:999 1 640px;min-width:0;max-width:920px;display:flex;flex-direction:column;gap:28px">
+      <header>
+        <div style="font-size:12px;color:#5427E6;font-weight:600;letter-spacing:0.04em">A3 · SECTION 03</div>
+        <h1 style="margin:6px 0 0;font-size:34px;line-height:1.15;font-weight:700">The TLS handshake</h1>
+      </header>
+      <section style="display:flex;flex-direction:column;gap:12px">
+        <div style="position:relative;aspect-ratio:16/9;border-radius:14px;background:#171821;display:flex;align-items:center;justify-content:center;overflow:hidden">
+          <button aria-label="Play video" style="width:76px;height:76px;border-radius:50%;border:0;background:#5427E6;cursor:pointer;display:flex;align-items:center;justify-content:center">
+            <svg width="28" height="28" viewBox="0 0 24 24" fill="#FFFFFF"><path d="M8 5v14l11-7z"></path></svg>
+          </button>
+          <span style="position:absolute;left:16px;top:16px;padding:4px 10px;border-radius:6px;background:rgba(255,255,255,0.14);color:#F4EEFF;font-size:12px">Video placeholder · 4:12</span>
+          <div style="position:absolute;left:0;right:0;bottom:0;padding:14px 18px;display:flex;gap:14px;align-items:center;color:#E2E2E7;font-size:12px;font-family:'JetBrains Mono',monospace;background:rgba(0,0,0,0.35)">
+            <span>0:00</span><div style="flex:1;height:4px;border-radius:2px;background:rgba(255,255,255,0.25)"></div><span>4:12</span><span>CC</span><span>1x</span>
+          </div>
+        </div>
+        <div style="display:flex;flex-wrap:wrap;gap:8px;align-items:center">
+          <span style="font-size:12px;color:#666978;margin-right:4px">Chapters</span>
+          <span style="padding:6px 12px;border-radius:999px;background:#E5DEFF;color:#5427E6;font-size:12px;font-weight:600">0:00 Why handshake</span>
+          <span style="padding:6px 12px;border-radius:999px;background:#EDEDF2;color:#484556;font-size:12px">1:05 Certificates</span>
+          <span style="padding:6px 12px;border-radius:999px;background:#EDEDF2;color:#484556;font-size:12px">2:20 Key exchange</span>
+          <span style="padding:6px 12px;border-radius:999px;background:#EDEDF2;color:#484556;font-size:12px">3:30 Finished</span>
+          <a href="#" style="margin-left:auto;font-size:13px;color:#5427E6;font-weight:600;text-decoration:none">Show transcript</a>
+        </div>
+      </section>
+      <section style="background:#FFFFFF;border:1px solid #E5E5EE;border-radius:14px;padding:28px;display:flex;flex-direction:column;gap:22px">
+        <div style="display:flex;flex-wrap:wrap;justify-content:space-between;align-items:center;gap:12px">
+          <div>
+            <h2 style="margin:0;font-size:20px;font-weight:600">Walk through the handshake</h2>
+            <div style="font-size:13px;color:#666978;margin-top:2px">Step through each message between your browser and the server.</div>
+          </div>
+          <span style="padding:4px 10px;border-radius:6px;background:#FEF3C7;color:#92400E;font-size:11px;font-weight:700;letter-spacing:0.04em">SIMULATION</span>
+        </div>
+        <div style="display:grid;grid-template-columns:150px minmax(0,1fr) 150px;gap:16px;align-items:center">
+          <div style="padding:18px 12px;border-radius:12px;background:#F4EEFF;border:1px solid #E5DEFF;text-align:center;font-weight:600;font-size:14px">Browser<div style="font-weight:400;font-size:12px;color:#666978;margin-top:2px">client</div></div>
+          <div style="display:flex;flex-direction:column;align-items:center;gap:8px">
+            <div style="font-family:'JetBrains Mono',monospace;font-size:13px;font-weight:500;color:#5427E6">{{msg.name}}</div>
+            <div style="width:100%;display:flex;align-items:center;flex-direction:{{msg.dir}}">
+              <div style="flex:1;height:3px;background:#5427E6;border-radius:2px"></div>
+              <svg width="14" height="14" viewBox="0 0 14 14" fill="#5427E6" style="transform:{{msg.flip}}"><path d="M2 1l11 6-11 6z"></path></svg>
+            </div>
+          </div>
+          <div style="padding:18px 12px;border-radius:12px;background:#E0F2FE;border:1px solid #BAE6FD;text-align:center;font-weight:600;font-size:14px">Server<div style="font-weight:400;font-size:12px;color:#666978;margin-top:2px">example.com</div></div>
+        </div>
+        <div style="padding:16px 18px;border-radius:10px;background:#F9F9FE;border:1px solid #E5E5EE;font-size:14px;line-height:1.6;color:#484556">
+          <strong style="color:#171821">Step {{stepNo}} of 4.</strong> {{msg.text}}
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+          <button onClick="{{prev}}" style="padding:10px 18px;min-height:44px;border-radius:8px;border:1px solid #DADAED;background:#FFFFFF;font-family:'Inter',sans-serif;font-size:14px;font-weight:500;cursor:pointer">Previous step</button>
+          <button onClick="{{next}}" style="padding:10px 18px;min-height:44px;border-radius:8px;border:0;background:#5427E6;color:#FFFFFF;font-family:'Inter',sans-serif;font-size:14px;font-weight:600;cursor:pointer">Next step</button>
+          <div style="display:flex;gap:6px;margin-left:12px">
+            <sc-for list="{{dots}}" as="d" hint-placeholder-count="4"><span style="width:10px;height:10px;border-radius:50%;background:{{d.bg}}"></span></sc-for>
+          </div>
+        </div>
+      </section>
+      <section style="display:flex;flex-direction:column;gap:14px">
+        <h2 style="margin:0;font-size:22px;font-weight:600">What is happening</h2>
+        <p style="margin:0;font-size:16px;line-height:1.75;color:#484556;max-width:68ch">Before any page content is sent, the browser and server agree on how to protect it. The server proves who it is with a certificate, and both sides derive a shared secret key that only they know. Everything afterwards is encrypted with that key.</p>
+        <div style="padding:16px 20px;border-radius:10px;background:#FFFFFF;border:1px solid #E5E5EE;border-left:4px solid #5427E6;font-size:14px;line-height:1.6;color:#484556;max-width:68ch"><strong style="color:#171821">Why this matters for quantum.</strong> The key exchange step is what a large quantum computer running Shor's algorithm would break. Post-quantum key exchange replaces it; you will see this in Track B.</div>
+      </section>
+      <section style="background:#FFFFFF;border:1px solid #E5E5EE;border-radius:14px;padding:28px;display:flex;flex-direction:column;gap:16px">
+        <div style="font-size:12px;font-weight:600;letter-spacing:0.04em;color:#5427E6">CHECKPOINT</div>
+        <h2 style="margin:0;font-size:18px;font-weight:600;line-height:1.4">Which message lets the browser verify the server's identity?</h2>
+        <div style="display:flex;flex-direction:column;gap:10px">
+          <sc-for list="{{options}}" as="o" hint-placeholder-count="3">
+            <button onClick="{{o.pick}}" style="display:flex;gap:12px;align-items:center;text-align:left;padding:14px 16px;min-height:44px;border-radius:10px;border:1.5px solid {{o.border}};background:{{o.bg}};font-family:'Inter',sans-serif;font-size:14px;color:#171821;cursor:pointer">{{o.label}}</button>
+          </sc-for>
+        </div>
+      </section>
+      <nav style="display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap">
+        <a href="#" style="padding:14px 22px;border-radius:8px;border:1px solid #DADAED;background:#FFFFFF;color:#171821;font-size:14px;font-weight:500;text-decoration:none">Previous: 3.2 IP addressing and DNS</a>
+        <a href="#" style="padding:14px 22px;border-radius:8px;background:#5427E6;color:#FFFFFF;font-size:14px;font-weight:600;text-decoration:none">Complete and continue: 3.4 TCP and UDP</a>
+      </nav>
+    </main>
+  </div>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1700}}'>
+class Component extends DCLogic {
+  constructor(props) { super(props); this.state = { step: 0, picked: -1 }; }
+  renderVals() {
+    const steps = [
+      { name: 'ClientHello', dir: 'row', flip: 'none', text: 'The browser says hello and lists the encryption methods it supports.' },
+      { name: 'ServerHello + Certificate', dir: 'row-reverse', flip: 'scaleX(-1)', text: 'The server chooses a method and sends its certificate, which links its public key to its identity.' },
+      { name: 'Key exchange', dir: 'row', flip: 'none', text: 'The browser checks the certificate, then both sides exchange values that let each derive the same secret key.' },
+      { name: 'Finished', dir: 'row-reverse', flip: 'scaleX(-1)', text: 'Both sides confirm the handshake worked. From here on, traffic is encrypted with the shared key.' }
+    ];
+    const s = this.state.step;
+    const titles = ['How data travels','IP addressing and DNS','The TLS handshake','TCP and UDP','HTTP and the web','Firewalls and segmentation','Reading packet captures','Module wrap-up'];
+    const opts = ['ClientHello','The server certificate','The Finished message'];
+    return {
+      msg: steps[s], stepNo: s + 1,
+      prev: () => this.setState({ step: Math.max(0, s - 1) }),
+      next: () => this.setState({ step: Math.min(3, s + 1) }),
+      dots: steps.map((_, i) => ({ bg: i === s ? '#5427E6' : '#E2E2E7' })),
+      rail: titles.map((title, i) => ({ title, mark: i < 2 ? '✓' : String(i + 1), bg: i === 2 ? '#E5DEFF' : 'transparent', color: i === 2 ? '#5427E6' : '#484556', weight: i === 2 ? 600 : 500, dot: i < 2 ? '#10B981' : i === 2 ? '#5427E6' : '#EDEDF2', dotText: i < 3 ? '#FFFFFF' : '#484556' })),
+      options: opts.map((label, i) => {
+        const on = this.state.picked === i;
+        const right = i === 1;
+        return { label, border: on ? (right ? '#10B981' : '#BA1A1A') : '#E5E5EE', bg: on ? (right ? '#ECFDF5' : '#FFF1F0') : '#FFFFFF', pick: () => this.setState({ picked: i }) };
+      })
+    };
+  }
+}
+</script>
+</body>
+</html>

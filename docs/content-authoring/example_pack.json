@@ -1,0 +1,151 @@
+{
+ "pack_version": 1,
+ "books": [
+  {
+   "id": "B01",
+   "title": "Example Book Title",
+   "authors": "Example Author",
+   "edition": "2nd",
+   "year": 2023,
+   "publisher": "Example Press",
+   "isbn": "000-0-00-000000-0"
+  }
+ ],
+ "modules": [
+  {
+   "slug": "track_a_a3_networking_foundations",
+   "action": "modify",
+   "sections": [
+    {
+     "slug": "example-new-section",
+     "action": "new",
+     "after": "sec-7",
+     "title": "EXAMPLE: A new section after 3.7",
+     "summary": "One sentence that tells a learner what this section covers (300 characters at most).",
+     "estimated_minutes": 12,
+     "blocks": [
+      {
+       "type": "text",
+       "markdown": "EXAMPLE ONLY. Replace this paragraph with an explanation, written in your own words, of one idea from the books. Start with what the learner needs to know and why it matters, then explain the mechanism step by step, then give one concrete example. Keep the sentences short and avoid jargon the learner has not met yet. Every number, date or standard you mention must appear in a cited book at the locator you give. If a book is older than the standard it describes, say so in needs_verification instead of guessing the current status. Aim for 150 to 400 words of text in each section, split into short paragraphs and lists where that helps the reader. Finish with one sentence that tells the learner what to try next."
+      },
+      {
+       "type": "callout",
+       "variant": "warning",
+       "title": "Common mistake",
+       "text": "EXAMPLE ONLY. State one frequent misunderstanding and the correction."
+      },
+      {
+       "type": "code",
+       "language": "python",
+       "code": "print('EXAMPLE ONLY: code must come from, or be checked against, a book')",
+       "caption": "Example caption"
+      },
+      {
+       "type": "checkpoint",
+       "question": "EXAMPLE ONLY: a question the section above answers?",
+       "options": [
+        "Wrong answer",
+        "Right answer",
+        "Another wrong answer"
+       ],
+       "correct_index": 1,
+       "explanation": "EXAMPLE ONLY. Say why the right answer is right, in one or two sentences."
+      }
+     ],
+     "sources": [
+      {
+       "book": "B01",
+       "locator": "Ch. 4, pp. 61-68",
+       "note": "Optional: what this source supports"
+      }
+     ],
+     "needs_verification": {
+      "reason": "Optional. Use when the book may be out of date, e.g. a standard published after the book."
+     }
+    }
+   ],
+   "quiz": [
+    {
+     "id": "a3-pk01",
+     "prompt": "EXAMPLE ONLY question 1?",
+     "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+     ],
+     "correct_index": 1,
+     "explanation": "EXAMPLE ONLY explanation.",
+     "source": {
+      "book": "B01",
+      "locator": "Ch. 4, p. 61"
+     }
+    },
+    {
+     "id": "a3-pk02",
+     "prompt": "EXAMPLE ONLY question 2?",
+     "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+     ],
+     "correct_index": 2,
+     "explanation": "EXAMPLE ONLY explanation.",
+     "source": {
+      "book": "B01",
+      "locator": "Ch. 4, p. 61"
+     }
+    },
+    {
+     "id": "a3-pk03",
+     "prompt": "EXAMPLE ONLY question 3?",
+     "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+     ],
+     "correct_index": 3,
+     "explanation": "EXAMPLE ONLY explanation.",
+     "source": {
+      "book": "B01",
+      "locator": "Ch. 4, p. 61"
+     }
+    },
+    {
+     "id": "a3-pk04",
+     "prompt": "EXAMPLE ONLY question 4?",
+     "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+     ],
+     "correct_index": 0,
+     "explanation": "EXAMPLE ONLY explanation.",
+     "source": {
+      "book": "B01",
+      "locator": "Ch. 4, p. 61"
+     }
+    },
+    {
+     "id": "a3-pk05",
+     "prompt": "EXAMPLE ONLY question 5?",
+     "options": [
+      "Option A",
+      "Option B",
+      "Option C",
+      "Option D"
+     ],
+     "correct_index": 1,
+     "explanation": "EXAMPLE ONLY explanation.",
+     "source": {
+      "book": "B01",
+      "locator": "Ch. 4, p. 61"
+     }
+    }
+   ]
+  }
+ ]
+}

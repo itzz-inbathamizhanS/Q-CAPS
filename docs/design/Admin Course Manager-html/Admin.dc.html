@@ -1,0 +1,94 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Admin Course Manager</title>
+<script src="./vendor/react.js"></script>
+<script src="./vendor/react-dom.js"></script>
+<script src="./support.js"></script>
+</head>
+<body>
+<x-dc>
+<helmet>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&amp;family=JetBrains+Mono:wght@500&amp;display=swap" rel="stylesheet">
+<style>body{margin:0;background:#F5F5FA;font-family:'Inter',sans-serif;color:#171821}</style>
+</helmet>
+<div style="display:flex;flex-wrap:wrap;min-height:1000px;background:#F5F5FA;font-family:'Inter',sans-serif;color:#171821">
+  <nav style="flex:0 0 232px;background:#171821;padding:24px 16px;display:flex;flex-direction:column;gap:4px;box-sizing:border-box">
+    <div style="font-weight:700;font-size:18px;color:#FFFFFF;padding:0 12px 4px">Q-CAPS</div>
+    <div style="font-size:11px;font-weight:700;letter-spacing:0.08em;color:#9485FF;padding:0 12px 20px">ADMIN</div>
+    <sc-for list="{{nav}}" as="n" hint-placeholder-count="6">
+      <a href="#" style="display:block;padding:10px 12px;border-radius:8px;font-size:14px;text-decoration:none;font-weight:{{n.weight}};background:{{n.bg}};color:{{n.color}}">{{n.label}}</a>
+    </sc-for>
+  </nav>
+  <main style="flex:999 1 640px;min-width:0;padding:40px 48px;box-sizing:border-box;display:flex;flex-direction:column;gap:28px">
+    <header style="display:flex;flex-wrap:wrap;gap:20px;justify-content:space-between;align-items:flex-end">
+      <div>
+        <h1 style="margin:0;font-size:30px;font-weight:700;line-height:1.2">Course management</h1>
+        <p style="margin:6px 0 0;font-size:14px;color:#666978">Create and edit tracks, modules and sections. Changes stay as drafts until published.</p>
+      </div>
+      <div style="display:flex;gap:12px">
+        <a href="#" style="padding:12px 18px;border-radius:8px;border:1px solid #DADAED;background:#FFFFFF;font-size:14px;font-weight:500;color:#171821;text-decoration:none">New track</a>
+        <a href="#" style="padding:12px 18px;border-radius:8px;background:#5427E6;color:#FFFFFF;font-size:14px;font-weight:600;text-decoration:none">New module</a>
+      </div>
+    </header>
+    <section style="display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px">
+      <sc-for list="{{stats}}" as="s" hint-placeholder-count="4">
+        <div style="background:#FFFFFF;border:1px solid #E5E5EE;border-radius:12px;padding:18px 20px"><div style="font-size:13px;color:#666978">{{s.label}}</div><div style="font-size:26px;font-weight:700;margin-top:4px">{{s.value}}</div></div>
+      </sc-for>
+    </section>
+    <div style="display:flex;flex-wrap:wrap;gap:24px;align-items:flex-start">
+      <aside style="flex:0 0 260px;background:#FFFFFF;border:1px solid #E5E5EE;border-radius:12px;padding:16px;display:flex;flex-direction:column;gap:6px;box-sizing:border-box">
+        <div style="font-size:12px;font-weight:600;letter-spacing:0.04em;color:#666978;padding:4px 8px 8px">TRACKS</div>
+        <sc-for list="{{tracks}}" as="t" hint-placeholder-count="4">
+          <a href="#" style="display:flex;justify-content:space-between;gap:8px;padding:12px;border-radius:8px;text-decoration:none;background:{{t.bg}};color:{{t.color}};font-size:14px;font-weight:{{t.weight}}">
+            <span>{{t.title}}</span><span style="font-size:12px;color:#666978">{{t.count}}</span>
+          </a>
+        </sc-for>
+      </aside>
+      <section style="flex:999 1 560px;min-width:0;background:#FFFFFF;border:1px solid #E5E5EE;border-radius:12px;overflow:hidden">
+        <div style="display:flex;flex-wrap:wrap;gap:12px;justify-content:space-between;align-items:center;padding:20px 24px;border-bottom:1px solid #E5E5EE">
+          <div>
+            <div style="font-size:12px;color:#5427E6;font-weight:600">TRACK A</div>
+            <div style="font-size:18px;font-weight:600">Foundations</div>
+          </div>
+          <div style="display:flex;gap:10px">
+            <a href="#" style="padding:8px 14px;border-radius:8px;border:1px solid #DADAED;font-size:13px;font-weight:500;color:#171821;text-decoration:none">Track settings</a>
+            <a href="#" style="padding:8px 14px;border-radius:8px;border:1px solid #DADAED;font-size:13px;font-weight:500;color:#171821;text-decoration:none">Reorder</a>
+          </div>
+        </div>
+        <div style="display:grid;grid-template-columns:36px minmax(0,3fr) 80px 110px 110px 90px;gap:12px;padding:12px 24px;background:#F9F9FE;font-size:12px;font-weight:600;color:#666978;letter-spacing:0.04em">
+          <span></span><span>MODULE</span><span>SECTIONS</span><span>STATUS</span><span>UPDATED</span><span></span>
+        </div>
+        <sc-for list="{{rows}}" as="r" hint-placeholder-count="8">
+          <div style="display:grid;grid-template-columns:36px minmax(0,3fr) 80px 110px 110px 90px;gap:12px;padding:16px 24px;align-items:center;border-top:1px solid #E5E5EE;font-size:14px">
+            <span style="color:#C9C4D9;font-size:18px;letter-spacing:-2px">⋮⋮</span>
+            <span style="display:flex;gap:12px;align-items:center;min-width:0"><span style="font-family:'JetBrains Mono',monospace;font-size:12px;color:#5427E6;font-weight:500">{{r.code}}</span><span style="font-weight:500">{{r.title}}</span></span>
+            <span style="color:#484556">{{r.sections}}</span>
+            <span><span style="padding:3px 10px;border-radius:999px;font-size:12px;font-weight:600;background:{{r.stBg}};color:{{r.stColor}}">{{r.status}}</span></span>
+            <span style="color:#666978;font-size:13px">{{r.updated}}</span>
+            <a href="Editor.dc.html" style="padding:8px 12px;border-radius:8px;border:1px solid #DADAED;font-size:13px;font-weight:500;color:#5427E6;text-decoration:none;text-align:center">Edit</a>
+          </div>
+        </sc-for>
+      </section>
+    </div>
+  </main>
+</div>
+</x-dc>
+<script type="text/x-dc" data-dc-script data-props='{"$preview":{"width":1440,"height":1000}}'>
+class Component extends DCLogic {
+  renderVals() {
+    const m = [['A1','Computing Foundations',8,'pub','Sep 18'],['A2','Mathematics Foundations',8,'pub','Sep 18'],['A3','Networking Foundations',8,'draft','Today'],['A4','Cybersecurity Foundations',6,'pub','Sep 20'],['A5','Cryptography Foundations',7,'pub','Sep 21'],['A6','Quantum Foundations',9,'draft','Oct 1'],['A7','First Quantum Programming',6,'pub','Sep 25'],['A8','PQC Mitigation',5,'review','Oct 2']];
+    const st = { pub: ['Published','#D1FAE5','#065F46'], draft: ['Draft','#EDEDF2','#484556'], review: ['In review','#FEF3C7','#92400E'] };
+    return {
+      nav: [['Overview',0],['Courses',1],['Quizzes',0],['Badges',0],['Users & roles',0],['Audit log',0]].map(([label,on]) => ({label, weight: on ? 600 : 500, bg: on ? '#2A2B3A' : 'transparent', color: on ? '#FFFFFF' : '#C9C4D9'})),
+      stats: [{label:'Tracks',value:'4'},{label:'Modules',value:'36'},{label:'Sections',value:'248'},{label:'Drafts awaiting review',value:'3'}],
+      tracks: [['Track A · Foundations','8',1],['Track B · Intermediate','11',0],['Track C · Advanced','11',0],['Track D · Enterprise','6',0]].map(([title,count,on]) => ({title, count, bg: on ? '#E5DEFF' : 'transparent', color: on ? '#5427E6' : '#171821', weight: on ? 600 : 500})),
+      rows: m.map(([code,title,sections,s,updated]) => ({code, title, sections, updated, status: st[s][0], stBg: st[s][1], stColor: st[s][2]}))
+    };
+  }
+}
+</script>
+</body>
+</html>
