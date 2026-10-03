@@ -1,0 +1,962 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B113",
+      "title": "From Classical to Quantum Shannon Theory (Quantum Information Theory, 2nd edition draft, arXiv:1106.1445v8)",
+      "authors": "Mark M. Wilde",
+      "edition": "arXiv v8, 14 July 2019",
+      "year": 2019,
+      "publisher": "Cambridge University Press (draft on arXiv, CC BY-NC-SA 3.0)"
+    },
+    {
+      "id": "B110",
+      "title": "Qiskit Textbook (GitHub repository Qiskit/textbook, notebooks), accessed 2026-10-04",
+      "authors": "Qiskit community",
+      "edition": "accessed 2026-10-04",
+      "year": 2023,
+      "publisher": "IBM and the Qiskit community"
+    },
+    {
+      "id": "B111",
+      "title": "Qiskit SDK documentation and guides (quantum.cloud.ibm.com/docs), accessed 2026-10-04",
+      "authors": "IBM Quantum",
+      "edition": "accessed 2026-10-04",
+      "year": 2026,
+      "publisher": "IBM"
+    },
+    {
+      "id": "B114",
+      "title": "Qiskit Aer 0.17.1 API documentation: qiskit_aer.noise (accessed 2026-10-04)",
+      "authors": "Qiskit Development Team",
+      "edition": "0.17.1",
+      "year": 2025,
+      "publisher": "IBM"
+    },
+    {
+      "id": "B115",
+      "title": "Quantum cloning (Rev. Mod. Phys. 77, 1225; arXiv:quant-ph/0511088)",
+      "authors": "Valerio Scarani, Sofyan Iblisdir, Nicolas Gisin",
+      "edition": "2005",
+      "year": 2005
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_b_b2_quantum_information",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "2.1 Qubits and Multi-Qubit Systems",
+          "summary": "Joint and marginal probabilities of n qubits, correlation without a product structure, and the exponential gap between product states and general states.",
+          "estimated_minutes": 30,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A single qubit is a unit vector in C²; n qubits live in the tensor product C^(2^n). The Born rule applies to the whole register: a measurement of all qubits returns an n-bit string x with probability |c_x|². You can also measure only some of the qubits. The distribution of the *measured* qubits is the **marginal distribution**, obtained by summing the joint probabilities over the unmeasured qubits. If the qubits are not entangled, the joint distribution is the product of the marginals; if they are entangled, it is not, and the whole is more than its parts.\n\nThe size of the space makes a quantitative point worth knowing. A **product state** of n qubits is described by 2n real numbers (two per qubit, after removing normalisation and global phase); a **general** state needs 2^(n+1) − 2. The gap between them, the room that only entanglement can fill, grows exponentially. The first listing builds a three-qubit state with an entangled pair (qubits 0 and 1) and an independent qubit 2, computes the marginal of qubits 0 and 1 by hand, checks it against Qiskit, tests whether the joint distribution factorises, and tabulates the parameter counts. The listings use NumPy and `qiskit` 2.5.2 (and `qiskit-aer` 0.17.2 where noise is simulated): `pip install numpy qiskit==2.5.2 qiskit-aer==0.17.2`. Each result is computed twice, once from the mathematics in NumPy and once with Qiskit, and the two must agree."
+            },
+            {
+              "type": "code",
+              "id": "c-multiqubit",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.quantum_info import Statevector\n\nqc = QuantumCircuit(3)\nqc.h(0); qc.cx(0, 1)                      # qubits 0 and 1: a Bell pair\nqc.rx(0.9, 2)                              # qubit 2: an independent single-qubit state\nstate = Statevector(qc)\njoint = np.abs(state.data) ** 2            # index = q2*4 + q1*2 + q0 in Qiskit's ordering\n\ndef marginal(joint, keep):\n    out = np.zeros(2 ** len(keep))\n    for index, p in enumerate(joint):\n        bits = [(index >> q) & 1 for q in range(3)]\n        out[sum(bits[q] << position for position, q in enumerate(keep))] += p\n    return out\n\nby_hand = marginal(joint, [0, 1])\nprint(\"marginal of qubits 0,1:\", np.round(by_hand, 4).tolist(), \"| Qiskit agrees:\", np.allclose(by_hand, state.probabilities([0, 1])))\np01, p2 = marginal(joint, [0, 1]), marginal(joint, [2])\nprint(\"joint = marginal(q0,q1) x marginal(q2) (independent):\", np.allclose(joint, np.kron(p2, p01)))\n\np0, p1 = marginal(joint, [0]), marginal(joint, [1])\nprint(\"P(q0=0, q1=1) =\", round(by_hand[2], 4), \"but P(q0=0) * P(q1=1) =\", round(p0[0] * p1[1], 4), \"-> the pair is correlated, so it is not a product\")\n\nprint(f\"{'n':>3} {'product states':>15} {'general states':>16}   (real parameters)\")\nfor n in (2, 3, 5, 10, 20):\n    print(f\"{n:>3} {2 * n:>15} {2 ** (n + 1) - 2:>16,}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-multiqubit",
+              "language": "text",
+              "code": "marginal of qubits 0,1: [0.5, 0.0, 0.0, 0.5] | Qiskit agrees: True\njoint = marginal(q0,q1) x marginal(q2) (independent): True\nP(q0=0, q1=1) = 0.0 but P(q0=0) * P(q1=1) = 0.25 -> the pair is correlated, so it is not a product\n  n  product states   general states   (real parameters)\n  2               4                6\n  3               6               14\n  5              10               62\n 10              20            2,046\n 20              40        2,097,150",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The marginal of qubits 0 and 1 is the Bell distribution (½ on 00, ½ on 11), and the joint distribution factorises across the boundary between the pair and qubit 2, so qubit 2 is independent of the pair. Within the pair the product of the marginals gives ¼ where the true joint probability is 0: perfect correlation that no product state can produce. The parameter table is the quantitative form of the earlier dimension argument: a 20-qubit product state is fixed by 40 numbers, a general one by about two million.\n\n**Common mistake.** Reading the marginal distribution as the state of the measured qubits. For an entangled pair, each qubit alone has no pure state (the next lessons describe it by a density matrix), so \"the state of qubit 0\" is not a vector."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How many real parameters does a general (pure) state of 3 qubits have after removing normalisation and global phase?",
+              "options": [
+                "14",
+                "6",
+                "8"
+              ],
+              "correct_index": 0,
+              "explanation": "A general state has 2^3 = 8 complex amplitudes, 16 real numbers; normalisation and global phase remove two, leaving 2^(n+1) - 2 = 14."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "The joint distribution of two qubits does not equal the product of their marginals. What does this show?",
+              "options": [
+                "The qubits are correlated",
+                "The state is not normalised",
+                "The marginals are wrong"
+              ],
+              "correct_index": 0,
+              "explanation": "If measuring one qubit changes your prediction for the other, the joint distribution cannot factorise."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Section 3.2 (Quantum Bits) and Section 3.5 (Composite Quantum Systems, including 3.5.2 Probability Amplitudes for Composite Systems)"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-gates/multiple-qubits-entangled-states.ipynb, section 1 (Representing Multi-Qubit States)"
+            },
+            {
+              "book": "B111",
+              "locator": "qiskit.quantum_info.Statevector.probabilities (used for the cross-check)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The parameter counts 2n and 2^(n+1)-2 are standard counting arguments, not quoted from a section of the cited sources."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "2.2 Entanglement (Formal Treatment)",
+          "summary": "The Bell states, entanglement as a resource, and the CHSH game: a classical limit of 3/4 and a quantum strategy that beats it, computed exactly.",
+          "estimated_minutes": 38,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Two qubits are **entangled** when their joint state is not a tensor product. The four **Bell states** are the maximally entangled basis of two qubits, for example |Φ+⟩ = (|00⟩ + |11⟩)/√2. They are *maximally* entangled in the sense that each qubit alone is completely random (the maximally mixed state I/2) while the pair is perfectly correlated. Entanglement is an **operational resource**: with a shared Bell pair, two distant parties can perform tasks impossible with classical resources, such as **teleportation** (sending an unknown qubit using the pair and two classical bits) and **super-dense coding**.\n\nThe cleanest demonstration that entanglement is not just classical correlation is the **CHSH game**. A referee sends random bits x and y to Alice and Bob, who cannot communicate. They return bits a and b and **win if a ⊕ b = x·y**, that is, if a = b unless both received 1, in which case a ≠ b is required. Any classical strategy, including shared randomness, wins with probability at most **3/4**. If Alice and Bob share |Φ+⟩ and measure suitable observables, they win with probability cos²(π/8) ≈ **0.854**. That is Bell's theorem as a game. The listing finds the classical limit by trying every deterministic strategy, computes the quantum winning probability exactly with Alice measuring Z or X and Bob measuring (Z ± X)/√2, confirms it with Qiskit, and checks that the largest value this quantum correlation can reach for these observables is 2√2. The listings use NumPy and `qiskit` 2.5.2 (and `qiskit-aer` 0.17.2 where noise is simulated): `pip install numpy qiskit==2.5.2 qiskit-aer==0.17.2`. Each result is computed twice, once from the mathematics in NumPy and once with Qiskit, and the two must agree."
+            },
+            {
+              "type": "code",
+              "id": "c-chsh",
+              "language": "python",
+              "code": "import itertools\nimport numpy as np\nfrom qiskit.quantum_info import SparsePauliOp, Statevector\n\n# Classical strategies: every deterministic choice of Alice's answers a(x) and Bob's answers b(y)\nbest = 0\nfor a0, a1, b0, b1 in itertools.product((0, 1), repeat=4):\n    wins = sum((a ^ b) == (x & y) for x, a in ((0, a0), (1, a1)) for y, b in ((0, b0), (1, b1)))\n    best = max(best, wins / 4)\nprint(\"best classical winning probability over all 16 deterministic strategies:\", best)\n\n# Quantum strategy with the Bell state (|00> + |11>)/sqrt(2)\nbell = Statevector([1, 0, 0, 1]) / np.sqrt(2)\nZ, X, I = np.diag([1, -1]), np.array([[0, 1], [1, 0]]), np.eye(2)\nalice = {0: Z, 1: X}\nbob = {0: (Z + X) / np.sqrt(2), 1: (Z - X) / np.sqrt(2)}\nE = {(x, y): float(np.real(bell.data.conj() @ np.kron(alice[x], bob[y]) @ bell.data)) for x in (0, 1) for y in (0, 1)}\nS = E[0, 0] + E[0, 1] + E[1, 0] - E[1, 1]\nwin = 0.5 + S / 8                                   # P(win) = 1/2 + S/8 for the CHSH combination S\nprint(\"correlations E(x,y):\", {k: round(v, 4) for k, v in E.items()})\nprint(f\"CHSH value S = {S:.4f}  (classical limit 2, 2*sqrt(2) = {2 * np.sqrt(2):.4f}) -> winning probability {win:.4f} = cos^2(pi/8) = {np.cos(np.pi / 8) ** 2:.4f}\")\n\n# Cross-check with Qiskit's Pauli expectation values\n# With Alice measuring Z or X and Bob (Z +/- X)/sqrt2, the CHSH combination equals sqrt2 (ZZ + XX)\nqiskit_S = bell.expectation_value(SparsePauliOp.from_list([(\"ZZ\", np.sqrt(2)), (\"XX\", np.sqrt(2))])).real\nprint(\"Qiskit gives the same CHSH value:\", np.isclose(qiskit_S, S))\n\n# The largest value of the CHSH operator over all states, for these observables\nchsh_operator = np.kron(alice[0], bob[0] + bob[1]) + np.kron(alice[1], bob[0] - bob[1])\nprint(\"largest eigenvalue of the CHSH operator:\", round(float(np.linalg.eigvalsh(chsh_operator)[-1]), 4))\n\nrng = np.random.default_rng(11)\nwins = 0; rounds = 20000\nfor _ in range(rounds):\n    x, y = rng.integers(0, 2, size=2)\n    # measure the Bell pair: Alice in the eigenbasis of alice[x], Bob in that of bob[y]\n    _, va = np.linalg.eigh(alice[x]); _, vb = np.linalg.eigh(bob[y])\n    probabilities = np.abs(np.kron(va, vb).conj().T @ bell.data) ** 2\n    outcome = rng.choice(4, p=probabilities / probabilities.sum())\n    a, b = outcome // 2, outcome % 2\n    wins += (a ^ b) == (x & y)\nprint(f\"simulated {rounds} rounds: win rate {wins / rounds:.3f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-chsh",
+              "language": "text",
+              "code": "best classical winning probability over all 16 deterministic strategies: 0.75\ncorrelations E(x,y): {(0, 0): 0.7071, (0, 1): 0.7071, (1, 0): 0.7071, (1, 1): -0.7071}\nCHSH value S = 2.8284  (classical limit 2, 2*sqrt(2) = 2.8284) -> winning probability 0.8536 = cos^2(pi/8) = 0.8536\nQiskit gives the same CHSH value: True\nlargest eigenvalue of the CHSH operator: 2.8284\nsimulated 20000 rounds: win rate 0.853",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The classical limit is 3/4 and the entangled strategy reaches 0.854, a difference no amount of classical shared randomness can produce, and the simulated rate sits close to the exact value. The CHSH value S = 2√2 ≈ 2.828 is also the largest the quantum strategy can reach for these observables (the largest eigenvalue of the CHSH operator, a limit known as Tsirelson's bound), so entanglement helps but does not allow arbitrary correlations.\n\n**Two cautions.** First, this does **not** allow communication: Alice's outcomes alone are uniformly random whatever Bob does, and the correlation only appears when the two lists are compared, which needs a classical channel. Second, \"spooky\" is not \"faster than light messaging\": that is why entanglement-based protocols such as teleportation still need classical bits."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the maximum winning probability of any classical strategy in the CHSH game?",
+              "options": [
+                "3/4",
+                "1",
+                "cos^2(pi/8)"
+              ],
+              "correct_index": 0,
+              "explanation": "Trying all deterministic strategies shows at most 3 of the 4 question pairs can be won; shared randomness only mixes deterministic strategies."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Can Alice use a shared Bell pair to send Bob a message without any classical channel?",
+              "options": [
+                "No: her local outcomes are uniformly random whatever Bob does",
+                "Yes, instantly",
+                "Only if the qubits are far apart"
+              ],
+              "correct_index": 0,
+              "explanation": "The no-signalling property: marginal statistics at one side do not depend on the other side's choices."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Section 3.6 (Entanglement), especially 3.6.1 (Entanglement as a Resource), 3.6.2 (Entanglement in the CHSH Game) and 3.6.3 (The Bell States)"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-demos/chsh.ipynb (local realism and the CHSH inequality: classical bound 2)"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-algorithms/teleportation.ipynb and superdense-coding.ipynb"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The name 'Tsirelson's bound' is standard but was not looked up in the cited sources; the value 2*sqrt(2) is computed in the listing."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "2.3 Density Matrices",
+          "summary": "Describing mixed and entangled subsystems: density matrices, purity, entropy, and the partial trace that turns a Bell pair into a maximally mixed qubit.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A state vector cannot describe a qubit that is **entangled** with something else, nor a qubit prepared by a **random process**. The tool that can is the **density matrix** ρ. For a pure state |ψ⟩, ρ = |ψ⟩⟨ψ|. For a probabilistic mixture that prepares |ψ_i⟩ with probability p_i, ρ = Σ p_i |ψ_i⟩⟨ψ_i|. A valid density matrix is **Hermitian**, has **trace 1** and is **positive semidefinite** (all eigenvalues ≥ 0). The probability of a measurement outcome with projector P is Tr(Pρ), and the expectation of an observable A is Tr(Aρ).\n\nThree facts to hold on to. **Different ensembles can give the same ρ**: an equal mix of |0⟩ and |1⟩, and an equal mix of |+⟩ and |−⟩, are both I/2, so the ensemble is not recoverable from ρ and nothing you measure can tell them apart. **Purity** Tr(ρ²) equals 1 for a pure state and falls to 1/d for the maximally mixed state of dimension d. And the **von Neumann entropy** S(ρ) = −Tr(ρ log₂ ρ) = −Σ λ log₂ λ over the eigenvalues λ measures the uncertainty in the state, 0 for pure states and 1 bit for the maximally mixed qubit.\n\nThe **partial trace** gives the state of one part of a composite system by tracing out the rest. For a Bell pair, the reduced state of either qubit is I/2 even though the pair is in a pure state, so a pure global state can have maximally uncertain parts: this is entanglement seen from one side. The listing verifies all of this and cross-checks with Qiskit's `DensityMatrix`, `partial_trace` and `entropy`. The listings use NumPy and `qiskit` 2.5.2 (and `qiskit-aer` 0.17.2 where noise is simulated): `pip install numpy qiskit==2.5.2 qiskit-aer==0.17.2`. Each result is computed twice, once from the mathematics in NumPy and once with Qiskit, and the two must agree."
+            },
+            {
+              "type": "code",
+              "id": "c-density",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit.quantum_info import DensityMatrix, Statevector, entropy, partial_trace\n\nket = lambda *amplitudes: np.array(amplitudes, dtype=complex)\nouter = lambda v: np.outer(v, v.conj())\nzero, one = ket(1, 0), ket(0, 1)\nplus, minus = (zero + one) / np.sqrt(2), (zero - one) / np.sqrt(2)\n\ndef checks(rho):\n    eigenvalues = np.linalg.eigvalsh(rho)\n    return bool(np.allclose(rho, rho.conj().T)), bool(np.isclose(np.trace(rho).real, 1)), bool(np.all(eigenvalues > -1e-12))\n\npure = outer(plus)\nmixed_z = 0.5 * outer(zero) + 0.5 * outer(one)\nmixed_x = 0.5 * outer(plus) + 0.5 * outer(minus)\nskewed = 0.75 * outer(zero) + 0.25 * outer(one)\nprint(\"(Hermitian, trace 1, positive) for the pure state:\", checks(pure), \"| for the mixture:\", checks(skewed))\nprint(\"the {|0>,|1>} mixture and the {|+>,|->} mixture are the same matrix:\", np.allclose(mixed_z, mixed_x), \"= I/2:\", np.allclose(mixed_z, np.eye(2) / 2))\n\npurity = lambda rho: float(np.trace(rho @ rho).real)\nvon_neumann = lambda rho: float(-sum(l * np.log2(l) for l in np.linalg.eigvalsh(rho) if l > 1e-12))\nprint(f\"{'state':18} {'purity':>7} {'entropy (bits)':>15} {'Qiskit entropy':>15}\")\nfor name, rho in ((\"|+> (pure)\", pure), (\"0.75|0><0|+0.25|1><1|\", skewed), (\"I/2 (mixed)\", mixed_z)):\n    print(f\"{name:18} {purity(rho):7.4f} {von_neumann(rho):15.4f} {entropy(DensityMatrix(rho), base=2):15.4f}\")\n\nbell = (np.kron(zero, zero) + np.kron(one, one)) / np.sqrt(2)\nrho_pair = outer(bell)\nreduced = rho_pair.reshape(2, 2, 2, 2).trace(axis1=1, axis2=3)               # trace out the second qubit by hand\nprint(\"pair is pure (purity 1):\", np.isclose(purity(rho_pair), 1), \"| reduced state of one qubit is I/2:\", np.allclose(reduced, np.eye(2) / 2))\nprint(\"Qiskit's partial_trace agrees:\", np.allclose(partial_trace(DensityMatrix(rho_pair), [1]).data, reduced))\nprint(\"entropy of the reduced qubit:\", round(entropy(partial_trace(DensityMatrix(Statevector(bell)), [1]), base=2), 4), \"bit\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-density",
+              "language": "text",
+              "code": "(Hermitian, trace 1, positive) for the pure state: (True, True, True) | for the mixture: (True, True, True)\nthe {|0>,|1>} mixture and the {|+>,|->} mixture are the same matrix: True = I/2: True\nstate               purity  entropy (bits)  Qiskit entropy\n|+> (pure)          1.0000          0.0000          0.0000\n0.75|0><0|+0.25|1><1|  0.6250          0.8113          0.8113\nI/2 (mixed)         0.5000          1.0000          1.0000\npair is pure (purity 1): True | reduced state of one qubit is I/2: True\nQiskit's partial_trace agrees: True\nentropy of the reduced qubit: 1.0 bit",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The Bell pair is pure, with entropy 0, yet each half has entropy 1 bit: the **entropy of one part of a pure state is a measure of its entanglement with the rest**, which is the entanglement entropy you computed with the Schmidt decomposition in B1. The two mixtures that give I/2 illustrate why the density matrix is the right object: the *ensemble* is a description of your ignorance, not a physical fact, and only ρ determines what any measurement returns.\n\n**Common mistakes.** Writing a mixture as a superposition (mixing |0⟩ and |1⟩ with probabilities ½ and ½ is not the state |+⟩: the former has no coherence, the latter has) and treating the diagonal of ρ as the whole state (the off-diagonal terms are the coherences that interference needs and that noise destroys, which the next lessons follow)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the density matrix of a qubit that is |0⟩ or |1⟩ with equal probability?",
+              "options": [
+                "I/2",
+                "|+⟩⟨+|",
+                "|0⟩⟨0|"
+              ],
+              "correct_index": 0,
+              "explanation": "The equal mixture has zero off-diagonal terms; it equals the maximally mixed state I/2, which is also the equal mixture of |+⟩ and |-⟩."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the reduced state of one qubit of the Bell state (|00⟩ + |11⟩)/sqrt(2)?",
+              "options": [
+                "I/2, the maximally mixed state",
+                "|0⟩⟨0|",
+                "|+⟩⟨+|"
+              ],
+              "correct_index": 0,
+              "explanation": "Tracing out the other qubit leaves an equal mixture of |0⟩ and |1⟩, with entropy 1 bit."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does purity Tr(rho^2) = 1 tell you?",
+              "options": [
+                "The state is pure",
+                "The state is maximally mixed",
+                "The state is entangled"
+              ],
+              "correct_index": 0,
+              "explanation": "Purity equals 1 only for pure states; it falls to 1/d for the maximally mixed state of dimension d."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Section 4.1 (Noisy Quantum States), 4.1.1 (The Density Operator); Section 4.3.3 (Local Density Operators and Partial Trace)"
+            },
+            {
+              "book": "B113",
+              "locator": "Section 11.1 (Quantum Entropy)"
+            },
+            {
+              "book": "B111",
+              "locator": "qiskit.quantum_info.DensityMatrix, partial_trace and entropy (used for the cross-check)"
+            }
+          ],
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "2.4 Quantum Channels",
+          "summary": "Noise and measurement as completely positive trace-preserving maps: Kraus operators for the bit-flip, dephasing, depolarizing and amplitude-damping channels, checked against Qiskit Aer.",
+          "estimated_minutes": 42,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **quantum channel** is the most general physical process a quantum system can undergo, including noise: a map ρ → N(ρ) that is **linear**, **completely positive** and **trace preserving** (CPTP). Every channel has a **Kraus representation**, N(ρ) = Σ K_k ρ K_k†, where the **Kraus operators** satisfy the completeness condition Σ K_k† K_k = I (this is exactly trace preservation). A unitary gate is the special case with one Kraus operator; noise has several.\n\nFour single-qubit channels cover most of what you will meet. The **bit-flip** channel applies X with probability p. The **dephasing** (phase-flip) channel applies Z with probability p; for p = ½ it equals measuring in the computational basis and forgetting the result, wiping out the off-diagonal terms of ρ. The **depolarizing** channel replaces the state with the maximally mixed state with probability λ, N(ρ) = (1 − λ)ρ + λ·I/2, equivalent to applying X, Y or Z each with probability λ/4. The **amplitude damping** channel models energy loss (spontaneous decay): with decay probability γ it has Kraus operators A₀ = [[1, 0], [0, √(1−γ)]] and A₁ = [[0, √γ], [0, 0]], taking |1⟩ to |0⟩. Wilde gives the same pair in the form |0⟩⟨0| + √(1−γ)|1⟩⟨1| and √γ |0⟩⟨1|. Damping compose nicely: two stages with parameters γ₁ and γ₂ equal one stage with 1 − γ = (1 − γ₁)(1 − γ₂).\n\nThe listing builds all four channels, checks the completeness condition, applies them to |+⟩, confirms the p = ½ dephasing equals a forgotten measurement, verifies the composition rule, and compares each result with Qiskit Aer's own error objects (the Aer documentation defines depolarizing with the same parametrisation). The listings use NumPy and `qiskit` 2.5.2 (and `qiskit-aer` 0.17.2 where noise is simulated): `pip install numpy qiskit==2.5.2 qiskit-aer==0.17.2`. Each result is computed twice, once from the mathematics in NumPy and once with Qiskit, and the two must agree."
+            },
+            {
+              "type": "code",
+              "id": "c-channels",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit_aer.noise import amplitude_damping_error, depolarizing_error, phase_damping_error\n\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]]); Y = np.array([[0, -1j], [1j, 0]]); Z = np.diag([1, -1])\napply = lambda kraus, rho: sum(K @ rho @ K.conj().T for K in kraus)\n\ndef bit_flip(p): return [np.sqrt(1 - p) * I2, np.sqrt(p) * X]\ndef dephasing(p): return [np.sqrt(1 - p) * I2, np.sqrt(p) * Z]\ndef depolarizing(lam): return [np.sqrt(1 - 3 * lam / 4) * I2] + [np.sqrt(lam / 4) * P for P in (X, Y, Z)]\ndef amplitude_damping(g): return [np.array([[1, 0], [0, np.sqrt(1 - g)]]), np.array([[0, np.sqrt(g)], [0, 0]])]\n\nplus = np.array([1, 1]) / np.sqrt(2)\nrho = np.outer(plus, plus.conj())\nchannels = {\"bit flip (p=0.2)\": bit_flip(0.2), \"dephasing (p=0.2)\": dephasing(0.2), \"depolarizing (lambda=0.2)\": depolarizing(0.2), \"amplitude damping (gamma=0.2)\": amplitude_damping(0.2)}\nprint(f\"{'channel':30} {'sum K^dagger K = I':>19}  output of |+><+| (real parts of the entries)\")\nfor name, kraus in channels.items():\n    complete = np.allclose(sum(K.conj().T @ K for K in kraus), I2)\n    print(f\"{name:30} {complete!s:>19}  {np.round(apply(kraus, rho).real, 4).tolist()}\")\n\n# Dephasing with p = 1/2 equals measuring in the computational basis and forgetting the result\npsi = np.array([0.6, 0.8j])\nrho_psi = np.outer(psi, psi.conj())\nforgotten = np.diag(np.diag(rho_psi))\nprint(\"dephasing at p = 1/2 equals a forgotten computational-basis measurement:\", np.allclose(apply(dephasing(0.5), rho_psi), forgotten))\n\n# Composition of amplitude damping channels: 1 - gamma = (1 - gamma1)(1 - gamma2)\ng1, g2 = 0.3, 0.4\nsequential = apply(amplitude_damping(g2), apply(amplitude_damping(g1), rho_psi))\ncombined = apply(amplitude_damping(1 - (1 - g1) * (1 - g2)), rho_psi)\nprint(\"two damping stages equal one stage with 1 - (1-g1)(1-g2):\", np.allclose(sequential, combined))\n\n# Cross-check against the Aer error objects (their superoperators act on vectorised density matrices)\ndef aer_apply(error, rho):\n    return np.array(error.to_quantumchannel()._data @ rho.reshape(-1, order=\"F\")).reshape(2, 2, order=\"F\")\nprint(\"matches Aer depolarizing_error:\", np.allclose(aer_apply(depolarizing_error(0.2, 1), rho_psi), apply(depolarizing(0.2), rho_psi)))\nprint(\"matches Aer amplitude_damping_error:\", np.allclose(aer_apply(amplitude_damping_error(0.2), rho_psi), apply(amplitude_damping(0.2), rho_psi)))\nprint(\"Aer phase_damping_error(0.36) is a dephasing channel with p = (1 - sqrt(1 - 0.36))/2 = 0.1:\",\n      np.allclose(aer_apply(phase_damping_error(0.36), rho_psi), apply(dephasing(0.1), rho_psi)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-channels",
+              "language": "text",
+              "code": "channel                         sum K^dagger K = I  output of |+><+| (real parts of the entries)\nbit flip (p=0.2)                              True  [[0.5, 0.5], [0.5, 0.5]]\ndephasing (p=0.2)                             True  [[0.5, 0.3], [0.3, 0.5]]\ndepolarizing (lambda=0.2)                     True  [[0.5, 0.4], [0.4, 0.5]]\namplitude damping (gamma=0.2)                 True  [[0.6, 0.4472], [0.4472, 0.4]]\ndephasing at p = 1/2 equals a forgotten computational-basis measurement: True\ntwo damping stages equal one stage with 1 - (1-g1)(1-g2): True\nmatches Aer depolarizing_error: True\nmatches Aer amplitude_damping_error: True\nAer phase_damping_error(0.36) is a dephasing channel with p = (1 - sqrt(1 - 0.36))/2 = 0.1: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The completeness column is the test of physical validity: a candidate \"noise\" built from operators that do not satisfy Σ K†K = I is not a channel. The amplitude damping output shows what T1 relaxation does to |+⟩: the population drifts toward |0⟩ and the coherence shrinks by √(1−γ), while dephasing leaves the populations alone and shrinks only the coherence.\n\nThe last lines tie the maths to the software you will use for noise models in B4: the same Kraus pairs are what Aer's `depolarizing_error`, `amplitude_damping_error` and `phase_damping_error` implement (the Aer phase-damping parameter is related to the dephasing probability by p = (1 − √(1 − parameter))/2, verified above).\n\n**Common mistake.** Assuming noise is always \"a random bit flip\". Amplitude damping is not unital (it does not map I/2 to I/2) and is nothing like a random Pauli error, which is why correcting it needs different tools."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What condition makes a set of Kraus operators a valid (trace-preserving) channel?",
+              "options": [
+                "The sum of K^dagger K equals the identity",
+                "Each K is unitary",
+                "Each K is Hermitian"
+              ],
+              "correct_index": 0,
+              "explanation": "Trace preservation requires sum_k K_k^dagger K_k = I; unitaries are the special case of one Kraus operator."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Dephasing with probability 1/2 acts on a qubit like:",
+              "options": [
+                "Measuring in the computational basis and forgetting the result",
+                "Flipping the qubit",
+                "Resetting the qubit to |0⟩"
+              ],
+              "correct_index": 0,
+              "explanation": "It removes the off-diagonal terms of the density matrix and keeps the populations."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which channel moves |1⟩ toward |0⟩?",
+              "options": [
+                "Amplitude damping",
+                "Dephasing",
+                "Depolarizing"
+              ],
+              "correct_index": 0,
+              "explanation": "Amplitude damping models energy loss; it is the T1 process."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Section 4.4 (Quantum Evolutions) and Section 4.7 (Examples of Quantum Channels): 4.7.2 Dephasing, 4.7.4 Depolarizing and 4.7.5 Amplitude Damping Channels"
+            },
+            {
+              "book": "B114",
+              "locator": "depolarizing_error: E(rho) = (1 - lambda) rho + lambda Tr[rho] I/2^n; thermal_relaxation_error and amplitude_damping_error pages"
+            },
+            {
+              "book": "B111",
+              "locator": "qiskit.quantum_info.Kraus and SuperOp (representations of channels)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The Aer phase-damping relation p = (1 - sqrt(1 - parameter))/2 is checked numerically in the listing, not read from the Aer page."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "2.5 Measurement Theory",
+          "summary": "Projective measurements and POVMs, the trine measurement, and the limit on telling non-orthogonal states apart that quantum cryptography relies on.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **projective measurement** is defined by a set of orthogonal projectors {P_m} that sum to the identity. The outcome m occurs with probability Tr(P_m ρ) and, for a pure state, leaves the system in the normalised state P_m|ψ⟩. It is **repeatable**: measuring again immediately gives the same outcome. The measurement you have used so far, in the computational basis, is projective.\n\nThe most general measurement is a **POVM** (positive operator-valued measure): a set of positive semidefinite operators {E_m} with Σ E_m = I, giving outcome probabilities Tr(E_m ρ). A POVM can have **more outcomes than the dimension of the system**, which a projective measurement cannot. A famous example is the **trine** measurement on a qubit: three states at 120° on the Bloch sphere's great circle, with E_k = (2/3)|ψ_k⟩⟨ψ_k|.\n\nThe deepest consequence for security is the **limit on distinguishing states**. If you are handed one of two pure states, |ψ₀⟩ or |ψ₁⟩, with equal probability and told which two they are, the best any measurement can do is succeed with probability **½ + ¼‖ρ₀ − ρ₁‖₁**, the Helstrom bound, which for pure states equals ½(1 + √(1 − |⟨ψ₀|ψ₁⟩|²)). Wilde interprets the normalised trace distance as exactly this bias away from random guessing. **Non-orthogonal states cannot be told apart with certainty**, which is what lets quantum key distribution detect an eavesdropper (a later module). The listing builds the trine POVM, checks completeness, computes outcome probabilities, and confirms the Helstrom formula by a brute-force search over projective measurements and by the trace distance. The listings use NumPy and `qiskit` 2.5.2 (and `qiskit-aer` 0.17.2 where noise is simulated): `pip install numpy qiskit==2.5.2 qiskit-aer==0.17.2`. Each result is computed twice, once from the mathematics in NumPy and once with Qiskit, and the two must agree."
+            },
+            {
+              "type": "code",
+              "id": "c-povm",
+              "language": "python",
+              "code": "import numpy as np\n\n# Trine POVM on a qubit: three real states 60 degrees apart in Hilbert space (120 degrees on the Bloch sphere)\nstates = [np.array([np.cos(k * np.pi / 3), np.sin(k * np.pi / 3)]) for k in range(3)]\nE = [2 / 3 * np.outer(s, s) for s in states]\nprint(\"trine elements sum to the identity:\", np.allclose(sum(E), np.eye(2)), \"| three outcomes on a 2-dimensional system\")\nrho = np.outer(states[0], states[0])\nprint(\"outcome probabilities for the first trine state:\", np.round([np.trace(e @ rho).real for e in E], 4).tolist(), \"-> sum\", round(sum(np.trace(e @ rho).real for e in E), 6))\n\n# Helstrom bound: two equally likely pure states with overlap c = <psi0|psi1>\ndef helstrom(c):\n    psi0 = np.array([1.0, 0.0]); psi1 = np.array([c, np.sqrt(1 - c ** 2)])\n    rho0, rho1 = np.outer(psi0, psi0), np.outer(psi1, psi1)\n    trace_distance_form = 0.5 + 0.25 * np.sum(np.abs(np.linalg.eigvalsh(rho0 - rho1)))\n    formula = 0.5 * (1 + np.sqrt(1 - c ** 2))\n    best = 0.0\n    for theta in np.linspace(0, np.pi, 3601):                                 # projective measurements in a rotated real basis\n        v0 = np.array([np.cos(theta), np.sin(theta)])\n        best = max(best, 0.5 * (v0 @ rho0 @ v0) + 0.5 * ((1 - v0 @ rho1 @ v0)))\n    return trace_distance_form, formula, best\n\nprint(f\"{'overlap':>8} {'trace-distance form':>20} {'formula':>9} {'best measurement found':>23}\")\nfor c in (0.0, 0.5, 0.8, 0.95, 1.0):\n    a, b, found = helstrom(c)\n    print(f\"{c:8.2f} {a:20.4f} {b:9.4f} {found:23.4f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-povm",
+              "language": "text",
+              "code": "trine elements sum to the identity: True | three outcomes on a 2-dimensional system\noutcome probabilities for the first trine state: [0.6667, 0.1667, 0.1667] -> sum 1.0\n overlap  trace-distance form   formula  best measurement found\n    0.00               1.0000    1.0000                  1.0000\n    0.50               0.9330    0.9330                  0.9330\n    0.80               0.8000    0.8000                  0.8000\n    0.95               0.6561    0.6561                  0.6561\n    1.00               0.5000    0.5000                  0.5000",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Orthogonal states (overlap 0) can be identified with certainty; as the overlap grows the best achievable success probability falls toward ½, which is pure guessing, and at overlap 1 the states are the same. Three methods agree to four decimals: the trace-distance expression, the closed form, and an exhaustive search over measurements.\n\n**Why this matters for security.** If an eavesdropper must identify which of several non-orthogonal states was sent, she cannot do so reliably, and any attempt to measure disturbs the state. That is the physical basis of BB84-style key distribution, and also the reason the no-cloning theorem (below) holds: a perfect copier would let her copy first and measure later.\n\n**Common mistake.** Thinking measurement merely reads out a pre-existing value. A projective measurement of a superposition produces a random outcome and changes the state; the post-measurement state is the projected one."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What distinguishes a POVM from a projective measurement?",
+              "options": [
+                "A POVM can have more outcomes than the system's dimension and its elements need not be projectors",
+                "A POVM is not a measurement",
+                "A POVM is always repeatable"
+              ],
+              "correct_index": 0,
+              "explanation": "POVM elements are positive operators summing to the identity; projective measurements are the special case of orthogonal projectors."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why can two non-orthogonal pure states not be distinguished with certainty?",
+              "options": [
+                "The best success probability is 1/2 + (1/2) sqrt(1 - |overlap|^2), below 1 unless the states are orthogonal",
+                "Measurements are random",
+                "Quantum computers are noisy"
+              ],
+              "correct_index": 0,
+              "explanation": "The Helstrom bound limits any measurement; it equals 1 only when the overlap is zero."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the best success probability of guessing between two identical states?",
+              "options": [
+                "1/2",
+                "1",
+                "0"
+              ],
+              "correct_index": 0,
+              "explanation": "With overlap 1 the trace distance is zero and no measurement beats a random guess."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Section 3.4 (Measurement), Section 4.2.1 (POVM Formalism) and Section 9.1.4 (Operational Interpretation of the Trace Distance: success probability 1/2 (1 + 1/2 ||rho0 - rho1||_1))"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-states/representing-qubit-states.ipynb, section 2 (The Rules of Measurement)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The closed form for pure states, (1/2)(1 + sqrt(1 - |overlap|^2)), is derived from the trace-distance expression and confirmed numerically in the listing; it is not quoted from the book."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "2.6 Quantum Noise",
+          "summary": "Simulating noisy circuits with Qiskit Aer, predicting the effect on a Bell state, and why noise accumulates with circuit depth.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Real quantum hardware is noisy: gates are imperfect, qubits interact with their environment, and readout is faulty. The channel model from the previous lesson is the standard way to describe it: attach a channel to each gate (or idle period) and simulate. The simplest model is **depolarizing noise**, a stand-in for \"something went wrong with probability λ\", and it is easy to analyse. With Qiskit Aer's definition, a two-qubit depolarizing error with parameter λ after a CNOT turns the state ρ into (1 − λ)ρ + λ·I/4.\n\nFor a Bell pair prepared by H then CNOT, the **fidelity** with the ideal state |Φ+⟩ after such an error is F = (1 − λ) + λ/4 = 1 − 3λ/4, because the maximally mixed state has overlap ¼ with any pure state. For a single qubit that suffers a depolarizing error with parameter λ on every one of N gates, the state decays toward the maximally mixed state and the fidelity with |0⟩ falls as ½ + ½(1 − λ)^N. These simple formulas already show the central difficulty: **errors compound with every gate**, so the usable circuit depth is limited by the error rate. The listing simulates both situations with Aer's density-matrix method and compares with the formulas. The listings use NumPy and `qiskit` 2.5.2 (and `qiskit-aer` 0.17.2 where noise is simulated): `pip install numpy qiskit==2.5.2 qiskit-aer==0.17.2`. Each result is computed twice, once from the mathematics in NumPy and once with Qiskit, and the two must agree."
+            },
+            {
+              "type": "code",
+              "id": "c-noise",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit, transpile\nfrom qiskit.quantum_info import DensityMatrix, Statevector, state_fidelity\nfrom qiskit_aer import AerSimulator\nfrom qiskit_aer.noise import NoiseModel, depolarizing_error\n\ndef final_density_matrix(circuit, noise_model):\n    circuit = circuit.copy()\n    circuit.save_density_matrix()\n    simulator = AerSimulator(method=\"density_matrix\", noise_model=noise_model)\n    return DensityMatrix(simulator.run(transpile(circuit, simulator, optimization_level=0)).result().data()[\"density_matrix\"])\n\nbell_circuit = QuantumCircuit(2); bell_circuit.h(0); bell_circuit.cx(0, 1)\nideal = Statevector(bell_circuit)\nprint(f\"{'lambda':<7} {'simulated fidelity':>19} {'1 - 3 lambda / 4':>17}\")\nfor lam in (0.0, 0.05, 0.1, 0.3):\n    noise = NoiseModel()\n    noise.add_all_qubit_quantum_error(depolarizing_error(lam, 2), [\"cx\"])\n    fidelity = state_fidelity(ideal, final_density_matrix(bell_circuit, noise))\n    print(f\"{lam:7.2f} {fidelity:19.4f} {1 - 3 * lam / 4:17.4f}\")\n\nlam = 0.02\nnoise = NoiseModel()\nnoise.add_all_qubit_quantum_error(depolarizing_error(lam, 1), [\"id\"])\nprint(f\"{'gates N':<8} {'simulated fidelity':>19} {'1/2 + (1 - lambda)^N / 2':>26}\")\nfor n in (0, 10, 50, 100, 200):\n    circuit = QuantumCircuit(1)\n    for _ in range(n):\n        circuit.id(0)\n    fidelity = state_fidelity(Statevector.from_label(\"0\"), final_density_matrix(circuit, noise))\n    print(f\"{n:8d} {fidelity:19.4f} {0.5 + 0.5 * (1 - lam) ** n:26.4f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-noise",
+              "language": "text",
+              "code": "lambda   simulated fidelity  1 - 3 lambda / 4\n   0.00              1.0000            1.0000\n   0.05              0.9625            0.9625\n   0.10              0.9250            0.9250\n   0.30              0.7750            0.7750\ngates N   simulated fidelity   1/2 + (1 - lambda)^N / 2\n       0              1.0000                     1.0000\n      10              0.9085                     0.9085\n      50              0.6821                     0.6821\n     100              0.5663                     0.5663\n     200              0.5088                     0.5088",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Simulation and formula agree: the Bell-state fidelity falls linearly in λ, and the single-qubit fidelity decays exponentially with the number of gates, reaching about 0.5 (the value for a completely random qubit) after a few hundred gates at a 2% error rate. Two practical rules follow. **Budget your errors**: a circuit of N noisy gates at error rate ε keeps fidelity near 1 only if N·ε is small, which is why gate count and, above all, the number of two-qubit gates (which have the highest error rates) matter more than anything else in practice. And **errors are not only bit flips**: a realistic model also includes T1 and T2 relaxation during idle time and readout errors, which the next lessons and B4 add.\n\n**Caveat.** Depolarizing noise is a deliberately simple model. Real device errors are correlated, biased toward certain Paulis, time-dependent, and include leakage out of the qubit subspace, so a model fitted to one device describes it only approximately."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "A two-qubit depolarizing error with parameter lambda follows a CNOT preparing a Bell pair. What is the fidelity with the ideal state?",
+              "options": [
+                "1 - 3 lambda / 4",
+                "1 - lambda",
+                "lambda / 4"
+              ],
+              "correct_index": 0,
+              "explanation": "The state becomes (1 - lambda) rho + lambda I/4, and I/4 has overlap 1/4 with any pure state."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does circuit depth limit near-term quantum computing?",
+              "options": [
+                "Errors compound with every gate, so fidelity decays roughly exponentially with gate count",
+                "Gates are too slow",
+                "Qubits run out of memory"
+              ],
+              "correct_index": 0,
+              "explanation": "Each noisy gate multiplies the surviving coherence by a factor below 1."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B114",
+              "locator": "depolarizing_error (definition E(rho) = (1 - lambda) rho + lambda Tr[rho] I/2^n)"
+            },
+            {
+              "book": "B113",
+              "locator": "Section 4.7.4 (Depolarizing Channels)"
+            },
+            {
+              "book": "B111",
+              "locator": "Guides on noise models and Aer simulation (qiskit-aer)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The fidelity formulas are derived from the channel definition and are confirmed by the Aer simulation in the listing."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "2.7 Decoherence",
+          "summary": "T1 relaxation and T2 dephasing as time-dependent channels, the constraint T2 <= 2 T1, and a coherence budget.",
+          "estimated_minutes": 38,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Decoherence** is the loss of quantum behaviour through interaction with the environment. For a qubit it is characterised by two time constants. **T1**, the **energy relaxation** time, is how long the excited state |1⟩ takes to decay toward |0⟩: the population ρ₁₁ falls as e^(−t/T1). **T2**, the **dephasing** time, is how long the superposition's phase relationship survives: the off-diagonal coherence |ρ₀₁| falls as e^(−t/T2). The two are linked: T1 decay also destroys coherence, giving 1/T2 = 1/(2·T1) + 1/T_φ where T_φ is the pure-dephasing time, so **T2 can never exceed 2·T1** (Qiskit Aer enforces this as a validity condition).\n\nThe effect is exactly the combination of the amplitude-damping and dephasing channels of the previous lessons with probabilities that grow with elapsed time. The listing builds that channel from first principles for a chosen duration, applies it to |+⟩, and checks that the population and coherence follow the exponentials, then compares with Aer's `thermal_relaxation_error` and shows the T2 ≤ 2·T1 check. The numbers T1 = 100 µs and T2 = 80 µs are **illustrative assumptions, not a particular device**. The listings use NumPy and `qiskit` 2.5.2 (and `qiskit-aer` 0.17.2 where noise is simulated): `pip install numpy qiskit==2.5.2 qiskit-aer==0.17.2`. Each result is computed twice, once from the mathematics in NumPy and once with Qiskit, and the two must agree."
+            },
+            {
+              "type": "code",
+              "id": "c-decoherence",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit_aer.noise import thermal_relaxation_error\nfrom qiskit_aer.noise.noiseerror import NoiseError\n\nT1, T2 = 100.0, 80.0                                         # microseconds: ASSUMED illustrative values, not a real device\nassert T2 <= 2 * T1\n\ndef relaxation_channel(t):\n    gamma = 1 - np.exp(-t / T1)                               # probability of energy decay\n    coherence_factor = np.exp(-t / T2)                        # total coherence decay we must produce\n    amplitude_part = np.sqrt(1 - gamma)                       # amplitude damping already shrinks the coherence by sqrt(1 - gamma)\n    extra = coherence_factor / amplitude_part                 # remaining shrinkage from pure dephasing\n    p = (1 - extra) / 2                                       # dephasing with probability p multiplies coherence by (1 - 2p)\n    K = [np.array([[1, 0], [0, np.sqrt(1 - gamma)]]), np.array([[0, np.sqrt(gamma)], [0, 0]])]\n    Z = np.diag([1, -1])\n    D = [np.sqrt(1 - p) * np.eye(2), np.sqrt(p) * Z]\n    return [d @ k for d in D for k in K]\n\nplus = np.array([1, 1]) / np.sqrt(2)\nrho0 = np.outer(plus, plus.conj())\nprint(f\"{'t (us)':>7} {'population rho11':>17} {'exact e^(-t/T1)/2':>18} {'|coherence|':>12} {'exact e^(-t/T2)/2':>18}\")\nfor t in (0, 20, 40, 80, 160):\n    kraus = relaxation_channel(t)\n    assert np.allclose(sum(K.conj().T @ K for K in kraus), np.eye(2))\n    rho = sum(K @ rho0 @ K.conj().T for K in kraus)\n    print(f\"{t:7d} {rho[1, 1].real:17.4f} {np.exp(-t / T1) / 2:18.4f} {abs(rho[0, 1]):12.4f} {np.exp(-t / T2) / 2:18.4f}\")\n\nt = 40.0\naer = thermal_relaxation_error(T1, T2, t).to_quantumchannel()._data\nours = sum(np.kron(K.conj(), K) for K in relaxation_channel(t))             # column-stacking superoperator of the Kraus map\nprint(\"matches Aer's thermal_relaxation_error:\", np.allclose(aer, ours))\ntry:\n    thermal_relaxation_error(50.0, 120.0, 10.0)\nexcept NoiseError as error:\n    print(\"T2 = 120 with T1 = 50 is rejected (T2 must not exceed 2 T1):\", str(error)[:60], \"...\")\ngate_time = 0.1                                                                # ASSUMED: a 100 ns two-qubit gate\nprint(f\"coherence budget at T2 = {T2:g} us with 100 ns gates: about {T2 / gate_time:.0f} gate durations before the coherence has fallen by 1/e\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-decoherence",
+              "language": "text",
+              "code": " t (us)  population rho11  exact e^(-t/T1)/2  |coherence|  exact e^(-t/T2)/2\n      0            0.5000             0.5000       0.5000             0.5000\n     20            0.4094             0.4094       0.3894             0.3894\n     40            0.3352             0.3352       0.3033             0.3033\n     80            0.2247             0.2247       0.1839             0.1839\n    160            0.1009             0.1009       0.0677             0.0677\nmatches Aer's thermal_relaxation_error: True\nT2 = 120 with T1 = 50 is rejected (T2 must not exceed 2 T1): 'Invalid T_2 relaxation time parameter: T_2 greater than 2 * ...\ncoherence budget at T2 = 80 us with 100 ns gates: about 800 gate durations before the coherence has fallen by 1/e",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The exponentials match: the population follows e^(−t/T1)/2 and the coherence e^(−t/T2)/2, and the construction reproduces Aer's relaxation error exactly. The last line shows how engineers think: **comparing the gate duration with T2** gives a rough budget for how many operations fit in the coherence window, ignoring all other error sources (gate errors usually dominate before the budget is reached).\n\n**Why decoherence limits quantum computing, and quantum communication.** The environment continuously measures the system in a way that destroys superposition; in the density-matrix picture the off-diagonal terms decay to zero and the state becomes a classical mixture. Longer coherence times are therefore a headline hardware goal (B5), and error correction (C3) exists to protect information for much longer than any physical qubit's T2.\n\n**Common mistake.** Treating T1 and T2 as independent. T2 is bounded by 2·T1, and the relation 1/T2 = 1/(2·T1) + 1/T_φ shows that T1 processes alone already limit T2."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the upper limit on T2 in terms of T1?",
+              "options": [
+                "T2 <= 2 T1",
+                "T2 <= T1 / 2",
+                "T2 = T1"
+              ],
+              "correct_index": 0,
+              "explanation": "Energy relaxation also destroys phase coherence, so the dephasing time cannot exceed twice the relaxation time."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which quantity decays with the time constant T2?",
+              "options": [
+                "The off-diagonal coherence of the density matrix",
+                "The population of |1⟩",
+                "The gate time"
+              ],
+              "correct_index": 0,
+              "explanation": "T1 governs population decay; T2 governs the loss of phase coherence between |0⟩ and |1⟩."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B114",
+              "locator": "thermal_relaxation_error: T1, T2 and time parameters; validity condition T2 <= 2 T1; T2 <= T1 as mixed reset and unitary error, T1 < T2 <= 2 T1 as Kraus error"
+            },
+            {
+              "book": "B113",
+              "locator": "Section 4.7 (Examples of Quantum Channels: dephasing and amplitude damping)"
+            },
+            {
+              "book": "B111",
+              "locator": "Guide on noise and relaxation in the Qiskit SDK and Aer"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The relation 1/T2 = 1/(2 T1) + 1/T_phi is the standard definition and is not quoted from the cited pages; the construction in the listing reproduces Aer's channel exactly, which is the check."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "2.8 No-Cloning Theorem",
+          "summary": "Why no machine can copy an unknown quantum state, shown by the linearity argument, a numerical cloner that fails, and the best possible approximate cloner (fidelity 5/6).",
+          "estimated_minutes": 38,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Classical information can be copied freely; quantum information cannot. The **no-cloning theorem** says there is no device that copies an arbitrary unknown quantum state. Wilde's proof is two lines of linear algebra. Suppose a unitary U copies every state: U(|ψ⟩|0⟩) = |ψ⟩|ψ⟩ for all |ψ⟩. For |ψ⟩ = α|0⟩ + β|1⟩ the output would be α²|00⟩ + αβ|01⟩ + αβ|10⟩ + β²|11⟩. But U also copies the basis states, U|00⟩ = |00⟩ and U|10⟩ = |11⟩, so by **linearity** U acts on the superposition as α|00⟩ + β|11⟩. These agree only when αβ = 0, that is, only for the basis states themselves. A second proof uses unitarity: copying two states would require |⟨ψ|φ⟩|² = |⟨ψ|φ⟩|, which holds only for overlap 0 or 1: **only identical or orthogonal states can be copied**.\n\nThe theorem has consequences everywhere. It underlies the security of **quantum key distribution** (an attacker cannot copy the photons to measure them later), it limits **quantum error correction** (you cannot protect information by making copies; B3 and C3 use entanglement instead), and it implies **no-signalling**-style limits on communication. It does not forbid *approximate* cloning: the best universal 1 → 2 qubit cloner gives each copy a fidelity of 5/6.\n\nThe listing demonstrates the linearity argument numerically, shows that the CNOT \"copier\" copies basis states but fails on superpositions (average fidelity 2/3 over random states), then builds the optimal Bužek-Hillery cloner as an explicit isometry and finds fidelity 5/6 for **every** input state, which matches the figure in the Scarani-Iblisdir-Gisin review. The listings use NumPy and `qiskit` 2.5.2 (and `qiskit-aer` 0.17.2 where noise is simulated): `pip install numpy qiskit==2.5.2 qiskit-aer==0.17.2`. Each result is computed twice, once from the mathematics in NumPy and once with Qiskit, and the two must agree."
+            },
+            {
+              "type": "code",
+              "id": "c-cloning",
+              "language": "python",
+              "code": "import numpy as np\n\nzero, one = np.array([1, 0]), np.array([0, 1])\ncnot = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]])      # control = left (first) qubit here\n\n# Linearity argument: a CNOT copies |0> and |1> into a second qubit, but what does it do to |+>?\nplus = (zero + one) / np.sqrt(2)\nwanted = np.kron(plus, plus)                                                     # a perfect copy would be |+>|+>\nactual = cnot @ np.kron(plus, zero)                                               # CNOT(|+>|0>) = (|00> + |11>)/sqrt2\nprint(\"copies |0>:\", np.allclose(cnot @ np.kron(zero, zero), np.kron(zero, zero)), \"| copies |1>:\", np.allclose(cnot @ np.kron(one, zero), np.kron(one, one)))\nprint(\"output for |+>:\", np.round(actual, 4).tolist(), \"| wanted |+>|+>:\", np.round(wanted, 4).tolist())\nprint(\"overlap between the output and a perfect copy:\", round(abs(np.vdot(wanted, actual)) ** 2, 4))\n\ndef clone_fidelities(isometry, psi):\n    out = isometry @ psi                                                         # amplitudes on three qubits (A, B, C): A and B are the clones\n    tensor = out.reshape(2, 2, 2)\n    rho_a = np.einsum(\"abc,dbc->ad\", tensor, tensor.conj())\n    rho_b = np.einsum(\"abc,adc->bd\", tensor, tensor.conj())\n    return (psi.conj() @ rho_a @ psi).real, (psi.conj() @ rho_b @ psi).real\n\n# CNOT cloner as an isometry from one qubit to the three-qubit register (A, B, C) with C in |0>\ncnot_cloner = np.zeros((8, 2))\nfor bit in (0, 1):\n    v = np.zeros(8); v[bit * 4 + bit * 2 + 0] = 1                                # |bit, bit, 0>\n    cnot_cloner[:, bit] = v\n\n# Buzek-Hillery optimal universal cloner as an isometry (A, B hold the clones, C is an ancilla)\ndef ket3(a, b, c):\n    v = np.zeros(8); v[a * 4 + b * 2 + c] = 1; return v\nbh = np.zeros((8, 2))\nbh[:, 0] = np.sqrt(2 / 3) * ket3(0, 0, 0) + np.sqrt(1 / 3) * (ket3(0, 1, 1) + ket3(1, 0, 1)) / np.sqrt(2)\nbh[:, 1] = np.sqrt(2 / 3) * ket3(1, 1, 1) + np.sqrt(1 / 3) * (ket3(0, 1, 0) + ket3(1, 0, 0)) / np.sqrt(2)\nprint(\"the Buzek-Hillery map is an isometry (V^dagger V = I):\", np.allclose(bh.T @ bh, np.eye(2)))\n\nrng = np.random.default_rng(5)\nsamples = []\nfor _ in range(20000):\n    v = rng.normal(size=2) + 1j * rng.normal(size=2); samples.append(v / np.linalg.norm(v))    # Haar-random pure states\ncnot_f = np.mean([clone_fidelities(cnot_cloner, s)[0] for s in samples])\nbh_f = np.array([clone_fidelities(bh, s) for s in samples])\nprint(f\"CNOT cloner: average fidelity of the copy {cnot_f:.3f} (exact value 2/3 = {2 / 3:.3f}); fidelity for |0>: {clone_fidelities(cnot_cloner, zero)[0]:.1f}, for |+>: {clone_fidelities(cnot_cloner, plus)[0]:.3f}\")\nprint(f\"Buzek-Hillery cloner: both clones have fidelity {bh_f.min():.6f} to {bh_f.max():.6f} for all {len(samples)} random inputs (5/6 = {5 / 6:.6f})\")\n\n# The unitarity argument: copying two states requires |<psi|phi>|^2 = |<psi|phi>|, true only for overlap 0 or 1\nfor c in (0.0, 0.3, 0.7, 1.0):\n    print(f\"overlap {c}: |overlap|^2 = {c ** 2:.2f}, |overlap| = {c:.2f} -> copyable by one unitary: {np.isclose(c ** 2, c)}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-cloning",
+              "language": "text",
+              "code": "copies |0>: True | copies |1>: True\noutput for |+>: [0.7071, 0.0, 0.0, 0.7071] | wanted |+>|+>: [0.5, 0.5, 0.5, 0.5]\noverlap between the output and a perfect copy: 0.5\nthe Buzek-Hillery map is an isometry (V^dagger V = I): True\nCNOT cloner: average fidelity of the copy 0.667 (exact value 2/3 = 0.667); fidelity for |0>: 1.0, for |+>: 0.500\nBuzek-Hillery cloner: both clones have fidelity 0.833333 to 0.833333 for all 20000 random inputs (5/6 = 0.833333)\noverlap 0.0: |overlap|^2 = 0.00, |overlap| = 0.00 -> copyable by one unitary: True\noverlap 0.3: |overlap|^2 = 0.09, |overlap| = 0.30 -> copyable by one unitary: False\noverlap 0.7: |overlap|^2 = 0.49, |overlap| = 0.70 -> copyable by one unitary: False\noverlap 1.0: |overlap|^2 = 1.00, |overlap| = 1.00 -> copyable by one unitary: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Read the results in order. The CNOT copies |0⟩ and |1⟩ perfectly, which is why classical-looking copying works, but its output for |+⟩ is an *entangled* Bell state with overlap 0.5 with the wanted copy, and averaged over random inputs its copies have fidelity 2/3. The optimal universal cloner does better, and its fidelity is exactly 5/6 for every input, so there is a state-independent price to pay for copying: you can make two *worse* copies, never two perfect ones. And the unitarity test reproduces the second proof: only overlaps 0 and 1 satisfy the condition.\n\n**Implications.** For QKD, an eavesdropper who tries to clone the transmitted states is limited to this 5/6 fidelity, and the errors she introduces are what the legitimate parties detect. For error correction, redundancy by copying is impossible, so quantum codes spread one logical qubit over an entangled state of many physical qubits. For teleportation, the original is destroyed in the process, consistent with no-cloning.\n\n**Common mistake.** Concluding that quantum states can never be duplicated at all. Known states (or states from a known orthogonal set) can be prepared again and again; it is an *unknown* arbitrary state that cannot be copied."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the no-cloning theorem say?",
+              "options": [
+                "No device can copy an arbitrary unknown quantum state",
+                "No quantum state can be measured",
+                "Quantum states cannot be prepared twice"
+              ],
+              "correct_index": 0,
+              "explanation": "Only states from a known orthogonal set (or identical states) can be copied by one unitary."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which fact do the standard proofs use?",
+              "options": [
+                "The linearity (and unitarity) of quantum evolution",
+                "The speed of light",
+                "The uncertainty of position"
+              ],
+              "correct_index": 0,
+              "explanation": "A universal copier would have to act linearly on superpositions, contradicting the quadratic structure of copying."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the best average single-copy fidelity of a universal 1-to-2 qubit cloner?",
+              "options": [
+                "5/6",
+                "1",
+                "2/3"
+              ],
+              "correct_index": 0,
+              "explanation": "The optimal symmetric universal cloner achieves 5/6; a simple CNOT cloner only 2/3."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Section 3.5.4 (The No-Cloning Theorem): linearity proof and unitarity proof"
+            },
+            {
+              "book": "B115",
+              "locator": "Section on optimal universal cloning machines: fidelity 5/6 for the symmetric 1 to 2 qubit cloner"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-algorithms/teleportation.ipynb (teleportation destroys the original)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The Buzek-Hillery transformation was written from memory of the standard construction and checked numerically (it is an isometry with fidelity exactly 5/6 for every input); the reference for the value 5/6 is the Scarani et al. review, whose general formula was not extracted cleanly from the PDF text."
+          },
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "2.9 Quantum Information Concepts (Synthesis)",
+          "summary": "Putting states, entanglement, noise and measurement together: how noise destroys the entanglement that teleportation needs, with a threshold you can compute.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "This lesson ties the module together with one question: **how noisy can an entangled pair be and still be useful?** Take a Bell pair and mix it with white noise, ρ(p) = (1 − p)|Φ+⟩⟨Φ+| + p·I/4, a **Werner state**. Four ideas from this module give four connected answers.\n\n- **Entanglement** (2.2, 2.3). A two-qubit state is entangled if its **partial transpose** has a negative eigenvalue (the PPT test, exact for two qubits). The smallest eigenvalue of the partially transposed Werner state is (p/4) − (1 − p)/2, which is negative exactly when p < 2/3. The **concurrence**, an entanglement measure for two qubits, is max(0, 1 − 3p/2).\n- **Fidelity** (2.5, 2.6). The fidelity with the ideal Bell state is F = 1 − 3p/4, and F > ½ is equivalent to p < 2/3: **the entanglement threshold is the same as the fidelity threshold F = ½**.\n- **Teleportation** (2.2). Using the noisy pair as the resource, the average fidelity of teleported states is (2F + 1)/3. The best purely classical strategy (measure the unknown state and send the result) achieves 2/3. So teleportation beats the classical limit exactly when F > ½.\n- **Noise** (2.4, 2.6). The noisy resource acts on the teleported qubit as a Pauli channel, which is why its effect is easy to compute.\n\nThe listing computes all four for several values of p, simulates the teleportation protocol with the noisy resource using the deferred-measurement form of the circuit, and cross-checks the concurrence with Qiskit. The listings use NumPy and `qiskit` 2.5.2 (and `qiskit-aer` 0.17.2 where noise is simulated): `pip install numpy qiskit==2.5.2 qiskit-aer==0.17.2`. Each result is computed twice, once from the mathematics in NumPy and once with Qiskit, and the two must agree."
+            },
+            {
+              "type": "code",
+              "id": "c-synthesis",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit import QuantumCircuit\nfrom qiskit.quantum_info import DensityMatrix, Statevector, concurrence, partial_trace, state_fidelity\n\nphi_plus = Statevector([1, 0, 0, 1]) / np.sqrt(2)\n\ndef werner(p):\n    return DensityMatrix((1 - p) * np.outer(phi_plus.data, phi_plus.data.conj()) + p * np.eye(4) / 4)\n\ndef min_partial_transpose_eigenvalue(rho):\n    pt = rho.data.reshape(2, 2, 2, 2).transpose(0, 3, 2, 1).reshape(4, 4)        # transpose the second qubit\n    return np.linalg.eigvalsh(pt)[0]\n\ndef average_teleportation_fidelity(p):\n    resource = werner(p)\n    total = 0.0\n    inputs = ([1, 0], [0, 1], [1, 1], [1, -1], [1, 1j], [1, -1j])               # six cardinal states: a 2-design, exact for fidelities\n    for v in inputs:\n        v = np.array(v, dtype=complex) / np.linalg.norm(v)\n        qc = QuantumCircuit(3)\n        qc.cx(0, 1); qc.h(0); qc.cx(1, 2); qc.cz(0, 2)\n        joint = resource.tensor(DensityMatrix(Statevector(v)))                  # DensityMatrix.tensor puts the new state on qubit 0\n        out = joint.evolve(qc)\n        bob = partial_trace(out, [0, 1])\n        total += state_fidelity(Statevector(v), bob)\n    return total / len(inputs)\n\nprint(f\"{'p':>5} {'F':>6} {'min PT eigenvalue':>18} {'concurrence':>12} {'Qiskit concurrence':>19} {'teleport fidelity':>18} {'(2F+1)/3':>9}\")\nfor p in (0.0, 0.2, 0.5, 2 / 3, 0.8, 1.0):\n    rho = werner(p)\n    F = state_fidelity(phi_plus, rho)\n    print(f\"{p:5.3f} {F:6.3f} {min_partial_transpose_eigenvalue(rho):18.4f} {max(0, 1 - 1.5 * p):12.4f} {concurrence(rho):19.4f} \"\n          f\"{average_teleportation_fidelity(p):18.4f} {(2 * F + 1) / 3:9.4f}\")\n\nclassical = np.mean([1, 1, 0.5, 0.5, 0.5, 0.5])                                  # measure in the Z basis and prepare the outcome, on the six cardinal states\nprint(\"best classical measure-and-prepare fidelity on the cardinal states (= Haar average):\", round(float(classical), 4))\nprint(\"entangled (PPT test) exactly when the minimum eigenvalue is negative, i.e. p < 2/3; teleportation beats 2/3 exactly then too\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-synthesis",
+              "language": "text",
+              "code": "    p      F  min PT eigenvalue  concurrence  Qiskit concurrence  teleport fidelity  (2F+1)/3\n0.000  1.000            -0.5000       1.0000              1.0000             1.0000    1.0000\n0.200  0.850            -0.3500       0.7000              0.7000             0.9000    0.9000\n0.500  0.625            -0.1250       0.2500              0.2500             0.7500    0.7500\n0.667  0.500             0.0000       0.0000              0.0000             0.6667    0.6667\n0.800  0.400             0.1000       0.0000              0.0000             0.6000    0.6000\n1.000  0.250             0.2500       0.0000              0.0000             0.5000    0.5000\nbest classical measure-and-prepare fidelity on the cardinal states (= Haar average): 0.6667\nentangled (PPT test) exactly when the minimum eigenvalue is negative, i.e. p < 2/3; teleportation beats 2/3 exactly then too",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The threshold p = 2/3 appears in every column: the partially transposed state turns non-negative, the concurrence reaches zero, the fidelity with the Bell state falls to ½, and the teleportation fidelity drops to the classical limit of 2/3. Below it, the noisy pair is still entangled and teleportation does better than anything classical; above it, the pair is separable and no quantum advantage remains, however much of it you have.\n\n**What this teaches beyond the numbers.** (1) Entanglement is a *resource that noise consumes*, and \"how much is left\" is a computable quantity. (2) Different tools (a mathematical test, a fidelity, a task) give consistent answers because they measure the same underlying thing. (3) Applications such as teleportation and key distribution have **quantitative thresholds**: protocols fail not gradually but past a limit, which is why the later modules on quantum networks and communication (C4, C5) and on QKD (C6) are largely about noise budgets, and why error correction and entanglement distillation exist.\n\n**Where to go next.** C1 extends this module with entropy, fidelity and trace distance and channel capacities; C3 shows how entanglement protects information from the noise you have just modelled."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Up to what noise level is a Werner state (1-p)|Phi+⟩⟨Phi+| + p I/4 entangled?",
+              "options": [
+                "p < 2/3",
+                "p < 1/2",
+                "p < 1"
+              ],
+              "correct_index": 0,
+              "explanation": "The partial transpose has a negative eigenvalue exactly when p < 2/3, equivalently when the fidelity with the Bell state exceeds 1/2."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Teleporting with a noisy resource of fidelity F gives an average fidelity of:",
+              "options": [
+                "(2F + 1)/3",
+                "F",
+                "F^2"
+              ],
+              "correct_index": 0,
+              "explanation": "The noisy resource acts as a Pauli channel on the teleported state; this beats the classical limit of 2/3 exactly when F > 1/2."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why does the PPT test identify entanglement exactly for two qubits?",
+              "options": [
+                "For two qubits a state is separable exactly when its partial transpose is positive semidefinite",
+                "Because transposing removes noise",
+                "Because it is cheaper to compute"
+              ],
+              "correct_index": 0,
+              "explanation": "This is the Peres-Horodecki criterion, necessary and sufficient for 2x2 and 2x3 systems."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Section 4.3.2 (Separable States) and Section 3.6 (Entanglement); Chapter 9 (distance measures such as fidelity)"
+            },
+            {
+              "book": "B110",
+              "locator": "notebooks/ch-algorithms/teleportation.ipynb (the teleportation protocol)"
+            },
+            {
+              "book": "B111",
+              "locator": "qiskit.quantum_info.concurrence, state_fidelity and partial_trace (used for the cross-check)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The Werner-state thresholds, the (2F+1)/3 teleportation fidelity and the Peres-Horodecki criterion are standard results that are confirmed numerically in the listing but are not quoted from a specific passage of the cited sources."
+          },
+          "after": "sec-8"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "b2-n01",
+          "prompt": "How many real parameters does a general pure state of n qubits need (after normalisation and global phase)?",
+          "options": [
+            "2^(n+1) - 2",
+            "2n",
+            "n^2"
+          ],
+          "correct_index": 0,
+          "explanation": "A product state needs only 2n, so the gap is exponential.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 3.5"
+          }
+        },
+        {
+          "id": "b2-n02",
+          "prompt": "In the CHSH game, what is the best classical winning probability?",
+          "options": [
+            "3/4",
+            "1",
+            "0.854"
+          ],
+          "correct_index": 0,
+          "explanation": "Deterministic strategies win at most 3 of 4 question pairs; randomness cannot do better.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 3.6.2"
+          }
+        },
+        {
+          "id": "b2-n03",
+          "prompt": "What is the reduced state of one qubit of a Bell pair?",
+          "options": [
+            "The maximally mixed state I/2",
+            "|0⟩",
+            "|+⟩"
+          ],
+          "correct_index": 0,
+          "explanation": "Tracing out the partner leaves a uniform mixture.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 4.3.3"
+          }
+        },
+        {
+          "id": "b2-n04",
+          "prompt": "Which statement about density matrices is true?",
+          "options": [
+            "Different ensembles can give the same density matrix",
+            "Every density matrix is a pure state",
+            "The trace of a density matrix is 0"
+          ],
+          "correct_index": 0,
+          "explanation": "An equal mix of |0⟩,|1⟩ and an equal mix of |+⟩,|-⟩ are both I/2.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 4.1.1"
+          }
+        },
+        {
+          "id": "b2-n05",
+          "prompt": "What do Kraus operators of a channel satisfy?",
+          "options": [
+            "The sum of K^dagger K equals the identity",
+            "Each K is unitary",
+            "Each K is the identity"
+          ],
+          "correct_index": 0,
+          "explanation": "This is trace preservation.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 4.4"
+          }
+        },
+        {
+          "id": "b2-n06",
+          "prompt": "Which channel moves population from |1⟩ toward |0⟩?",
+          "options": [
+            "Amplitude damping",
+            "Dephasing",
+            "Bit flip"
+          ],
+          "correct_index": 0,
+          "explanation": "It models spontaneous emission (T1).",
+          "source": {
+            "book": "B113",
+            "locator": "Section 4.7.5"
+          }
+        },
+        {
+          "id": "b2-n07",
+          "prompt": "What is a POVM?",
+          "options": [
+            "A set of positive operators summing to the identity that gives outcome probabilities Tr(E rho)",
+            "A set of unitary gates",
+            "A single Hermitian operator"
+          ],
+          "correct_index": 0,
+          "explanation": "POVMs generalise projective measurements and may have more outcomes than the dimension.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 4.2.1"
+          }
+        },
+        {
+          "id": "b2-n08",
+          "prompt": "What limits the success of telling two non-orthogonal pure states apart?",
+          "options": [
+            "The Helstrom bound 1/2 + 1/4 ||rho0 - rho1||_1",
+            "The number of qubits",
+            "The speed of light"
+          ],
+          "correct_index": 0,
+          "explanation": "Wilde interprets the trace distance as the bias away from random guessing.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 9.1.4"
+          }
+        },
+        {
+          "id": "b2-n09",
+          "prompt": "What is the relation between T1 and T2?",
+          "options": [
+            "T2 is at most 2 T1",
+            "T2 equals T1",
+            "T2 is at least 2 T1"
+          ],
+          "correct_index": 0,
+          "explanation": "Energy relaxation also destroys coherence; Aer enforces T2 <= 2 T1.",
+          "source": {
+            "book": "B114",
+            "locator": "thermal_relaxation_error"
+          }
+        },
+        {
+          "id": "b2-n10",
+          "prompt": "Why does the no-cloning theorem hold?",
+          "options": [
+            "Quantum evolution is linear (and unitary), so a universal copier would be contradictory",
+            "Copying is too slow",
+            "Qubits are too small"
+          ],
+          "correct_index": 0,
+          "explanation": "Linearity forces the copier to act on a superposition differently from a copy of the superposition.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 3.5.4"
+          }
+        },
+        {
+          "id": "b2-n11",
+          "prompt": "What is the best average fidelity of a universal 1-to-2 qubit cloner?",
+          "options": [
+            "5/6",
+            "1",
+            "1/2"
+          ],
+          "correct_index": 0,
+          "explanation": "Optimal symmetric universal cloning gives 5/6.",
+          "source": {
+            "book": "B115",
+            "locator": "Optimal universal cloning machines"
+          }
+        },
+        {
+          "id": "b2-n12",
+          "prompt": "At what noise level does the Werner state stop being entangled?",
+          "options": [
+            "p = 2/3",
+            "p = 1/2",
+            "p = 1/3"
+          ],
+          "correct_index": 0,
+          "explanation": "The partial transpose becomes positive at p = 2/3, where the Bell-state fidelity reaches 1/2.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 4.3.2"
+          }
+        }
+      ],
+      "estimated_minutes": 351,
+      "notes": "Rewrites nine outline sections as lessons built on Wilde's Quantum Information Theory (arXiv:1106.1445v8), the Qiskit textbook and Qiskit Aer documentation, every result computed in NumPy and cross-checked with qiskit 2.5.2 and qiskit-aer 0.17.2: marginals, CHSH game, density matrices, Kraus channels, Helstrom bound, noisy Bell states, T1/T2 decoherence, optimal cloning and Werner-state teleportation.",
+      "learning_objectives": [
+        "Compute joint and marginal distributions of multi-qubit states and count how fast general states outgrow product states.",
+        "Explain and compute with entanglement, including the CHSH game with its classical limit 3/4 and quantum value 0.854.",
+        "Use density matrices, purity, entropy and the partial trace.",
+        "Write and verify Kraus representations of bit-flip, dephasing, depolarizing and amplitude-damping channels.",
+        "Use projective and POVM measurements and the limit on distinguishing non-orthogonal states.",
+        "Model noise, T1 and T2 decoherence, and state the no-cloning theorem with its proofs and the 5/6 optimal cloner; combine all of it in the Werner-state teleportation threshold."
+      ]
+    }
+  ]
+}
