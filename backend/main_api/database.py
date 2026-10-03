@@ -47,6 +47,15 @@ def ensure_schema():
                         "WHEN NEW.role NOT IN ('learner', 'admin') "
                         "BEGIN SELECT RAISE(ABORT, 'invalid role'); END"
                     ))
+        if "assets" in tables:
+            cols = {c["name"] for c in insp.get_columns("assets")}
+            if "owner_user_id" not in cols:
+                conn.execute(text("ALTER TABLE assets ADD COLUMN owner_user_id INTEGER"))
+            conn.execute(text("CREATE INDEX IF NOT EXISTS ix_assets_owner_user_id ON assets (owner_user_id)"))
+        if "findings" in tables:
+            cols = {c["name"] for c in insp.get_columns("findings")}
+            if "title" not in cols:
+                conn.execute(text("ALTER TABLE findings ADD COLUMN title VARCHAR"))
         if "sections" in tables:
             cols = {c["name"] for c in insp.get_columns("sections")}
             if "summary" not in cols:

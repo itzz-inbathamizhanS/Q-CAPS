@@ -2,6 +2,7 @@ import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { downloadScannerReport, fetchScanLog, fetchScanLogs } from '../../services/backendService';
 import { checkDomainVerification, exportable, runScan, saveScan, ScannerApiError } from './scannerService';
 import type { SaveOutcome, ScanLogSummary, ScanMode, ScanResultV2, VerificationInfo } from './types';
+import { AssetsPanel } from './components/AssetsPanel';
 import { ChecksPanel } from './components/ChecksPanel';
 import { DetailSections } from './components/DetailSections';
 import { DomainVerificationPanel } from './components/DomainVerificationPanel';
@@ -28,6 +29,7 @@ const ScannerTool: React.FC = () => {
   const [error, setError] = useState('');
   const [history, setHistory] = useState<ScanLogSummary[] | null>(null);
   const [historyError, setHistoryError] = useState('');
+  const [historyVersion, setHistoryVersion] = useState(0);
   const [opening, setOpening] = useState(false);
   const [verification, setVerification] = useState<{ forTarget: string; info: VerificationInfo } | null>(null);
   const [verifyLoading, setVerifyLoading] = useState(false);
@@ -41,6 +43,7 @@ const ScannerTool: React.FC = () => {
       .then((rows) => {
         setHistory(rows);
         setHistoryError('');
+        setHistoryVersion((v) => v + 1);
       })
       .catch(() => setHistoryError('Your scan history could not be loaded.'));
   }, []);
@@ -200,6 +203,7 @@ const ScannerTool: React.FC = () => {
             onOpen={handleOpen}
             onRescan={(t, m) => handleScan(t, m)}
           />
+          <AssetsPanel refreshKey={historyVersion} />
         </>
       )}
 

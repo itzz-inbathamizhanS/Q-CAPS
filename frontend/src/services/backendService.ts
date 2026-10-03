@@ -4,7 +4,7 @@
 
 import { useAuthStore } from '../features/auth/authStore';
 import { handleUnauthorized } from '../features/auth/session';
-import type { ScanLogSummary } from '../features/scanner/types';
+import type { ScanAsset, ScanLogSummary, TrackedFinding } from '../features/scanner/types';
 
 export const BACKEND_BASE_URL =
   import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
@@ -401,4 +401,16 @@ export async function fetchScanLogs(limit = 20): Promise<ScanLogSummary[]> {
 export async function fetchScanLog(logId: number): Promise<ScannerLogRecord> {
   const { data } = await api.get(`/scanner/logs/${logId}`);
   return data as ScannerLogRecord;
+}
+
+/** Domains the user has scanned with verified ownership. */
+export async function fetchScanAssets(): Promise<ScanAsset[]> {
+  const { data } = await api.get('/scanner/assets');
+  return data as ScanAsset[];
+}
+
+/** Findings tracked for one verified domain, open ones first. */
+export async function fetchAssetFindings(assetId: number): Promise<TrackedFinding[]> {
+  const { data } = await api.get(`/scanner/assets/${assetId}/findings`);
+  return data as TrackedFinding[];
 }

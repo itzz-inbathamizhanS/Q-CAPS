@@ -12,6 +12,7 @@ import scan_report
 from database import engine, Base, get_db, ensure_schema
 from recommendation import get_user_recommendation
 from leaderboard import get_leaderboard_data, get_user_rank
+import logging
 import os
 import json
 from datetime import datetime, timedelta, timezone
@@ -28,6 +29,8 @@ from course_content.admin_routes import create_admin_router
 from course_content.public_routes import create_public_router
 from course_content.ratelimit import login_limiter
 from config import load_jwt_secret
+
+logger = logging.getLogger(__name__)
 
 # Security Configurations
 # The secret comes from QCAPS_JWT_SECRET (see config.load_jwt_secret): at least 32 characters,
@@ -80,6 +83,14 @@ def require_admin(current_user: models.User = Depends(get_current_user)):
     if current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Admin access required")
     return current_user
+
+def asset_visible(db: Session, user: models.User, asset_id) -> bool:
+    """Evidence, findings and interventions hang off assets. An asset created from a verified scan is
+    private to the user who scanned it (and admins); assets without an owner are shared, admin-managed records."""
+    if user.role == "admin" or asset_id is None:
+        return True
+    asset = db.query(models.Asset).filter(models.Asset.id == asset_id).first()
+    return asset is None or asset.owner_user_id is None or asset.owner_user_id == user.id
 
 class ConnectionManager:
     def __init__(self):
@@ -350,6 +361,14 @@ def log_scanner_result(log_in: schemas.ScannerLogCreate, background_tasks: Backg
     xp_awarded = 0 if already_today else scan_receipts.xp_for(result)
     user.xp += xp_awarded
 
+    # Verified full scans also update the asset, evidence and findings of the user. A failure here must not lose
+    # the verified scan log or its XP, so it runs in a savepoint and is logged rather than raised.
+    try:
+        with db.begin_nested():
+            evidence_service.ingest_scan(db, user, result)
+    except Exception:
+        logger.exception("Evidence ingestion failed for scan log %s", db_log.id)
+
     db.commit()
     db.refresh(db_log)
     db.refresh(user)
@@ -399,6 +418,38 @@ def get_rank(db: Session = Depends(get_db), current_user: models.User = Depends(
     rank = get_user_rank(db, current_user.id)
     return {"rank": rank}
 
+def _finding_visible(db: Session, user: models.User, finding_id) -> bool:
+    finding = db.query(models.Finding).filter(models.Finding.id == finding_id).first()
+    return finding is None or asset_visible(db, user, finding.asset_id)
+
+
+@app.get("/api/scanner/assets", response_model=List[schemas.ScannerAssetOut])
+def list_scanner_assets(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Domains the user has scanned with verified ownership, with how many findings are open or resolved."""
+    assets = db.query(models.Asset).filter(models.Asset.owner_user_id == current_user.id) \
+        .order_by(models.Asset.created_at.desc(), models.Asset.id.desc()).all()
+    out = []
+    for asset in assets:
+        statuses = [f.status for f in db.query(models.Finding).filter(models.Finding.asset_id == asset.id).all()]
+        last = db.query(func.max(models.Evidence.observed_at)).filter(models.Evidence.asset_id == asset.id).scalar()
+        out.append(schemas.ScannerAssetOut(
+            id=asset.id, target=asset.canonical_target, created_at=asset.created_at,
+            open_findings=statuses.count("OPEN"), resolved_findings=statuses.count("RESOLVED"), last_scanned=last))
+    return out
+
+
+@app.get("/api/scanner/assets/{asset_id}/findings", response_model=List[schemas.ScannerFindingOut])
+def list_asset_findings(asset_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    asset = db.query(models.Asset).filter(models.Asset.id == asset_id, models.Asset.owner_user_id == current_user.id).first()
+    if not asset:
+        raise HTTPException(status_code=404, detail="Asset not found")
+    rows = db.query(models.Finding).filter(models.Finding.asset_id == asset.id).all()
+    rows.sort(key=lambda f: (f.status != "OPEN", -f.severity, -(f.last_seen.timestamp() if f.last_seen else 0)))
+    return [schemas.ScannerFindingOut(
+        id=f.id, finding_type=f.finding_type, title=f.title, severity=evidence_service.severity_label(f.severity),
+        algorithm=f.algorithm, status=f.status, first_seen=f.first_seen, last_seen=f.last_seen) for f in rows]
+
+
 # --- CANDIDATE A: EVIDENCE-TO-COMPETENCY CLOSURE LOOP ROUTES ---
 
 @app.post("/api/evidence", response_model=schemas.EvidenceOut)
@@ -410,7 +461,7 @@ def create_evidence(raw_scan: dict, db: Session = Depends(get_db), _admin: model
 @app.get("/api/evidence/{evidence_id}", response_model=schemas.EvidenceOut)
 def get_evidence(evidence_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     evidence = db.query(models.Evidence).filter(models.Evidence.id == evidence_id).first()
-    if not evidence:
+    if not evidence or not asset_visible(db, current_user, evidence.asset_id):
         raise HTTPException(status_code=404, detail="Evidence not found")
     return evidence
 
@@ -426,13 +477,14 @@ def create_finding(finding_in: schemas.FindingCreate, db: Session = Depends(get_
 @app.get("/api/findings/{finding_id}", response_model=schemas.FindingOut)
 def get_finding(finding_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     finding = db.query(models.Finding).filter(models.Finding.id == finding_id).first()
-    if not finding:
+    if not finding or not asset_visible(db, current_user, finding.asset_id):
         raise HTTPException(status_code=404, detail="Finding not found")
     return finding
 
 @app.get("/api/findings/{finding_id}/interventions", response_model=List[schemas.InterventionOut])
 def get_finding_interventions(finding_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    if not db.query(models.Finding).filter(models.Finding.id == finding_id).first():
+    finding = db.query(models.Finding).filter(models.Finding.id == finding_id).first()
+    if not finding or not asset_visible(db, current_user, finding.asset_id):
         raise HTTPException(status_code=404, detail="Finding not found")
     return db.query(models.Intervention).filter(models.Intervention.finding_id == finding_id).order_by(models.Intervention.created_at.desc()).all()
 
@@ -455,7 +507,7 @@ def create_intervention(intervention_in: schemas.InterventionCreate, db: Session
 @app.get("/api/interventions/{id}", response_model=schemas.InterventionOut)
 def get_intervention(id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     intervention = db.query(models.Intervention).filter(models.Intervention.id == id).first()
-    if not intervention:
+    if not intervention or not _finding_visible(db, current_user, intervention.finding_id):
         raise HTTPException(status_code=404, detail="Intervention not found")
     return intervention
 
@@ -468,11 +520,11 @@ def verify_intervention(id: str, verification_data: dict, db: Session = Depends(
     - after_scan_raw: dict
     """
     intervention = db.query(models.Intervention).filter(models.Intervention.id == id).first()
-    if not intervention:
+    if not intervention or not _finding_visible(db, current_user, intervention.finding_id):
         raise HTTPException(status_code=404, detail="Intervention not found")
-        
+
     before_evidence = db.query(models.Evidence).filter(models.Evidence.id == verification_data.get("before_evidence_id")).first()
-    if not before_evidence:
+    if not before_evidence or not asset_visible(db, current_user, before_evidence.asset_id):
         raise HTTPException(status_code=404, detail="Before evidence not found")
         
     # Create after evidence
@@ -491,6 +543,8 @@ def verify_intervention(id: str, verification_data: dict, db: Session = Depends(
 
 @app.get("/api/closures/{finding_id}")
 def get_closures(finding_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    if not _finding_visible(db, current_user, finding_id):
+        return []  # indistinguishable from a finding that does not exist
     closures = db.query(models.ClosureEvent).filter(models.ClosureEvent.finding_id == finding_id).all()
     return closures
 

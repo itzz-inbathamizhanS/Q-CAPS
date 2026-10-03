@@ -166,3 +166,25 @@ export interface VerificationInfo {
 export type SaveOutcome =
   | { ok: true; logId: number; xpAwarded: number }
   | { ok: false; error: string };
+
+/** Row of GET /scanner/assets: a domain scanned with verified ownership. */
+export interface ScanAsset {
+  id: number;
+  target: string;
+  created_at: string;
+  open_findings: number;
+  resolved_findings: number;
+  last_scanned: string | null;
+}
+
+/** Row of GET /scanner/assets/{id}/findings. RESOLVED means a later scan completed the supporting check and no longer saw it. */
+export interface TrackedFinding {
+  id: string;
+  finding_type: string;
+  title: string | null;
+  severity: 'high' | 'medium';
+  algorithm: string | null;
+  status: string;
+  first_seen: string;
+  last_seen: string;
+}

@@ -80,7 +80,8 @@ npm run content:check                                 # compiled curriculum data
 - The backend is authoritative for identity, quiz scoring, XP and checkpoint grading. Quiz and checkpoint
   answer keys are never sent to the browser.
 - Secrets come from the environment. Production refuses to start without `QCAPS_JWT_SECRET`.
-- The scanner is for authorised assessment only: it rejects private and reserved targets and is rate limited.
+- The scanner is for authorised assessment only. See `docs/architecture/SCANNER.md` for what it checks, how targets are
+  validated (every connection is pinned to addresses validated once), and the domain-ownership gate for active checks.
 - Do not report simulated data as findings. Anything simulated must be labelled `SIMULATION` or `DEMO DATA`.
 
 ## Documentation

@@ -5,6 +5,13 @@
 **Updates since this report (2026-10-03 end-to-end audit, verified by running the stack and tests).**
 S1 (JWT secret from env), S4 (server-graded quizzes, legacy submit returns 410), S9 (login now throttled per address+name; leaderboard now requires auth) and S12 (exact case-insensitive name match) are resolved. S5 is resolved: `/api/scanner/log` requires a receipt signed by the scanner (`scan_receipts.py`) and derives findings/XP from the verified result. Registration validates name/password, `progress_data` must be a JSON object ≤ 64 KB (S8 partly; the blob is still client-authored), and profile readiness no longer mixes in XP. Still open: S6 (DNS-rebinding window), S7 for the diagnostic assessment, S10, S11, and evidence/findings having no ownership model.
 
+**Scanner overhaul (2026-10-03, verified against live hosts and tests).** Sections 13 and 16 below describe the scanner as
+originally analysed. It was rewritten: result schema v2, observed TLS 1.3 key-exchange detection (hybrid ML-KEM vs classical),
+pinned connections (S6 resolved), findings with evidence instead of a score, fabricated breach and subdomain data removed (S2),
+active checks gated behind DNS-based domain ownership, flat once-per-day scan XP, scan history and PDF report from the backend,
+scanner evidence reaching the recommender, and per-user ownership of scan-derived assets, evidence and findings. See
+`docs/architecture/SCANNER.md`.
+
 **Project restructure (2026-10-03).** The legacy Node server and test artifacts were removed, mockups and planning documents moved under `docs/`, the loose backend tests moved to `backend/tests` and `backend/scripts`, and unused frontend dependencies were dropped. Paths in the sections below describe the layout at the time of the original analysis unless stated otherwise; see the root `README.md` for the current layout.
 
 **What was not verified.** The backend test suite, the frontend build, and the end-to-end tests were not executed (this was an analysis-only pass). Anything described as "likely" is inferred from reading the code, not from running it.
@@ -221,21 +228,9 @@ The two counters diverge.
 
 ## 13. Scanner Architecture
 
-`scanner_api/api.py` (Flask, `CORS(app)` open to all origins, no authentication) calls `scanner_engine.analyze_domain`. That function runs these checks:
-- Resolve and block private ranges
-- WHOIS
-- DNS A/MX/TXT records
-- HTTPS HEAD request to check security headers
-- Subdomains: 7 common prefixes, then hackertarget, then crt.sh
-- 8 TCP ports
-- TLS handshake with certificate checking disabled, to inspect the certificate
-- `check_data_leaks`
-
-**Fabricated data.**
-- **`check_data_leaks`** derives 0–3 "breaches" from `md5(hostname)`. The docstring admits it's a simulation, but the output has no simulation flag. `ScannerTool.jsx` renders "⚠️ N BREACHES DETECTED", and `download_scan_report` prints "WARNING: N Data Breaches Found in Dark Web".
-- **`enumerate_subdomains`** returns invented `www/api/mail/portal` subdomains when its real lookups fail, also unlabeled.
-
-**Wasted computation.** `mission_xp_awarded` is computed by the scanner but ignored. The XP is recomputed elsewhere.
+*Rewritten 2026-10-03; the earlier description (open CORS, `md5`-derived breaches, invented subdomains, unvalidated
+`ssl.cipher()` heuristics, all headers reported missing) no longer applies.* The current design, schema and limits are in
+`docs/architecture/SCANNER.md`.
 
 ## 14. Recommendation & Skill-Gap Engine
 

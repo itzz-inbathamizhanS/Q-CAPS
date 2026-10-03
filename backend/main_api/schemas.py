@@ -205,6 +205,7 @@ class EvidenceOut(EvidenceBase):
 
 class FindingBase(BaseModel):
     asset_id: Optional[int] = None
+    title: Optional[str] = None
     evidence_id: Optional[str] = None
     finding_type: str
     algorithm: Optional[str] = None
@@ -222,6 +223,26 @@ class FindingOut(FindingBase):
     last_seen: datetime
     class Config:
         from_attributes = True
+
+class ScannerAssetOut(BaseModel):
+    id: int
+    target: str
+    created_at: datetime
+    open_findings: int
+    resolved_findings: int
+    last_scanned: Optional[datetime] = None
+
+
+class ScannerFindingOut(BaseModel):
+    id: str
+    finding_type: str
+    title: Optional[str] = None
+    severity: str
+    algorithm: Optional[str] = None
+    status: str
+    first_seen: datetime
+    last_seen: datetime
+
 
 class CompetencyBase(BaseModel):
     code: str

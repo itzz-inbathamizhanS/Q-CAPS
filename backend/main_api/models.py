@@ -83,6 +83,8 @@ class Asset(Base):
     criticality = Column(Float, default=1.0)
     confidentiality_lifetime = Column(Integer, default=0) # Days
     owner_role = Column(String, nullable=True)
+    # Set for assets created from a verified scan; NULL for shared/admin-managed assets.
+    owner_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
@@ -110,6 +112,7 @@ class Finding(Base):
     protocol = Column(String, nullable=True)
     severity = Column(Float, nullable=False)
     confidence = Column(Float, nullable=False)
+    title = Column(String, nullable=True)
     migration_urgency = Column(Float, default=1.0)
     status = Column(String, nullable=False, default="OPEN")
     first_seen = Column(DateTime, default=lambda: datetime.now(timezone.utc))
