@@ -1,0 +1,894 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B01",
+      "title": "Understanding Cryptography: From Established Symmetric and Asymmetric Ciphers to Post-Quantum Algorithms",
+      "authors": "Christof Paar, Jan Pelzl, Tim Güneysu",
+      "edition": "2nd edition",
+      "year": 2024,
+      "publisher": "Springer"
+    },
+    {
+      "id": "B03",
+      "title": "A Tutorial on Post-quantum Cryptography (lecture slides)",
+      "authors": "Douglas R. Stinson",
+      "edition": "11 August 2025",
+      "year": 2025
+    },
+    {
+      "id": "B04",
+      "title": "FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B92",
+      "title": "FIPS 204: Module-Lattice-Based Digital Signature Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B93",
+      "title": "FIPS 205: Stateless Hash-Based Digital Signature Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B94",
+      "title": "NIST IR 8545: Status Report on the Fourth Round of the NIST Post-Quantum Cryptography Standardization Process",
+      "authors": "NIST",
+      "edition": "March 2025",
+      "year": 2025,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B95",
+      "title": "NIST SP 800-227: Recommendations for Key-Encapsulation Mechanisms",
+      "authors": "Alagic, Barker, Chen, Moody, Robinson, Silberg, Waller",
+      "edition": "September 2025",
+      "year": 2025,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B96",
+      "title": "NIST Post-Quantum Cryptography project pages: project overview, selected algorithms, additional digital signature schemes (accessed 2026-10-04)",
+      "authors": "NIST Computer Security Resource Center",
+      "edition": "accessed 2026-10-04",
+      "year": 2026,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B90",
+      "title": "kyber-py: a pure Python implementation of ML-KEM (FIPS 203), version 1.2.0 (PyPI package metadata)",
+      "authors": "Package authors",
+      "edition": "1.2.0",
+      "year": 2025
+    },
+    {
+      "id": "B91",
+      "title": "dilithium-py: a pure Python implementation of ML-DSA (FIPS 204), version 1.4.0 (PyPI package metadata)",
+      "authors": "Package authors",
+      "edition": "1.4.0",
+      "year": 2025
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_b_b10_pqc_standards",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "10.1 NIST FIPS 203 - ML-KEM",
+          "summary": "The standardised lattice KEM: parameter sets, categories, size formulas, the input checks the standard requires, and implicit rejection.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**FIPS 203** (published 13 August 2024) specifies **ML-KEM**, the Module-Lattice-Based Key-Encapsulation Mechanism derived from CRYSTALS-Kyber. Its security rests on the presumed hardness of the **Module Learning With Errors (MLWE)** problem, the module version of the LWE problem you worked through in B9. ML-KEM is an **IND-CCA2-secure** KEM: an attacker who can submit chosen ciphertexts for decapsulation still learns nothing about the shared secret.\n\nThe standard defines three parameter sets, all with polynomial degree n = 256 and modulus q = 3329, differing in the matrix dimension k and the noise and compression parameters. They are claimed to be in NIST **security categories** 1, 3 and 5, meaning at least as hard to break as a generic AES-128, AES-192 or AES-256 key search, respectively. Security is deliberately not stated as a single number of bits. FIPS 203 says: use the strongest parameter set that is practical when first establishing protections, but **NIST recommends ML-KEM-768 as the default**, because it gives a large margin at reasonable cost. The shared secret is always a 256-bit value that can be used directly as a symmetric key; any further key derivation must follow SP 800-108 or SP 800-56C.\n\nBecause every size follows from the parameters, you can *predict* the byte lengths and check them against a real implementation. The first listing does that for all three sets with `kyber-py` 1.2.0: encapsulation key 384k + 32 bytes, decapsulation key 768k + 96, ciphertext 32(d_u·k + d_v), shared secret 32."
+            },
+            {
+              "type": "code",
+              "id": "c-params",
+              "language": "python",
+              "code": "from importlib.metadata import version\nfrom kyber_py.ml_kem import ML_KEM_512, ML_KEM_768, ML_KEM_1024\n\n# FIPS 203 Table 2: (k, eta1, eta2, d_u, d_v) and the claimed security category; n = 256, q = 3329 for all sets\nPARAMETERS = {\n    \"ML-KEM-512\":  (ML_KEM_512,  (2, 3, 2, 10, 4), 1),\n    \"ML-KEM-768\":  (ML_KEM_768,  (3, 2, 2, 10, 4), 3),\n    \"ML-KEM-1024\": (ML_KEM_1024, (4, 2, 2, 11, 5), 5),\n}\nprint(\"kyber-py\", version(\"kyber-py\"))\nprint(f\"{'parameter set':12} {'category':>8} {'ek':>6} {'dk':>6} {'ciphertext':>10} {'secret':>6}  formula matches measurement\")\nfor name, (kem, (k, eta1, eta2, du, dv), category) in PARAMETERS.items():\n    ek, dk = kem.keygen()\n    secret, ct = kem.encaps(ek)\n    predicted = (384 * k + 32, 768 * k + 96, 32 * (du * k + dv), 32)\n    measured = (len(ek), len(dk), len(ct), len(secret))\n    print(f\"{name:12} {category:>8} {len(ek):>6} {len(dk):>6} {len(ct):>10} {len(secret):>6}  {predicted == measured}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-params",
+              "language": "text",
+              "code": "kyber-py 1.2.0\nparameter set category     ek     dk ciphertext secret  formula matches measurement\nML-KEM-512          1    800   1632        768     32  True\nML-KEM-768          3   1184   2400       1088     32  True\nML-KEM-1024         5   1568   3168       1568     32  True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Input checking.** FIPS 203 requires that Encaps and Decaps only run on **checked inputs**. For an encapsulation key ek: a *type check* (length exactly 384k + 32) and a *modulus check*: every 12-bit coefficient in the first 384k bytes must be smaller than q = 3329, which the standard expresses as ByteEncode12(ByteDecode12(ek)) = ek. For a decapsulation key dk: a type check (length 768k + 96) and a *hash check*: SHA3-256 of the embedded encapsulation key must equal the stored hash. For a ciphertext: length 32(d_u·k + d_v). The standard stresses that these checks **do not prove that a key was properly generated**; they catch malformed input only.\n\n**Implicit rejection.** Decaps never reports failure. If the re-encryption of the decrypted message does not reproduce the received ciphertext, it silently returns a pseudorandom key derived from a secret value stored in dk, so an attacker cannot tell valid from invalid ciphertexts. The second listing implements the three checks and shows the behaviour."
+            },
+            {
+              "type": "code",
+              "id": "c-checks",
+              "language": "python",
+              "code": "import hashlib\nfrom kyber_py.ml_kem import ML_KEM_768\n\nK, Q = 3, 3329                                                   # ML-KEM-768\n\ndef decode12(data):\n    coefficients = []\n    for i in range(0, len(data), 3):                              # 3 bytes carry two 12-bit coefficients (little-endian bit order)\n        b0, b1, b2 = data[i:i + 3]\n        coefficients += [b0 | (b1 & 15) << 8, (b1 >> 4) | b2 << 4]\n    return coefficients\n\ndef check_encapsulation_key(ek):\n    if len(ek) != 384 * K + 32:\n        return \"type check failed\"\n    if any(c >= Q for c in decode12(ek[:384 * K])):\n        return \"modulus check failed\"\n    return \"ok\"\n\ndef check_decapsulation_key(dk):\n    if len(dk) != 768 * K + 96:\n        return \"type check failed\"\n    if hashlib.sha3_256(dk[384 * K:768 * K + 32]).digest() != dk[768 * K + 32:768 * K + 64]:\n        return \"hash check failed\"\n    return \"ok\"\n\nek, dk = ML_KEM_768.keygen()\nsecret, ct = ML_KEM_768.encaps(ek)\nprint(\"valid encapsulation key:\", check_encapsulation_key(ek))\nprint(\"truncated encapsulation key:\", check_encapsulation_key(ek[:-1]))\nprint(\"coefficient set to 4095:\", check_encapsulation_key(b\"\\xff\\xff\\xff\" + ek[3:]))\nprint(\"valid decapsulation key:\", check_decapsulation_key(dk))\ntampered_dk = bytearray(dk)\ntampered_dk[1200] ^= 1                                            # a byte inside the embedded encapsulation key\nprint(\"decapsulation key with a flipped byte:\", check_decapsulation_key(bytes(tampered_dk)))\nprint(\"ciphertext length correct:\", len(ct) == 32 * (10 * K + 4))\n\nbad = bytearray(ct)\nbad[0] ^= 1\nrejected = ML_KEM_768.decaps(dk, bytes(bad))\nprint(\"tampered ciphertext: no error raised, key length\", len(rejected), \"| differs from the real secret:\", rejected != secret)\nprint(\"implicit rejection is deterministic:\", rejected == ML_KEM_768.decaps(dk, bytes(bad)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-checks",
+              "language": "text",
+              "code": "valid encapsulation key: ok\ntruncated encapsulation key: type check failed\ncoefficient set to 4095: modulus check failed\nvalid decapsulation key: ok\ndecapsulation key with a flipped byte: hash check failed\nciphertext length correct: True\ntampered ciphertext: no error raised, key length 32 | differs from the real secret: True\nimplicit rejection is deterministic: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "K-PKE is not a public-key encryption scheme",
+              "text": "FIPS 203 contains an internal component called K-PKE. It is approved only as a subroutine of ML-KEM and must not be used on its own to encrypt messages. The derandomised internal functions are likewise for testing only: the cryptographic module has to generate the randomness itself."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which ML-KEM parameter set does NIST recommend as the default?",
+              "options": [
+                "ML-KEM-768",
+                "ML-KEM-512",
+                "ML-KEM-1024"
+              ],
+              "correct_index": 0,
+              "explanation": "FIPS 203 recommends ML-KEM-768 as the default because it offers a large security margin at reasonable performance cost."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does ML-KEM decapsulation do when the ciphertext has been tampered with?",
+              "options": [
+                "It returns a pseudorandom key derived from a secret value, without signalling an error (implicit rejection).",
+                "It raises an error that identifies the tampering.",
+                "It returns the correct secret anyway."
+              ],
+              "correct_index": 0,
+              "explanation": "Implicit rejection prevents an attacker from learning whether a chosen ciphertext was valid."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Does passing the FIPS 203 encapsulation-key checks prove the key was produced by ML-KEM.KeyGen?",
+              "options": [
+                "No, the checks only catch malformed input",
+                "Yes, completely",
+                "Only for ML-KEM-512"
+              ],
+              "correct_index": 0,
+              "explanation": "The standard states that input checking does not guarantee a key is a properly produced output of KeyGen."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "Sections 3.2 (The ML-KEM Scheme), 3.3 (Requirements for ML-KEM Implementations), 7.2 and 7.3 (input checks), 8 (Parameter Sets, including the default recommendation) and Tables 2 and 3"
+            },
+            {
+              "book": "B96",
+              "locator": "Project overview: FIPS 203, 204 and 205 published August 13, 2024"
+            },
+            {
+              "book": "B90",
+              "locator": "Package metadata, version 1.2.0",
+              "note": "Used to measure sizes and demonstrate behaviour; not a validated module."
+            }
+          ]
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "10.2 NIST FIPS 204 - ML-DSA",
+          "summary": "The standardised lattice signature: parameter sets, measured sizes against the standard, hedged versus deterministic signing, and context strings.",
+          "estimated_minutes": 38,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**FIPS 204** specifies **ML-DSA**, the Module-Lattice-Based Digital Signature Algorithm derived from CRYSTALS-Dilithium. As you saw in B9, Dilithium has the same overall shape as a Schnorr signature: a commitment, a challenge obtained by hashing the commitment and the message, and a response. To keep the response from leaking the secret key, the signer uses **rejection sampling**: it throws away unsuitable attempts and retries, so signing takes a variable number of loops (the standard lists the expected repetitions as about 4.25, 5.1 and 3.85 for the three sets). The scheme is designed to be **strongly unforgeable (SUF-CMA)**.\n\nThree parameter sets exist, named after the dimensions (k, l) of the matrix: ML-DSA-44 (4×4), ML-DSA-65 (6×5) and ML-DSA-87 (8×7), claimed to be in security categories **2, 3 and 5**. The sizes in FIPS 204 Table 2 are: ML-DSA-44 private key 2560, public key 1312, signature 2420 bytes; ML-DSA-65 4032, 1952, 3309; ML-DSA-87 4896, 2592, 4627. The standard also notes that the private key can be stored as just its 32-byte seed. Listing one measures all three with `dilithium-py` 1.4.0 and compares with those figures, and checks the pattern that the public key is 32 + 320k bytes."
+            },
+            {
+              "type": "code",
+              "id": "c-sizes",
+              "language": "python",
+              "code": "from importlib.metadata import version\nfrom dilithium_py.ml_dsa import ML_DSA_44, ML_DSA_65, ML_DSA_87\n\n# FIPS 204 Table 2: (private key, public key, signature), and Table 1: dimension k and claimed category\nSTANDARD = {\n    \"ML-DSA-44\": (ML_DSA_44, 4, 2, (2560, 1312, 2420)),\n    \"ML-DSA-65\": (ML_DSA_65, 6, 3, (4032, 1952, 3309)),\n    \"ML-DSA-87\": (ML_DSA_87, 8, 5, (4896, 2592, 4627)),\n}\nprint(\"dilithium-py\", version(\"dilithium-py\"))\nprint(f\"{'parameter set':10} {'category':>8} {'private':>8} {'public':>7} {'signature':>9}  matches Table 2  pk = 32 + 320k\")\nfor name, (dsa, k, category, table2) in STANDARD.items():\n    pk, sk = dsa.keygen()\n    sig = dsa.sign(sk, b\"size check\")\n    measured = (len(sk), len(pk), len(sig))\n    print(f\"{name:10} {category:>8} {measured[0]:>8} {measured[1]:>7} {measured[2]:>9}  {measured == table2!s:>14}  {len(pk) == 32 + 320 * k}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-sizes",
+              "language": "text",
+              "code": "dilithium-py 1.4.0\nparameter set category  private  public signature  matches Table 2  pk = 32 + 320k\nML-DSA-44         2     2560    1312      2420            True  True\nML-DSA-65         3     4032    1952      3309            True  True\nML-DSA-87         5     4896    2592      4627            True  True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Hedged and deterministic signing.** ML-DSA needs fresh, unpredictable commitment values. By default the standard uses *both* kinds of randomness (the **hedged** variant): fresh random bits at signing time, which help against side-channel and fault attacks, and a precomputed random value stored in the private key, which protects against a faulty random-number generator. A fully **deterministic** variant is permitted for platforms with no fresh randomness, but it should not be used where side-channel attacks are a concern and cannot be mitigated. Verification is identical for both, so implementing only the hedged variant is enough for interoperability.\n\n**Context strings.** Signing and verification take an optional **context string** of at most 255 bytes (empty by default). Because the context is bound into what is signed, a signature made for one purpose does not verify under another, which is a cheap defence against cross-protocol replay. A pre-hash variant, HashML-DSA, signs a hash of the message instead. The second listing demonstrates the first two behaviours."
+            },
+            {
+              "type": "code",
+              "id": "c-behaviour",
+              "language": "python",
+              "code": "from dilithium_py.ml_dsa import ML_DSA_65\n\npk, sk = ML_DSA_65.keygen()\nmessage = b\"release 4.2 manifest\"\n\ndeterministic_1 = ML_DSA_65.sign(sk, message, deterministic=True)\ndeterministic_2 = ML_DSA_65.sign(sk, message, deterministic=True)\nhedged_1 = ML_DSA_65.sign(sk, message)\nhedged_2 = ML_DSA_65.sign(sk, message)\nprint(\"deterministic signatures are identical:\", deterministic_1 == deterministic_2)\nprint(\"hedged signatures differ:\", hedged_1 != hedged_2)\nprint(\"both kinds verify with the same function:\", ML_DSA_65.verify(pk, message, deterministic_1), ML_DSA_65.verify(pk, message, hedged_1))\n\nsignature = ML_DSA_65.sign(sk, message, ctx=b\"firmware-signing\")\nprint(\"verifies under the same context:\", ML_DSA_65.verify(pk, message, signature, ctx=b\"firmware-signing\"))\nprint(\"verifies under another context:\", ML_DSA_65.verify(pk, message, signature, ctx=b\"payments\"))\nprint(\"verifies with no context:\", ML_DSA_65.verify(pk, message, signature))\nprint(\"changed message verifies:\", ML_DSA_65.verify(pk, b\"release 4.2 manifest!\", hedged_1))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-behaviour",
+              "language": "text",
+              "code": "deterministic signatures are identical: True\nhedged signatures differ: True\nboth kinds verify with the same function: True True\nverifies under the same context: True\nverifies under another context: False\nverifies with no context: False\nchanged message verifies: False",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the default signing mode of ML-DSA in FIPS 204?",
+              "options": [
+                "Hedged: fresh randomness plus randomness precomputed in the private key.",
+                "Fully deterministic.",
+                "No randomness at all"
+              ],
+              "correct_index": 0,
+              "explanation": "The hedged variant mitigates both side-channel attacks and a flawed random-number generator; deterministic signing is only permitted as an option."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the maximum length of an ML-DSA context string?",
+              "options": [
+                "255 bytes",
+                "32 bytes",
+                "1024 bytes"
+              ],
+              "correct_index": 0,
+              "explanation": "The signing and verification algorithms return an error if the context string is longer than 255 bytes."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which ML-DSA parameter set is claimed to be in security category 3?",
+              "options": [
+                "ML-DSA-65",
+                "ML-DSA-44",
+                "ML-DSA-87"
+              ],
+              "correct_index": 0,
+              "explanation": "FIPS 204 claims categories 2, 3 and 5 for ML-DSA-44, ML-DSA-65 and ML-DSA-87."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B92",
+              "locator": "Sections 3.4 (Hedged and Deterministic Signing), 3.6.2 (length checks), 4 (Parameter Sets) with Tables 1 and 2, and 5.2 (context string of 255 or fewer bytes)"
+            },
+            {
+              "book": "B03",
+              "locator": "Section 4, slide 'Kyber-PKE and Crystals-Dilithium': Dilithium has the structure of a Schnorr signature"
+            },
+            {
+              "book": "B91",
+              "locator": "Package metadata, version 1.4.0",
+              "note": "Used to measure sizes and demonstrate behaviour; not a validated module."
+            }
+          ],
+          "needs_verification": {
+            "reason": "The remark that rejection sampling makes signing time variable is explained from the Table 1 'repetitions' row; the detailed algorithm of FIPS 204 was not walked through here."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "10.3 NIST FIPS 205 - SLH-DSA",
+          "summary": "The standardised stateless hash-based signature: how its twelve parameter sets are built, the s versus f trade-off, and a computation of every signature size from the structure.",
+          "estimated_minutes": 35,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**FIPS 205** specifies **SLH-DSA**, the Stateless Hash-Based Digital Signature Algorithm derived from SPHINCS+. It is the hash-based construction of B9 assembled from standard parts. A **FORS** few-times signature signs the message digest; its public key is authenticated by a chain of **XMSS** trees (each built from **WOTS+** one-time signatures, which are Winternitz signatures, and a Merkle tree); and the whole structure is a **hypertree** so large that a signing leaf can be chosen pseudorandomly. The key pair conceptually holds 2^63, 2^64, 2^66 or 2^68 FORS keys depending on the parameter set, all generated from one seed, so **no state has to be kept**.\n\nThere are **12 parameter sets**: six sets of numbers, each available with either SHA-2 or SHAKE as the hash. The name encodes the hash family, the security parameter n in bits (128, 192, 256) and a letter: **s** for relatively **small** signatures, **f** for relatively **fast** signing. The claimed security categories are 1, 3 and 5 for n = 16, 24 and 32 bytes. Each key pair may sign at most **2^64 messages**; the standard's footnote notes that at ten billion signatures per second this would take over 58 years. Other limits apply to the parameter sets in SP 800-230.\n\nEvery signature has the structure *randomizer (n bytes) + FORS signature + hypertree signature*, so its length is (1 + k(1 + a) + h + d·len)·n bytes, where len = len1 + len2 is the length of a WOTS+ signature in n-byte blocks. The listing computes that formula for all six parameter sets from the numbers in FIPS 205 Table 2 and compares with the table's printed signature sizes. A match for all six is a strong cross-check of both the transcription and the formula."
+            },
+            {
+              "type": "code",
+              "id": "c-slh",
+              "language": "python",
+              "code": "import math\n\n# FIPS 205 Table 2: (n bytes, h, d, h', a, k, lg_w, m, category) and the signature size printed in the table\nPARAMETER_SETS = {\n    \"128s\": ((16, 63, 7, 9, 12, 14, 4, 30, 1),  7856),\n    \"128f\": ((16, 66, 22, 3, 6, 33, 4, 34, 1), 17088),\n    \"192s\": ((24, 63, 7, 9, 14, 17, 4, 39, 3), 16224),\n    \"192f\": ((24, 66, 22, 3, 8, 33, 4, 42, 3), 35664),\n    \"256s\": ((32, 64, 8, 8, 14, 22, 4, 47, 5), 29792),\n    \"256f\": ((32, 68, 17, 4, 9, 35, 4, 49, 5), 49856),\n}\nprint(f\"{'set':5} {'category':>8} {'public key':>10} {'signature':>10}  formula = table\")\nfor name, ((n, h, d, h_prime, a, k, lg_w, m, category), table_size) in PARAMETER_SETS.items():\n    assert h == d * h_prime\n    len1 = math.ceil(8 * n / lg_w)\n    len2 = math.floor(math.log2(len1 * (2 ** lg_w - 1)) / lg_w) + 1\n    length = len1 + len2                                               # WOTS+ signature length in n-byte blocks\n    signature = (1 + k * (1 + a) + h + d * length) * n\n    print(f\"{name:5} {category:>8} {2 * n:>10} {signature:>10,}  {signature == table_size}\")\nyears = 2 ** 64 / 10 ** 10 / (365.25 * 24 * 3600)\nprint(f\"2^64 signatures at 10^10 per second take {years:.1f} years\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-slh",
+              "language": "text",
+              "code": "set   category public key  signature  formula = table\n128s         1         32      7,856  True\n128f         1         32     17,088  True\n192s         3         48     16,224  True\n192f         3         48     35,664  True\n256s         5         64     29,792  True\n256f         5         64     49,856  True\n2^64 signatures at 10^10 per second take 58.5 years",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Compare these with ML-DSA from the previous lesson: SLH-DSA public keys are tiny (32 to 64 bytes) but signatures are **2 to 20 times larger** (7,856 to 49,856 bytes against 2,420 to 4,627). In return the security rests only on hash functions, the most conservative assumption you can make, and there is no lattice structure to attack.\n\n**Practical notes from the standard.** Signing is **hedged** by default (fresh randomness is mixed in, which should be used where side-channel attacks are a concern); a deterministic variant exists for platforms without a source of random bits, and a pre-hash version, HashSLH-DSA, signs a digest. Signatures are not automatically *message-bound*: the key owner could create two messages with the same signature by finding a collision on an internal hash, which for most parameter sets costs less than the claimed security category. Applications that need message-bound signatures must account for that or use a transformation such as BUFF."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In SLH-DSA parameter-set names, what does the letter 's' stand for?",
+              "options": [
+                "Relatively small signatures",
+                "Relatively fast signing",
+                "Stateful"
+              ],
+              "correct_index": 0,
+              "explanation": "'s' sets are designed for small signatures; 'f' sets for fast signature generation (at the cost of larger signatures)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "How many messages may one SLH-DSA key pair sign?",
+              "options": [
+                "At most 2^64",
+                "Exactly one",
+                "An unlimited number"
+              ],
+              "correct_index": 0,
+              "explanation": "FIPS 205 sets the security analysis for keys used to sign at most 2^64 messages; the scheme is stateless, so the signer does not track the count."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is SLH-DSA attractive despite its large signatures?",
+              "options": [
+                "Its security rests only on hash functions, a more conservative assumption than lattices.",
+                "It has the smallest signatures of all schemes.",
+                "It needs no hash function."
+              ],
+              "correct_index": 0,
+              "explanation": "Hash-based schemes avoid the structured-lattice assumption, which gives assumption diversity."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B93",
+              "locator": "Sections 3 (Overview), 11 (Parameter Sets) with Table 2, and the signature structure in 10.2 (SIG_FORS and SIG_HT)"
+            },
+            {
+              "book": "B03",
+              "locator": "Section 2 (Hash-based signature schemes): Merkle trees, stateful versus stateless signatures"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 12.4 (Hash-Based Cryptography)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The structure of a signature (randomizer, FORS signature, hypertree signature) is taken from FIPS 205 Algorithm 20 as extracted from the PDF text; the six computed sizes all equal the table values, which is the verification."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "10.4 Emerging and Evolving Standardization",
+          "summary": "What is standardised, what is selected but not yet published, and what is still being evaluated, with the dates the sources give.",
+          "estimated_minutes": 28,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "PQC standardisation is not finished, and status is easy to misstate, so this lesson separates three groups. All statements are the situation described on the NIST pages and reports cited below as read on **4 October 2026**; check them again before quoting.\n\n**Published standards.** FIPS 203 (ML-KEM), FIPS 204 (ML-DSA) and FIPS 205 (SLH-DSA) were published on **13 August 2024**. NIST SP 800-227, *Recommendations for Key-Encapsulation Mechanisms*, was approved in **September 2025**; it states requirements for implementing and using KEMs, including how to combine KEMs. The stateful hash-based signatures LMS and XMSS are covered by SP 800-208.\n\n**Selected, standard not yet published.** NIST selected **Falcon** (to become **FN-DSA**) in 2022 and the code-based KEM **HQC** on **11 March 2025**. On 4 October 2026 the NIST pages still show \"FIPS coming soon\" for both. NIST IR 8545 explains the choice of HQC: NIST wanted at most one of BIKE or HQC as a general-purpose KEM, needs a sufficiently low decryption-failure rate to achieve IND-CCA2 security, judged HQC's analysis of that rate more mature than BIKE's, and expected to publish a draft HQC standard for comment followed by a final version roughly two years later. **Classic McEliece** is no longer under consideration in the NIST process because its standardisation is being pursued at ISO; NIST said it may later develop a standard based on the ISO one. SIKE was removed after it was broken.\n\n**Still being evaluated.** Because the selected signatures are all lattice-based except SLH-DSA, NIST opened a call for **additional digital signatures** in September 2022 (40 submissions in round one, 14 in round two). **Round 3 candidates were announced on 14 May 2026**, with the rationale in NIST IR 8610. The candidates use isogeny (SQIsign), MPC-in-the-head (for example MQOM), multivariate (for example MAYO, UOV, SNOVA, QR-UOV) and symmetric-based (FAEST) designs; the lattice-based HAWK was withdrawn by its submitters. None of these is a standard and none should be deployed on the strength of being a candidate."
+            },
+            {
+              "type": "callout",
+              "id": "k1",
+              "variant": "warning",
+              "title": "Candidate is not standard",
+              "text": "Being in a later round does not make an algorithm safe to use. SIKE reached round four before it was broken. Production systems should use published standards, and treat selected-but-unpublished algorithms as planning inputs only."
+            },
+            {
+              "type": "callout",
+              "id": "k2",
+              "variant": "info",
+              "title": "Where this connects",
+              "text": "NIST IR 8547 (draft) sets the transition timeline for the classical algorithms you met in B8. The standards in this lesson are the replacements it points to."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which of these is a published FIPS standard as of the sources read for this lesson?",
+              "options": [
+                "ML-DSA (FIPS 204)",
+                "HQC",
+                "FN-DSA (Falcon)"
+              ],
+              "correct_index": 0,
+              "explanation": "FIPS 203, 204 and 205 were published in August 2024. HQC and FN-DSA were selected but the NIST pages still say a FIPS is coming soon."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why did NIST select HQC rather than BIKE?",
+              "options": [
+                "Its decryption-failure-rate analysis was judged more mature, which matters for IND-CCA2 security.",
+                "HQC has smaller keys than every other scheme.",
+                "BIKE was broken."
+              ],
+              "correct_index": 0,
+              "explanation": "NIST IR 8545: both need a sufficiently low decryption failure rate, and NIST considered HQC's analysis more mature."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the status of the additional digital signature process in the sources read?",
+              "options": [
+                "Round 3 candidates were announced in May 2026; none is yet a standard.",
+                "A winner has been published as a FIPS.",
+                "The process was cancelled."
+              ],
+              "correct_index": 0,
+              "explanation": "NIST announced the Round 3 candidates on 14 May 2026 (IR 8610 gives the rationale)."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B96",
+              "locator": "Project overview (publication dates of FIPS 203 to 205, HQC selection, Falcon and HQC 'FIPS coming soon'), Additional Digital Signature Schemes overview and Round 3 page"
+            },
+            {
+              "book": "B94",
+              "locator": "Section 2 (selection of HQC; Classic McEliece and BIKE) and Section 4 (Conclusion: draft standard and approximately two years)"
+            },
+            {
+              "book": "B95",
+              "locator": "Sections 1.3 (Requirements) and 4.6 (Multi-Algorithm KEMs and PQ/T Hybrids)"
+            },
+            {
+              "book": "B03",
+              "locator": "Section 1 (NIST standardization process) and Section 5 (additional signatures)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Status entries come from NIST web pages read on 2026-10-04 and are time-sensitive. The list of Round 3 candidates is partial: it names those confirmed on the page text, not all nine. SP 800-208 is mentioned from the book citations only."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "10.5 Algorithm Selection",
+          "summary": "Turning standards into choices: an explainable rule-based selector built only from facts in the sources, with its limits stated.",
+          "estimated_minutes": 32,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Choosing an algorithm is a decision with reasons, and a decision aid should show them. The selector below encodes only rules that follow from this module's sources, and it returns a **reason for every recommendation** so a reviewer can challenge it.\n\n- **KEM.** The default is ML-KEM-768 (FIPS 203). If a security category is required, use 512, 768 or 1024 for categories 1, 3 and 5. Use no KEM that has not been published as a standard in a production system.\n- **Signatures.** SLH-DSA is the only published signature with a non-lattice assumption (hash-based); choose it when assumption diversity matters and large signatures are acceptable. The stateful LMS and XMSS are acceptable only where state can be guaranteed (B9). ML-DSA is the general-purpose choice with much smaller signatures than SLH-DSA. FN-DSA is not yet a published standard, so it cannot be required.\n- **Always.** Treat any single recommendation as a starting point: a regulator, a protocol profile or an interoperability partner may require something else, and the parameter set belongs in an agile configuration (see the enterprise track on crypto-agility).\n\nThis is an illustration of explainable selection, **not** a policy and not a substitute for your regulator's requirements."
+            },
+            {
+              "type": "code",
+              "id": "c-selector",
+              "language": "python",
+              "code": "def choose_kem(category=None):\n    by_category = {1: \"ML-KEM-512\", 2: \"ML-KEM-768\", 3: \"ML-KEM-768\", 4: \"ML-KEM-1024\", 5: \"ML-KEM-1024\"}\n    if category is None:\n        return \"ML-KEM-768\", [\"NIST recommends ML-KEM-768 as the default parameter set (FIPS 203, section 8)\"]\n    choice = by_category[category]\n    note = \"category %d is claimed by %s (FIPS 203)\" % (category, choice) if category in (1, 3, 5) else \"no set targets category %d; the next stronger set is used\" % category\n    return choice, [note]\n\ndef choose_signature(state_guaranteed=False, need_non_lattice=False, small_signatures=False, category=3):\n    sets = {\"ML-DSA\": {2: \"ML-DSA-44\", 3: \"ML-DSA-65\", 5: \"ML-DSA-87\"}, \"SLH-DSA\": {1: \"SLH-DSA-128\", 3: \"SLH-DSA-192\", 5: \"SLH-DSA-256\"}}\n    reasons = []\n    if need_non_lattice:\n        reasons.append(\"hash-based security is the only non-lattice assumption in a published signature standard (FIPS 205)\")\n        if state_guaranteed:\n            reasons.append(\"LMS or XMSS (SP 800-208) are also possible because state is guaranteed, with much smaller signatures\")\n        else:\n            reasons.append(\"stateful LMS/XMSS is excluded: state cannot be guaranteed (B9)\")\n        sizes = sets[\"SLH-DSA\"]\n        choice = sizes[1 if category <= 1 else 3 if category <= 3 else 5]\n        reasons.append(\"signatures of about 8 KB to 50 KB must be acceptable (FIPS 205 Table 2)\")\n        return choice + \" (s or f variant)\", reasons\n    sizes = sets[\"ML-DSA\"]\n    choice = sizes[2 if category <= 2 else 3 if category <= 3 else 5]\n    reasons.append(\"ML-DSA is the general-purpose published lattice signature (FIPS 204)\")\n    reasons.append(\"signatures of 2,420 to 4,627 bytes are much smaller than SLH-DSA's\" if small_signatures else \"signature sizes are 2,420 to 4,627 bytes (FIPS 204 Table 2)\")\n    reasons.append(\"FN-DSA (Falcon) is selected but not yet a published FIPS, so it is not recommended where a standard is required\")\n    return choice, reasons\n\nscenarios = [\n    (\"TLS key exchange, default\", choose_kem()),\n    (\"long-lived records, category 5\", choose_kem(5)),\n    (\"code signing, no special constraints\", choose_signature()),\n    (\"firmware root key, wants non-lattice, no reliable state\", choose_signature(need_non_lattice=True, category=3)),\n    (\"IoT, small signatures matter\", choose_signature(small_signatures=True, category=2)),\n]\nfor name, (choice, reasons) in scenarios:\n    print(f\"{name}: {choice}\")\n    for reason in reasons:\n        print(\"    -\", reason)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-selector",
+              "language": "text",
+              "code": "TLS key exchange, default: ML-KEM-768\n    - NIST recommends ML-KEM-768 as the default parameter set (FIPS 203, section 8)\nlong-lived records, category 5: ML-KEM-1024\n    - category 5 is claimed by ML-KEM-1024 (FIPS 203)\ncode signing, no special constraints: ML-DSA-65\n    - ML-DSA is the general-purpose published lattice signature (FIPS 204)\n    - signature sizes are 2,420 to 4,627 bytes (FIPS 204 Table 2)\n    - FN-DSA (Falcon) is selected but not yet a published FIPS, so it is not recommended where a standard is required\nfirmware root key, wants non-lattice, no reliable state: SLH-DSA-192 (s or f variant)\n    - hash-based security is the only non-lattice assumption in a published signature standard (FIPS 205)\n    - stateful LMS/XMSS is excluded: state cannot be guaranteed (B9)\n    - signatures of about 8 KB to 50 KB must be acceptable (FIPS 205 Table 2)\nIoT, small signatures matter: ML-DSA-44\n    - ML-DSA is the general-purpose published lattice signature (FIPS 204)\n    - signatures of 2,420 to 4,627 bytes are much smaller than SLH-DSA's\n    - FN-DSA (Falcon) is selected but not yet a published FIPS, so it is not recommended where a standard is required",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Two things to notice in the output. Every recommendation can be traced to a standard, which is what makes it reviewable; and the selector knows when it **cannot** recommend something (FN-DSA) rather than inventing a justification. A real selector would also encode protocol constraints, performance budgets and your organisation's policy; the project's recommendation engine follows the same principle of explainable output."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "A firmware signing root must use a non-lattice assumption and the signer cannot guarantee state. Which published scheme fits?",
+              "options": [
+                "SLH-DSA, because it is hash-based and stateless.",
+                "LMS, because it is stateful.",
+                "ML-DSA, because it is lattice-based."
+              ],
+              "correct_index": 0,
+              "explanation": "Stateful schemes are unsafe without guaranteed state, and ML-DSA is lattice-based. SLH-DSA is the published stateless hash-based option."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why should a selection tool explain its recommendation?",
+              "options": [
+                "So reviewers can check each reason against a source and challenge it.",
+                "To make the output longer.",
+                "Because standards require explanations."
+              ],
+              "correct_index": 0,
+              "explanation": "Explainable output can be audited; an unexplained choice cannot be challenged or updated when the standards change."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "Section 8 (Parameter Sets): security categories and the default recommendation"
+            },
+            {
+              "book": "B92",
+              "locator": "Section 4 (Parameter Sets) and Table 2"
+            },
+            {
+              "book": "B93",
+              "locator": "Section 11 (Parameter Sets) and Table 2"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 12.4.3 (stateful versus stateless hash-based signatures)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The selector is a teaching device written for this lesson; its rules are drawn from the cited sources but it has not been validated as a policy tool."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "10.6 Implementation and Interoperability Considerations",
+          "summary": "What the standards require of implementations: validated modules, randomness, input checking, combining algorithms safely, and the limits of what a test can show.",
+          "estimated_minutes": 38,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A correct algorithm is not enough: the standards also constrain **how it is implemented and used**.\n\n**From FIPS 203 and SP 800-227.** Implementations must follow the FIPS (RS1) and FIPS 140-3 guidelines (RS2) and use approved components with enough security strength (RS3). Randomness must come from an **approved random bit generator** with the security strength of the parameter set (at least 128, 192 or 256 bits for ML-KEM-512, 768 and 1024) (RS4). Intermediate values must be **destroyed** when an algorithm finishes, apart from seeds and data derivable from public information (RS5); a seed that can regenerate a decapsulation key is as sensitive as the key itself. Floating-point arithmetic must not be used, as rounding errors can produce wrong results. Encaps and Decaps must run only on **checked inputs**, as in the previous lessons. An **ephemeral key pair** is used for one key establishment only and destroyed as soon as possible (RS6). Derived symmetric keys must come from the 256-bit shared secret through an approved key-derivation method.\n\nA Python script cannot demonstrate several of these (guaranteed memory erasure, constant-time execution, approved randomness), which is one reason production systems use **validated cryptographic modules** and why the packages used in this module are for learning.\n\n**Combining algorithms.** During migration, many deployments combine a post-quantum KEM with a traditional one (a **PQ/T hybrid**). SP 800-227 explains that a well-designed multi-algorithm scheme is secure if at least one component is secure, and describes a **composite KEM**: run both KEMs, then pass both shared secrets, ciphertexts and encapsulation keys through an **approved key combiner** based on SP 800-56C or SP 800-133. FIPS 203 warns that a combined KEM that includes ML-KEM may not itself be IND-CCA2, so the combiner must be chosen with care. One detail is easy to get wrong. SP 800-227 distinguishes hashing several inputs from hashing their naive concatenation: if the lengths of the inputs can vary, different pairs can produce the same concatenated string. The listing shows that failure with real hashes and the fix of length-prefixing each input."
+            },
+            {
+              "type": "code",
+              "id": "c-combiner",
+              "language": "python",
+              "code": "import hashlib\n\ndef naive(*parts):\n    return hashlib.sha3_256(b\"\".join(parts)).hexdigest()[:16]\n\ndef length_prefixed(*parts):\n    return hashlib.sha3_256(b\"\".join(len(p).to_bytes(4, \"big\") + p for p in parts)).hexdigest()[:16]\n\npair_one = (b\"ab\", b\"c\")          # stand-ins for two shared secrets of variable length\npair_two = (b\"a\", b\"bc\")\nprint(\"different pairs, naive concatenation:   \", naive(*pair_one), naive(*pair_two), \"-> collide:\", naive(*pair_one) == naive(*pair_two))\nprint(\"different pairs, length-prefixed inputs:\", length_prefixed(*pair_one), length_prefixed(*pair_two), \"-> collide:\", length_prefixed(*pair_one) == length_prefixed(*pair_two))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-combiner",
+              "language": "text",
+              "code": "different pairs, naive concatenation:    3a985da74fe225b2 3a985da74fe225b2 -> collide: True\ndifferent pairs, length-prefixed inputs: 9b633b138b9046bf 9b57f7038681b98b -> collide: False",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "With fixed-length inputs, such as two 32-byte shared secrets, simple concatenation is unambiguous, which is why it can be acceptable in a fixed protocol; the rule is to **choose and fix the encoding** appropriate to the application. The next listing shows the limits of testing. It runs many round trips for each ML-KEM parameter set. A zero failure count is the expected result, because the decapsulation failure probability is far below anything a test can measure (Paar's Table 12.2 lists 2^-139 to 2^-174 for the three Kyber sets), so the test can show that the code runs, **not** that it is correct for all inputs. FIPS 203 itself notes that conformance is judged against the specification, and SP 800-227 observes that full functional equivalence cannot be established by testing."
+            },
+            {
+              "type": "code",
+              "id": "c-roundtrips",
+              "language": "python",
+              "code": "from kyber_py.ml_kem import ML_KEM_512, ML_KEM_768, ML_KEM_1024\n\nfor name, kem in ((\"ML-KEM-512\", ML_KEM_512), (\"ML-KEM-768\", ML_KEM_768), (\"ML-KEM-1024\", ML_KEM_1024)):\n    trials = 40\n    failures = 0\n    for _ in range(trials):\n        ek, dk = kem.keygen()\n        secret, ct = kem.encaps(ek)\n        if kem.decaps(dk, ct) != secret:\n            failures += 1\n    other_ek, other_dk = kem.keygen()\n    mismatch = kem.decaps(other_dk, ct) != secret                 # decapsulating with the wrong key must not give the secret\n    print(f\"{name}: {trials} round trips, {failures} failures; wrong decapsulation key gives a different secret: {mismatch}\")\nprint(\"no failures in a few dozen runs says nothing about a failure probability of 2^-139 or smaller\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-roundtrips",
+              "language": "text",
+              "code": "ML-KEM-512: 40 round trips, 0 failures; wrong decapsulation key gives a different secret: True\nML-KEM-768: 40 round trips, 0 failures; wrong decapsulation key gives a different secret: True\nML-KEM-1024: 40 round trips, 0 failures; wrong decapsulation key gives a different secret: True\nno failures in a few dozen runs says nothing about a failure probability of 2^-139 or smaller",
+              "caption": "Expected output"
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How should an ephemeral KEM key pair be used according to SP 800-227?",
+              "options": [
+                "For one key establishment only, and destroyed as soon as possible.",
+                "For all sessions until it expires.",
+                "Shared among several servers for speed."
+              ],
+              "correct_index": 0,
+              "explanation": "Requirement RS6 says an ephemeral key pair shall be used for only one execution of key establishment and destroyed as soon as possible."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why must a key combiner not simply hash a naive concatenation of variable-length inputs?",
+              "options": [
+                "Different input pairs can concatenate to the same string, so they would produce the same key.",
+                "Hash functions cannot take concatenated input.",
+                "It makes the output too long."
+              ],
+              "correct_index": 0,
+              "explanation": "SP 800-227 notes that x||y can equal x'||y' even though (x, y) differs from (x', y'); fix the encoding, for example by length-prefixing."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why does a test that finds no decapsulation failures not prove ML-KEM is correct?",
+              "options": [
+                "The true failure probability is far below anything a test can measure, and testing cannot establish equivalence with the specification.",
+                "Because ML-KEM never fails.",
+                "Tests are forbidden by FIPS 203."
+              ],
+              "correct_index": 0,
+              "explanation": "Conformance is judged against the standard; validation labs use random input-output tests but cannot prove equivalence."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "Section 3.3 (Requirements for ML-KEM Implementations): randomness strength, input checking, destruction of intermediate values, no floating point, approved key derivation, combined KEMs"
+            },
+            {
+              "book": "B95",
+              "locator": "Section 1.3 (Requirements RS1 to RS6 and footnote on testing) and Section 4.6 (composite KEMs, approved key combiners, concatenation of inputs)"
+            },
+            {
+              "book": "B01",
+              "locator": "Table 12.2 (decapsulation failure probabilities of lattice KEMs)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Python cannot demonstrate memory erasure or constant-time execution; those requirements are stated from the standards, not tested."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "new",
+          "title": "Task: Validate a received ML-KEM public key",
+          "summary": "Build the FIPS 203 input checker, fuzz it with corrupted keys, and learn what the check does and does not protect you from.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Objective.** Implement the encapsulation-key checks required by FIPS 203, measure how many corrupted keys they catch, and discover what they cannot catch.\n\n**Scenario.** A service receives ML-KEM-768 encapsulation keys from peers. Before encapsulating to a key it must check it. You will corrupt valid keys one byte at a time and record whether the checker rejects them. This runs entirely on keys you generate yourself.\n\n**Steps.** (1) Write `check_encapsulation_key` (length check and the 12-bit coefficient range check). (2) For 1,500 trials, flip one randomly chosen byte of a valid key to a different random value and count how many are rejected, separately for the coefficient region (the first 1152 bytes) and the 32-byte public seed at the end. (3) For corrupted keys that **pass** the check, encapsulate to them and see whether the legitimate owner derives the same secret. The reference solution follows."
+            },
+            {
+              "type": "code",
+              "id": "c-fuzz",
+              "language": "python",
+              "code": "import random\nfrom kyber_py.ml_kem import ML_KEM_768\n\nK, Q = 3, 3329\ndef decode12(data):\n    out = []\n    for i in range(0, len(data), 3):\n        b0, b1, b2 = data[i:i + 3]\n        out += [b0 | (b1 & 15) << 8, (b1 >> 4) | b2 << 4]\n    return out\ndef check(ek):\n    return len(ek) == 384 * K + 32 and all(c < Q for c in decode12(ek[:384 * K]))\n\nrng = random.Random(2026)\nek, dk = ML_KEM_768.key_derive(bytes(range(64)))                   # fixed seed (test use only) so the run is reproducible\nassert check(ek)\nstats = {\"coefficients\": [0, 0], \"seed\": [0, 0]}                   # [rejected, accepted]\naccepted_keys = []\nfor _ in range(1500):\n    position = rng.randrange(len(ek))\n    corrupted = bytearray(ek)\n    corrupted[position] = (corrupted[position] + rng.randrange(1, 256)) % 256\n    region = \"coefficients\" if position < 384 * K else \"seed\"\n    ok = check(bytes(corrupted))\n    stats[region][0 if not ok else 1] += 1\n    if ok and len(accepted_keys) < 20:\n        accepted_keys.append(bytes(corrupted))\nfor region, (rejected, accepted) in stats.items():\n    print(f\"corrupted byte in the {region:12}: {rejected:>4} rejected, {accepted:>4} accepted\")\n\nmismatched = 0\nfor bad_key in accepted_keys:\n    secret, ct = ML_KEM_768.encaps(bad_key)\n    if ML_KEM_768.decaps(dk, ct) != secret:\n        mismatched += 1\nprint(f\"keys that passed the check but were corrupted: {mismatched} of {len(accepted_keys)} give the owner a different secret\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-fuzz",
+              "language": "text",
+              "code": "corrupted byte in the coefficients:  188 rejected, 1280 accepted\ncorrupted byte in the seed        :    0 rejected,   32 accepted\nkeys that passed the check but were corrupted: 20 of 20 give the owner a different secret",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Verify.** Corruptions in the coefficient region are rejected only when they push a 12-bit value to 3329 or more, so a minority are caught; corruptions in the seed are never caught, because any 32 bytes are a valid seed. The corrupted keys that pass the check all lead to a **different secret** for the owner, so the protocol breaks later, when the two sides fail to agree on traffic keys, instead of at the check. That is exactly what the standard means when it says the check does not guarantee the key was properly produced.\n\n**What follows.** Input checking protects the implementation from malformed input. It does not authenticate the key: a peer's key must be bound to an identity through an authenticated channel, signature or certificate, exactly as with classical keys.\n\n**Troubleshooting.** If the assertion fails, your decoder has a bit-order error: each group of three bytes carries two 12-bit coefficients, the first in byte 0 plus the low nibble of byte 1.\n\n**Cleanup.** Nothing persists. All keys were generated for the exercise.\n\n**Stretch.** Add the decapsulation-key hash check and show that flipping a byte inside the embedded encapsulation key is always caught, because the stored SHA3-256 hash no longer matches."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why are corruptions in the 32-byte seed part of the encapsulation key never detected by the check?",
+              "options": [
+                "Any 32 bytes are a valid seed, so there is nothing to range-check.",
+                "The seed is encrypted.",
+                "The seed is checked by the hash check."
+              ],
+              "correct_index": 0,
+              "explanation": "The modulus check covers only the coefficient region; the type check covers only the length."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What must accompany key checking to make a received public key trustworthy?",
+              "options": [
+                "Authentication binding the key to an identity (signature, certificate or authenticated channel).",
+                "A longer key.",
+                "A second copy of the same key."
+              ],
+              "correct_index": 0,
+              "explanation": "Input checking only rejects malformed keys; it cannot tell whether the key belongs to the peer you intend."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "Section 7.2 (ML-KEM Encapsulation: encapsulation key check, type and modulus checks) and Section 3.3 (input checking)"
+            }
+          ],
+          "after": "sec-6"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "b10-n01",
+          "prompt": "What problem underlies the security of ML-KEM?",
+          "options": [
+            "Module Learning With Errors (MLWE)",
+            "Integer factorisation",
+            "The discrete logarithm"
+          ],
+          "correct_index": 0,
+          "explanation": "FIPS 203 bases ML-KEM on the presumed hardness of MLWE.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 3.2"
+          }
+        },
+        {
+          "id": "b10-n02",
+          "prompt": "Which parameter set does NIST recommend as the ML-KEM default?",
+          "options": [
+            "ML-KEM-768",
+            "ML-KEM-512",
+            "ML-KEM-1024"
+          ],
+          "correct_index": 0,
+          "explanation": "FIPS 203 section 8 recommends ML-KEM-768 as the default.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 8"
+          }
+        },
+        {
+          "id": "b10-n03",
+          "prompt": "What does ML-KEM decapsulation do with an invalid ciphertext?",
+          "options": [
+            "Returns a pseudorandom key (implicit rejection) without an error",
+            "Raises an exception",
+            "Returns an all-zero key"
+          ],
+          "correct_index": 0,
+          "explanation": "Implicit rejection hides whether a chosen ciphertext was valid.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 6.3"
+          }
+        },
+        {
+          "id": "b10-n04",
+          "prompt": "Is K-PKE approved as a stand-alone public-key encryption scheme?",
+          "options": [
+            "No, only as a subroutine of ML-KEM",
+            "Yes",
+            "Only for 512"
+          ],
+          "correct_index": 0,
+          "explanation": "FIPS 203 section 3.3 forbids using K-PKE on its own.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 3.3"
+          }
+        },
+        {
+          "id": "b10-n05",
+          "prompt": "What is the signature size of ML-DSA-44?",
+          "options": [
+            "2420 bytes",
+            "3309 bytes",
+            "4627 bytes"
+          ],
+          "correct_index": 0,
+          "explanation": "FIPS 204 Table 2: 2420 bytes for ML-DSA-44, 3309 for ML-DSA-65, 4627 for ML-DSA-87.",
+          "source": {
+            "book": "B92",
+            "locator": "Table 2"
+          }
+        },
+        {
+          "id": "b10-n06",
+          "prompt": "What is the 'hedged' signing variant of ML-DSA?",
+          "options": [
+            "Using fresh randomness at signing time as well as randomness stored in the private key",
+            "Signing twice",
+            "Signing without a hash"
+          ],
+          "correct_index": 0,
+          "explanation": "Hedging combines two sources of randomness to resist side-channel attacks and RNG flaws.",
+          "source": {
+            "book": "B92",
+            "locator": "Section 3.4"
+          }
+        },
+        {
+          "id": "b10-n07",
+          "prompt": "What is the maximum ML-DSA context string length?",
+          "options": [
+            "255 bytes",
+            "64 bytes",
+            "no limit"
+          ],
+          "correct_index": 0,
+          "explanation": "FIPS 204 returns an error for contexts longer than 255 bytes.",
+          "source": {
+            "book": "B92",
+            "locator": "Algorithms 2 and 3"
+          }
+        },
+        {
+          "id": "b10-n08",
+          "prompt": "In SLH-DSA names, what does 'f' stand for?",
+          "options": [
+            "Fast signing, with larger signatures",
+            "Small signatures",
+            "FIPS-only"
+          ],
+          "correct_index": 0,
+          "explanation": "'s' sets favour small signatures and 'f' sets favour fast signing.",
+          "source": {
+            "book": "B93",
+            "locator": "Section 11"
+          }
+        },
+        {
+          "id": "b10-n09",
+          "prompt": "How many signatures may one SLH-DSA key pair produce under the standard's analysis?",
+          "options": [
+            "At most 2^64",
+            "Exactly 2^10",
+            "Unlimited with no analysis"
+          ],
+          "correct_index": 0,
+          "explanation": "The parameter sets were designed for at most 2^64 signed messages per key pair.",
+          "source": {
+            "book": "B93",
+            "locator": "Section 11"
+          }
+        },
+        {
+          "id": "b10-n10",
+          "prompt": "Why was HQC selected over BIKE in March 2025, according to NIST IR 8545?",
+          "options": [
+            "NIST considered HQC's decryption-failure-rate analysis more mature, which matters for IND-CCA2 security",
+            "BIKE had been broken",
+            "HQC has the smallest keys"
+          ],
+          "correct_index": 0,
+          "explanation": "IR 8545 explains that IND-CCA2 needs a low decryption failure rate and HQC's analysis was more mature.",
+          "source": {
+            "book": "B94",
+            "locator": "Section 2"
+          }
+        },
+        {
+          "id": "b10-n11",
+          "prompt": "Why is simple concatenation risky in a key combiner when input lengths can vary?",
+          "options": [
+            "Different input pairs can produce the same concatenated string",
+            "Concatenation is slower",
+            "It always leaks keys"
+          ],
+          "correct_index": 0,
+          "explanation": "SP 800-227 explains that x||y can equal x'||y' for different pairs, so encodings must be fixed.",
+          "source": {
+            "book": "B95",
+            "locator": "Section 4.6.2"
+          }
+        },
+        {
+          "id": "b10-n12",
+          "prompt": "What does passing the ML-KEM encapsulation key modulus check guarantee?",
+          "options": [
+            "Only that every encoded coefficient is in range, not that the key is genuine",
+            "That the key belongs to the intended peer",
+            "That the key was generated by KeyGen"
+          ],
+          "correct_index": 0,
+          "explanation": "FIPS 203 states the check does not guarantee a properly produced key.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 7.2"
+          }
+        }
+      ],
+      "estimated_minutes": 251,
+      "notes": "Rewrites six outline sections as lessons that verify FIPS 203/204/205 parameter sizes against the standards, implement the FIPS 203 input checks, summarise the dated status of FN-DSA, HQC and additional signatures from NIST pages read on 2026-10-04, and add a key-validation fuzzing task.",
+      "learning_objectives": [
+        "Describe ML-KEM, ML-DSA and SLH-DSA, their parameter sets, security categories and sizes, and verify sizes from the standards.",
+        "Implement the FIPS 203 input checks and explain implicit rejection and what the checks do not prove.",
+        "Explain hedged versus deterministic signing and context strings in ML-DSA.",
+        "Separate published standards, selected-but-unpublished algorithms and candidates, with dates and sources.",
+        "Build an explainable algorithm-selection aid and state its limits.",
+        "State the implementation and combiner requirements of FIPS 203 and SP 800-227 and the limits of testing."
+      ]
+    }
+  ]
+}
