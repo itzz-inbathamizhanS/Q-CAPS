@@ -10,7 +10,7 @@
     "preview": "vite preview",
     "content:compile": "node scripts/compile-content.cjs",
     "content:check": "node scripts/compile-content.cjs --check",
-    "test:content": "node --test scripts/curriculum-validation.test.cjs scripts/competency-validation.test.cjs scripts/avalanche.test.cjs"
+    "test:content": "node --test scripts/curriculum-validation.test.cjs scripts/competency-validation.test.cjs scripts/avalanche.test.cjs scripts/recommended-module.test.cjs"
   },
   "dependencies": {
     "lucide-react": "^0.441.0",

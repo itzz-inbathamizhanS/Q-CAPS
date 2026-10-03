@@ -9,6 +9,7 @@ import { useNavigate } from 'react-router-dom';
 import { UserRecommendation } from '@/services/backendService';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 import { curriculumModules } from '@/data/curriculumData';
+import { resolveRecommendedModule } from '@/features/curriculum/recommendedModule';
 
 interface BentoSectionProps {
   liveRecommendation?: UserRecommendation | null;
@@ -17,21 +18,36 @@ interface BentoSectionProps {
 export const BentoSection: React.FC<BentoSectionProps> = ({ liveRecommendation }) => {
   const navigate = useNavigate();
   const { getRecommendedNextModule, completedModules } = useCurriculumStore();
-  const recommendedId = liveRecommendation?.course_id || getRecommendedNextModule();
+  // The server names the module that addresses the gap; the learner may not be able to open it yet, so link to the
+  // first module on its prerequisite chain that is unlocked. Without evidence, start at the curriculum order.
+  const target = liveRecommendation?.course_id ?? null;
+  const resolved = target ? resolveRecommendedModule(curriculumModules, target, completedModules) : null;
+  const recommendedId = resolved?.moduleId ?? getRecommendedNextModule();
   const recommendedMod = curriculumModules.find(m => m.id === recommendedId);
+  const targetMod = target ? curriculumModules.find(m => m.id === target) : undefined;
+  const redirected = resolved?.redirected === true;
 
-  const displayTitle = liveRecommendation?.title || recommendedMod?.title || 'Shor\'s Algorithm & RSA';
-  const displayDesc = liveRecommendation?.reason || 'Critical for understanding the upcoming PQC migration.';
-  const displayBadge = liveRecommendation?.status === 'no_evidence'
-    ? 'Start here'
-    : liveRecommendation?.priority ? `Priority: ${liveRecommendation.priority}` : 'Recommended';
+  const displayTitle = recommendedMod ? `${recommendedMod.code} ${recommendedMod.title}` : 'Curriculum';
+  let displayDesc: string;
+  if (redirected && targetMod && recommendedMod) {
+    displayDesc = `${liveRecommendation?.reason ?? ''} ${targetMod.code} ${targetMod.title} is locked until its prerequisites are complete, so start with ${recommendedMod.code} ${recommendedMod.title}.`.trim();
+  } else if (liveRecommendation) {
+    displayDesc = liveRecommendation.reason;
+  } else {
+    displayDesc = 'Personalised recommendations are not available right now. This is the next module in the curriculum.';
+  }
+  const displayBadge = redirected
+    ? 'Prerequisite first'
+    : !liveRecommendation || liveRecommendation.status === 'no_evidence'
+      ? 'Start here'
+      : liveRecommendation.priority ? `Priority: ${liveRecommendation.priority}` : 'Recommended';
 
   const totalModules = curriculumModules.length;
   const progressPercent = Math.round((completedModules.length / totalModules) * 100);
 
   const recommendedLearning = {
-    level: recommendedMod?.level || 'Intermediate',
-    duration: recommendedMod ? `${recommendedMod.estimatedMinutes} mins` : '45 mins',
+    level: recommendedMod?.level ?? 'Not available',
+    duration: recommendedMod ? `${recommendedMod.estimatedMinutes} mins` : 'Not available',
     progress: progressPercent,
     ctaText: 'Start Module',
     ctaLink: `/learning/${recommendedId}`,
