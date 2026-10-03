@@ -1,10 +1,28 @@
 from datetime import datetime
-from typing import Optional, List
-from pydantic import BaseModel
+from typing import Optional, List, Dict, Any
+import json
+import unicodedata
+
+from pydantic import BaseModel, Field, field_validator
+
+MIN_PASSWORD_LENGTH = 8
+MAX_PROGRESS_BYTES = 64 * 1024
+
 
 class UserCreate(BaseModel):
-    name: str
-    password: str
+    # Validated here because the name is shown to other users (leaderboard) and is the login key.
+    name: str = Field(max_length=100)
+    password: str = Field(min_length=MIN_PASSWORD_LENGTH, max_length=256)
+
+    @field_validator("name")
+    @classmethod
+    def _clean_name(cls, v: str) -> str:
+        v = v.strip()
+        if not v:
+            raise ValueError("name must not be blank")
+        if any(unicodedata.category(ch).startswith("C") for ch in v):
+            raise ValueError("name must not contain control characters")
+        return v
 
 class UserLogin(BaseModel):
     name: str
@@ -20,7 +38,7 @@ class UserOut(BaseModel):
     id: int
     name: str
     xp: int
-    readiness_score: int
+    readiness_score: Optional[int] = None  # None = no graded quiz evidence yet (unknown, not 0)
     global_rank: int
     progress_data: Optional[str] = "{}"
 
@@ -29,7 +47,18 @@ class UserOut(BaseModel):
         from_attributes = True
 
 class ProgressUpdate(BaseModel):
-    progress_data: str
+    progress_data: str = Field(max_length=MAX_PROGRESS_BYTES)
+
+    @field_validator("progress_data")
+    @classmethod
+    def _json_object(cls, v: str) -> str:
+        try:
+            parsed = json.loads(v)
+        except ValueError:
+            raise ValueError("progress_data must be a JSON object")
+        if not isinstance(parsed, dict):
+            raise ValueError("progress_data must be a JSON object")
+        return v
 
 class QuizSubmission(BaseModel):
     user_id: int
@@ -52,10 +81,13 @@ class QuizScoreOut(BaseModel):
 
 class ScannerLogCreate(BaseModel):
     user_id: int
-    endpoint: str
-    status: str
+    endpoint: str = Field(max_length=300)
+    status: str = Field(max_length=100)
+    # Ignored: the server counts findings in the verified details. Kept for older clients.
     vulnerabilities_found: int = 0
-    details: Optional[str] = None
+    details: str = Field(max_length=256 * 1024)
+    # Signed by the scanner over `details` (see scan_receipts.py).
+    receipt: Optional[str] = Field(default=None, max_length=2048)
 
 class ScannerLogOut(BaseModel):
     id: int
@@ -65,6 +97,7 @@ class ScannerLogOut(BaseModel):
     vulnerabilities_found: int
     details: Optional[str]
     created_at: datetime
+    xp_awarded: Optional[int] = None
 
     class Config:
         orm_mode = True
@@ -79,3 +112,243 @@ class RecommendationOut(BaseModel):
     quiz_score: Optional[float] = None
     scanner_risk: Optional[str] = None
     status: str = "recommendation"
+    graph_paths: List[Dict[str, Any]] = []
+
+# --- V2 SCANNER SCHEMAS ---
+
+class EvidenceCapsuleCreate(BaseModel):
+    scan_id: str
+    target: str
+    fingerprint_hash: str
+    exposure_state: str
+    full_capsule_json: Dict[str, Any]
+
+class EvidenceCapsuleOut(BaseModel):
+    id: str
+    target_id: int
+    fingerprint_hash: str
+    exposure_state: str
+    full_capsule_json: Dict[str, Any]
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+class CryptoDeltaCreate(BaseModel):
+    baseline_capsule_id: str
+    current_capsule_id: str
+    verification_status: str
+    delta_json: Dict[str, Any]
+
+class CryptoDeltaOut(BaseModel):
+    id: int
+    baseline_capsule_id: str
+    current_capsule_id: str
+    verification_status: str
+    delta_json: Dict[str, Any]
+    created_at: datetime
+
+    class Config:
+        orm_mode = True
+        from_attributes = True
+
+# --- CANDIDATE A: CLOSURE LOOP SCHEMAS ---
+
+class AssetBase(BaseModel):
+    organization_id: Optional[int] = None
+    canonical_target: str
+    asset_type: str
+    criticality: float = 1.0
+    confidentiality_lifetime: int = 0
+    owner_role: Optional[str] = None
+
+class AssetCreate(AssetBase):
+    pass
+
+class AssetOut(AssetBase):
+    id: int
+    created_at: datetime
+    updated_at: datetime
+    class Config:
+        from_attributes = True
+
+class EvidenceBase(BaseModel):
+    scan_id: Optional[str] = None
+    asset_id: Optional[int] = None
+    evidence_type: str
+    normalized_payload: Dict[str, Any]
+    payload_hash: str
+    scanner_version: str
+    classifier_version: str
+    confidence: float
+    authorization_context: Optional[str] = None
+
+class EvidenceCreate(EvidenceBase):
+    pass
+
+class EvidenceOut(EvidenceBase):
+    id: str
+    observed_at: datetime
+    class Config:
+        from_attributes = True
+
+class FindingBase(BaseModel):
+    asset_id: Optional[int] = None
+    evidence_id: Optional[str] = None
+    finding_type: str
+    algorithm: Optional[str] = None
+    protocol: Optional[str] = None
+    severity: float
+    confidence: float
+    status: str = "OPEN"
+
+class FindingCreate(FindingBase):
+    pass
+
+class FindingOut(FindingBase):
+    id: str
+    first_seen: datetime
+    last_seen: datetime
+    class Config:
+        from_attributes = True
+
+class CompetencyBase(BaseModel):
+    code: str
+    name: str
+    description: Optional[str] = None
+    prerequisites: Optional[Dict[str, Any]] = None
+    evidence_requirements: Optional[Dict[str, Any]] = None
+
+class CompetencyCreate(CompetencyBase):
+    pass
+
+class CompetencyOut(CompetencyBase):
+    id: int
+    class Config:
+        from_attributes = True
+
+class LearnerCapabilityBase(BaseModel):
+    user_id: int
+    competency_id: int
+    knowledge_score: float = 0.0
+    procedural_score: float = 0.0
+    operational_score: float = 0.0
+    confidence: float = 0.0
+    freshness: float = 1.0
+
+class LearnerCapabilityCreate(LearnerCapabilityBase):
+    pass
+
+class LearnerCapabilityOut(LearnerCapabilityBase):
+    id: int
+    updated_at: datetime
+    class Config:
+        from_attributes = True
+
+class InterventionBase(BaseModel):
+    finding_id: Optional[str] = None
+    competency_id: Optional[int] = None
+    intervention_type: str
+    module_id: Optional[str] = None
+    lab_template_id: Optional[str] = None
+    minimum_score: float = 0.8
+
+class InterventionCreate(InterventionBase):
+    pass
+
+class InterventionOut(InterventionBase):
+    id: str
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+class VerificationBase(BaseModel):
+    intervention_id: Optional[str] = None
+    before_evidence_id: Optional[str] = None
+    after_evidence_id: Optional[str] = None
+    technical_result: Dict[str, Any]
+    learner_result: Dict[str, Any]
+    verifier_version: str
+
+class VerificationCreate(VerificationBase):
+    pass
+
+class VerificationOut(VerificationBase):
+    id: str
+    verified_at: datetime
+    class Config:
+        from_attributes = True
+
+class ClosureEventBase(BaseModel):
+    finding_id: Optional[str] = None
+    intervention_id: Optional[str] = None
+    verification_id: Optional[str] = None
+    previous_state: str
+    new_state: str
+    reason: str
+    event_hash: str
+    previous_event_hash: Optional[str] = None
+
+class ClosureEventCreate(ClosureEventBase):
+    pass
+
+class ClosureEventOut(ClosureEventBase):
+    id: str
+    created_at: datetime
+    class Config:
+        from_attributes = True
+
+class QuizAttemptQuestion(BaseModel):
+    item_id: str
+    prompt: str
+    options: List[str]  # already in the order shown to the learner; no answer key
+
+
+class QuizAttemptOut(BaseModel):
+    attempt_id: str
+    module_id: str
+    title: str
+    passing_score_percent: int
+    total_questions: int
+    issued_at: datetime
+    expires_at: datetime
+    questions: List[QuizAttemptQuestion]
+
+
+class QuizAnswerIn(BaseModel):
+    item_id: str
+    selected_position: int = Field(ge=0, le=50)
+
+
+class QuizAttemptSubmit(BaseModel):
+    answers: List[QuizAnswerIn] = Field(default_factory=list, max_length=200)
+
+
+class QuizItemResult(BaseModel):
+    item_id: str
+    selected_position: Optional[int] = None
+    correct: bool
+    correct_position: Optional[int] = None  # only when the module reveals answers
+    explanation: Optional[str] = None       # only when the module reveals answers
+
+
+class QuizAttemptResult(BaseModel):
+    attempt_id: str
+    module_id: str
+    total_questions: int
+    correct_answers: int
+    score_percent: float
+    passed: bool
+    passing_score_percent: int
+    xp_awarded: int
+    graded_at: datetime
+    items: List[QuizItemResult]
+
+
+class QuizAnswerResult(BaseModel):
+    item_id: str
+    recorded: bool
+    correct: Optional[bool] = None          # None when the module withholds feedback until grading
+    correct_position: Optional[int] = None
+    explanation: Optional[str] = None

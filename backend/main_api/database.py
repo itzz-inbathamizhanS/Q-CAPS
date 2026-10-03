@@ -1,12 +1,16 @@
-from sqlalchemy import create_engine
+from sqlalchemy import create_engine, inspect, text
+from sqlalchemy.pool import StaticPool
+import os
 from sqlalchemy.orm import declarative_base, sessionmaker
 
-DATABASE_URL = "sqlite:///./qcaps.db"
+DATABASE_URL = os.environ.get("QCAPS_DATABASE_URL", "sqlite:///./qcaps.db")
 
-engine = create_engine(
-    DATABASE_URL,
-    connect_args={"check_same_thread": False}
-)
+_engine_kwargs = {"connect_args": {"check_same_thread": False}}
+if DATABASE_URL in ("sqlite://", "sqlite:///:memory:"):
+    # In-memory SQLite is per-connection; share one connection (used by tests).
+    _engine_kwargs["poolclass"] = StaticPool
+
+engine = create_engine(DATABASE_URL, **_engine_kwargs)
 
 SessionLocal = sessionmaker(
     autocommit=False,
@@ -23,3 +27,40 @@ def get_db():
         yield db
     finally:
         db.close()
+
+
+def ensure_schema():
+    """Idempotent additive changes that create_all() cannot apply to existing tables."""
+    insp = inspect(engine)
+    tables = set(insp.get_table_names())
+    with engine.begin() as conn:
+        if "users" in tables:
+            cols = {c["name"] for c in insp.get_columns("users")}
+            if "role" not in cols:
+                conn.execute(text("ALTER TABLE users ADD COLUMN role VARCHAR NOT NULL DEFAULT 'learner'"))
+            if engine.dialect.name == "sqlite":
+                # SQLite cannot add a CHECK to an existing table; triggers give existing
+                # databases the same guarantee as the model's ck_users_role constraint.
+                for trigger, event in (("insert", "INSERT"), ("update", "UPDATE OF role")):
+                    conn.execute(text(
+                        f"CREATE TRIGGER IF NOT EXISTS trg_users_role_{trigger} BEFORE {event} ON users "
+                        "WHEN NEW.role NOT IN ('learner', 'admin') "
+                        "BEGIN SELECT RAISE(ABORT, 'invalid role'); END"
+                    ))
+        if "sections" in tables:
+            cols = {c["name"] for c in insp.get_columns("sections")}
+            if "summary" not in cols:
+                conn.execute(text("ALTER TABLE sections ADD COLUMN summary VARCHAR(300)"))
+            if "estimated_minutes" not in cols:
+                conn.execute(text("ALTER TABLE sections ADD COLUMN estimated_minutes INTEGER"))
+            if "sources" not in cols:
+                conn.execute(text("ALTER TABLE sections ADD COLUMN sources JSON"))
+            if "needs_verification" not in cols:
+                conn.execute(text("ALTER TABLE sections ADD COLUMN needs_verification JSON"))
+            # Progress left behind by sections deleted before the admin API cleaned it up (SQLite does
+            # not enforce the ON DELETE CASCADE). Such rows point at nothing, or at a reused id.
+            for table in ("checkpoint_passes", "section_completions"):
+                if table in tables:
+                    conn.execute(text(
+                        f"DELETE FROM {table} WHERE section_id NOT IN (SELECT id FROM sections)"
+                    ))

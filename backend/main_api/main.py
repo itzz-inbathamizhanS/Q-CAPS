@@ -1,11 +1,14 @@
-from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect, Query, BackgroundTasks, Response
+from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconnect, Query, BackgroundTasks, Request, Response
 from fastapi.middleware.cors import CORSMiddleware
+from sqlalchemy import func
 from sqlalchemy.orm import Session
 from typing import List
 
 import models
 import schemas
-from database import engine, Base, get_db
+import quiz_service
+import scan_receipts
+from database import engine, Base, get_db, ensure_schema
 from recommendation import get_user_recommendation
 from leaderboard import get_leaderboard_data, get_user_rank
 import os
@@ -15,10 +18,22 @@ from passlib.context import CryptContext
 import jwt
 from fastapi.security import OAuth2PasswordBearer
 
+# Candidate A Services
+from services import evidence_service
+from closure.engine import process_closure_verification
+from competency.mapper import get_required_competencies
+from interventions.selector import select_intervention
+from course_content.admin_routes import create_admin_router
+from course_content.public_routes import create_public_router
+from course_content.ratelimit import login_limiter
+from config import load_jwt_secret
+
 # Security Configurations
-SECRET_KEY = "qcaps_super_secret_jwt_key_for_development_only"
+# The secret comes from QCAPS_JWT_SECRET (see config.load_jwt_secret): at least 32 characters,
+# required when QCAPS_ENV=production, random per-process in development.
+SECRET_KEY = load_jwt_secret()
 ALGORITHM = "HS256"
-ACCESS_TOKEN_EXPIRE_MINUTES = 60 * 24 * 7 # 1 week
+ACCESS_TOKEN_EXPIRE_MINUTES = int(os.environ.get("QCAPS_TOKEN_EXPIRE_MINUTES", 60 * 24))
 
 pwd_context = CryptContext(schemes=["pbkdf2_sha256"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="/api/auth/login")
@@ -47,15 +62,23 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
     )
     try:
         payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
-        user_id: str = payload.get("sub")
-        if user_id is None:
-            raise credentials_exception
-    except jwt.PyJWTError:
+        if payload.get("typ") is not None:
+            raise ValueError("not an access token")  # e.g. a scan receipt signed with the same secret
+        user_id = int(payload.get("sub"))
+    except (jwt.PyJWTError, TypeError, ValueError):
+        # Missing or non-numeric "sub" is an invalid credential, not a server error.
         raise credentials_exception
-    user = db.query(models.User).filter(models.User.id == int(user_id)).first()
+    user = db.query(models.User).filter(models.User.id == user_id).first()
     if user is None:
         raise credentials_exception
     return user
+
+def require_admin(current_user: models.User = Depends(get_current_user)):
+    """Admin gate. get_current_user re-reads the user from the database on every request,
+    so the role is always the stored one and nothing the client sends can change it."""
+    if current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
 
 class ConnectionManager:
     def __init__(self):
@@ -80,6 +103,7 @@ manager = ConnectionManager()
 
 # Create SQLite database tables if they do not exist
 Base.metadata.create_all(bind=engine)
+ensure_schema()
 
 app = FastAPI(
     title="Q-CAPS Analytics Backend",
@@ -90,11 +114,22 @@ app = FastAPI(
 # Allow React dev server origin
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=["http://localhost:5173", "http://localhost:3000"],
+    allow_origins=[o.strip() for o in os.environ.get("QCAPS_CORS_ORIGINS", "http://localhost:5173,http://localhost:3000").split(",") if o.strip()],
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
 )
+
+app.include_router(create_public_router(get_current_user))
+app.include_router(create_admin_router(require_admin))
+
+@app.on_event("startup")
+def seed_quiz_bank():
+    """Populate the server-side item bank on first start (idempotent; CLI: python seed_quizzes.py)."""
+    from database import SessionLocal
+    from seed_quizzes import seed_if_empty
+    with SessionLocal() as session:
+        seed_if_empty(session)
 
 @app.get("/")
 def root():
@@ -111,7 +146,7 @@ def health_check():
 @app.post("/api/auth/register", response_model=schemas.UserOut)
 def register_user(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
     # Check if user already exists
-    existing_user = db.query(models.User).filter(models.User.name.ilike(user_in.name)).first()
+    existing_user = db.query(models.User).filter(func.lower(models.User.name) == user_in.name.lower()).first()
     if existing_user:
         raise HTTPException(status_code=400, detail="Username already registered")
         
@@ -128,14 +163,22 @@ def register_user(user_in: schemas.UserCreate, db: Session = Depends(get_db)):
         id=db_user.id,
         name=db_user.name,
         xp=db_user.xp,
-        readiness_score=0,
+        readiness_score=None,  # no quiz evidence yet: unknown, as /profile reports it
         global_rank=rank,
         progress_data=db_user.progress_data or "{}"
     )
 
 @app.post("/api/auth/login", response_model=schemas.Token)
-def login(user_in: schemas.UserLogin, db: Session = Depends(get_db)):
-    user = db.query(models.User).filter(models.User.name.ilike(user_in.name)).first()
+def login(user_in: schemas.UserLogin, request: Request, db: Session = Depends(get_db)):
+    client = request.client.host if request.client else "unknown"
+    retry_after = login_limiter.hit((client, user_in.name.strip().lower()))
+    if retry_after:
+        raise HTTPException(
+            status_code=429,
+            detail=f"Too many sign-in attempts. Try again in {retry_after} seconds.",
+            headers={"Retry-After": str(retry_after)},
+        )
+    user = db.query(models.User).filter(func.lower(models.User.name) == user_in.name.strip().lower()).first()
     if not user or not verify_password(user_in.password, user.hashed_password):
         raise HTTPException(status_code=401, detail="Incorrect username or password")
     
@@ -149,6 +192,12 @@ def login(user_in: schemas.UserLogin, db: Session = Depends(get_db)):
         "user_id": user.id,
         "user_name": user.name
     }
+
+@app.get("/api/auth/me")
+def read_me(current_user: models.User = Depends(get_current_user)):
+    """Who the server says the caller is. The frontend uses this only to show or hide the
+    admin link; every admin endpoint enforces the role itself."""
+    return {"id": current_user.id, "name": current_user.name, "role": current_user.role}
 
 @app.websocket("/api/ws/leaderboard")
 async def websocket_leaderboard(websocket: WebSocket, token: str = Query(None), db: Session = Depends(get_db)):
@@ -187,8 +236,37 @@ def update_user_progress(user_id: int, progress: schemas.ProgressUpdate, db: Ses
     db.commit()
     return {"status": "success"}
 
-@app.post("/api/quizzes/submit", response_model=schemas.QuizScoreOut)
+@app.post("/api/quizzes/{module_id}/attempts", response_model=schemas.QuizAttemptOut)
+def start_quiz_attempt(module_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Issue a server-built quiz form (shuffled, no answer keys)."""
+    try:
+        return quiz_service.issue_attempt(db, current_user, module_id)
+    except quiz_service.QuizError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+@app.post("/api/quizzes/attempts/{attempt_id}/answers", response_model=schemas.QuizAnswerResult)
+def answer_quiz_question(attempt_id: str, answer: schemas.QuizAnswerIn, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Record and lock one answer; returns feedback so the UI can keep per-question explanations."""
+    try:
+        return quiz_service.record_answer(db, current_user, attempt_id, answer.item_id, answer.selected_position)
+    except quiz_service.QuizError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+@app.post("/api/quizzes/attempts/{attempt_id}/submit", response_model=schemas.QuizAttemptResult)
+def submit_quiz_attempt(attempt_id: str, body: schemas.QuizAttemptSubmit, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Grade an issued attempt on the server. The score is computed here, never taken from the client."""
+    try:
+        result = quiz_service.grade_attempt(db, current_user, attempt_id, body.answers)
+    except quiz_service.QuizError as e:
+        raise HTTPException(status_code=e.status_code, detail=e.detail)
+    background_tasks.add_task(manager.broadcast, json.dumps(get_leaderboard_data(db)))
+    return result
+
+@app.post("/api/quizzes/submit", response_model=schemas.QuizScoreOut, deprecated=True)
 def submit_quiz_score(submission: schemas.QuizSubmission, background_tasks: BackgroundTasks, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    # Legacy endpoint: it trusts client-reported scores, so it is disabled unless explicitly enabled.
+    if os.getenv("QCAPS_ENABLE_LEGACY_QUIZ_SUBMIT") != "1":
+        raise HTTPException(status_code=410, detail="Client-reported quiz scores are no longer accepted; use /api/quizzes/{module_id}/attempts")
     if current_user.id != submission.user_id:
         raise HTTPException(status_code=403, detail="Not authorized to submit quiz for this user")
 
@@ -239,27 +317,40 @@ def log_scanner_result(log_in: schemas.ScannerLogCreate, background_tasks: Backg
     user = db.query(models.User).filter(models.User.id == log_in.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
-        
+
+    # The result is relayed by the browser, so it is only accepted with the scanner's signed receipt,
+    # and everything stored or awarded is derived from it rather than from client-supplied numbers.
+    try:
+        result = json.loads(log_in.details)
+        scan_receipts.verify_receipt(log_in.receipt, SECRET_KEY, current_user.id, result)
+    except ValueError as e:  # includes ReceiptError and malformed JSON
+        raise HTTPException(status_code=422, detail=str(e) if isinstance(e, scan_receipts.ReceiptError) else "details must be the scanner's JSON result")
+    details = scan_receipts.canonical_json(result)
+    if db.query(models.ScannerLog.id).filter(models.ScannerLog.user_id == user.id, models.ScannerLog.details == details).first():
+        raise HTTPException(status_code=409, detail="This scan result has already been recorded")
+    findings = scan_receipts.count_findings(result)
+
     db_log = models.ScannerLog(
-        user_id=log_in.user_id,
-        endpoint=log_in.endpoint,
+        user_id=user.id,
+        endpoint=(result.get("target_url") if isinstance(result, dict) else None) or log_in.endpoint,
         status=log_in.status,
-        vulnerabilities_found=log_in.vulnerabilities_found,
-        details=log_in.details
+        vulnerabilities_found=findings,
+        details=details
     )
     db.add(db_log)
-    
-    # Award XP for scanning based on vulnerabilities found
-    xp_awarded = 10 + (log_in.vulnerabilities_found * 5)
+
+    xp_awarded = 10 + (findings * 5)
     user.xp += xp_awarded
-    
+
     db.commit()
     db.refresh(db_log)
     db.refresh(user)
-    
+
     background_tasks.add_task(manager.broadcast, json.dumps(get_leaderboard_data(db)))
-    
-    return db_log
+
+    out = schemas.ScannerLogOut.model_validate(db_log)
+    out.xp_awarded = xp_awarded
+    return out
 
 @app.get("/api/scanner/logs/{log_id}/report")
 def download_scan_report(log_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -307,21 +398,8 @@ def download_scan_report(log_id: int, db: Session = Depends(get_db), current_use
             p.drawString(60, y, f"Risk Level: {osint.get('risk_level', 'Unknown')}")
             y -= 25
             
-            data_leaks = osint.get("data_leaks", {})
-            breaches_found = data_leaks.get("breaches_found", 0)
-            if breaches_found > 0:
-                p.setFont("Helvetica-Bold", 10)
-                p.setFillColorRGB(0.8, 0.1, 0.1)
-                p.drawString(60, y, f"! WARNING: {breaches_found} Data Breaches Found in Dark Web / OSINT DB")
-                p.setFillColorRGB(0, 0, 0)
-                p.setFont("Helvetica", 10)
-                y -= 15
-                for b in data_leaks.get("breaches", []):
-                    p.drawString(70, y, f"- {b.get('source')} ({b.get('date')}): {b.get('records_compromised')} records")
-                    y -= 15
-                    p.drawString(80, y, f"Types: {', '.join(b.get('data_types', []))}")
-                    y -= 15
-                y -= 10
+            p.drawString(60, y, "Breach / dark-web exposure: No verified result available")
+            y -= 25
         else:
             p.drawString(60, y, "No OSINT data available.")
             y -= 25
@@ -382,8 +460,24 @@ def download_scan_report(log_id: int, db: Session = Depends(get_db), current_use
                         p.drawString(70, y, line)
                         y -= 15
             else:
-                p.drawString(70, y, "None detected.")
+                # Only meaningful when the check actually ran; notes below say when it did not.
+                p.drawString(70, y, "None detected." if not crypto.get("notes") else "None detected (see assessment notes).")
                 y -= 15
+            notes = crypto.get("notes") or []
+            if notes:
+                y -= 10
+                p.setFont("Helvetica-Bold", 10)
+                p.drawString(60, y, "Assessment notes (limitations, not findings):")
+                p.setFont("Helvetica", 10)
+                y -= 15
+                for n in notes:
+                    for line in textwrap.wrap(f"- {n}", width=80):
+                        if y < 50:
+                            p.showPage()
+                            p.setFont("Helvetica", 10)
+                            y = 750
+                        p.drawString(70, y, line)
+                        y -= 15
         else:
             p.drawString(60, y, "No cryptographic data available.")
             y -= 25
@@ -408,6 +502,106 @@ def download_scan_report(log_id: int, db: Session = Depends(get_db), current_use
         headers={"Content-Disposition": f"attachment; filename=threat_report_{log.id}.pdf"}
     )
 
+@app.get("/api/leaderboard/rank")
+def get_rank(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    rank = get_user_rank(db, current_user.id)
+    return {"rank": rank}
+
+# --- CANDIDATE A: EVIDENCE-TO-COMPETENCY CLOSURE LOOP ROUTES ---
+
+@app.post("/api/evidence", response_model=schemas.EvidenceOut)
+def create_evidence(raw_scan: dict, db: Session = Depends(get_db), _admin: models.User = Depends(require_admin)):
+    """Receives raw scan data, normalizes it, and stores it as Evidence."""
+    evidence = evidence_service.create_evidence(db, raw_scan)
+    return evidence
+
+@app.get("/api/evidence/{evidence_id}", response_model=schemas.EvidenceOut)
+def get_evidence(evidence_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    evidence = db.query(models.Evidence).filter(models.Evidence.id == evidence_id).first()
+    if not evidence:
+        raise HTTPException(status_code=404, detail="Evidence not found")
+    return evidence
+
+@app.post("/api/findings", response_model=schemas.FindingOut)
+def create_finding(finding_in: schemas.FindingCreate, db: Session = Depends(get_db), _admin: models.User = Depends(require_admin)):
+    import uuid
+    finding = models.Finding(**finding_in.dict(), id=str(uuid.uuid4()))
+    db.add(finding)
+    db.commit()
+    db.refresh(finding)
+    return finding
+
+@app.get("/api/findings/{finding_id}", response_model=schemas.FindingOut)
+def get_finding(finding_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    finding = db.query(models.Finding).filter(models.Finding.id == finding_id).first()
+    if not finding:
+        raise HTTPException(status_code=404, detail="Finding not found")
+    return finding
+
+@app.get("/api/findings/{finding_id}/interventions", response_model=List[schemas.InterventionOut])
+def get_finding_interventions(finding_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    if not db.query(models.Finding).filter(models.Finding.id == finding_id).first():
+        raise HTTPException(status_code=404, detail="Finding not found")
+    return db.query(models.Intervention).filter(models.Intervention.finding_id == finding_id).order_by(models.Intervention.created_at.desc()).all()
+
+@app.get("/api/users/{user_id}/capabilities", response_model=List[schemas.LearnerCapabilityOut])
+def get_user_capabilities(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    if current_user.id != user_id and current_user.role != "admin":
+        raise HTTPException(status_code=403, detail="Not authorized to view this user's capabilities")
+    capabilities = db.query(models.LearnerCapability).filter(models.LearnerCapability.user_id == user_id).all()
+    return capabilities
+
+@app.post("/api/interventions", response_model=schemas.InterventionOut)
+def create_intervention(intervention_in: schemas.InterventionCreate, db: Session = Depends(get_db), _admin: models.User = Depends(require_admin)):
+    import uuid
+    intervention = models.Intervention(**intervention_in.dict(), id=str(uuid.uuid4()))
+    db.add(intervention)
+    db.commit()
+    db.refresh(intervention)
+    return intervention
+
+@app.get("/api/interventions/{id}", response_model=schemas.InterventionOut)
+def get_intervention(id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    intervention = db.query(models.Intervention).filter(models.Intervention.id == id).first()
+    if not intervention:
+        raise HTTPException(status_code=404, detail="Intervention not found")
+    return intervention
+
+@app.post("/api/interventions/{id}/verify")
+def verify_intervention(id: str, verification_data: dict, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """
+    verification_data should contain:
+    - learner_result: dict
+    - before_evidence_id: str
+    - after_scan_raw: dict
+    """
+    intervention = db.query(models.Intervention).filter(models.Intervention.id == id).first()
+    if not intervention:
+        raise HTTPException(status_code=404, detail="Intervention not found")
+        
+    before_evidence = db.query(models.Evidence).filter(models.Evidence.id == verification_data.get("before_evidence_id")).first()
+    if not before_evidence:
+        raise HTTPException(status_code=404, detail="Before evidence not found")
+        
+    # Create after evidence
+    after_evidence = evidence_service.create_evidence(db, verification_data.get("after_scan_raw", {}))
+    
+    # Process closure
+    closure_result = process_closure_verification(
+        intervention.__dict__, 
+        verification_data.get("learner_result", {}), 
+        before_evidence.normalized_payload, 
+        after_evidence.normalized_payload
+    )
+    
+    # In a full implementation, we'd save Verification and ClosureEvent here
+    return closure_result
+
+@app.get("/api/closures/{finding_id}")
+def get_closures(finding_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    closures = db.query(models.ClosureEvent).filter(models.ClosureEvent.finding_id == finding_id).all()
+    return closures
+
 @app.get("/api/users/{user_id}/profile", response_model=schemas.UserOut)
 def get_user_profile(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     if current_user.id != user_id:
@@ -420,11 +614,12 @@ def get_user_profile(user_id: int, db: Session = Depends(get_db), current_user: 
     # Get all quiz scores to calculate readiness
     scores = db.query(models.QuizScore).filter(models.QuizScore.user_id == user_id).all()
     
-    readiness_score = 0
+    readiness_score = None  # no quiz evidence: report unknown rather than a score of 0
     if scores:
-        avg_score = sum(s.score for s in scores) / len(scores)
-        # Readiness is weighted average of quiz performance and XP
-        readiness_score = min(100, int((avg_score * 0.7) + (min(user.xp, 1000) / 1000 * 30)))
+        # Mean of all server-graded quiz scores. XP is deliberately excluded: it is a gamification
+        # counter (scans, first-time-correct bonuses), not a measure of capability, and the UI labels
+        # this figure "Based on quiz performance".
+        readiness_score = min(100, round(sum(s.score for s in scores) / len(scores)))
         
     rank = get_user_rank(db, user_id)
         
@@ -462,7 +657,7 @@ def get_recommendation(user_id: int, db: Session = Depends(get_db), current_user
     return recommendations
 
 @app.get("/api/leaderboard")
-def get_leaderboard(db: Session = Depends(get_db)):
+def get_leaderboard(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     """
     Returns the top users sorted by XP in descending order.
     """

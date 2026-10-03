@@ -1,6 +1,13 @@
 import json
+import os
+os.environ["QCAPS_ENABLE_LEGACY_QUIZ_SUBMIT"] = "1"  # legacy endpoint is off by default
+# This script drops and recreates every table, so it must never run against the real database.
+# Both variables must be set before main/database are imported.
+os.environ["QCAPS_DATABASE_URL"] = "sqlite://"
+os.environ.setdefault("QCAPS_JWT_SECRET", "test-secret-not-for-production-use-0123456789")
 from fastapi.testclient import TestClient
-from main import app
+from main import app, SECRET_KEY
+from scan_receipts import issue_receipt
 from database import Base, engine
 
 client = TestClient(app)
@@ -112,6 +119,8 @@ def run_api_tests():
             {"algorithmDetected": "RSA-2048", "threatLevel": "Critical (Shor's Algorithm)"}
         ])
     }
+    # Scan results are only accepted with the scanner's signed receipt (see scan_receipts.py).
+    charlie_scan["receipt"] = issue_receipt(SECRET_KEY, u3_id, json.loads(charlie_scan["details"]))
     res_s_charlie = client.post("/api/scanner/log", json=charlie_scan, headers=h3)
     check("Charlie scanner log status == 200", res_s_charlie.status_code == 200)
     check("Charlie log vulnerabilities_found == 1", res_s_charlie.json().get("vulnerabilities_found") == 1)
@@ -144,6 +153,7 @@ def run_api_tests():
             {"algorithmDetected": "RSA-2048", "threatLevel": "Critical (Shor's Algorithm)"}
         ])
     }
+    dave_scan["receipt"] = issue_receipt(SECRET_KEY, u4_id, json.loads(dave_scan["details"]))
     res_s_dave = client.post("/api/scanner/log", json=dave_scan, headers=h4)
     check("Dave scanner log status == 200", res_s_dave.status_code == 200)
 
@@ -177,7 +187,7 @@ def run_api_tests():
     check("Dave scanner_risk == High", dave_rec.get("scanner_risk") == "High")
 
     # 9. Verify Leaderboard Rankings
-    res_leaderboard = client.get("/api/leaderboard")
+    res_leaderboard = client.get("/api/leaderboard", headers=h1)
     leaderboard = res_leaderboard.json()
     check("Leaderboard returns correct size", len(leaderboard) == 4)
     # Bob (1350 XP) -> Rank 1, Alice (850 XP) -> Rank 2, Dave (550 XP) -> Rank 3, Charlie (0 XP) -> Rank 4

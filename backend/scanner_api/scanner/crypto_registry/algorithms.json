@@ -1,0 +1,17 @@
+{
+    "registry_version": "1.0",
+    "algorithms": {
+        "RSA": {"class": "CLASSICAL", "type": "BOTH"},
+        "ECDSA": {"class": "CLASSICAL", "type": "SIGNATURE"},
+        "ECDHE": {"class": "CLASSICAL", "type": "KEM"},
+        "X25519": {"class": "CLASSICAL", "type": "KEM"},
+        "AES": {"class": "SYMMETRIC", "type": "CIPHER"},
+        "CHACHA20": {"class": "SYMMETRIC", "type": "CIPHER"},
+        "KYBER": {"class": "PQC", "type": "KEM"},
+        "ML-KEM": {"class": "PQC", "type": "KEM"},
+        "DILITHIUM": {"class": "PQC", "type": "SIGNATURE"},
+        "ML-DSA": {"class": "PQC", "type": "SIGNATURE"},
+        "FALCON": {"class": "PQC", "type": "SIGNATURE"},
+        "SPHINCS+": {"class": "PQC", "type": "SIGNATURE"}
+    }
+}
