@@ -1,0 +1,887 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B113",
+      "title": "From Classical to Quantum Shannon Theory (Quantum Information Theory, 2nd edition draft, arXiv:1106.1445v8)",
+      "authors": "Mark M. Wilde",
+      "edition": "arXiv v8, 14 July 2019",
+      "year": 2019,
+      "publisher": "Cambridge University Press (draft on arXiv, CC BY-NC-SA 3.0)"
+    },
+    {
+      "id": "B115",
+      "title": "Quantum cloning (Rev. Mod. Phys. 77, 1225; arXiv:quant-ph/0511088)",
+      "authors": "Valerio Scarani, Sofyan Iblisdir, Nicolas Gisin",
+      "edition": "2005",
+      "year": 2005
+    },
+    {
+      "id": "B110",
+      "title": "Qiskit Textbook (GitHub repository Qiskit/textbook, notebooks), accessed 2026-10-04",
+      "authors": "Qiskit community",
+      "edition": "accessed 2026-10-04",
+      "year": 2023,
+      "publisher": "IBM and the Qiskit community"
+    },
+    {
+      "id": "B111",
+      "title": "Qiskit SDK documentation and guides (quantum.cloud.ibm.com/docs), accessed 2026-10-04",
+      "authors": "IBM Quantum",
+      "edition": "accessed 2026-10-04",
+      "year": 2026,
+      "publisher": "IBM"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_c_c5_quantum_communications",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "5.1 Teleportation (Communications-Theory Framing)",
+          "summary": "Teleportation as the resource inequality 1 ebit + 2 cbits >= 1 qubit: Bob's state before the classical bits is independent of the input, and qudit teleportation needs 2 log2(d) bits.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Module C4 treated teleportation as a protocol. In **communication theory** it is a statement about **resources**: Wilde's framework writes it as the **resource inequality** 1 ebit + 2 cbits ≥ 1 qubit, meaning that one shared Bell pair and two classical bits can simulate the transmission of one qubit (Wilde, chapter 6). The question this framing asks is what is **necessary**: why two bits, and why an entangled pair at all. The answer for the classical bits is the **no-signalling principle**: before Alice's measurement result reaches Bob, his state cannot depend on the input she teleports, otherwise teleportation would transmit information faster than light. The listing verifies that numerically: averaged over Alice's four outcomes, Bob's uncorrected state is the maximally mixed state I/2 for every input.\n\nThe resource counts scale with the dimension. Teleporting a **qudit** (a d-level system) uses a maximally entangled pair of two d-level systems (log₂ d ebits) and the generalised Pauli operators X^a Z^b with d² equally likely outcomes, i.e. **2 log₂ d classical bits**. The listing simulates qudit teleportation for d = 2, 3, 4 with random input states and counts the outcomes. The labs are exact simulations of small systems (qubits and qudits) and closed-form capacity and loss calculations written for the lesson. Where a table uses assumed device parameters (aperture sizes, detector efficiencies, dark counts) they are stated as assumptions and are not measurements of a real system."
+            },
+            {
+              "type": "code",
+              "id": "c-teleportation-resources",
+              "language": "python",
+              "code": "import math, itertools\nimport numpy as np\n\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]], dtype=complex); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]], dtype=complex)\nH = np.array([[1, 1], [1, -1]], dtype=complex) / math.sqrt(2)\ndef kron(*ms):\n    out = np.array([[1.0 + 0j]])\n    for m in ms: out = np.kron(out, m)\n    return out\ndef ket(bits):\n    v = np.zeros(2 ** len(bits), dtype=complex); v[int(\"\".join(map(str, bits)), 2)] = 1; return v\ndef proj(v):\n    return np.outer(v, v.conj())\nPHI_PLUS = (ket([0, 0]) + ket([1, 1])) / math.sqrt(2)\nBELL = {\"phi+\": PHI_PLUS, \"phi-\": (ket([0, 0]) - ket([1, 1])) / math.sqrt(2), \"psi+\": (ket([0, 1]) + ket([1, 0])) / math.sqrt(2), \"psi-\": (ket([0, 1]) - ket([1, 0])) / math.sqrt(2)}\ndef werner(w, target=PHI_PLUS):\n    # w * |target><target| + (1 - w) * I / 4: the noisy entangled pair used throughout; w is the Werner parameter, the fidelity with the target is (1 + 3 w) / 4\n    return w * proj(target) + (1 - w) * np.eye(4) / 4\ndef fidelity_pure(rho, v):\n    return float((v.conj() @ rho @ v).real)\ndef ptrace(rho, dims, keep):\n    n = len(dims); t = rho.reshape(dims + dims)\n    for i in sorted([i for i in range(n) if i not in keep], reverse=True):\n        t = np.trace(t, axis1=i, axis2=i + t.ndim // 2)\n    d = int(np.prod([dims[i] for i in keep])); return t.reshape(d, d)\ndef apply_unitary(rho, U):\n    return U @ rho @ U.conj().T\ndef op_on(n, gate, qubits):\n    # a gate (given as a matrix on len(qubits) qubits) acting on the listed qubits of an n-qubit system, identity elsewhere\n    k = len(qubits); dim = 2 ** n\n    U = np.zeros((dim, dim), dtype=complex)\n    for col in range(dim):\n        bits = [(col >> (n - 1 - i)) & 1 for i in range(n)]\n        sub = int(\"\".join(str(bits[q]) for q in qubits), 2)\n        for row_sub in range(2 ** k):\n            amp = gate[row_sub, sub]\n            if abs(amp) < 1e-15: continue\n            nb = bits.copy()\n            for j, q in enumerate(qubits): nb[q] = (row_sub >> (k - 1 - j)) & 1\n            U[int(\"\".join(map(str, nb)), 2), col] += amp\n    return U\nCNOT = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]], dtype=complex)\nrng = np.random.default_rng(51)\ndef random_pure(d=2):\n    v = rng.normal(size=d) + 1j * rng.normal(size=d); return v / np.linalg.norm(v)\n\n# --- resource accounting. Teleportation realises the resource inequality  1 ebit + 2 cbits >= 1 qubit (Wilde, chapter 6).\n# Part 1: WITHOUT the classical bits Bob's state does not depend on the input at all (no signalling): average it over Alice's four outcomes without correcting.\ndef bob_state_without_bits(psi):\n    state = np.kron(proj(psi), proj(PHI_PLUS))\n    state = apply_unitary(state, op_on(3, CNOT, [0, 1])); state = apply_unitary(state, op_on(3, H, [0]))\n    total = np.zeros((2, 2), dtype=complex)\n    for m0, m1 in itertools.product((0, 1), repeat=2):\n        P = kron(np.diag([1 - m0, m0]), np.diag([1 - m1, m1]), I2)\n        total += ptrace(P @ state @ P, [2, 2, 2], [2])                       # no correction applied: Bob does not know the outcome\n    return total\nprint(\"Bob's state before the classical bits arrive, for several different inputs:\")\nfor psi in (np.array([1, 0], dtype=complex), np.array([0, 1], dtype=complex), np.array([1, 1], dtype=complex) / math.sqrt(2), random_pure()):\n    print(\"  input Bloch vector\", np.round([np.trace(proj(psi) @ P).real for P in (X, Y, Z)], 3), \"-> Bob's state is I/2:\", np.allclose(bob_state_without_bits(psi), I2 / 2))\nprint(\"the quantum channel is not used at all: before the two classical bits arrive Bob's state is the same maximally mixed state for every input, so no information has travelled (no signalling), and the bits are indispensable\")\n\n# Part 2: qudit teleportation uses generalised Paulis and costs 2 log2(d) classical bits and log2(d) ebits for a d-level system\ndef qudit_teleportation_fidelity(d, trials=40):\n    omega = np.exp(2j * np.pi / d)\n    Xd = np.roll(np.eye(d), 1, axis=0).astype(complex); Zd = np.diag([omega ** k for k in range(d)])\n    phi = np.zeros(d * d, dtype=complex)\n    for k in range(d): phi[k * d + k] = 1 / math.sqrt(d)                      # maximally entangled pair of two d-level systems\n    fids = []\n    for _ in range(trials):\n        psi = random_pure(d)\n        # Bell measurement outcome (a, b) projects the data and Alice's half on the state (Xd^a Zd^b x I)|phi>; Bob then holds the data state transformed by a generalised Pauli\n        total = 0.0\n        for a in range(d):\n            for b in range(d):\n                bell = np.kron(np.linalg.matrix_power(Xd, a) @ np.linalg.matrix_power(Zd, b), np.eye(d)) @ phi\n                # unnormalised state of Bob given this outcome: <bell|_{data,A} (|psi> (x) |phi>_{A,B})\n                vec = np.kron(psi, phi).reshape(d, d, d)\n                bob = np.einsum(\"ij,ijk->k\", bell.conj().reshape(d, d), vec)\n                prob = np.linalg.norm(bob) ** 2\n                bob = bob / np.linalg.norm(bob)\n                # find the unitary correction that maps Bob's state back to psi (it is one of the d^2 generalised Paulis)\n                best = max(abs(np.vdot(psi, np.linalg.matrix_power(Xd, a2) @ np.linalg.matrix_power(Zd, b2) @ bob)) ** 2 for a2 in range(d) for b2 in range(d))\n                total += prob * best\n        fids.append(total)\n    return float(np.mean(fids))\nprint()\nprint(f\"{'dimension d':>12} {'classical bits needed 2 log2(d)':>33} {'ebits consumed log2(d)':>24} {'teleportation fidelity (simulated)':>36} {'outcomes':>9}\")\nfor d in (2, 3, 4):\n    print(f\"{d:>12} {2 * math.log2(d):>33.3f} {math.log2(d):>24.3f} {qudit_teleportation_fidelity(d):>36.4f} {d * d:>9}\")\nprint(\"per qudit the protocol needs d^2 equally likely outcomes, i.e. 2 log2(d) classical bits, and one maximally entangled pair of d levels (log2 d ebits); the inequality 1 ebit + 2 cbits >= 1 qubit is optimal: neither resource can be reduced\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-teleportation-resources",
+              "language": "text",
+              "code": "Bob's state before the classical bits arrive, for several different inputs:\n  input Bloch vector [0. 0. 1.] -> Bob's state is I/2: True\n  input Bloch vector [ 0.  0. -1.] -> Bob's state is I/2: True\n  input Bloch vector [1. 0. 0.] -> Bob's state is I/2: True\n  input Bloch vector [ 0.4   -0.585 -0.706] -> Bob's state is I/2: True\nthe quantum channel is not used at all: before the two classical bits arrive Bob's state is the same maximally mixed state for every input, so no information has travelled (no signalling), and the bits are indispensable\n\n dimension d   classical bits needed 2 log2(d)   ebits consumed log2(d)   teleportation fidelity (simulated)  outcomes\n           2                             2.000                    1.000                               1.0000         4\n           3                             3.170                    1.585                               1.0000         9\n           4                             4.000                    2.000                               1.0000        16\nper qudit the protocol needs d^2 equally likely outcomes, i.e. 2 log2(d) classical bits, and one maximally entangled pair of d levels (log2 d ebits); the inequality 1 ebit + 2 cbits >= 1 qubit is optimal: neither resource can be reduced",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Bob's state before the bits arrive is I/2 for the inputs |0⟩, |1⟩, |+⟩ and a random state: the quantum channel by itself delivers **no information**, and the two classical bits are therefore indispensable. For d = 2, 3 and 4 the simulated teleportation fidelity is 1.0000 and the protocol has 4, 9 and 16 equally likely outcomes, which cost 2, 3.170 and 4 classical bits and consume 1, 1.585 and 2 ebits. The resource inequality is optimal in Wilde's treatment (neither the entanglement nor the classical communication can be reduced without losing the task), which is what makes teleportation a **unit protocol** in the theory (chapter 6, together with superdense coding in 5.2 and entanglement distribution).\n\n**Why the framing is useful.** Quantum communication tasks can then be compared by what they consume: a channel that carries qubits can simulate entanglement distribution; entanglement plus classical bits simulates a qubit channel; and so a limited resource (say a noisy quantum channel with a high-rate classical side channel) can be converted into another by a sequence of such protocols. The classical channel's role also sets the **latency** (C4.9): the bits cannot travel faster than light."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the resource inequality of teleportation state?",
+              "options": [
+                "1 ebit + 2 cbits >= 1 qubit",
+                "1 qubit >= 2 cbits",
+                "2 ebits >= 1 cbit"
+              ],
+              "correct_index": 0,
+              "explanation": "One shared Bell pair and two classical bits can simulate one qubit channel."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is Bob's state before the classical bits arrive?",
+              "options": [
+                "The maximally mixed state I/2, independent of the input",
+                "The input state",
+                "A random pure state"
+              ],
+              "correct_index": 0,
+              "explanation": "Otherwise teleportation would signal faster than light."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How many classical bits does teleporting a d-level system need?",
+              "options": [
+                "2 log2(d)",
+                "log2(d)",
+                "d"
+              ],
+              "correct_index": 0,
+              "explanation": "d^2 equally likely generalised-Pauli outcomes."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde, From Classical to Quantum Shannon Theory: Chapter 6 (Three Unit Quantum Protocols: resource inequalities, optimality of the three unit protocols, qudit protocols, sections 6.1 to 6.5)"
+            },
+            {
+              "book": "B110",
+              "locator": "Qiskit Textbook: Quantum Teleportation chapter"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The optimality of the resource inequality is a theorem in Wilde (section 6.3) cited without re-deriving it; the lesson verifies the no-signalling property and the qudit counts numerically."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "5.2 Superdense Coding",
+          "summary": "Superdense coding simulated exactly, the information per qubit with a noisy pair (a 4-ary symmetric channel), the fidelity needed to beat one bit per qubit, and the entanglement-assisted capacity.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Superdense coding** is the dual of teleportation: Alice applies one of four Pauli operators (I, X, Z, XZ) to her half of a shared Bell pair and sends that **single qubit** to Bob, who performs a Bell measurement on the two qubits and recovers **two classical bits**. Without the shared pair a qubit carries at most one classical bit (the **Holevo bound**, lesson 1.7), so entanglement doubles the capacity of a noiseless qubit channel: the resource inequality is 1 ebit + 1 qubit ≥ 2 cbits (Wilde, chapter 6). The entanglement-assisted classical capacity of the noiseless qubit channel is 2 bits per use (Bennett, Shor, Smolin and Thapliyal), against 1 bit unassisted (the Holevo-Schumacher-Westmoreland capacity, Wilde chapter 20).\n\nWith a noisy pair the decoding is imperfect. If the pair is a Werner state with fidelity F = (1 + 3w)/4, each message is decoded correctly with probability F and as each of the three wrong messages with probability (1 − F)/3, a **4-ary symmetric channel**, whose information per use is 2 − H(F, (1−F)/3, (1−F)/3, (1−F)/3) bits. The listing simulates all four messages with a perfect pair, then evaluates the noisy case and finds the fidelity at which superdense coding beats the unassisted 1 bit per qubit. The labs are exact simulations of small systems (qubits and qudits) and closed-form capacity and loss calculations written for the lesson. Where a table uses assumed device parameters (aperture sizes, detector efficiencies, dark counts) they are stated as assumptions and are not measurements of a real system."
+            },
+            {
+              "type": "code",
+              "id": "c-superdense",
+              "language": "python",
+              "code": "import math, itertools\nimport numpy as np\n\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]], dtype=complex); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]], dtype=complex)\nH = np.array([[1, 1], [1, -1]], dtype=complex) / math.sqrt(2)\ndef kron(*ms):\n    out = np.array([[1.0 + 0j]])\n    for m in ms: out = np.kron(out, m)\n    return out\ndef ket(bits):\n    v = np.zeros(2 ** len(bits), dtype=complex); v[int(\"\".join(map(str, bits)), 2)] = 1; return v\ndef proj(v):\n    return np.outer(v, v.conj())\nPHI_PLUS = (ket([0, 0]) + ket([1, 1])) / math.sqrt(2)\nBELL = {\"phi+\": PHI_PLUS, \"phi-\": (ket([0, 0]) - ket([1, 1])) / math.sqrt(2), \"psi+\": (ket([0, 1]) + ket([1, 0])) / math.sqrt(2), \"psi-\": (ket([0, 1]) - ket([1, 0])) / math.sqrt(2)}\ndef werner(w, target=PHI_PLUS):\n    # w * |target><target| + (1 - w) * I / 4: the noisy entangled pair used throughout; w is the Werner parameter, the fidelity with the target is (1 + 3 w) / 4\n    return w * proj(target) + (1 - w) * np.eye(4) / 4\ndef fidelity_pure(rho, v):\n    return float((v.conj() @ rho @ v).real)\ndef ptrace(rho, dims, keep):\n    n = len(dims); t = rho.reshape(dims + dims)\n    for i in sorted([i for i in range(n) if i not in keep], reverse=True):\n        t = np.trace(t, axis1=i, axis2=i + t.ndim // 2)\n    d = int(np.prod([dims[i] for i in keep])); return t.reshape(d, d)\ndef apply_unitary(rho, U):\n    return U @ rho @ U.conj().T\ndef op_on(n, gate, qubits):\n    # a gate (given as a matrix on len(qubits) qubits) acting on the listed qubits of an n-qubit system, identity elsewhere\n    k = len(qubits); dim = 2 ** n\n    U = np.zeros((dim, dim), dtype=complex)\n    for col in range(dim):\n        bits = [(col >> (n - 1 - i)) & 1 for i in range(n)]\n        sub = int(\"\".join(str(bits[q]) for q in qubits), 2)\n        for row_sub in range(2 ** k):\n            amp = gate[row_sub, sub]\n            if abs(amp) < 1e-15: continue\n            nb = bits.copy()\n            for j, q in enumerate(qubits): nb[q] = (row_sub >> (k - 1 - j)) & 1\n            U[int(\"\".join(map(str, nb)), 2), col] += amp\n    return U\nCNOT = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]], dtype=complex)\n# --- superdense coding: Alice applies one of I, X, Z, XZ to her half of a Bell pair and sends that qubit to Bob, who decodes 2 classical bits with a Bell measurement\npaulis = {\"00\": I2, \"01\": X, \"10\": Z, \"11\": X @ Z}\ndef decode_distribution(pair_state, message):\n    # Alice acts on qubit 0 (her half), Bob holds both and measures in the Bell basis: outcome probabilities\n    U = np.kron(paulis[message], I2)\n    sent = U @ pair_state @ U.conj().T\n    bell_order = [\"phi+\", \"psi+\", \"phi-\", \"psi-\"]                              # the Bell state reached by applying I, X, Z, XZ to |Phi+> (up to a global phase)\n    return {m: float((BELL[b].conj() @ sent @ BELL[b]).real) for m, b in zip([\"00\", \"01\", \"10\", \"11\"], bell_order)}\nprint(\"superdense coding with a perfect pair: probability that Bob decodes each message correctly\")\nfor msg in paulis:\n    dist = decode_distribution(proj(PHI_PLUS), msg)\n    print(f\"  message {msg}: P(decoded = {msg}) = {dist[msg]:.4f}, other outcomes {[round(v, 4) for k, v in dist.items() if k != msg]}\")\nprint(\"two classical bits are delivered by sending ONE qubit, which a classical qubit-sized channel (one bit per use) cannot do: the resource inequality is 1 ebit + 1 qubit >= 2 cbits\")\n\n# --- with a noisy (Werner) pair every message is decoded correctly with probability F = (1 + 3 w) / 4 and wrongly with (1 - F)/3 for each of the other three; the information per use follows from the 4-ary symmetric channel\ndef h4(F):\n    probs = [F] + [(1 - F) / 3] * 3\n    return -sum(p * math.log2(p) for p in probs if p > 0)\nprint()\nprint(f\"{'Werner parameter w':>19} {'fidelity F':>11} {'P(correct) simulated':>22} {'information per qubit sent: 2 - H(error pattern)':>50} {'without entanglement (one qubit carries at most)':>50}\")\nfor w in (1.0, 0.9, 0.7, 0.5, 1 / 3, 0.0):\n    pair = werner(w); F = fidelity_pure(pair, PHI_PLUS)\n    simulated = float(np.mean([decode_distribution(pair, m)[m] for m in paulis]))\n    print(f\"{w:>19.4f} {F:>11.4f} {simulated:>22.4f} {2 - h4(F):>50.4f} {'1 bit (Holevo bound)':>50}\")\nprint(\"at the entanglement threshold w = 1/3 (fidelity 0.5) the rate is only 0.21 bits per qubit, far below the 1 bit a qubit carries without entanglement: being entangled is not enough, the pair must be good enough; at w = 0 the rate is 0\")\nw_cross = None\nfor w in np.linspace(0, 1, 100001):\n    F = (1 + 3 * w) / 4\n    if 2 - h4(F) >= 1:\n        w_cross = w; break\nprint(f\"the rate exceeds 1 bit per qubit for w >= {w_cross:.4f} (fidelity {(1 + 3 * w_cross) / 4:.4f}): a noisy pair beats the classical limit of one bit per qubit\")\n\n# --- the dense-coding capacity of a noiseless qubit channel is 2 bits with unlimited entanglement (entanglement-assisted capacity, Bennett-Shor-Smolin-Thapliyal): C_E = 2 for a qubit identity channel\nprint()\nprint(\"entanglement-assisted classical capacity of the noiseless qubit channel: 2 bits per use, against the Holevo-Schumacher-Westmoreland capacity of 1 bit without assistance\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-superdense",
+              "language": "text",
+              "code": "superdense coding with a perfect pair: probability that Bob decodes each message correctly\n  message 00: P(decoded = 00) = 1.0000, other outcomes [0.0, 0.0, 0.0]\n  message 01: P(decoded = 01) = 1.0000, other outcomes [0.0, 0.0, 0.0]\n  message 10: P(decoded = 10) = 1.0000, other outcomes [0.0, 0.0, 0.0]\n  message 11: P(decoded = 11) = 1.0000, other outcomes [0.0, 0.0, 0.0]\ntwo classical bits are delivered by sending ONE qubit, which a classical qubit-sized channel (one bit per use) cannot do: the resource inequality is 1 ebit + 1 qubit >= 2 cbits\n\n Werner parameter w  fidelity F   P(correct) simulated   information per qubit sent: 2 - H(error pattern)   without entanglement (one qubit carries at most)\n             1.0000      1.0000                 1.0000                                             2.0000                               1 bit (Holevo bound)\n             0.9000      0.9250                 0.9250                                             1.4968                               1 bit (Holevo bound)\n             0.7000      0.7750                 0.7750                                             0.8742                               1 bit (Holevo bound)\n             0.5000      0.6250                 0.6250                                             0.4512                               1 bit (Holevo bound)\n             0.3333      0.5000                 0.5000                                             0.2075                               1 bit (Holevo bound)\n             0.0000      0.2500                 0.2500                                             0.0000                               1 bit (Holevo bound)\nat the entanglement threshold w = 1/3 (fidelity 0.5) the rate is only 0.21 bits per qubit, far below the 1 bit a qubit carries without entanglement: being entangled is not enough, the pair must be good enough; at w = 0 the rate is 0\nthe rate exceeds 1 bit per qubit for w >= 0.7476 (fidelity 0.8107): a noisy pair beats the classical limit of one bit per qubit\n\nentanglement-assisted classical capacity of the noiseless qubit channel: 2 bits per use, against the Holevo-Schumacher-Westmoreland capacity of 1 bit without assistance",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "With a perfect pair each of the four messages is decoded with probability 1. For Werner pairs the simulated correct-decoding probability equals F exactly (0.925 at w = 0.9, 0.775 at w = 0.7, 0.625 at w = 0.5), and the information per qubit sent is 2.000, 1.497, 0.874, 0.451, 0.208 and 0 bits for w = 1, 0.9, 0.7, 0.5, 1/3 and 0. It exceeds the 1 bit that a qubit carries without entanglement only for **w ≥ 0.7476, F ≥ 0.8107**. At the entanglement threshold w = 1/3 (F = 0.5) the rate is only 0.21 bits per qubit: being entangled is not enough, the pair has to be good enough. (The threshold F ≈ 0.8107 is the same number as the hashing bound for Werner states in 5.5; they have the same mathematical origin in the entropy of the 4-ary channel.)\n\n**Practical remarks.** The protocol requires that the receiver can perform a complete Bell measurement on two qubits, which with linear optics can only be done partly (a limitation that caps the information at log₂3 bits for photons in the simplest scheme; this is stated from the literature and not shown here), and it requires storing the shared half until the message qubit arrives. It remains the clearest demonstration that entanglement is a communication resource. **Common mistake:** quoting \"two bits per qubit\" without stating that it is the noiseless, ideal-detection case."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How many classical bits does superdense coding send per qubit with a perfect pair?",
+              "options": [
+                "2",
+                "1",
+                "4"
+              ],
+              "correct_index": 0,
+              "explanation": "Alice's four Pauli operators encode two bits."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What fidelity of a Werner pair is needed for superdense coding to beat one bit per qubit?",
+              "options": [
+                "F above about 0.81 (w above 0.7476)",
+                "F above 0.5",
+                "Any F above 0.25"
+              ],
+              "correct_index": 0,
+              "explanation": "At F = 0.5 the rate is 0.21 bits."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the unassisted classical capacity of a noiseless qubit channel?",
+              "options": [
+                "1 bit per use",
+                "2 bits per use",
+                "0.5 bits per use"
+              ],
+              "correct_index": 0,
+              "explanation": "Holevo bound; entanglement assistance raises it to 2."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Chapter 6 (unit protocols; superdense coding) and Chapters 20 and 21 (classical capacity and entanglement-assisted capacity)"
+            },
+            {
+              "book": "B110",
+              "locator": "Qiskit Textbook: Superdense Coding chapter"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The entanglement-assisted capacity result (Bennett, Shor, Smolin, Thapliyal) is stated from the literature and located in Wilde chapter 21 but not re-derived; the remark on linear-optics Bell measurements capping the rate is stated from memory."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "5.3 No-Cloning (Communications Implications)",
+          "summary": "Why a unitary copier fails (CNOT copies basis states only), the optimal universal cloner with fidelity 5/6 against 2/3 for measure-and-prepare, and the consequences for communication and cryptography.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **no-cloning theorem** says that no physical process can copy an arbitrary unknown quantum state. The proof is linearity: a unitary U that copies |0⟩ and |1⟩, U|ψ⟩|0⟩ = |ψ⟩|ψ⟩, must map the superposition (|0⟩ + |1⟩)/√2 to the entangled state (|00⟩ + |11⟩)/√2, not to the product |+⟩|+⟩ (Scarani, Iblisdir, Gisin and Acín, section I.B). Approximate copying is possible: the **optimal universal symmetric 1 → 2 cloner** produces two copies, each with fidelity **5/6** for every input state (Bužek and Hillery; Werner), and its channel is (2/3)·P_sym(ρ ⊗ I)P_sym with P_sym the projector on the symmetric subspace (section II.A of the review). The simplest classical alternative, **measure and prepare**, reaches only 2/3.\n\nThe listing demonstrates each statement: the CNOT copier is exact on |0⟩, |1⟩ and fails on others (average fidelity 0.4951 over random states); linearity forces the Bell state; the optimal cloner is trace preserving with the same single-copy fidelity for every input (the spread is at the 10⁻¹⁶ level) equal to 5/6; and a simulated measure-and-prepare cloner gives 2/3. The labs are exact simulations of small systems (qubits and qudits) and closed-form capacity and loss calculations written for the lesson. Where a table uses assumed device parameters (aperture sizes, detector efficiencies, dark counts) they are stated as assumptions and are not measurements of a real system."
+            },
+            {
+              "type": "code",
+              "id": "c-no-cloning",
+              "language": "python",
+              "code": "import math, itertools\nimport numpy as np\n\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]], dtype=complex); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]], dtype=complex)\nH = np.array([[1, 1], [1, -1]], dtype=complex) / math.sqrt(2)\ndef kron(*ms):\n    out = np.array([[1.0 + 0j]])\n    for m in ms: out = np.kron(out, m)\n    return out\ndef ket(bits):\n    v = np.zeros(2 ** len(bits), dtype=complex); v[int(\"\".join(map(str, bits)), 2)] = 1; return v\ndef proj(v):\n    return np.outer(v, v.conj())\nPHI_PLUS = (ket([0, 0]) + ket([1, 1])) / math.sqrt(2)\nBELL = {\"phi+\": PHI_PLUS, \"phi-\": (ket([0, 0]) - ket([1, 1])) / math.sqrt(2), \"psi+\": (ket([0, 1]) + ket([1, 0])) / math.sqrt(2), \"psi-\": (ket([0, 1]) - ket([1, 0])) / math.sqrt(2)}\ndef werner(w, target=PHI_PLUS):\n    # w * |target><target| + (1 - w) * I / 4: the noisy entangled pair used throughout; w is the Werner parameter, the fidelity with the target is (1 + 3 w) / 4\n    return w * proj(target) + (1 - w) * np.eye(4) / 4\ndef fidelity_pure(rho, v):\n    return float((v.conj() @ rho @ v).real)\ndef ptrace(rho, dims, keep):\n    n = len(dims); t = rho.reshape(dims + dims)\n    for i in sorted([i for i in range(n) if i not in keep], reverse=True):\n        t = np.trace(t, axis1=i, axis2=i + t.ndim // 2)\n    d = int(np.prod([dims[i] for i in keep])); return t.reshape(d, d)\ndef apply_unitary(rho, U):\n    return U @ rho @ U.conj().T\ndef op_on(n, gate, qubits):\n    # a gate (given as a matrix on len(qubits) qubits) acting on the listed qubits of an n-qubit system, identity elsewhere\n    k = len(qubits); dim = 2 ** n\n    U = np.zeros((dim, dim), dtype=complex)\n    for col in range(dim):\n        bits = [(col >> (n - 1 - i)) & 1 for i in range(n)]\n        sub = int(\"\".join(str(bits[q]) for q in qubits), 2)\n        for row_sub in range(2 ** k):\n            amp = gate[row_sub, sub]\n            if abs(amp) < 1e-15: continue\n            nb = bits.copy()\n            for j, q in enumerate(qubits): nb[q] = (row_sub >> (k - 1 - j)) & 1\n            U[int(\"\".join(map(str, nb)), 2), col] += amp\n    return U\nimport numpy as np\nrng = np.random.default_rng(53)\ndef random_pure():\n    v = rng.normal(size=2) + 1j * rng.normal(size=2); return v / np.linalg.norm(v)\n\n# --- no-cloning, step 1: the CNOT \"copier\" works on |0> and |1> but not on superpositions (a unitary cannot copy both basis states and their superpositions)\nCNOT = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]], dtype=complex)\nzero = np.array([1, 0], dtype=complex)\ndef cnot_copy(psi):\n    out = CNOT @ np.kron(psi, zero)\n    return proj(out)\ndef clone_fidelity(rho_two, psi):\n    target = np.kron(psi, psi)\n    return float((target.conj() @ rho_two @ target).real)\nprint(\"CNOT as a copier: fidelity of the output with |psi>|psi>\")\nfor name, psi in ((\"|0>\", zero), (\"|1>\", np.array([0, 1], dtype=complex)), (\"|+>\", np.array([1, 1], dtype=complex) / math.sqrt(2)), (\"random state\", random_pure())):\n    print(f\"  {name:<14} {clone_fidelity(cnot_copy(psi), psi):.4f}\")\navg = float(np.mean([clone_fidelity(cnot_copy(p), p) for p in (random_pure() for _ in range(2000))]))\nprint(f\"  average over 2,000 random states: {avg:.4f} (it clones the basis states perfectly and fails on the others, so it clones nothing in general)\")\n# the linearity argument in numbers: cloning |0>,|1> forces the output for |+> to be an ENTANGLED state, not |+>|+>\nplus = np.array([1, 1], dtype=complex) / math.sqrt(2)\nlinear_output = (CNOT @ np.kron(plus, zero))\nprint(\"linearity forces U|+>|0> = (|00> + |11>)/sqrt(2), a Bell state, whereas a copy would be |+>|+> =\", np.round(np.kron(plus, plus), 3), \"; the overlap between the two is\", round(abs(np.vdot(np.kron(plus, plus), linear_output)), 4))\n\n# --- step 2: the best a machine can do for ALL states: the optimal symmetric universal 1 -> 2 cloner (Buzek-Hillery), fidelity 5/6, built from the projector on the symmetric subspace\nSWAP = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]], dtype=complex)\nP_sym = (np.eye(4) + SWAP) / 2\ndef optimal_cloner(psi):\n    rho = proj(psi)\n    out = (2 / 3) * P_sym @ np.kron(rho, I2) @ P_sym                        # Werner's optimal cloner channel for qubits: (2 / (d + 1)) P_sym (rho (x) I) P_sym\n    return out\nprint()\nprint(\"the optimal universal cloner channel (2/3) P_sym (rho (x) I) P_sym maps states to states: trace preserved for 5 random inputs:\", all(np.isclose(np.trace(optimal_cloner(random_pure())).real, 1) for _ in range(5)))\ndef single_clone_fidelity(rho_two, psi, which):\n    reduced = ptrace(rho_two, [2, 2], [which])\n    return float((psi.conj() @ reduced @ psi).real)\nfid = [single_clone_fidelity(optimal_cloner(p), p, w) for p in (random_pure() for _ in range(2000)) for w in (0, 1)]\nprint(f\"average single-copy fidelity of the two output copies over 2,000 random inputs: {np.mean(fid):.4f}; spread {np.std(fid):.1e} (universal: the same fidelity for every input); 5/6 = {5 / 6:.4f}\")\n\n# --- step 3: a measure-and-prepare cloner (measure the state, prepare two copies of the result) reaches only 2/3 for qubits\ndef measure_and_prepare_fidelity(trials=40000):\n    total = 0.0\n    for _ in range(trials):\n        psi = random_pure()\n        axis = random_pure()                                                    # a random projective measurement\n        p0 = abs(np.vdot(axis, psi)) ** 2\n        outcome = 0 if rng.random() < p0 else 1\n        guess = axis if outcome == 0 else np.array([-np.conj(axis[1]), np.conj(axis[0])])\n        total += abs(np.vdot(psi, guess)) ** 2\n    return total / trials\nprint(f\"measure-and-prepare: average fidelity {measure_and_prepare_fidelity():.4f} (theory for a random measurement: 2/3 = {2 / 3:.4f}); the quantum cloner reaches 5/6 = {5 / 6:.4f}\")\nprint(\"so a copy is possible only as an approximation: the best symmetric universal copy has fidelity 5/6, and more copies of better quality are possible only by consuming more input copies (N -> M cloning); the Scarani-Iblisdir-Gisin-Acin review is the reference (sections I.B, II.A)\")\n\n# --- why it matters for communications and cryptography\nprint()\nfor consequence in (\"quantum money and unclonable tokens are conceivable because an unknown state cannot be copied exactly; no-cloning alone does not make such a scheme secure, which needs a full security analysis\",\n                    \"eavesdropping on quantum key distribution cannot be perfect: any attempt to copy or measure the states disturbs them, which Alice and Bob detect through the error rate (module C6)\",\n                    \"classical error-correcting repetition is unavailable: a qubit cannot be sent three times, which is why quantum error correction encodes in entangled states instead (module C3)\",\n                    \"no faster-than-light signalling by cloning: a perfect cloner would let entanglement be used for signalling (Gisin 1998), a second route to the theorem\"):\n    print(\"  -\", consequence)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-no-cloning",
+              "language": "text",
+              "code": "CNOT as a copier: fidelity of the output with |psi>|psi>\n  |0>            1.0000\n  |1>            1.0000\n  |+>            0.5000\n  random state   0.1410\n  average over 2,000 random states: 0.4951 (it clones the basis states perfectly and fails on the others, so it clones nothing in general)\nlinearity forces U|+>|0> = (|00> + |11>)/sqrt(2), a Bell state, whereas a copy would be |+>|+> = [0.5+0.j 0.5+0.j 0.5+0.j 0.5+0.j] ; the overlap between the two is 0.7071\n\nthe optimal universal cloner channel (2/3) P_sym (rho (x) I) P_sym maps states to states: trace preserved for 5 random inputs: True\naverage single-copy fidelity of the two output copies over 2,000 random inputs: 0.8333; spread 3.6e-16 (universal: the same fidelity for every input); 5/6 = 0.8333\nmeasure-and-prepare: average fidelity 0.6687 (theory for a random measurement: 2/3 = 0.6667); the quantum cloner reaches 5/6 = 0.8333\nso a copy is possible only as an approximation: the best symmetric universal copy has fidelity 5/6, and more copies of better quality are possible only by consuming more input copies (N -> M cloning); the Scarani-Iblisdir-Gisin-Acin review is the reference (sections I.B, II.A)\n\n  - quantum money and unclonable tokens are conceivable because an unknown state cannot be copied exactly; no-cloning alone does not make such a scheme secure, which needs a full security analysis\n  - eavesdropping on quantum key distribution cannot be perfect: any attempt to copy or measure the states disturbs them, which Alice and Bob detect through the error rate (module C6)\n  - classical error-correcting repetition is unavailable: a qubit cannot be sent three times, which is why quantum error correction encodes in entangled states instead (module C3)\n  - no faster-than-light signalling by cloning: a perfect cloner would let entanglement be used for signalling (Gisin 1998), a second route to the theorem",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The CNOT copier gives fidelity 1 for |0⟩ and |1⟩, 0.5 for |+⟩, 0.141 for the random state tried and 0.4951 on average; for |+⟩ the overlap between its output (a Bell state) and the ideal copy |+⟩|+⟩ is 0.7071. The optimal cloner's single-copy fidelity is 0.8333 = 5/6 for every one of 2,000 random inputs (spread 3.6×10⁻¹⁶), while measure-and-prepare reaches 0.6687 (theory 2/3). So quantum mechanics allows *better* approximate copies than any classical strategy, but never perfect ones.\n\n**Implications.** (1) **Eavesdropping** on a quantum channel disturbs the states; the best cloning attack bounds the information an eavesdropper can gain for a given disturbance, which is the basis of QKD security (C6; the state-dependent phase-covariant cloner, section II.D, is the optimal attack on BB84 states). (2) Classical **repetition** and retransmission are unavailable, so quantum error correction uses entanglement (C3). (3) No-cloning is linked to **no-signalling**: a perfect cloner would allow signalling with entanglement. (4) Ideas such as unforgeable quantum tokens rest on it, though no-cloning alone does not make such a scheme secure. **Common mistake:** concluding that quantum information cannot be copied at all; approximate copies exist and matter for security analysis."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why can no unitary clone an arbitrary state?",
+              "options": [
+                "Linearity: cloning |0⟩ and |1⟩ forces an entangled output for a superposition",
+                "Quantum states are too large",
+                "Measurement destroys states"
+              ],
+              "correct_index": 0,
+              "explanation": "The CNOT output for |+⟩ is a Bell state, not |+⟩|+⟩."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the single-copy fidelity of the optimal universal symmetric 1 -> 2 cloner?",
+              "options": [
+                "5/6",
+                "2/3",
+                "1"
+              ],
+              "correct_index": 0,
+              "explanation": "The same for every input state."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does a measure-and-prepare cloner achieve for qubits?",
+              "options": [
+                "Fidelity 2/3",
+                "Fidelity 5/6",
+                "Fidelity 1"
+              ],
+              "correct_index": 0,
+              "explanation": "The lesson measured 0.6687."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B115",
+              "locator": "Scarani, Iblisdir, Gisin, Acin, Quantum cloning (Rev. Mod. Phys. 77, 1225; arXiv quant-ph/0511088): Section I.B (the no-cloning theorem), II.A (symmetric 1 -> 2 universal cloner for qubits), II.D (state-dependent and phase-covariant cloning) and IV.B (incoherent attacks and cloning machines)"
+            },
+            {
+              "book": "B113",
+              "locator": "Wilde: the no-cloning discussion in Chapter 3 and the relation to the resource inequalities of Chapter 6"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The optimal-cloner channel (2/3) P_sym (rho (x) I) P_sym is quoted from the structure given in the review (section II.A) as I recall it and is verified numerically here (trace preserving, fidelity 5/6); the link between perfect cloning and signalling (Gisin) is from memory."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "5.4 Quantum Channel Capacity Concepts",
+          "summary": "Classical, quantum and entanglement-assisted capacities of dephasing, erasure and depolarizing channels, with the coherent information computed from Choi states.",
+          "estimated_minutes": 65,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A quantum channel has several **capacities**, because it can be used for different tasks. The **classical capacity** C is the best rate of reliable classical communication; by the Holevo-Schumacher-Westmoreland theorem it is the regularised maximum of the Holevo quantity (Wilde, chapter 20). The **quantum capacity** Q is the best rate of reliable qubit transmission and is given by the regularised maximum of the **coherent information** I_c = S(B) − S(AB) of the channel output with its reference (Wilde, chapter 24 and section 11.5, with the Lloyd-Shor-Devetak theorem); it can be computed from the **Choi state**. The **entanglement-assisted** classical capacity C_E is the maximum of the mutual information I(A:B) and is single-letter (Wilde, chapter 21). They differ: for the erasure channel with erasure probability ε, C = 1 − ε, Q = max(0, 1 − 2ε) and C_E = 2(1 − ε); for the dephasing channel with parameter p, Q = 1 − h(p), where h is the binary entropy, while the classical capacity stays 1 bit; for the depolarizing channel C = 1 − h(p/2) (King) and the quantum capacity is not known in closed form.\n\nThe listing computes the coherent information for the maximally entangled input of the dephasing, erasure and depolarizing channels from their Kraus operators (as the entropy of the output minus the entropy of the joint output) and compares it with the closed forms. Where the closed forms are literature results (the classical and the quantum capacity of the erasure channel, the capacity of the depolarizing channel) the lesson states them as such. The labs are exact simulations of small systems (qubits and qudits) and closed-form capacity and loss calculations written for the lesson. Where a table uses assumed device parameters (aperture sizes, detector efficiencies, dark counts) they are stated as assumptions and are not measurements of a real system."
+            },
+            {
+              "type": "code",
+              "id": "c-capacities",
+              "language": "python",
+              "code": "import math\nimport numpy as np\n\ndef h2(x):\n    return 0.0 if x <= 0 or x >= 1 else -x * math.log2(x) - (1 - x) * math.log2(1 - x)\ndef entropy(rho):\n    w = np.linalg.eigvalsh(rho); w = w[w > 1e-14]; return float(-(w * np.log2(w)).sum())\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]], dtype=complex); Y = np.array([[0, -1j], [1j, 0]]); Z = np.diag([1, -1]).astype(complex)\n\n# --- coherent information of a channel with maximally entangled input, computed from the Choi state: I_c = S(output) - S(joint output with the reference)\ndef choi_state(kraus_ops, dim_in=2):\n    phi = np.zeros(dim_in * dim_in, dtype=complex)\n    for i in range(dim_in): phi[i * dim_in + i] = 1 / math.sqrt(dim_in)\n    J = np.zeros((phi.size, phi.size), dtype=complex)\n    out_dim = kraus_ops[0].shape[0]\n    big = [np.kron(np.eye(dim_in), K) for K in kraus_ops]\n    return sum(K @ np.outer(phi, phi.conj()) @ K.conj().T for K in big)\ndef coherent_information(kraus_ops):\n    J = choi_state(kraus_ops)\n    out = J.reshape(2, -1, 2, J.shape[0] // 2)\n    rho_B = np.einsum(\"iaib->ab\", J.reshape(2, J.shape[0] // 2, 2, J.shape[0] // 2))\n    return entropy(rho_B) - entropy(J)\ndef dephasing(p): return [math.sqrt(1 - p) * I2, math.sqrt(p) * Z]\ndef depolarizing(p): return [math.sqrt(1 - 3 * p / 4) * I2] + [math.sqrt(p / 4) * P for P in (X, Y, Z)]\ndef erasure(eps):\n    # output space is 3-dimensional: the qubit or an erasure flag |e>\n    K0 = math.sqrt(1 - eps) * np.vstack([np.eye(2), np.zeros((1, 2))])\n    K1 = math.sqrt(eps) * np.vstack([np.zeros((2, 2)), np.array([[1, 0]])])\n    K2 = math.sqrt(eps) * np.vstack([np.zeros((2, 2)), np.array([[0, 1]])])\n    return [K0, K1, K2]\ndef coherent_information_erasure(eps):\n    kraus = erasure(eps); dim_out = 3\n    phi = np.zeros(4, dtype=complex); phi[0] = phi[3] = 1 / math.sqrt(2)\n    J = sum(np.kron(np.eye(2), K) @ np.outer(phi, phi.conj()) @ np.kron(np.eye(2), K).conj().T for K in kraus)\n    rho_B = np.einsum(\"iaib->ab\", J.reshape(2, dim_out, 2, dim_out))\n    return entropy(rho_B) - entropy(J)\n\nprint(\"capacities of three qubit channels. C = classical capacity, Q = quantum capacity, C_E = entanglement-assisted classical capacity; formulas from the literature, with the coherent information computed here\")\nprint()\nprint(f\"{'dephasing p':>12} {'C (classical)':>14} {'Q = 1 - h(p)':>14} {'coherent information (computed)':>33}\")\nfor p in (0.0, 0.05, 0.11, 0.25, 0.5):\n    print(f\"{p:>12} {1.0:>14.4f} {1 - h2(p):>14.4f} {coherent_information(dephasing(p)):>33.4f}\")\nprint(\"the dephasing channel does not touch the Z basis, so one classical bit per use survives for every p; the quantum capacity 1 - h(p) is the coherent information with the maximally entangled input and it vanishes at p = 1/2\")\nprint()\nprint(f\"{'erasure eps':>12} {'C = 1 - eps':>12} {'Q = 1 - 2 eps':>14} {'coherent information (computed)':>33} {'C_E = 2 (1 - eps)':>19}\")\nfor eps in (0.0, 0.1, 0.25, 0.4, 0.5, 0.75):\n    print(f\"{eps:>12} {1 - eps:>12.4f} {max(0, 1 - 2 * eps):>14.4f} {coherent_information_erasure(eps):>33.4f} {2 * (1 - eps):>19.4f}\")\nprint(\"for the erasure channel the quantum capacity 1 - 2 eps is positive only for eps < 1/2: beyond that the coherent information is negative and no quantum information can pass; entanglement assistance doubles the classical rate\")\nprint()\nprint(f\"{'depolarizing p':>15} {'C = 1 - h(p/2) (King)':>23} {'coherent information, maximally entangled input':>49} {'positive?':>10}\")\nfor p in (0.0, 0.1, 0.2, 0.25, 0.3, 0.5):\n    ci = coherent_information(depolarizing(p))\n    print(f\"{p:>15} {1 - h2(p / 2):>23.4f} {ci:>49.4f} {str(ci > 1e-9):>10}\")\nprint(\"for depolarizing noise the coherent information with the maximally entangled input becomes negative near p = 0.253 in this parameterisation (a total Pauli-error probability of 0.19); the true quantum capacity is not known in closed form (it is only bounded, and superadditivity of coherent information makes it hard to compute)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-capacities",
+              "language": "text",
+              "code": "capacities of three qubit channels. C = classical capacity, Q = quantum capacity, C_E = entanglement-assisted classical capacity; formulas from the literature, with the coherent information computed here\n\n dephasing p  C (classical)   Q = 1 - h(p)   coherent information (computed)\n         0.0         1.0000         1.0000                            1.0000\n        0.05         1.0000         0.7136                            0.7136\n        0.11         1.0000         0.5001                            0.5001\n        0.25         1.0000         0.1887                            0.1887\n         0.5         1.0000         0.0000                            0.0000\nthe dephasing channel does not touch the Z basis, so one classical bit per use survives for every p; the quantum capacity 1 - h(p) is the coherent information with the maximally entangled input and it vanishes at p = 1/2\n\n erasure eps  C = 1 - eps  Q = 1 - 2 eps   coherent information (computed)   C_E = 2 (1 - eps)\n         0.0       1.0000         1.0000                            1.0000              2.0000\n         0.1       0.9000         0.8000                            0.8000              1.8000\n        0.25       0.7500         0.5000                            0.5000              1.5000\n         0.4       0.6000         0.2000                            0.2000              1.2000\n         0.5       0.5000         0.0000                            0.0000              1.0000\n        0.75       0.2500         0.0000                           -0.5000              0.5000\nfor the erasure channel the quantum capacity 1 - 2 eps is positive only for eps < 1/2: beyond that the coherent information is negative and no quantum information can pass; entanglement assistance doubles the classical rate\n\n depolarizing p   C = 1 - h(p/2) (King)   coherent information, maximally entangled input  positive?\n            0.0                  1.0000                                            1.0000       True\n            0.1                  0.7136                                            0.4968       True\n            0.2                  0.5310                                            0.1524       True\n           0.25                  0.4564                                            0.0066       True\n            0.3                  0.3902                                           -0.1258      False\n            0.5                  0.1887                                           -0.5488      False\nfor depolarizing noise the coherent information with the maximally entangled input becomes negative near p = 0.253 in this parameterisation (a total Pauli-error probability of 0.19); the true quantum capacity is not known in closed form (it is only bounded, and superadditivity of coherent information makes it hard to compute)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "For dephasing the computed coherent information equals 1 − h(p): 0.7136, 0.5001, 0.1887 and 0.0000 at p = 0.05, 0.11, 0.25 and 0.5, and the classical capacity stays at 1 bit. For erasure it equals 1 − 2ε for ε ≤ 1/2 (0.8, 0.5, 0.2, 0.0 at ε = 0.1, 0.25, 0.4, 0.5) and is **negative** beyond (−0.5 at ε = 0.75), where the quantum capacity is 0; the classical capacity 1 − ε and the entanglement-assisted capacity 2(1 − ε) (1.8, 1.5, 1.2, 1.0, 0.5) show how assistance doubles the classical rate. For depolarizing noise the classical capacity is 0.7136, 0.5310, 0.4564 and 0.3902 for p = 0.1, 0.2, 0.25, 0.3, while the coherent information of the maximally entangled input is 0.4968, 0.1524, 0.0066 and −0.1258: it becomes negative near p = 0.253 in this parameterisation (a total Pauli-error probability of 0.19, the well-known value of the hashing bound).\n\n**What to take from this.** The same channel can be good for classical bits and useless for qubits (dephasing keeps C = 1 even at p = 1/2 where Q = 0); a negative coherent information with one particular input does not prove Q = 0 (the quantum capacity is a regularised quantity and superadditivity of coherent information is known), which is why Q is hard to compute and the depolarizing capacity is open; and for a **photon-loss link** the erasure formulas give the same rate-loss relations as 4.1. **Common mistake:** applying the classical capacity formula to a task that needs quantum information."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the quantum capacity of the erasure channel with erasure probability eps?",
+              "options": [
+                "max(0, 1 - 2 eps)",
+                "1 - eps",
+                "2 (1 - eps)"
+              ],
+              "correct_index": 0,
+              "explanation": "The computed coherent information equals 1 - 2 eps up to eps = 1/2."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does entanglement assistance do to the classical capacity of the erasure channel?",
+              "options": [
+                "Doubles it: C_E = 2 (1 - eps) against C = 1 - eps",
+                "Nothing",
+                "Halves it"
+              ],
+              "correct_index": 0,
+              "explanation": "1.8 against 0.9 at eps = 0.1."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is the quantum capacity of the depolarizing channel not simply the coherent information of the maximally entangled input?",
+              "options": [
+                "Capacity is a regularised quantity and coherent information can be superadditive",
+                "The input must be pure",
+                "The channel is not linear"
+              ],
+              "correct_index": 0,
+              "explanation": "A negative single-letter value does not prove Q = 0."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Chapter 20 (classical capacity), Chapter 21 (entanglement-assisted capacity), Section 11.5 (coherent information) and the chapters on quantum capacity (Lloyd-Shor-Devetak)"
+            },
+            {
+              "book": "B111",
+              "locator": "Qiskit documentation: Choi, Kraus and quantum_info entropy functions used to compute the coherent information"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The closed forms for the erasure channel, the dephasing channel and the classical capacity of the depolarizing channel (King) are results from the literature stated without proof; the lesson computes the coherent information of the maximally entangled input numerically. The chapter numbers cited for the quantum capacity are approximate."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "5.5 Entanglement Distribution (Communications Context)",
+          "summary": "Distillable entanglement and the hashing bound for Werner pairs (positive only above F = 0.8107), the gap to the entanglement threshold, and entanglement generation over dephasing and erasure channels.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "In the communications view, entanglement is a **resource to be counted in ebits**. The **distillable entanglement** D(ρ) is the optimal asymptotic rate at which maximally entangled pairs can be extracted from many copies of ρ by local operations and classical communication (LOCC); the **entanglement cost** is the rate needed to make ρ (Wilde, chapter 19). A lower bound on D that is easy to compute is the **hashing bound** D(ρ) ≥ 1 − S(ρ) for Bell-diagonal states, which comes from random-coding arguments. For a Werner state S(ρ) is the entropy of its four eigenvalues, and the hashing bound is positive only above a certain fidelity.\n\nThe lesson computes S(ρ) and the hashing bound for Werner states, locates the fidelity at which the bound becomes positive by bisection, and compares it with the **PPT test** (entangled for w > 1/3, fidelity above 0.5). It then looks at entanglement generation over a **dephasing channel** (send halves of Bell pairs, distil) and over an **erasure channel** (photon loss), where the arriving pairs are perfect and the rate equals the arrival probability. The labs are exact simulations of small systems (qubits and qudits) and closed-form capacity and loss calculations written for the lesson. Where a table uses assumed device parameters (aperture sizes, detector efficiencies, dark counts) they are stated as assumptions and are not measurements of a real system."
+            },
+            {
+              "type": "code",
+              "id": "c-entanglement-resource",
+              "language": "python",
+              "code": "import math\nimport numpy as np\n\ndef entropy(rho):\n    w = np.linalg.eigvalsh(rho); w = w[w > 1e-14]; return float(-(w * np.log2(w)).sum())\ndef h2(x): return 0.0 if x <= 0 or x >= 1 else -x * math.log2(x) - (1 - x) * math.log2(1 - x)\nphi_plus = np.array([1, 0, 0, 1]) / math.sqrt(2)\ndef werner(w):\n    return w * np.outer(phi_plus, phi_plus) + (1 - w) * np.eye(4) / 4\ndef partial_transpose(rho):\n    return rho.reshape(2, 2, 2, 2).transpose(0, 3, 2, 1).reshape(4, 4)\n# --- distillable entanglement D(rho): the rate of Bell pairs that can be extracted per copy by LOCC. The HASHING bound D >= 1 - S(rho) holds for Bell-diagonal states.\nprint(f\"{'Werner w':>9} {'fidelity F':>11} {'S(rho)':>8} {'hashing bound 1 - S(rho)':>26} {'PPT test (entangled?)':>23}\")\nfor w in (1.0, 0.95, 0.9, 0.85, 0.8, 0.7476, 0.7, 0.5, 1 / 3, 0.2):\n    rho = werner(w); S = entropy(rho)\n    entangled = np.linalg.eigvalsh(partial_transpose(rho)).min() < -1e-10\n    print(f\"{w:>9.4f} {(1 + 3 * w) / 4:>11.4f} {S:>8.4f} {max(0.0, 1 - S):>26.4f} {str(entangled):>23}\")\nlo, hi = 0.0, 1.0\nfor _ in range(60):\n    mid = (lo + hi) / 2\n    if 1 - entropy(werner(mid)) > 0: hi = mid\n    else: lo = mid\nprint(f\"the hashing bound becomes positive at w = {hi:.4f}, fidelity F = {(1 + 3 * hi) / 4:.4f}; the state is entangled from w = 1/3 (F = 0.5): between the two thresholds the state is entangled and the hashing bound gives no rate\")\nprint(\"for Werner states with 1/3 < w < 0.7476 other protocols (recurrence protocols such as BBPSSW and DEJMPS in module C4) can still distill entanglement for fidelity above 0.5; for two qubits every entangled state is distillable (Horodecki), and the sharp rate is not known in general\")\n\n# --- what the entanglement can be used for: the quantum capacity of a channel is the optimum asymptotic rate of ENTANGLEMENT generation with LOCC-free sending (the coherent information gives achievable rates)\ndef coherent_information_dephasing(p): return 1 - h2(p)\nprint()\nprint(\"rate of entanglement generation (ebits per channel use) over a dephasing channel by sending halves of Bell pairs and then distilling: Q = 1 - h(p)\")\nprint(f\"{'p':>6} {'Q = 1 - h(p)':>14} {'fidelity of the delivered pair 1 - p':>38} {'hashing yield from the delivered pair 1 - h(p)':>48}\")\nfor p in (0.0, 0.05, 0.11, 0.2, 0.3):\n    S = h2(p)                                                                  # the delivered pair is a mixture of Phi+ (prob 1-p) and Phi- (prob p): entropy h(p)\n    print(f\"{p:>6} {1 - h2(p):>14.4f} {1 - p:>38.4f} {1 - S:>48.4f}\")\nprint(\"for the dephasing channel the hashing yield of the delivered pairs equals the quantum capacity: distillation after transmission is optimal here\")\n# --- erasure channel: entanglement generation rate 1 - eps equals the number of arriving pairs; no distillation needed\nprint()\nprint(\"erasure channel (photon loss): each arriving pair is perfect, so the rate is the arrival probability and the capacities Q = 1 - 2 eps and the entanglement-generation rate 1 - eps differ:\")\nprint(\"  sending halves of Bell pairs generates 1 - eps ebits per use, but sending QUBITS directly has quantum capacity 1 - 2 eps; the difference is the classical communication (heralding) available in the first scheme, which is exactly why repeaters can help\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-entanglement-resource",
+              "language": "text",
+              "code": " Werner w  fidelity F   S(rho)   hashing bound 1 - S(rho)   PPT test (entangled?)\n   1.0000      1.0000   0.0000                     1.0000                    True\n   0.9500      0.9625   0.2901                     0.7099                    True\n   0.9000      0.9250   0.5032                     0.4968                    True\n   0.8500      0.8875   0.6857                     0.3143                    True\n   0.8000      0.8500   0.8476                     0.1524                    True\n   0.7476      0.8107   1.0000                     0.0000                    True\n   0.7000      0.7750   1.1258                     0.0000                    True\n   0.5000      0.6250   1.5488                     0.0000                    True\n   0.3333      0.5000   1.7925                     0.0000                   False\n   0.2000      0.4000   1.9219                     0.0000                   False\nthe hashing bound becomes positive at w = 0.7476, fidelity F = 0.8107; the state is entangled from w = 1/3 (F = 0.5): between the two thresholds the state is entangled and the hashing bound gives no rate\nfor Werner states with 1/3 < w < 0.7476 other protocols (recurrence protocols such as BBPSSW and DEJMPS in module C4) can still distill entanglement for fidelity above 0.5; for two qubits every entangled state is distillable (Horodecki), and the sharp rate is not known in general\n\nrate of entanglement generation (ebits per channel use) over a dephasing channel by sending halves of Bell pairs and then distilling: Q = 1 - h(p)\n     p   Q = 1 - h(p)   fidelity of the delivered pair 1 - p   hashing yield from the delivered pair 1 - h(p)\n   0.0         1.0000                                 1.0000                                           1.0000\n  0.05         0.7136                                 0.9500                                           0.7136\n  0.11         0.5001                                 0.8900                                           0.5001\n   0.2         0.2781                                 0.8000                                           0.2781\n   0.3         0.1187                                 0.7000                                           0.1187\nfor the dephasing channel the hashing yield of the delivered pairs equals the quantum capacity: distillation after transmission is optimal here\n\nerasure channel (photon loss): each arriving pair is perfect, so the rate is the arrival probability and the capacities Q = 1 - 2 eps and the entanglement-generation rate 1 - eps differ:\n  sending halves of Bell pairs generates 1 - eps ebits per use, but sending QUBITS directly has quantum capacity 1 - 2 eps; the difference is the classical communication (heralding) available in the first scheme, which is exactly why repeaters can help",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The hashing bound for Werner pairs is 0.7099, 0.4968, 0.3143 and 0.1524 ebits per pair at w = 0.95, 0.9, 0.85 and 0.8, and **vanishes at w = 0.7476 (F = 0.8107)**, while the PPT test already shows entanglement from w = 1/3 (F = 0.5). Between these two thresholds the hashing protocol yields nothing, although other (recurrence) protocols such as BBPSSW and DEJMPS can still purify pairs of fidelity above 0.5 with a finite number of rounds, as simulated in C4.5; for two qubits every entangled state is distillable (Horodecki), though the optimal rate is not known in general. For the dephasing channel the hashing yield of the delivered pair equals the quantum capacity 1 − h(p) (0.7136, 0.5001, 0.2781, 0.1187 at p = 0.05, 0.11, 0.2, 0.3): distillation after transmission is optimal there. For the erasure channel the entanglement generated by sending halves of Bell pairs (with classical communication of the erasure flags) is 1 − ε per use, larger than the quantum capacity 1 − 2ε of sending qubits without such side information.\n\n**Reading the result.** \"How much entanglement does this link deliver?\" has the answer \"rate × distillable entanglement per pair\", and the second factor can be zero for pairs that are entangled. This is the quantitative reason why repeater designs (C4.5) insist on a minimum link fidelity, and why the thresholds of 4.2 (CHSH, 0.7071) and 5.2 (superdense coding, 0.7476) are close to each other: they all reflect the same entropy of a Bell-diagonal state."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the hashing bound for distillable entanglement of a Bell-diagonal state?",
+              "options": [
+                "1 - S(rho)",
+                "S(rho)",
+                "1 - F"
+              ],
+              "correct_index": 0,
+              "explanation": "Positive for Werner states only above w = 0.7476."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Is a Werner state with fidelity 0.7 entangled, and does the hashing bound give a rate?",
+              "options": [
+                "Entangled, but the hashing bound gives zero rate",
+                "Not entangled",
+                "Entangled with a positive hashing rate"
+              ],
+              "correct_index": 0,
+              "explanation": "At fidelity 0.7 (w = 0.6) the entropy S exceeds 1 (it is 1.13 at w = 0.7 and 1.55 at w = 0.5), so the hashing bound 1 - S is 0 although the state is entangled."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the entanglement generation rate over an erasure channel when halves of Bell pairs are sent?",
+              "options": [
+                "1 - eps ebits per use",
+                "1 - 2 eps",
+                "2 (1 - eps)"
+              ],
+              "correct_index": 0,
+              "explanation": "Each arriving pair is perfect; erasure flags are classical side information."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Chapter 19 (Entanglement manipulation: LOCC, distillation and entanglement cost) and Section 11.5 (coherent information)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The hashing bound and the claim that every entangled two-qubit state is distillable are stated from the literature and located in Wilde's entanglement-manipulation chapter, but not re-derived here; the numbers (0.7476 and 0.8107) are computed by the listing."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "5.6 Quantum Repeaters (Communications Context)",
+          "summary": "The expected waiting time for an end-to-end pair under idealised repeaters (a maximum of geometric waiting times), the sqrt(eta) scaling per added repeater level, and the limits of the idealisation.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The communications question about repeaters is **rate-versus-distance scaling**. A repeaterless link over a pure-loss channel is limited to a rate proportional to the transmission η (the PLOB bound of 4.1), and η decays exponentially with distance. With N equally spaced repeater stations the span is split into N + 1 segments each with transmission η^(1/(N+1)); the rate then scales like η^(1/(N+1)) up to constants, and for a number of repeaters growing with the distance the cost becomes polynomial in the distance, which is the central promise of repeaters. A single ideal repeater in the middle of the link gives a rate scaling like √η (Pirandola; I cite this and the general η^(1/(N+1)) scaling from the literature).\n\nThe listing computes a precise version of this under **idealised assumptions**: perfect swaps, unlimited memory and heralded generation in rounds, so that the end-to-end pair is ready when all N + 1 segments have succeeded at least once, and the waiting time is the **maximum of N + 1 independent geometric variables**. It evaluates that expectation exactly (or by its exponential approximation for tiny success probabilities) for distances from 200 to 1,000 km and N = 1 to 31, and tabulates the scaling formulas for comparison. The labs are exact simulations of small systems (qubits and qudits) and closed-form capacity and loss calculations written for the lesson. Where a table uses assumed device parameters (aperture sizes, detector efficiencies, dark counts) they are stated as assumptions and are not measurements of a real system."
+            },
+            {
+              "type": "code",
+              "id": "c-repeater-scaling",
+              "language": "python",
+              "code": "import math\nimport numpy as np\n\n# An IDEALISED model of a repeater chain: N + 1 equal segments of loss eta_seg = eta^(1/(N+1)), perfect swaps and unlimited memory, heralded generation in rounds.\n# The end-to-end pair is ready when ALL segments have succeeded at least once; the waiting time (in rounds) is the maximum of N + 1 geometric variables.\ndef expected_max_geometric(k, p, tol=1e-12):\n    # E[max of k independent geometric(p) variables] = sum_{t >= 0} (1 - (1 - (1 - p)^t)^k); for small p the continuous (exponential) approximation H_k / (-ln(1 - p)) + 1/2 is used\n    if p < 1e-3:\n        harmonic = sum(1 / i for i in range(1, k + 1))\n        return harmonic / (-math.log1p(-p)) + 0.5\n    total, t = 0.0, 0\n    while True:\n        term = 1 - (1 - (1 - p) ** t) ** k\n        total += term; t += 1\n        if term < tol * max(1.0, total) and t > 10: break\n    return total\nalpha = 0.2\nprint(f\"{'distance (km)':>14} {'direct: rounds 1/eta':>22} \" + \" \".join(f\"{'N = ' + str(n) + ' repeaters':>18}\" for n in (1, 3, 7, 15, 31)))\nfor L in (200, 400, 600, 800, 1000):\n    eta = 10 ** (-alpha * L / 10)\n    row = [f\"{1 / eta:>22.3e}\"]\n    for n in (1, 3, 7, 15, 31):\n        k = n + 1\n        p_seg = eta ** (1 / k)\n        row.append(f\"{expected_max_geometric(k, p_seg):>18.3e}\")\n    print(f\"{L:>14} \" + \" \".join(row))\nprint(\"expected number of rounds until an end-to-end pair exists. Direct transmission grows exponentially with distance; with N repeaters the cost grows like eta^(-1/(N+1)), so adding repeaters turns an exponential cost into a much milder one, and for N growing with distance (about L/L0) the cost becomes polynomial in L\")\nprint(\"these are ideal conditions: no swap failures, no memory decay, no cutoff, no purification; practical rates are lower, and the model is the lesson's own simplified analysis, not a published design\")\n\n# --- rate-loss scaling formulas for comparison (from the literature, stated here): repeaterless PLOB bound ~ 1.44 eta; with one ideal repeater in the middle (Pirandola) ~ sqrt(eta); with n equally spaced ideal repeaters ~ eta^(1/(n+1))\nprint()\nprint(f\"{'distance (km)':>14} {'eta':>11} {'PLOB (no repeater) ~ 1.44 eta':>32} {'one middle repeater ~ sqrt(eta)':>34} {'three repeaters ~ eta^(1/4)':>29}\")\nfor L in (200, 400, 800):\n    eta = 10 ** (-alpha * L / 10)\n    print(f\"{L:>14} {eta:>11.2e} {-math.log1p(-eta) / math.log(2):>32.2e} {math.sqrt(eta):>34.2e} {eta ** 0.25:>29.2e}\")\nprint(\"the scaling with sqrt(eta) per added repeater level is why a handful of repeater stations give orders-of-magnitude higher rates at 400 to 800 km than any repeaterless scheme, while the constants (swap success, memory efficiency) decide whether the crossover is practical\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-repeater-scaling",
+              "language": "text",
+              "code": " distance (km)   direct: rounds 1/eta    N = 1 repeaters    N = 3 repeaters    N = 7 repeaters   N = 15 repeaters   N = 31 repeaters\n           200              1.000e+04          1.497e+02          2.027e+01          7.650e+00          4.591e+00          3.429e+00\n           400              1.000e+08          1.500e+04          2.078e+02          2.630e+01          9.394e+00          5.412e+00\n           600              1.000e+12          1.500e+06          2.083e+03          8.508e+01          1.777e+01          7.911e+00\n           800              1.000e+16          1.500e+08          2.083e+04          2.709e+02          3.259e+01          1.118e+01\n          1000              1.000e+20          1.500e+10          2.083e+05          8.586e+02          5.891e+01          1.549e+01\nexpected number of rounds until an end-to-end pair exists. Direct transmission grows exponentially with distance; with N repeaters the cost grows like eta^(-1/(N+1)), so adding repeaters turns an exponential cost into a much milder one, and for N growing with distance (about L/L0) the cost becomes polynomial in L\nthese are ideal conditions: no swap failures, no memory decay, no cutoff, no purification; practical rates are lower, and the model is the lesson's own simplified analysis, not a published design\n\n distance (km)         eta    PLOB (no repeater) ~ 1.44 eta    one middle repeater ~ sqrt(eta)   three repeaters ~ eta^(1/4)\n           200    1.00e-04                         1.44e-04                           1.00e-02                      1.00e-01\n           400    1.00e-08                         1.44e-08                           1.00e-04                      1.00e-02\n           800    1.00e-16                         1.44e-16                           1.00e-08                      1.00e-04\nthe scaling with sqrt(eta) per added repeater level is why a handful of repeater stations give orders-of-magnitude higher rates at 400 to 800 km than any repeaterless scheme, while the constants (swap success, memory efficiency) decide whether the crossover is practical",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "At 400 km direct transmission needs 10⁸ rounds on average; with 1, 3, 7, 15 and 31 repeaters the expectations are 1.5×10⁴, 208, 26.3, 9.4 and 5.4 rounds. At 1,000 km the direct cost is 10²⁰ rounds against 1.5×10¹⁰ (N = 1), 2.1×10⁵ (N = 3), 859 (N = 7), 58.9 (N = 15) and 15.5 (N = 31). Each doubling of the number of segments takes a root of the exponential cost, so a few tens of repeaters bring a 1,000 km link to tens of rounds. The comparison table shows the leading scaling: at 400 km η = 10⁻⁸, so the PLOB bound is 1.4×10⁻⁸ per use, a single ideal repeater scales like √η = 10⁻⁴, and three repeaters like η^(1/4) = 10⁻².\n\n**The idealisations matter.** These numbers assume perfect swaps, no memory decay, no cutoff and no purification: C4.5 showed how failing swaps (an optimum number of segments) and memory limits change the picture, and real repeater rates are lower. Reaching the polynomial-scaling regime needs memories with coherence times longer than the heralding round trip (C4.6), swap and purification operations of high fidelity, and error rates low enough that the accumulated noise (C4.4) can be controlled. The model is the lesson's own analysis, not a published design."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How does the repeaterless rate scale with distance?",
+              "options": [
+                "Like the transmission eta, exponentially in distance",
+                "Linearly",
+                "Like the square root of the distance"
+              ],
+              "correct_index": 0,
+              "explanation": "The PLOB bound is about 1.44 eta."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the waiting time of the idealised repeater chain?",
+              "options": [
+                "The maximum of N + 1 independent geometric waiting times",
+                "The sum of the waiting times",
+                "The minimum of the waiting times"
+              ],
+              "correct_index": 0,
+              "explanation": "All segments must have succeeded at least once."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why are the idealised repeater numbers optimistic?",
+              "options": [
+                "They ignore swap failures, memory decay and the cost of purification",
+                "They assume too long a distance",
+                "They use too many repeaters"
+              ],
+              "correct_index": 0,
+              "explanation": "C4.5 shows an optimum number of segments once swaps can fail."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Chapter 19 (entanglement manipulation) and the capacity chapters for the rate-loss background"
+            },
+            {
+              "book": "B111",
+              "locator": "Qiskit documentation (for the simulation tools); the repeater literature (Briegel et al.; Pirandola et al.) is cited from memory, not read"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The sqrt(eta) scaling for one ideal repeater and the eta^(1/(N+1)) scaling are stated from the literature, which is not among the cited sources and was not read; the waiting-time table is the lesson's own computation under stated idealisations."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "5.7 Satellite Quantum Communication",
+          "summary": "A geometric free-space loss model against fibre loss: loss in dB grows like 20 log10(L) in free space and linearly in fibre, which is why satellites reach distances fibre cannot; with the orbit and operation caveats.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Satellite quantum communication** avoids the exponential loss of fibre. A beam of divergence θ from a transmit telescope of diameter D_t has a diameter of about D_t + θL at distance L, and a receiver of diameter D_r collects the fraction η_geo ≈ (D_r/(D_t + θL))² of it: the loss in dB grows only like **20 log₁₀ L** because most of the path is in vacuum, whereas fibre loses a fixed number of dB per kilometre. On top of the geometric loss come the atmosphere (which matters only for the last ten or so kilometres of the path), pointing error, turbulence and detector efficiency. A **low-Earth-orbit** satellite sees a ground station only for a few minutes per pass; a **geostationary** one is always visible but far away. Experiments with satellites have been reported over more than a thousand kilometres (the Micius experiments; cited from memory), using the satellite either as a **trusted relay** for key distribution or as a **source of entangled photons** sent to two ground stations.\n\nThe listing evaluates the geometric model with assumed parameters (0.3 m transmit aperture, 10 µrad divergence, 1.0 m receiver, an extra 10 dB for atmosphere, pointing and optics) against fibre at 0.2 dB/km for distances from 100 to 5,000 km, and lists the main operational factors qualitatively. The labs are exact simulations of small systems (qubits and qudits) and closed-form capacity and loss calculations written for the lesson. Where a table uses assumed device parameters (aperture sizes, detector efficiencies, dark counts) they are stated as assumptions and are not measurements of a real system."
+            },
+            {
+              "type": "code",
+              "id": "c-satellite",
+              "language": "python",
+              "code": "import math\n\n# --- a geometric model of a free-space optical link: the beam spreads with divergence theta, the receiver collects a disc of diameter D_r.\n# eta_geo = min(1, (D_r / (D_t + theta L))^2). Atmospheric loss, pointing error and detector losses come on top (modelled by one extra attenuation in dB).\ndef geometric_efficiency(L_km, D_t=0.3, theta=10e-6, D_r=1.0):\n    spot = D_t + theta * L_km * 1000                                           # diameter of the beam at the receiver (m)\n    return min(1.0, (D_r / spot) ** 2)\ndef to_db(eta):\n    return -10 * math.log10(eta)\nprint(\"ASSUMED parameters for illustration: transmit aperture 0.3 m, full divergence 10 microradians, receive aperture 1.0 m, extra loss 10 dB (atmosphere, pointing, optics)\")\nprint(f\"{'distance (km)':>14} {'beam diameter (m)':>19} {'geometric loss (dB)':>21} {'total (dB), extra 10 dB':>25} {'fibre at 0.2 dB/km (dB)':>25}\")\nfor L in (100, 500, 1000, 1200, 2000, 5000):\n    spot = 0.3 + 10e-6 * L * 1000\n    g = to_db(geometric_efficiency(L))\n    print(f\"{L:>14} {spot:>19.1f} {g:>21.1f} {g + 10:>25.1f} {0.2 * L:>25.1f}\")\nprint(\"fibre loss in dB grows LINEARLY with distance (exponential transmission), free-space geometric loss in dB grows only like 20 log10(L): for 1,200 km the free-space path loses about 32 dB in this model while fibre would lose 240 dB, which is why satellites reach distances that fibre cannot\")\n# crossover: where free-space total loss falls below fibre loss\nfor L in range(1, 5000):\n    if to_db(geometric_efficiency(L)) + 10 < 0.2 * L:\n        print(f\"with these assumptions the free-space link loses less than fibre beyond about {L} km; real satellite links also suffer pointing error, turbulence and detector losses, and reported system losses are considerably higher than this simple geometric model (published values are not reproduced here)\")\n        break\n# --- a satellite also has limited contact time and works only under suitable conditions\nprint()\nprint(\"orbit and operation (qualitative):\")\nfor item, text in ((\"low Earth orbit (about 500 km altitude)\", \"short passes of a few minutes, many passes per day, low loss, ground stations needed; the satellite acts as a TRUSTED NODE or as an entanglement source for two ground stations\"),\n                   (\"geostationary orbit (about 36,000 km)\", \"continuous coverage but far greater geometric loss (the 1/L^2 law), so very large apertures or very bright sources are needed\"),\n                   (\"daylight\", \"background light raises detector noise, so most demonstrations operate at night\"),\n                   (\"weather\", \"cloud blocks the link; ground station networks need site diversity\"),\n                   (\"security model\", \"a satellite as a trusted relay requires trust in the satellite; entanglement distribution to two ground stations avoids it at the cost of a much lower rate\")):\n    print(f\"  {item:<44} {text}\")\nprint(\"space-based quantum links have been demonstrated experimentally over more than a thousand kilometres (the Micius experiments, reported in the literature; I cite the existence of these demonstrations from memory and the lesson does not reproduce their numbers)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-satellite",
+              "language": "text",
+              "code": "ASSUMED parameters for illustration: transmit aperture 0.3 m, full divergence 10 microradians, receive aperture 1.0 m, extra loss 10 dB (atmosphere, pointing, optics)\n distance (km)   beam diameter (m)   geometric loss (dB)   total (dB), extra 10 dB   fibre at 0.2 dB/km (dB)\n           100                 1.3                   2.3                      12.3                      20.0\n           500                 5.3                  14.5                      24.5                     100.0\n          1000                10.3                  20.3                      30.3                     200.0\n          1200                12.3                  21.8                      31.8                     240.0\n          2000                20.3                  26.1                      36.1                     400.0\n          5000                50.3                  34.0                      44.0                    1000.0\nfibre loss in dB grows LINEARLY with distance (exponential transmission), free-space geometric loss in dB grows only like 20 log10(L): for 1,200 km the free-space path loses about 32 dB in this model while fibre would lose 240 dB, which is why satellites reach distances that fibre cannot\nwith these assumptions the free-space link loses less than fibre beyond about 51 km; real satellite links also suffer pointing error, turbulence and detector losses, and reported system losses are considerably higher than this simple geometric model (published values are not reproduced here)\n\norbit and operation (qualitative):\n  low Earth orbit (about 500 km altitude)      short passes of a few minutes, many passes per day, low loss, ground stations needed; the satellite acts as a TRUSTED NODE or as an entanglement source for two ground stations\n  geostationary orbit (about 36,000 km)        continuous coverage but far greater geometric loss (the 1/L^2 law), so very large apertures or very bright sources are needed\n  daylight                                     background light raises detector noise, so most demonstrations operate at night\n  weather                                      cloud blocks the link; ground station networks need site diversity\n  security model                               a satellite as a trusted relay requires trust in the satellite; entanglement distribution to two ground stations avoids it at the cost of a much lower rate\nspace-based quantum links have been demonstrated experimentally over more than a thousand kilometres (the Micius experiments, reported in the literature; I cite the existence of these demonstrations from memory and the lesson does not reproduce their numbers)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "In this model the free-space loss is 12.3 dB at 100 km (fibre: 20 dB), 24.5 dB at 500 km (100 dB), 30.3 dB at 1,000 km (200 dB), 31.8 dB at 1,200 km (240 dB) and 44.0 dB at 5,000 km (1,000 dB), so the advantage grows without bound with distance and free space is the better medium beyond about 50 km in this idealised model. **This is a deliberately simple geometric model**: real satellite links also suffer pointing jitter, turbulence, background light and detector losses, and the reported system losses are considerably higher than the geometric value; the lesson does not reproduce published numbers. The qualitative lesson is robust: the dB loss of a satellite link grows slowly with distance, so intercontinental distances are reachable with one or two hops.\n\n**Operational and security caveats.** Daylight background and weather limit operation; a LEO satellite offers only short passes, so the quantum key rate is a few bits per second to kilobits per second averaged over passes (this is a qualitative statement, not a quoted figure); and using the satellite as a trusted relay means the satellite and the ground segment are part of the trusted base, whereas distributing entanglement to both ends avoids trusting it at a much lower rate. Satellites are therefore an important route for QKD networks but not a substitute for the migration of classical cryptography (module E5)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How does the geometric loss in dB of a free-space link grow with distance?",
+              "options": [
+                "Like 20 log10(L)",
+                "Linearly in L",
+                "Exponentially in L"
+              ],
+              "correct_index": 0,
+              "explanation": "Fibre loss grows linearly in dB."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why can a satellite reach distances that fibre cannot?",
+              "options": [
+                "Most of the path is in vacuum, so beam spreading rather than absorption sets the loss",
+                "Satellites use stronger lasers",
+                "Fibre cannot carry photons"
+              ],
+              "correct_index": 0,
+              "explanation": "31.8 dB at 1,200 km against 240 dB of fibre in the lesson's model."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does using a satellite as a trusted relay imply?",
+              "options": [
+                "The satellite and its ground segment are part of the trusted base",
+                "The key is secret from the satellite",
+                "No trust is needed"
+              ],
+              "correct_index": 0,
+              "explanation": "Entanglement distribution to both ends avoids trusting it, at a lower rate."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B115",
+              "locator": "Scarani et al., Quantum cloning: the Section IV treatment of quantum cryptography as context for the trusted-relay and attack models"
+            },
+            {
+              "book": "B111",
+              "locator": "Qiskit documentation (not a source for the numbers); the geometric loss model is the lesson's own"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The Micius satellite experiments are cited from memory and none of their numbers is used; the geometric model and its parameters are the lesson's own assumptions. Statements about QKD key rates of satellite passes are qualitative."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "5.8 Optical Quantum Communications",
+          "summary": "Weak coherent pulses and their multi-photon fraction, the click probability and error rate of a receiver against distance with assumed parameters, the distance at which dark counts end the link, and the encodings of a qubit in light.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "In practice a qubit sent through fibre is a **photon** whose polarisation, arrival time (**time bin**) or path encodes |0⟩ and |1⟩. True single-photon sources are hard, so most systems use **attenuated laser pulses** (weak coherent pulses): a pulse with mean photon number μ has a **Poisson** photon-number distribution, so it is empty with probability e^(−μ), contains one photon with probability μe^(−μ) and **more than one** with the remaining probability 1 − e^(−μ)(1 + μ). The multi-photon part is a security issue because an eavesdropper can keep a photon (the photon-number-splitting attack, handled by the decoy-state method in C6). At the receiver, the signal falls exponentially with distance while **dark counts** of the detectors are constant, so the **quantum bit error rate (QBER)** rises with distance until it exceeds the value (about 11% for BB84) beyond which no key can be extracted.\n\nThe listing tabulates the Poisson probabilities for μ = 0.01 to 2, computes the click probability and QBER of a receiver for assumed parameters (μ = 0.5, detector efficiency 10%, dark-count probability 10⁻⁶ per pulse, misalignment 1.5%, 1 GHz clock) against distance, finds the distance at which the QBER reaches 11% and how it changes with the dark-count probability, and lists the encodings. The labs are exact simulations of small systems (qubits and qudits) and closed-form capacity and loss calculations written for the lesson. Where a table uses assumed device parameters (aperture sizes, detector efficiencies, dark counts) they are stated as assumptions and are not measurements of a real system."
+            },
+            {
+              "type": "code",
+              "id": "c-optical-communications",
+              "language": "python",
+              "code": "import math\nimport numpy as np\n\n# --- 1. weak coherent pulses: a laser pulse attenuated to mean photon number mu has a Poisson photon-number distribution; the multi-photon part is a security problem (module C6)\nprint(f\"{'mean photon number mu':>22} {'P(0 photons)':>13} {'P(1)':>8} {'P(2 or more)':>13} {'P(2+) / P(1 or more)':>22}\")\nfor mu in (0.01, 0.1, 0.5, 1.0, 2.0):\n    p0 = math.exp(-mu); p1 = mu * math.exp(-mu); p2plus = 1 - p0 - p1\n    print(f\"{mu:>22} {p0:>13.4f} {p1:>8.4f} {p2plus:>13.5f} {p2plus / (1 - p0):>22.4f}\")\nprint(\"a pulse with mu = 0.1 is empty 90% of the time, and 4.7% of the pulses that contain light contain more than one photon; lowering mu reduces the multi-photon fraction but wastes pulses; decoy-state methods (module C6) measure the photon-number statistics to cope with this\")\n\n# --- 2. what the receiver sees: gain and error rate with channel transmission eta, detector efficiency, dark counts and misalignment\ndef gain_and_qber(L_km, mu=0.5, eta_det=0.1, dark=1e-6, misalignment=0.015, alpha=0.2):\n    eta = 10 ** (-alpha * L_km / 10) * eta_det                               # channel and detector efficiency\n    signal = 1 - math.exp(-eta * mu)                                          # probability that a pulse produces a click from the signal\n    Q = dark + signal * (1 - dark)                                            # total click probability (dark counts add a constant background)\n    errors = 0.5 * dark + misalignment * signal                               # dark counts are random (error 1/2); signal clicks err with the misalignment\n    return Q, errors / Q\nprint()\nprint(\"ASSUMED parameters: mean photon number 0.5, detector efficiency 10%, dark-count probability 1e-6 per pulse, optical misalignment 1.5%, clock 1 GHz\")\nprint(f\"{'distance (km)':>14} {'click probability per pulse':>29} {'QBER':>8} {'clicks per second':>19}\")\nfor L in (0, 25, 50, 100, 150, 200, 250, 300):\n    Q, qber = gain_and_qber(L)\n    print(f\"{L:>14} {Q:>29.3e} {qber:>8.4f} {Q * 1e9:>19.3e}\")\nprint(\"the signal falls exponentially while the dark counts are constant, so the error rate climbs with distance until it reaches the 11% limit of the BB84 key-rate formula (module C6) and the key rate falls to zero: this sets the maximum range of a point-to-point link\")\ndef range_km(dark):\n    for L in np.arange(0, 600, 0.5):\n        if gain_and_qber(L, dark=dark)[1] > 0.11:\n            return float(L)\nr_ref, r_half, r_tenth = range_km(1e-6), range_km(5e-7), range_km(1e-7)\nprint(f\"the QBER exceeds 11% at about {r_ref:.1f} km with these parameters; with half the dark-count probability {r_half:.1f} km (+{r_half - r_ref:.1f} km); with one tenth {r_tenth:.1f} km (+{r_tenth - r_ref:.1f} km)\")\nprint(\"better detectors (lower dark counts, higher efficiency) extend the range, but only by tens of kilometres: the range of a point-to-point link is limited by the exponential loss against a constant noise floor\")\n\n# --- 3. encodings of a qubit in light\nprint()\nprint(f\"{'encoding':<22} {'how |0> and |1> are represented':<52} {'main impairment':<40}\")\nfor enc, how, imp in ((\"polarisation\", \"horizontal and vertical polarisation of one photon\", \"birefringence changes polarisation in fibre (needs active compensation)\"),\n                      (\"time-bin\", \"a photon in an early or a late time slot (interferometer analysis)\", \"phase stability of the interferometers\"),\n                      (\"path (dual rail)\", \"a photon in one of two spatial modes\", \"relative phase between the two paths drifts\"),\n                      (\"coherent states (CV)\", \"quadratures of a bright light field (continuous variables)\", \"excess noise and the need for reconciliation; very different detectors\")):\n    print(f\"{enc:<22} {how:<52} {imp:<40}\")\nprint(\"a qubit sent through fibre is a single photon in a chosen degree of freedom; telecom fibre favours time-bin encoding for long distances and polarisation for free space, where the polarisation is preserved by the atmosphere\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-optical-communications",
+              "language": "text",
+              "code": " mean photon number mu  P(0 photons)     P(1)  P(2 or more)   P(2+) / P(1 or more)\n                  0.01        0.9900   0.0099       0.00005                 0.0050\n                   0.1        0.9048   0.0905       0.00468                 0.0492\n                   0.5        0.6065   0.3033       0.09020                 0.2293\n                   1.0        0.3679   0.3679       0.26424                 0.4180\n                   2.0        0.1353   0.2707       0.59399                 0.6870\na pulse with mu = 0.1 is empty 90% of the time, and 4.7% of the pulses that contain light contain more than one photon; lowering mu reduces the multi-photon fraction but wastes pulses; decoy-state methods (module C6) measure the photon-number statistics to cope with this\n\nASSUMED parameters: mean photon number 0.5, detector efficiency 10%, dark-count probability 1e-6 per pulse, optical misalignment 1.5%, clock 1 GHz\n distance (km)   click probability per pulse     QBER   clicks per second\n             0                     4.877e-02   0.0150           4.877e+07\n            25                     1.569e-02   0.0150           1.569e+07\n            50                     4.989e-03   0.0151           4.989e+06\n           100                     5.009e-04   0.0160           5.009e+05\n           150                     5.100e-05   0.0245           5.100e+04\n           200                     6.000e-06   0.0958           6.000e+03\n           250                     1.500e-06   0.3383           1.500e+03\n           300                     1.050e-06   0.4769           1.050e+03\nthe signal falls exponentially while the dark counts are constant, so the error rate climbs with distance until it reaches the 11% limit of the BB84 key-rate formula (module C6) and the key rate falls to zero: this sets the maximum range of a point-to-point link\nthe QBER exceeds 11% at about 204.5 km with these parameters; with half the dark-count probability 219.5 km (+15.0 km); with one tenth 254.5 km (+50.0 km)\nbetter detectors (lower dark counts, higher efficiency) extend the range, but only by tens of kilometres: the range of a point-to-point link is limited by the exponential loss against a constant noise floor\n\nencoding               how |0> and |1> are represented                      main impairment                         \npolarisation           horizontal and vertical polarisation of one photon   birefringence changes polarisation in fibre (needs active compensation)\ntime-bin               a photon in an early or a late time slot (interferometer analysis) phase stability of the interferometers  \npath (dual rail)       a photon in one of two spatial modes                 relative phase between the two paths drifts\ncoherent states (CV)   quadratures of a bright light field (continuous variables) excess noise and the need for reconciliation; very different detectors\na qubit sent through fibre is a single photon in a chosen degree of freedom; telecom fibre favours time-bin encoding for long distances and polarisation for free space, where the polarisation is preserved by the atmosphere",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "For μ = 0.1 a pulse is empty with probability 0.905, holds one photon with 0.0905 and more with 0.0047, so 4.9% of the non-empty pulses hold more than one photon; at μ = 0.5 that share is 23% and at μ = 1 it is 42%. With the assumed receiver the click probability falls from 4.9×10⁻² per pulse at 0 km to 5.0×10⁻⁴ at 100 km, 5.1×10⁻⁵ at 150 km and 6.0×10⁻⁶ at 200 km, while the QBER rises from 1.5% (misalignment only) through 1.6% at 100 km and 2.45% at 150 km to 9.6% at 200 km, 34% at 250 km and 48% at 300 km (where dark counts dominate); it crosses 11% at about 204.5 km. Halving the dark-count probability extends that distance by 15 km, a tenfold reduction by 50 km (to 254.5 km): detector improvements buy tens of kilometres, because the loss is exponential and the noise floor is constant.\n\n**Reading the table.** The maximum range of a point-to-point fibre QKD link is set by loss against dark counts, not by a fundamental distance limit, and the numbers above are model outputs for **assumed parameters**, not measurements of a real system. Encodings: polarisation (simple, but fibre birefringence needs compensation), time bin (robust in fibre, needs interferometer stability), path encoding and continuous-variable (coherent-state) encodings with homodyne detection, a different technology with its own noise analysis."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the photon-number distribution of an attenuated laser pulse?",
+              "options": [
+                "Poisson with mean mu",
+                "Always exactly one photon",
+                "Uniform"
+              ],
+              "correct_index": 0,
+              "explanation": "P(n >= 2) = 1 - e^-mu (1 + mu)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does the QBER rise with distance in a fibre link?",
+              "options": [
+                "The signal falls exponentially while dark counts stay constant",
+                "Dark counts grow with distance",
+                "The fibre adds errors to each photon"
+              ],
+              "correct_index": 0,
+              "explanation": "The QBER passes 11% near 204.5 km for the lesson's parameters."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is the multi-photon part of a weak coherent pulse a security problem?",
+              "options": [
+                "An eavesdropper can keep one photon without disturbing the others",
+                "Multi-photon pulses are brighter",
+                "Detectors cannot see them"
+              ],
+              "correct_index": 0,
+              "explanation": "The photon-number-splitting attack; decoy states address it (module C6)."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B115",
+              "locator": "Scarani et al., Quantum cloning: Section IV.B (incoherent attacks on BB84 with cloning machines) as the background to why the photon number matters"
+            },
+            {
+              "book": "B110",
+              "locator": "Qiskit Textbook: quantum key distribution chapter for the BB84 encodings"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The 11% QBER limit of BB84 is a standard result stated here from the literature and used again in module C6; the receiver parameters (efficiency, dark counts, misalignment, mean photon number) are assumptions of the lesson and not measurements."
+          },
+          "after": "sec-7"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "c5-n01",
+          "prompt": "What does teleportation's resource inequality state?",
+          "options": [
+            "1 ebit + 2 cbits >= 1 qubit",
+            "1 qubit >= 2 cbits",
+            "2 qubits >= 1 ebit"
+          ],
+          "correct_index": 0,
+          "explanation": "Wilde chapter 6.",
+          "source": {
+            "book": "B113",
+            "locator": "Chapter 6"
+          }
+        },
+        {
+          "id": "c5-n02",
+          "prompt": "Why are the two classical bits indispensable in teleportation?",
+          "options": [
+            "Before they arrive Bob's state is independent of the input",
+            "They carry the quantum state",
+            "They encrypt the channel"
+          ],
+          "correct_index": 0,
+          "explanation": "No-signalling.",
+          "source": {
+            "book": "B113",
+            "locator": "Chapter 6"
+          }
+        },
+        {
+          "id": "c5-n03",
+          "prompt": "How many classical bits does superdense coding deliver per qubit with a perfect pair?",
+          "options": [
+            "2",
+            "1",
+            "3"
+          ],
+          "correct_index": 0,
+          "explanation": "1 ebit + 1 qubit >= 2 cbits.",
+          "source": {
+            "book": "B113",
+            "locator": "Chapter 6"
+          }
+        },
+        {
+          "id": "c5-n04",
+          "prompt": "What fidelity does a Werner pair need for superdense coding to beat 1 bit per qubit?",
+          "options": [
+            "About 0.81",
+            "0.5",
+            "0.25"
+          ],
+          "correct_index": 0,
+          "explanation": "w = 0.7476.",
+          "source": {
+            "book": "B113",
+            "locator": "Chapter 21"
+          }
+        },
+        {
+          "id": "c5-n05",
+          "prompt": "What is the fidelity of the optimal universal symmetric 1 -> 2 qubit cloner?",
+          "options": [
+            "5/6",
+            "2/3",
+            "1/2"
+          ],
+          "correct_index": 0,
+          "explanation": "Measure-and-prepare reaches 2/3.",
+          "source": {
+            "book": "B115",
+            "locator": "Section II.A"
+          }
+        },
+        {
+          "id": "c5-n06",
+          "prompt": "Why can no unitary clone arbitrary states?",
+          "options": [
+            "Linearity",
+            "Unitarity forbids copies of basis states",
+            "Measurement"
+          ],
+          "correct_index": 0,
+          "explanation": "A superposition would be mapped to an entangled state.",
+          "source": {
+            "book": "B115",
+            "locator": "Section I.B"
+          }
+        },
+        {
+          "id": "c5-n07",
+          "prompt": "What is the quantum capacity of the erasure channel?",
+          "options": [
+            "max(0, 1 - 2 eps)",
+            "1 - eps",
+            "2 (1 - eps)"
+          ],
+          "correct_index": 0,
+          "explanation": "The coherent information of the maximally entangled input.",
+          "source": {
+            "book": "B113",
+            "locator": "Chapters 20 and 21"
+          }
+        },
+        {
+          "id": "c5-n08",
+          "prompt": "What does the coherent information of a channel measure?",
+          "options": [
+            "Achievable rates of quantum information transmission",
+            "Classical capacity",
+            "Channel loss"
+          ],
+          "correct_index": 0,
+          "explanation": "I_c = S(B) - S(AB).",
+          "source": {
+            "book": "B113",
+            "locator": "Section 11.5"
+          }
+        },
+        {
+          "id": "c5-n09",
+          "prompt": "For which Werner parameter does the hashing bound become positive?",
+          "options": [
+            "w above about 0.7476",
+            "w above 1/3",
+            "w above 0.5"
+          ],
+          "correct_index": 0,
+          "explanation": "F above about 0.8107.",
+          "source": {
+            "book": "B113",
+            "locator": "Chapter 19"
+          }
+        },
+        {
+          "id": "c5-n10",
+          "prompt": "How does the repeaterless rate scale with distance?",
+          "options": [
+            "Like eta, exponentially in distance",
+            "Like sqrt(eta)",
+            "Linearly"
+          ],
+          "correct_index": 0,
+          "explanation": "PLOB bound.",
+          "source": {
+            "book": "B113",
+            "locator": "Capacity chapters"
+          }
+        },
+        {
+          "id": "c5-n11",
+          "prompt": "Why can satellites reach distances fibre cannot?",
+          "options": [
+            "Free-space loss in dB grows like 20 log10 L, fibre loss linearly",
+            "Satellites amplify photons",
+            "Fibre has no loss"
+          ],
+          "correct_index": 0,
+          "explanation": "Beam spreading, not absorption.",
+          "source": {
+            "book": "B115",
+            "locator": "Context of Section IV"
+          }
+        },
+        {
+          "id": "c5-n12",
+          "prompt": "What ends the range of a point-to-point fibre QKD link in the lesson's model?",
+          "options": [
+            "Exponentially falling signal against constant dark counts",
+            "A fundamental distance limit",
+            "Fibre bending"
+          ],
+          "correct_index": 0,
+          "explanation": "QBER exceeds 11% near 204.5 km.",
+          "source": {
+            "book": "B115",
+            "locator": "Section IV.B"
+          }
+        }
+      ],
+      "estimated_minutes": 450,
+      "notes": "Rewrites eight outline sections as lessons with exact simulations and capacity calculations: teleportation as a resource inequality including qudits, superdense coding with noisy pairs, no-cloning with the optimal cloner at 5/6, capacities of dephasing, erasure and depolarizing channels from coherent information, the hashing bound for Werner pairs, ideal repeater waiting times, a free-space against fibre loss model, and a weak-coherent-pulse receiver model with dark counts.",
+      "learning_objectives": [
+        "Frame teleportation and superdense coding as resource inequalities and explain why the classical bits and the entanglement are both needed.",
+        "Explain no-cloning through linearity and compare the optimal cloner with measure-and-prepare.",
+        "Compute and interpret classical, quantum and entanglement-assisted capacities of simple channels, using the coherent information.",
+        "Use the hashing bound and the PPT threshold to state what entanglement a noisy link provides.",
+        "Compare fibre, repeater and satellite links by their rate-versus-distance scaling.",
+        "Model an optical receiver's signal, dark counts and error rate and read the range limit."
+      ]
+    }
+  ]
+}
