@@ -1,5 +1,7 @@
 {
   "mission_id": "mission_pqc_migration_enterprise",
+  "competencies": [{ "id": "PQC.8", "depth": "Analyse" }],
+  "tag_status": "proposed-unreviewed",
   "title": "The Migration Mandate",
   "type": "decision_scenario",
   "linked_module_id": "track_d_e5_enterprise_pqc_migration",

@@ -1,5 +1,7 @@
 {
   "mission_id": "mission_bb84_diplomatic_channel",
+  "competencies": [{ "id": "NET.5", "depth": "Apply" }],
+  "tag_status": "proposed-unreviewed",
   "title": "Secure the Diplomatic Channel",
   "type": "simulation",
   "linked_module_id": "track_c_c6_quantum_key_distribution",

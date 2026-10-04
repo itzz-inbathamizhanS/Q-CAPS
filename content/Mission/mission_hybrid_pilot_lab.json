@@ -1,5 +1,7 @@
 {
   "mission_id": "mission_hybrid_pilot_lab",
+  "competencies": [{ "id": "NET.4", "depth": "Apply" }, { "id": "PQC.6", "depth": "Apply" }],
+  "tag_status": "proposed-unreviewed",
   "title": "The Hybrid Pilot",
   "type": "decision_scenario",
   "linked_module_id": "track_b_b11_intermediate_pqc_labs",

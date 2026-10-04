@@ -29,6 +29,28 @@ Mirrors the course structure exactly under `quizzes/`, plus `quizzes/quiz_submis
 ### 6. Master Curriculum Index
 `MASTER_CURRICULUM_INDEX.md` — single source of truth for all 36 `module_id`s, file paths, and unlock chains. Frontend navigation/progress logic should be built against this file.
 
+### 7. Competency tags
+Quiz items, labs and missions are tagged against `curriculum/competency_model.json`. The tags feed the server's
+capability estimates.
+
+- **Quiz item:** `competency_id` and `depth` (Aware, Explain, Apply or Analyse) go together. `lesson_id` is
+  required in modules that have a lesson design (Track A, `curriculum/track_a_lessons.json`) and optional
+  elsewhere.
+- **Lab or mission:** a `competencies` list of `{ "id", "depth" }`.
+- **`tag_status`:**
+  - `proposed-unreviewed` means a drafted tag that nobody has reviewed.
+  - `reviewed` means a person has checked it.
+  - `no-competency` marks an item that tests course structure rather than a skill. It carries no tags.
+  - Track A sets the status once for the whole file (`tagging_status`).
+- **Commands:**
+  - `npm run content:check` (in `frontend/`) validates the tags.
+  - `npm run content:coverage -- --write` regenerates `docs/curriculum/COMPETENCY_COVERAGE.md`.
+- **Getting tags into a database:**
+  - The backend copies new tags into an existing database on start-up (`seed_quizzes.sync_tags`).
+  - Tags never clear a value already set, and syncing never changes prompts or answer keys.
+
+Every tag drafted in October 2026 is `proposed-unreviewed` and needs review by a subject expert.
+
 ## Still open (flagging honestly)
 - [ ] **`badges/badges_list.md` should be deleted** — it only covered the now-removed 3-module set (badge names like "Crypto Explorer" tied to `module_1_basics`). Fully superseded by `master_badges_and_certificates.md`.
 - [ ] **Backend stack confirmation** — built in Node/Express/MongoDB; port to FastAPI if the team consolidates there (see `backend/README.md` §8).

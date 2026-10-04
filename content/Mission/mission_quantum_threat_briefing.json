@@ -1,5 +1,7 @@
 {
   "mission_id": "mission_quantum_threat_briefing",
+  "competencies": [{ "id": "PQC.1", "depth": "Apply" }, { "id": "SEC.2", "depth": "Apply" }],
+  "tag_status": "proposed-unreviewed",
   "title": "The Quantum Threat Briefing",
   "type": "decision_scenario",
   "linked_module_id": "track_b_b8_quantum_threats",

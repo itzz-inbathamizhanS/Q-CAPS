@@ -1,5 +1,7 @@
 {
   "mission_id": "mission_incident_ransomware_monday",
+  "competencies": [{ "id": "SEC.3", "depth": "Apply" }],
+  "tag_status": "proposed-unreviewed",
   "title": "Ransomware Monday",
   "type": "decision_scenario",
   "linked_module_id": "track_a_a4_cybersecurity_foundations",

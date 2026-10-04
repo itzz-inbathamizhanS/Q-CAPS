@@ -1,5 +1,7 @@
 {
   "mission_id": "mission_leaked_signing_key",
+  "competencies": [{ "id": "CRYPTO.4", "depth": "Apply" }, { "id": "CRYPTO.5", "depth": "Apply" }],
+  "tag_status": "proposed-unreviewed",
   "title": "The Leaked Signing Key",
   "type": "decision_scenario",
   "linked_module_id": "track_a_a5_cryptography_foundations",

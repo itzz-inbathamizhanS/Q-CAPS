@@ -1,5 +1,7 @@
 {
   "mission_id": "mission_crypto_incident_commander",
+  "competencies": [{ "id": "SEC.3", "depth": "Apply" }, { "id": "PQC.6", "depth": "Apply" }],
+  "tag_status": "proposed-unreviewed",
   "title": "The Cryptographic Incident",
   "type": "decision_scenario",
   "linked_module_id": "track_d_e6_governance",
