@@ -1,0 +1,986 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B05",
+      "title": "Becoming Quantum Safe: Protect Your Business and Mitigate Risks with Post-Quantum Cryptography and Crypto-Agility",
+      "authors": "Jai Singh Arun, Ray Harishankar, Walid Rjaibi",
+      "edition": "1st edition",
+      "year": 2025,
+      "publisher": "Wiley"
+    },
+    {
+      "id": "B85",
+      "title": "IR 8547 (initial public draft), Transition to Post-Quantum Cryptography Standards",
+      "authors": "Dustin Moody, Ray Perlner, Andrew Regenscheid, Angela Robinson, David Cooper",
+      "edition": "November 2024, accessed 2026-10-04",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B26",
+      "title": "SP 800-30 Rev. 1, Guide for Conducting Risk Assessments",
+      "authors": "Joint Task Force Transformation Initiative",
+      "edition": "September 2012, accessed 2026-10-03",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B25",
+      "title": "SP 800-61 Rev. 3, Incident Response Recommendations and Considerations for Cybersecurity Risk Management: A CSF 2.0 Community Profile",
+      "authors": "Alexander Nelson, Sanjay Rekhi, Murugiah Souppaya, Karen Scarfone",
+      "edition": "April 2025 (supersedes Rev. 2, 2012), accessed 2026-10-03",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B97",
+      "title": "NIST SP 800-57 Part 1 Revision 5: Recommendation for Key Management: Part 1 - General",
+      "authors": "Elaine Barker",
+      "edition": "Revision 5",
+      "year": 2020,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B99",
+      "title": "CycloneDX Bill of Materials specification, version 1.6 (JSON schema with the Cryptography Bill of Materials extension)",
+      "authors": "OWASP CycloneDX",
+      "edition": "1.6",
+      "year": 2024,
+      "publisher": "OWASP Foundation"
+    },
+    {
+      "id": "B73",
+      "title": "FIPS 140-3, Security Requirements for Cryptographic Modules",
+      "authors": "NIST",
+      "edition": "final, accessed 2026-10-04",
+      "publisher": "NIST"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_d_e6_governance",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "6.1 Quantum-Readiness Policy",
+          "summary": "A machine-readable policy whose objectives are validated for owner, due date, measurable KPI and review cadence, so that an aspiration like 'be crypto-agile' is rejected until it is testable.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **quantum-readiness policy** turns the programme of E1 to E5 into an institutional commitment: objectives, owners, dates, measures and a review cycle, approved by someone with authority. Its common failure is vagueness. A sentence such as \"be crypto-agile\" cannot be owned, scheduled or audited. The test of a policy objective is that it has an **owner** (a named role), a **due date**, a **measurable KPI with a target** and a **review cadence**.\n\nThe listing encodes a small policy as data (four objectives, DEMO DATA) and validates every objective against those four tests, with a fixed date of 15 January 2027 so that the result is reproducible. It then checks the dates against the proposed 2030 deprecation in the NIST IR 8547 draft. Governance is mostly decisions, not computation, so the listings turn each governance artefact into something **testable**: a policy validator, a policy-as-code evaluator with dated algorithm statuses, ownership and escalation checks, evidence-based vendor scoring, gated procurement, a control-to-evidence map, a design-review checklist, a downtime simulation and an incident query. Every organisation, person, vendor, bid, control ID and number is **DEMO DATA / SIMULATION**; control IDs are invented and are **not** citations of any regulation. Nothing here is legal or compliance advice."
+            },
+            {
+              "type": "code",
+              "id": "c-policy",
+              "language": "python",
+              "code": "import datetime, json\n# A quantum-readiness policy as a machine-readable document with a validator. DEMO DATA: invented organisation and objectives.\nPOLICY = {\n    \"title\": \"Quantum-readiness policy\", \"version\": \"1.0\", \"approved_by\": \"CISO\", \"next_review\": \"2027-09-30\",\n    \"objectives\": [\n        {\"id\": \"O1\", \"statement\": \"Maintain a cryptographic inventory covering all internet-facing and tier 1 assets\", \"owner\": \"Head of Security Architecture\", \"due\": \"2027-03-31\", \"kpi\": \"inventory coverage of tier 1 assets\", \"target\": 1.0, \"review\": \"quarterly\"},\n        {\"id\": \"O2\", \"statement\": \"Migrate key establishment of tier 1 assets to hybrid post-quantum\", \"owner\": \"Platform lead\", \"due\": \"2028-12-31\", \"kpi\": \"share of tier 1 assets with hybrid key establishment\", \"target\": 1.0, \"review\": \"quarterly\"},\n        {\"id\": \"O3\", \"statement\": \"Be crypto-agile\", \"owner\": None, \"due\": None, \"kpi\": None, \"target\": None, \"review\": None},\n        {\"id\": \"O4\", \"statement\": \"Retire classical-only key exchange on internet-facing services\", \"owner\": \"Network lead\", \"due\": \"2031-06-30\", \"kpi\": \"share of classical-only connections\", \"target\": 0.01, \"review\": \"semi-annual\"},\n    ],\n}\nTODAY = datetime.date(2027, 1, 15)          # fixed so that the output is reproducible\nREVIEW = {\"quarterly\", \"semi-annual\", \"annual\"}\ndef validate(policy):\n    problems = []\n    for o in policy[\"objectives\"]:\n        w = []\n        if not o[\"owner\"]: w.append(\"no owner\")\n        if not o[\"due\"]: w.append(\"no due date\")\n        elif datetime.date.fromisoformat(o[\"due\"]) < TODAY: w.append(\"due date already passed\")\n        if not o[\"kpi\"] or o[\"target\"] is None: w.append(\"not measurable (no KPI or target)\")\n        if o[\"review\"] not in REVIEW: w.append(\"no review cadence\")\n        problems.append((o[\"id\"], w))\n    return problems\nprint(f\"policy '{POLICY['title']}' v{POLICY['version']}, approved by {POLICY['approved_by']}, next review {POLICY['next_review']}\")\nprint(f\"{'id':<4} {'owner':<30} {'due':<11} {'review':<12} result\")\nfor (oid, w), o in zip(validate(POLICY), POLICY[\"objectives\"]):\n    print(f\"{oid:<4} {str(o['owner']):<30} {str(o['due']):<11} {str(o['review']):<12} {'OK' if not w else 'REJECTED: ' + '; '.join(w)}\")\nok = [o for o in POLICY[\"objectives\"] if not dict(validate(POLICY))[o[\"id\"]]]\nprint()\nprint(f\"{len(ok)} of {len(POLICY['objectives'])} objectives are enforceable as written\")\nprint(\"O3 'Be crypto-agile' fails every test: nobody owns it, nothing dates it, nothing measures it, and nobody reviews it; rewritten it could read: 'All new systems use the approved crypto API (E4.2); share of cryptographic call sites behind the boundary reaches 90% by 2028-06-30; owner: Software architecture lead; reviewed semi-annually'\")\nprint()\nprint(\"consistency of dates against the programme (dates from the lesson plan; policy dates quoted in E1.1 are drafts):\")\nfor o in ok:\n    d = datetime.date.fromisoformat(o[\"due\"])\n    print(f\"  {o['id']} due {o['due']}: {'before the proposed 2030 deprecation of 112-bit RSA/ECDSA (IR 8547 draft)' if d.year < 2030 else 'after 2030: confirm that the exposure until then is accepted by the risk owner'}\")\nprint(\"a policy is useful when each sentence can be tested: an objective without owner, date and measure is an aspiration, not a control\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-policy",
+              "language": "text",
+              "code": "policy 'Quantum-readiness policy' v1.0, approved by CISO, next review 2027-09-30\nid   owner                          due         review       result\nO1   Head of Security Architecture  2027-03-31  quarterly    OK\nO2   Platform lead                  2028-12-31  quarterly    OK\nO3   None                           None        None         REJECTED: no owner; no due date; not measurable (no KPI or target); no review cadence\nO4   Network lead                   2031-06-30  semi-annual  OK\n\n3 of 4 objectives are enforceable as written\nO3 'Be crypto-agile' fails every test: nobody owns it, nothing dates it, nothing measures it, and nobody reviews it; rewritten it could read: 'All new systems use the approved crypto API (E4.2); share of cryptographic call sites behind the boundary reaches 90% by 2028-06-30; owner: Software architecture lead; reviewed semi-annually'\n\nconsistency of dates against the programme (dates from the lesson plan; policy dates quoted in E1.1 are drafts):\n  O1 due 2027-03-31: before the proposed 2030 deprecation of 112-bit RSA/ECDSA (IR 8547 draft)\n  O2 due 2028-12-31: before the proposed 2030 deprecation of 112-bit RSA/ECDSA (IR 8547 draft)\n  O4 due 2031-06-30: after 2030: confirm that the exposure until then is accepted by the risk owner\na policy is useful when each sentence can be tested: an objective without owner, date and measure is an aspiration, not a control",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Three of the four objectives are **enforceable as written**: the inventory coverage of tier 1 assets (due 2027-03-31), hybrid key establishment for tier 1 assets (due 2028-12-31) and retirement of classical-only key exchange on internet-facing services (due 2031-06-30, target below 1% of connections). O3, \"Be crypto-agile\", is **rejected on all four counts** (no owner, no due date, not measurable, no review cadence); the listing shows a testable rewrite: all new systems use the approved crypto API, the share of cryptographic call sites behind the boundary reaches 90% by 30 June 2028, owned by the software architecture lead and reviewed semi-annually. The date check notes that O4 falls after 2030, so the exposure until then must be accepted explicitly by the risk owner.\n\n**Practical rules.** Write objectives so that a script can check them (the listing is that script); tie each to a KPI that the programme already produces (inventory coverage from E2, the agility metric from E4.7, classical-connection share from E5.12); approve the policy at the level that can resource it; and review it on a fixed cycle because standards and dates move. **Common mistake:** a policy that restates good intentions and is never tested against evidence."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which four properties make a policy objective testable?",
+              "options": [
+                "Owner, due date, measurable KPI with target, and review cadence",
+                "Length, tone, font and title",
+                "Budget, vendor, location and colour"
+              ],
+              "correct_index": 0,
+              "explanation": "O3 failed all four."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does O4 get a note about exposure until 2031?",
+              "options": [
+                "Its due date is after the proposed 2030 deprecation, so the risk owner must accept the interim exposure",
+                "Because dates are forbidden",
+                "It is invalid"
+              ],
+              "correct_index": 0,
+              "explanation": "A policy date can lag a policy-relevant external date."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Where should the KPIs of a quantum-readiness policy come from?",
+              "options": [
+                "From evidence the programme already produces, such as inventory coverage",
+                "From a yearly survey only",
+                "From vendor brochures"
+              ],
+              "correct_index": 0,
+              "explanation": "Measurable and routinely produced."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (risk management framework, governance and policy enforcement, regulatory compliance in the quantum-safe landscape) and Chapter 8 (sustaining crypto-agility)"
+            },
+            {
+              "book": "B85",
+              "locator": "NIST IR 8547 initial public draft: Section 4 (the proposed deprecation after 2030 and disallowance after 2035)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The policy, objectives and dates are DEMO DATA. IR 8547 is an initial public draft and its dates may have changed in later versions."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "6.2 Cryptographic Policy",
+          "summary": "Algorithm statuses with effective dates evaluated as code against service configurations, showing the findings on three dates and treating unknown algorithms as blocking.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **cryptographic policy** is the operational layer under the readiness policy: which algorithms, key sizes and configurations are **approved**, **deprecated** or **disallowed**, and from when. Written as a document it is read once; written as **code** it can be enforced in the build pipeline, at deployment and against discovered inventory records (E2). Two design points matter: statuses carry **effective dates** (so the same configuration can be approved today and a finding in 2031), and an algorithm **not in the catalogue** is a finding, not a pass.\n\nThe listing defines a status table for the organisation (DEMO): RSA-1024 and SHA-1 disallowed, RSA-2048, ECDSA-P256 and ECDH-P256 approved until 2031 (deprecated) and 2036 (disallowed) following the dates proposed for RSA and ECDSA in the NIST IR 8547 draft, and the hybrid ML-KEM, ML-DSA-65 and AES-256-GCM approved. It evaluates five service configurations on three dates. Governance is mostly decisions, not computation, so the listings turn each governance artefact into something **testable**: a policy validator, a policy-as-code evaluator with dated algorithm statuses, ownership and escalation checks, evidence-based vendor scoring, gated procurement, a control-to-evidence map, a design-review checklist, a downtime simulation and an incident query. Every organisation, person, vendor, bid, control ID and number is **DEMO DATA / SIMULATION**; control IDs are invented and are **not** citations of any regulation. Nothing here is legal or compliance advice."
+            },
+            {
+              "type": "code",
+              "id": "c-crypto-policy",
+              "language": "python",
+              "code": "import datetime\n# Cryptographic policy as code: algorithm statuses with dates, evaluated against service configurations. The statuses are an ORGANISATION's policy for the lesson (DEMO); dates for RSA and ECDSA follow the NIST IR 8547 initial public draft (deprecated after 2030, disallowed after 2035).\nSTATUS = [   # algorithm, status from, status\n    (\"RSA-1024\", datetime.date(2000, 1, 1), \"disallowed\"),\n    (\"SHA-1\", datetime.date(2000, 1, 1), \"disallowed\"),\n    (\"RSA-2048\", datetime.date(2000, 1, 1), \"approved\"), (\"RSA-2048\", datetime.date(2031, 1, 1), \"deprecated\"), (\"RSA-2048\", datetime.date(2036, 1, 1), \"disallowed\"),\n    (\"ECDSA-P256\", datetime.date(2000, 1, 1), \"approved\"), (\"ECDSA-P256\", datetime.date(2031, 1, 1), \"deprecated\"), (\"ECDSA-P256\", datetime.date(2036, 1, 1), \"disallowed\"),\n    (\"ECDH-P256\", datetime.date(2000, 1, 1), \"approved\"), (\"ECDH-P256\", datetime.date(2031, 1, 1), \"deprecated\"), (\"ECDH-P256\", datetime.date(2036, 1, 1), \"disallowed\"),\n    (\"X25519+ML-KEM-768\", datetime.date(2000, 1, 1), \"approved\"),\n    (\"ML-DSA-65\", datetime.date(2000, 1, 1), \"approved\"),\n    (\"AES-256-GCM\", datetime.date(2000, 1, 1), \"approved\"),\n]\ndef status_on(alg, day):\n    s = [(d, st) for a, d, st in STATUS if a == alg and d <= day]\n    return max(s)[1] if s else \"unknown (not in the catalogue)\"\nSERVICES = {\n    \"customer portal\":  {\"key_exchange\": \"ECDH-P256\", \"signature\": \"RSA-2048\", \"cipher\": \"AES-256-GCM\"},\n    \"mobile API\":       {\"key_exchange\": \"X25519+ML-KEM-768\", \"signature\": \"ECDSA-P256\", \"cipher\": \"AES-256-GCM\"},\n    \"legacy billing\":   {\"key_exchange\": \"ECDH-P256\", \"signature\": \"RSA-1024\", \"cipher\": \"AES-256-GCM\"},\n    \"document signing\": {\"key_exchange\": \"X25519+ML-KEM-768\", \"signature\": \"ML-DSA-65\", \"cipher\": \"AES-256-GCM\"},\n    \"partner file feed\": {\"key_exchange\": \"ECDH-P256\", \"signature\": \"RSA-2048\", \"cipher\": \"3DES\"},\n}\ndef evaluate(day):\n    out = []\n    for svc, cfg in SERVICES.items():\n        for use, alg in cfg.items():\n            st = status_on(alg, day)\n            if st not in (\"approved\",): out.append((svc, use, alg, st))\n    return out\nfor day in (datetime.date(2027, 1, 15), datetime.date(2031, 6, 1), datetime.date(2036, 6, 1)):\n    v = evaluate(day)\n    print(f\"== evaluation on {day.isoformat()}: {len(v)} findings\")\n    for svc, use, alg, st in v:\n        print(f\"   {svc:<18} {use:<13} {alg:<18} {st}\")\nprint()\nprint(\"how the policy is enforced: the same check runs in CI on configuration files, at deployment, and against discovered inventory records (E2); a finding of 'unknown (not in the catalogue)' blocks the change until the algorithm is reviewed and added\")\nprint(\"the future dates are not predictions of what will break, they are the dates on which the organisation's own policy turns today's approved algorithm into a finding: the output is the migration backlog for each year\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-crypto-policy",
+              "language": "text",
+              "code": "== evaluation on 2027-01-15: 2 findings\n   legacy billing     signature     RSA-1024           disallowed\n   partner file feed  cipher        3DES               unknown (not in the catalogue)\n== evaluation on 2031-06-01: 8 findings\n   customer portal    key_exchange  ECDH-P256          deprecated\n   customer portal    signature     RSA-2048           deprecated\n   mobile API         signature     ECDSA-P256         deprecated\n   legacy billing     key_exchange  ECDH-P256          deprecated\n   legacy billing     signature     RSA-1024           disallowed\n   partner file feed  key_exchange  ECDH-P256          deprecated\n   partner file feed  signature     RSA-2048           deprecated\n   partner file feed  cipher        3DES               unknown (not in the catalogue)\n== evaluation on 2036-06-01: 8 findings\n   customer portal    key_exchange  ECDH-P256          disallowed\n   customer portal    signature     RSA-2048           disallowed\n   mobile API         signature     ECDSA-P256         disallowed\n   legacy billing     key_exchange  ECDH-P256          disallowed\n   legacy billing     signature     RSA-1024           disallowed\n   partner file feed  key_exchange  ECDH-P256          disallowed\n   partner file feed  signature     RSA-2048           disallowed\n   partner file feed  cipher        3DES               unknown (not in the catalogue)\n\nhow the policy is enforced: the same check runs in CI on configuration files, at deployment, and against discovered inventory records (E2); a finding of 'unknown (not in the catalogue)' blocks the change until the algorithm is reviewed and added\nthe future dates are not predictions of what will break, they are the dates on which the organisation's own policy turns today's approved algorithm into a finding: the output is the migration backlog for each year",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**On 15 January 2027** there are two findings: legacy billing signs with the disallowed RSA-1024, and the partner file feed uses 3DES, which is **not in the catalogue** and therefore blocks. **On 1 June 2031** there are eight: every use of ECDH-P256, RSA-2048 and ECDSA-P256 has become *deprecated* (customer portal, mobile API signature, billing, partner feed), while RSA-1024 and 3DES remain. **On 1 June 2036** the same uses are *disallowed*. The services that already use the hybrid key exchange and ML-DSA-65 (document signing) never appear.\n\n**Reading the future columns.** They are not predictions of what will break. They are the dates on which the organisation's *own* policy turns an approved algorithm into a finding, which is the **migration backlog for each year** and the argument for acting before the dates. The same function runs in CI on configuration files and against the inventory; an unknown algorithm blocks the change until it is reviewed and added. **Common mistake:** a static allow-list with no dates, which says nothing about the next five years."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How does the policy engine treat an algorithm missing from the catalogue?",
+              "options": [
+                "As a finding that blocks the change until reviewed",
+                "As approved",
+                "As deprecated"
+              ],
+              "correct_index": 0,
+              "explanation": "3DES was reported as unknown."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why give algorithm statuses effective dates?",
+              "options": [
+                "So today's approved algorithm can become a dated finding and generate the backlog",
+                "To make files larger",
+                "Dates are required by TLS"
+              ],
+              "correct_index": 0,
+              "explanation": "Eight findings on 2031-06-01."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Where should the same policy check run?",
+              "options": [
+                "In CI, at deployment and against discovered inventory",
+                "Only in an annual audit",
+                "Only on paper"
+              ],
+              "correct_index": 0,
+              "explanation": "One policy, enforced at every stage."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (risk management framework, governance and policy enforcement, regulatory compliance in the quantum-safe landscape) and Chapter 8 (sustaining crypto-agility)"
+            },
+            {
+              "book": "B85",
+              "locator": "NIST IR 8547 initial public draft: Table 2 (ECDSA and RSA deprecation after 2030, disallowance after 2035)"
+            },
+            {
+              "book": "B97",
+              "locator": "NIST SP 800-57 Part 1 Rev. 5: algorithm and key-length transitions and the role of policy"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statuses and dates are the lesson organisation's policy (DEMO). The 2031 and 2036 effective dates are the day after the IR 8547 draft's 2030 and 2035 milestones and follow a draft that may have changed. 3DES and RSA-1024 statuses reflect common current practice and were not re-checked against a specific standard."
+          }
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "6.3 Risk Ownership",
+          "summary": "A risk register with automatic checks for missing owners, inactive owners and overdue items, escalation rules and a RACI.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Without a **named owner**, a well-designed risk model and migration plan tend to stall: nobody is accountable for pushing the work. Ownership has three failure modes that can be **checked automatically**: no owner at all, an owner who has **left or changed role**, and **overdue** actions. A **RACI** matrix makes the roles explicit: **R**esponsible (does the work), **A**ccountable (answers for the outcome, exactly one person), **C**onsulted, **I**nformed.\n\nThe listing holds a small register (DEMO DATA: people, assets, five risks) with a fixed check date of 1 June 2027 and applies the rules: every risk needs an active owner and a due date, overdue items are measured in days, and a written **escalation rule** decides who is told (an issue older than 30 days goes to the CISO; no owner or an inactive owner goes to the CISO immediately). Governance is mostly decisions, not computation, so the listings turn each governance artefact into something **testable**: a policy validator, a policy-as-code evaluator with dated algorithm statuses, ownership and escalation checks, evidence-based vendor scoring, gated procurement, a control-to-evidence map, a design-review checklist, a downtime simulation and an incident query. Every organisation, person, vendor, bid, control ID and number is **DEMO DATA / SIMULATION**; control IDs are invented and are **not** citations of any regulation. Nothing here is legal or compliance advice."
+            },
+            {
+              "type": "code",
+              "id": "c-ownership",
+              "language": "python",
+              "code": "import datetime\n# Risk ownership register with automatic checks. DEMO DATA: invented people, assets and risks; \"today\" is fixed for reproducibility.\nTODAY = datetime.date(2027, 6, 1)\nSTAFF = {\"alice\": \"active\", \"bob\": \"active\", \"carol\": \"left the company 2027-04-30\", \"dan\": \"active\"}\nASSETS = {\"customer portal\": \"alice\", \"claims upload\": \"bob\", \"legacy ERP\": None, \"HR archive\": \"carol\", \"internal PKI\": \"dan\", \"HSM\": \"dan\"}\nRISKS = [\n    {\"id\": \"R1\", \"text\": \"HR archive wrapped under RSA key, 40-year secrecy requirement\", \"asset\": \"HR archive\", \"owner\": \"carol\", \"due\": \"2027-05-01\", \"status\": \"open\"},\n    {\"id\": \"R2\", \"text\": \"Claims upload uses RSA key transport\", \"asset\": \"claims upload\", \"owner\": \"bob\", \"due\": \"2027-09-30\", \"status\": \"open\"},\n    {\"id\": \"R3\", \"text\": \"Legacy ERP: algorithms unknown\", \"asset\": \"legacy ERP\", \"owner\": None, \"due\": None, \"status\": \"open\"},\n    {\"id\": \"R4\", \"text\": \"HSM firmware cannot sign with ML-DSA\", \"asset\": \"HSM\", \"owner\": \"dan\", \"due\": \"2027-05-15\", \"status\": \"open\"},\n    {\"id\": \"R5\", \"text\": \"PKI root migration plan\", \"asset\": \"internal PKI\", \"owner\": \"dan\", \"due\": \"2027-12-31\", \"status\": \"in progress\"},\n]\ndef check_risk(r):\n    issues = []\n    if r[\"owner\"] is None: issues.append(\"NO OWNER\")\n    elif STAFF.get(r[\"owner\"]) != \"active\": issues.append(f\"owner {r['owner']} is not active ({STAFF.get(r['owner'])})\")\n    if r[\"due\"] is None: issues.append(\"no due date\")\n    elif r[\"status\"] != \"closed\" and datetime.date.fromisoformat(r[\"due\"]) < TODAY: issues.append(f\"OVERDUE by {(TODAY - datetime.date.fromisoformat(r['due'])).days} days\")\n    return issues\nprint(f\"date of the check: {TODAY}\")\nprint(f\"{'risk':<4} {'asset':<16} {'owner':<7} {'due':<11} {'status':<12} findings\")\nescalate = []\nfor r in RISKS:\n    f = check_risk(r)\n    print(f\"{r['id']:<4} {r['asset']:<16} {str(r['owner']):<7} {str(r['due']):<11} {r['status']:<12} {'; '.join(f) or 'ok'}\")\n    if f: escalate.append((r[\"id\"], f))\nprint()\nprint(\"assets without an accountable active owner:\", [a for a, o in ASSETS.items() if o is None or STAFF.get(o) != \"active\"])\nprint()\nprint(\"escalation rule applied (written policy): an issue older than 30 days goes to the CISO; no owner or an inactive owner goes to the CISO immediately; a risk with an issue and tier 1 data goes to the risk committee\")\nfor rid, f in escalate:\n    days = max([int(x.split(\"by \")[1].split(\" \")[0]) for x in f if x.startswith(\"OVERDUE\")] + [0])\n    target = \"CISO immediately\" if any((\"NO OWNER\" in x or \"not active\" in x) for x in f) else \"CISO (overdue more than 30 days)\" if days > 30 else f\"owner reminded, no escalation yet ({days} days overdue)\"\n    print(f\"  {rid}: {target}\")\nprint()\nprint(\"a RACI is a table of who is Responsible, Accountable, Consulted and Informed. For this register: Accountable = the risk owner named above (one person, never a team alias); Responsible = the team doing the work; Consulted = security architecture; Informed = the risk committee. A role with two accountable names has none\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-ownership",
+              "language": "text",
+              "code": "date of the check: 2027-06-01\nrisk asset            owner   due         status       findings\nR1   HR archive       carol   2027-05-01  open         owner carol is not active (left the company 2027-04-30); OVERDUE by 31 days\nR2   claims upload    bob     2027-09-30  open         ok\nR3   legacy ERP       None    None        open         NO OWNER; no due date\nR4   HSM              dan     2027-05-15  open         OVERDUE by 17 days\nR5   internal PKI     dan     2027-12-31  in progress  ok\n\nassets without an accountable active owner: ['legacy ERP', 'HR archive']\n\nescalation rule applied (written policy): an issue older than 30 days goes to the CISO; no owner or an inactive owner goes to the CISO immediately; a risk with an issue and tier 1 data goes to the risk committee\n  R1: CISO immediately\n  R3: CISO immediately\n  R4: owner reminded, no escalation yet (17 days overdue)\n\na RACI is a table of who is Responsible, Accountable, Consulted and Informed. For this register: Accountable = the risk owner named above (one person, never a team alias); Responsible = the team doing the work; Consulted = security architecture; Informed = the risk committee. A role with two accountable names has none",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The checks find three problems among five risks. **R1** (HR archive wrapped under an RSA key) belongs to carol, who **left the company on 30 April 2027**, and is overdue by 31 days: **CISO immediately**. **R3** (legacy ERP, algorithms unknown) has **no owner and no due date**: CISO immediately. **R4** (HSM firmware cannot sign with ML-DSA) is overdue by 17 days: the owner is reminded, with no escalation yet because the rule's 30 days have not elapsed. R2 and R5 are fine. Two assets, the legacy ERP and the HR archive, have no accountable **active** owner.\n\n**Practice.** Link the register to the HR system so that a leaver automatically reassigns or flags their risks; keep **one** accountable person per risk, never a team alias; and treat \"no owner\" as a high-severity finding of its own, since an ownerless asset is also one whose classification and discovery will not happen (E5.3). **Common mistake:** a RACI with two accountable names, which means nobody is."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why was R1 escalated immediately?",
+              "options": [
+                "Its owner left the company, so nobody active is accountable",
+                "It is the biggest risk",
+                "It is cheap to fix"
+              ],
+              "correct_index": 0,
+              "explanation": "The owner is inactive."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "How many Accountable persons may a risk have in a RACI?",
+              "options": [
+                "Exactly one",
+                "Two",
+                "A whole team"
+              ],
+              "correct_index": 0,
+              "explanation": "Two accountable names mean none."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why did R4 not escalate although it is overdue?",
+              "options": [
+                "The written rule escalates only after 30 days, and it is 17 days overdue",
+                "Escalation is forbidden",
+                "It has no owner"
+              ],
+              "correct_index": 0,
+              "explanation": "The owner is reminded."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (risk management framework, governance and policy enforcement, regulatory compliance in the quantum-safe landscape) and Chapter 8 (sustaining crypto-agility)"
+            },
+            {
+              "book": "B26",
+              "locator": "NIST SP 800-30 Rev. 1: Section 3.4 (maintaining the risk assessment) and the assignment of responsibility for risk response"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The register and people are DEMO DATA. The 30-day escalation threshold is an example. The SP 800-30 section was cited for the general idea of maintaining the assessment."
+          }
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "6.4 Vendor Requirements",
+          "summary": "Vendor evidence scored by document, statement or silence against a requirement set by data tier, with the unanswered questions turned into contract clauses.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "E1.6 assessed third-party exposure; governance turns that into **requirements**. The mechanism is: **tier** each vendor by the data it holds, ask a standard set of questions (algorithm inventory or CBOM, a dated PQC roadmap, the intended standards, a notice period for cryptographic changes, an audit or attestation right), score the answers by the **level of evidence**, set a **minimum evidence score per tier**, and attach **contract clauses** to the gaps. The evidence rule is the key: a document on file counts fully, a verbal or marketing statement half, no answer nothing, so a vendor cannot pass by not answering.\n\nThe listing applies this to five invented vendors (DEMO DATA) with minimum scores of 0.8, 0.5 and 0.2 for tiers 1, 2 and 3, prints the decision per vendor and the unanswered questions, and lists template clauses by tier (for legal review, not legal advice). Governance is mostly decisions, not computation, so the listings turn each governance artefact into something **testable**: a policy validator, a policy-as-code evaluator with dated algorithm statuses, ownership and escalation checks, evidence-based vendor scoring, gated procurement, a control-to-evidence map, a design-review checklist, a downtime simulation and an incident query. Every organisation, person, vendor, bid, control ID and number is **DEMO DATA / SIMULATION**; control IDs are invented and are **not** citations of any regulation. Nothing here is legal or compliance advice."
+            },
+            {
+              "type": "code",
+              "id": "c-vendor-requirements",
+              "language": "python",
+              "code": "# Vendor requirements: tier the vendor by the data they hold, score their written answers by the level of evidence, and derive the contract actions. DEMO DATA: invented vendors and answers.\nQUESTIONS = [\"algorithm inventory (CBOM) provided\", \"written PQC roadmap with dates\", \"NIST-standard algorithms planned (FIPS 203, 204, 205)\", \"migration notice period in contract\", \"audit or attestation right\"]\nEVIDENCE = {\"document\": 1.0, \"statement\": 0.5, \"none\": 0.0}      # a document on file counts fully; a verbal or marketing statement half; no answer nothing\nVENDORS = [\n    (\"cloud provider\", \"all customer data\", 3, [\"document\", \"document\", \"document\", \"document\", \"statement\"]),\n    (\"payment processor\", \"card transactions\", 3, [\"statement\", \"statement\", \"statement\", \"none\", \"none\"]),\n    (\"HR SaaS\", \"employee records\", 3, [\"none\", \"none\", \"none\", \"none\", \"none\"]),\n    (\"marketing platform\", \"contact emails\", 2, [\"none\", \"statement\", \"none\", \"none\", \"none\"]),\n    (\"facilities booking\", \"room bookings\", 1, [\"none\", \"none\", \"none\", \"none\", \"none\"]),\n]\nREQUIRED = {3: 0.8, 2: 0.5, 1: 0.2}       # minimum evidence score by data tier: 3 high, 2 moderate, 1 low\ndef tier_name(t): return {3: \"tier 1\", 2: \"tier 2\", 1: \"tier 3\"}[t]\nprint(f\"{'vendor':<20} {'holds':<18} {'tier':<7} {'evidence':>8} {'required':>9}  decision\")\nfor name, holds, tier, answers in VENDORS:\n    score = sum(EVIDENCE[a] for a in answers) / len(answers)\n    ok = score >= REQUIRED[tier]\n    gap = [q for q, a in zip(QUESTIONS, answers) if a == \"none\"]\n    action = \"meets the requirement\" if ok else (\"remediation plan with date; contract clause; exit review\" if tier == 3 else \"request evidence within 90 days\")\n    print(f\"{name:<20} {holds:<18} {tier_name(tier):<7} {score:>8.2f} {REQUIRED[tier]:>9.2f}  {action}\")\nprint()\nprint(\"unanswered questions per vendor (what the contract must obtain):\")\nfor name, holds, tier, answers in VENDORS:\n    gaps = [q for q, a in zip(QUESTIONS, answers) if a == \"none\"]\n    print(f\"  {name:<20} {', '.join(gaps) if gaps else '-'}\")\nprint()\nprint(\"clauses by tier (templates for legal review, not legal advice):\")\nCLAUSES = {\"tier 1\": [\"supplier provides a cryptographic bill of materials and updates it on change\", \"supplier publishes a dated migration roadmap to NIST-standard post-quantum algorithms and notifies at least 12 months before breaking changes\",\n                      \"customer may audit or request attestation annually\", \"exit right without penalty if the roadmap is missed by more than 6 months\"],\n           \"tier 2\": [\"supplier states algorithms in use on request within 30 days\", \"notice of 6 months before breaking cryptographic changes\"],\n           \"tier 3\": [\"no specific clause; revisit at renewal\"]}\nfor t, cs in CLAUSES.items():\n    print(f\"  {t}:\")\n    for c in cs: print(f\"     - {c}\")\nprint(\"the evidence rule matters: 'unknown' scores 0, so a vendor cannot pass by not answering, and a statement counts half until it is backed by a document\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-vendor-requirements",
+              "language": "text",
+              "code": "vendor               holds              tier    evidence  required  decision\ncloud provider       all customer data  tier 1      0.90      0.80  meets the requirement\npayment processor    card transactions  tier 1      0.30      0.80  remediation plan with date; contract clause; exit review\nHR SaaS              employee records   tier 1      0.00      0.80  remediation plan with date; contract clause; exit review\nmarketing platform   contact emails     tier 2      0.10      0.50  request evidence within 90 days\nfacilities booking   room bookings      tier 3      0.00      0.20  request evidence within 90 days\n\nunanswered questions per vendor (what the contract must obtain):\n  cloud provider       -\n  payment processor    migration notice period in contract, audit or attestation right\n  HR SaaS              algorithm inventory (CBOM) provided, written PQC roadmap with dates, NIST-standard algorithms planned (FIPS 203, 204, 205), migration notice period in contract, audit or attestation right\n  marketing platform   algorithm inventory (CBOM) provided, NIST-standard algorithms planned (FIPS 203, 204, 205), migration notice period in contract, audit or attestation right\n  facilities booking   algorithm inventory (CBOM) provided, written PQC roadmap with dates, NIST-standard algorithms planned (FIPS 203, 204, 205), migration notice period in contract, audit or attestation right\n\nclauses by tier (templates for legal review, not legal advice):\n  tier 1:\n     - supplier provides a cryptographic bill of materials and updates it on change\n     - supplier publishes a dated migration roadmap to NIST-standard post-quantum algorithms and notifies at least 12 months before breaking changes\n     - customer may audit or request attestation annually\n     - exit right without penalty if the roadmap is missed by more than 6 months\n  tier 2:\n     - supplier states algorithms in use on request within 30 days\n     - notice of 6 months before breaking cryptographic changes\n  tier 3:\n     - no specific clause; revisit at renewal\nthe evidence rule matters: 'unknown' scores 0, so a vendor cannot pass by not answering, and a statement counts half until it is backed by a document",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The **cloud provider** scores 0.90 against the required 0.80 and meets the requirement. The **payment processor** scores 0.30 (statements only, and no notice period or audit right): below 0.80, so it needs a remediation plan with a date, a contract clause and an exit review. The **HR SaaS** scores **0.00** because it answered nothing, and fails in the same way, although it holds employee records. The marketing platform (0.10 against 0.50) and the facilities app (0.00 against 0.20) are asked for evidence within 90 days. The unanswered-question lists tell the contract team exactly what to obtain.\n\n**Clauses.** For tier 1 vendors: a cryptographic bill of materials updated on change, a dated roadmap to NIST-standard post-quantum algorithms with at least 12 months' notice before breaking changes, an annual audit or attestation right, and an exit right if the roadmap slips by more than 6 months; lighter obligations for tier 2; none for tier 3. **Common mistake:** collecting questionnaire answers and filing them without any consequence for a missing answer."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How does the lesson score a vendor that gives no answer?",
+              "options": [
+                "As zero evidence, which fails a tier 1 requirement",
+                "As compliant",
+                "As half evidence"
+              ],
+              "correct_index": 0,
+              "explanation": "The HR SaaS scored 0.00."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What counts more: a verbal statement or a document on file?",
+              "options": [
+                "The document, which counts fully against half for a statement",
+                "They count equally",
+                "The statement"
+              ],
+              "correct_index": 0,
+              "explanation": "Evidence levels drive the score."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does a tier 1 clause set typically include?",
+              "options": [
+                "CBOM, a dated roadmap with notice, audit rights and an exit right",
+                "Only a logo",
+                "A price freeze only"
+              ],
+              "correct_index": 0,
+              "explanation": "Templates for legal review."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (risk management framework, governance and policy enforcement, regulatory compliance in the quantum-safe landscape) and Chapter 8 (sustaining crypto-agility)"
+            },
+            {
+              "book": "B99",
+              "locator": "CycloneDX 1.6: the cryptography bill of materials as the artefact vendors can supply"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Vendors, scores and thresholds are DEMO DATA; the clause texts are drafting templates for legal review and carry no legal weight."
+          }
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "6.5 Procurement",
+          "summary": "Hard gates (updatable cryptography, support for the full service life) applied before weighted scoring, so a cheap bid cannot buy back a structural defect.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Procurement is where crypto-agility (E4) and the hardware lesson (E4.8) become enforceable: a device bought today stays in service for years, past the policy dates. Requirements fall in two classes. **Hard gates** (must pass): the cryptographic functions can be **updated by firmware**, and **support covers the whole service life**. **Scored requirements** (weighted): support for NIST post-quantum KEM and signature algorithms, hybrid key exchange, a CBOM, FIPS 140-3 validation (module B11), price. Gates are applied **first**, so scoring never lets a low price offset a structural defect.\n\nThe listing evaluates three invented bids for a gateway with a 10-year service life from 2027 (DEMO DATA). Governance is mostly decisions, not computation, so the listings turn each governance artefact into something **testable**: a policy validator, a policy-as-code evaluator with dated algorithm statuses, ownership and escalation checks, evidence-based vendor scoring, gated procurement, a control-to-evidence map, a design-review checklist, a downtime simulation and an incident query. Every organisation, person, vendor, bid, control ID and number is **DEMO DATA / SIMULATION**; control IDs are invented and are **not** citations of any regulation. Nothing here is legal or compliance advice."
+            },
+            {
+              "type": "code",
+              "id": "c-procurement",
+              "language": "python",
+              "code": "import datetime\n# Procurement: hard requirements (must pass) and weighted requirements (scored), applied to three DEMO bids for a gateway device that will stay in service for 10 years.\nTODAY_YEAR = 2027\nSERVICE_YEARS = 10\nbids = {\n    \"Bid A\": {\"firmware_updatable_crypto\": True, \"algorithms\": {\"ML-KEM-768\", \"ML-DSA-65\", \"AES-256-GCM\"}, \"cbom_provided\": True, \"fips140_3\": \"validated\", \"support_until\": 2038, \"hybrid_tls\": True, \"price\": 120},\n    \"Bid B\": {\"firmware_updatable_crypto\": False, \"algorithms\": {\"RSA-2048\", \"ECDSA-P256\", \"AES-256-GCM\"}, \"cbom_provided\": False, \"fips140_3\": \"in process\", \"support_until\": 2032, \"hybrid_tls\": False, \"price\": 80},\n    \"Bid C\": {\"firmware_updatable_crypto\": True, \"algorithms\": {\"RSA-2048\", \"ECDSA-P256\", \"ML-KEM-768\", \"AES-256-GCM\"}, \"cbom_provided\": False, \"fips140_3\": \"validated\", \"support_until\": 2030, \"hybrid_tls\": True, \"price\": 100},\n}\nHARD = [  # name, test, reason\n    (\"cryptographic functions can be updated by firmware\", lambda b: b[\"firmware_updatable_crypto\"], \"a fixed algorithm set cannot follow the migration (E4.8)\"),\n    (\"support covers the whole service life\", lambda b: b[\"support_until\"] >= TODAY_YEAR + SERVICE_YEARS, f\"device stays in service until {TODAY_YEAR + SERVICE_YEARS}\"),\n]\nSOFT = [   # name, weight, score function 0..1\n    (\"supports a NIST post-quantum KEM and signature\", 0.30, lambda b: ((\"ML-KEM-768\" in b[\"algorithms\"]) + (\"ML-DSA-65\" in b[\"algorithms\"])) / 2),\n    (\"hybrid TLS key exchange\", 0.20, lambda b: 1.0 if b[\"hybrid_tls\"] else 0.0),\n    (\"provides a CBOM\", 0.15, lambda b: 1.0 if b[\"cbom_provided\"] else 0.0),\n    (\"FIPS 140-3 validation\", 0.20, lambda b: {\"validated\": 1.0, \"in process\": 0.4}.get(b[\"fips140_3\"], 0.0)),\n    (\"price (lower is better, relative to the cheapest)\", 0.15, lambda b: min(x[\"price\"] for x in bids.values()) / b[\"price\"]),\n]\nprint(f\"requirement gates (service life {SERVICE_YEARS} years from {TODAY_YEAR}); any failure excludes the bid however cheap it is\")\nfor name, b in bids.items():\n    fails = [f\"{n} ({why})\" for n, test, why in HARD if not test(b)]\n    print(f\"  {name}: {'PASSES all gates' if not fails else 'EXCLUDED: ' + '; '.join(fails)}\")\nprint()\nprint(f\"{'criterion':<52} {'weight':>6} \" + \"\".join(f\"{n:>8}\" for n in bids))\ntotals = {n: 0.0 for n in bids}\nfor crit, w, f in SOFT:\n    row = f\"{crit:<52} {w:>6.2f} \"\n    for n, b in bids.items():\n        s = f(b); totals[n] += w * s; row += f\"{s:>8.2f}\"\n    print(row)\nprint(f\"{'weighted total (only meaningful for bids that passed the gates)':<59} \" + \"\".join(f\"{totals[n]:>8.2f}\" for n in bids))\nprint()\nprint(\"outcome: Bid B is cheapest but fails both gates; Bid C passes the firmware gate but its support ends in 2030, so it is excluded; only Bid A passes\")\nprint(\"two procurement rules shown: the gates reflect lessons from migration (updatable cryptography, support for the full service life), and scoring is applied only after the gates so that price cannot buy back a structural defect\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-procurement",
+              "language": "text",
+              "code": "requirement gates (service life 10 years from 2027); any failure excludes the bid however cheap it is\n  Bid A: PASSES all gates\n  Bid B: EXCLUDED: cryptographic functions can be updated by firmware (a fixed algorithm set cannot follow the migration (E4.8)); support covers the whole service life (device stays in service until 2037)\n  Bid C: EXCLUDED: support covers the whole service life (device stays in service until 2037)\n\ncriterion                                            weight    Bid A   Bid B   Bid C\nsupports a NIST post-quantum KEM and signature         0.30     1.00    0.00    0.50\nhybrid TLS key exchange                                0.20     1.00    0.00    1.00\nprovides a CBOM                                        0.15     1.00    0.00    0.00\nFIPS 140-3 validation                                  0.20     1.00    0.40    1.00\nprice (lower is better, relative to the cheapest)      0.15     0.67    1.00    0.80\nweighted total (only meaningful for bids that passed the gates)     0.95    0.23    0.67\n\noutcome: Bid B is cheapest but fails both gates; Bid C passes the firmware gate but its support ends in 2030, so it is excluded; only Bid A passes\ntwo procurement rules shown: the gates reflect lessons from migration (updatable cryptography, support for the full service life), and scoring is applied only after the gates so that price cannot buy back a structural defect",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Bid A** passes both gates. **Bid B** is the cheapest but is **excluded** on both: its cryptographic functions are not updatable by firmware, and its support ends in 2032, before the end of the required service life in 2037. **Bid C** passes the firmware gate but is **excluded** because its support ends in 2030. The weighted totals (A 0.95, B 0.23, C 0.67) are only meaningful for bids that pass the gates, so Bid A wins on the gates alone; the table also shows where the scoring would have put them (C second on the post-quantum and validation criteria, B last).\n\n**Rules that carry over.** Write the service life and the support requirement into the RFP; require a CBOM so the new asset enters the inventory; ask for written statements on post-quantum firmware update plans (a statement is evidence level one, a contractual commitment better); and keep the gates stable across procurements so that suppliers know them. **Common mistake:** letting price decide among bids that cannot be migrated."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why are gates applied before weighted scoring?",
+              "options": [
+                "So a low price cannot compensate for a structural defect",
+                "To speed up evaluation",
+                "Scoring is unreliable"
+              ],
+              "correct_index": 0,
+              "explanation": "Bid B was cheapest but excluded."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why was Bid C excluded?",
+              "options": [
+                "Its support ends in 2030, before the 2037 end of service life",
+                "It lacks hybrid TLS",
+                "It is the most expensive"
+              ],
+              "correct_index": 0,
+              "explanation": "Support must cover the whole service life."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does requiring a CBOM from suppliers achieve?",
+              "options": [
+                "The new asset enters the cryptographic inventory with its algorithms",
+                "A lower price",
+                "Faster delivery"
+              ],
+              "correct_index": 0,
+              "explanation": "Procurement feeds discovery."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (risk management framework, governance and policy enforcement, regulatory compliance in the quantum-safe landscape) and Chapter 8 (sustaining crypto-agility)"
+            },
+            {
+              "book": "B73",
+              "locator": "FIPS 140-3: Security requirements for cryptographic modules (validation as a procurement criterion)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Bids, weights, gates and the service life are DEMO assumptions. FIPS 140-3 validation status of products must be checked in the NIST validation lists."
+          }
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "6.6 Compliance",
+          "summary": "A control-to-evidence map that reports current, stale and missing evidence, with invented control IDs and an explicit rule that real obligations come from the current text of each regulator.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Compliance with quantum-related obligations is a growing driver in regulated sectors, and the course text describes standards bodies and regulators moving on several fronts. Requirements differ by country and sector and change over time, so this lesson does **not** list regulations. It shows the machinery that works for any of them: write each obligation as a **control statement**, map it to the **evidence** the programme already produces (inventory exports, policy-engine logs, ownership checks, drift reports), and compute for each control whether the evidence is **current, stale or missing**.\n\nThe listing maps six invented controls (IDs QC-01 to QC-06 are examples, **not citations of any regulation**) to dated evidence, with a fixed assessment date of 1 June 2027 and a staleness limit of 120 days. Governance is mostly decisions, not computation, so the listings turn each governance artefact into something **testable**: a policy validator, a policy-as-code evaluator with dated algorithm statuses, ownership and escalation checks, evidence-based vendor scoring, gated procurement, a control-to-evidence map, a design-review checklist, a downtime simulation and an incident query. Every organisation, person, vendor, bid, control ID and number is **DEMO DATA / SIMULATION**; control IDs are invented and are **not** citations of any regulation. Nothing here is legal or compliance advice."
+            },
+            {
+              "type": "code",
+              "id": "c-compliance",
+              "language": "python",
+              "code": "import datetime\n# Compliance as evidence: map INTERNAL control statements to the evidence the programme produces, then compute status and evidence age. The control IDs are examples invented for the lesson; they are NOT citations of any regulation or standard.\nTODAY = datetime.date(2027, 6, 1)\nMAX_AGE_DAYS = 120\nCONTROLS = [\n    {\"id\": \"QC-01\", \"text\": \"A cryptographic inventory exists for in-scope systems\", \"evidence\": [(\"inventory export (E2)\", \"2027-05-10\")]},\n    {\"id\": \"QC-02\", \"text\": \"Approved-algorithm policy is enforced in CI and at deployment\", \"evidence\": [(\"policy engine run log (E6.2)\", \"2027-05-28\")]},\n    {\"id\": \"QC-03\", \"text\": \"Every in-scope asset has an accountable owner\", \"evidence\": [(\"risk register check (E6.3)\", \"2027-05-28\")]},\n    {\"id\": \"QC-04\", \"text\": \"Vendors holding tier 1 data meet the evidence requirement\", \"evidence\": [(\"vendor evidence table (E6.4)\", \"2027-01-20\")]},\n    {\"id\": \"QC-05\", \"text\": \"A migration plan with owners and dates is approved\", \"evidence\": []},\n    {\"id\": \"QC-06\", \"text\": \"Migrated assets are re-verified by discovery on a schedule\", \"evidence\": [(\"drift report (E5.11)\", \"2027-04-02\"), (\"drift report (E5.11)\", \"2027-05-02\")]},\n]\ndef status(c):\n    if not c[\"evidence\"]: return \"NO EVIDENCE\", None\n    newest = max(datetime.date.fromisoformat(d) for _, d in c[\"evidence\"])\n    age = (TODAY - newest).days\n    return (\"CURRENT\" if age <= MAX_AGE_DAYS else \"STALE\"), age\nprint(f\"date of the assessment {TODAY}; evidence older than {MAX_AGE_DAYS} days is stale\")\nprint(f\"{'control':<7} {'status':<12} {'age (days)':>10}  statement\")\ntally = {}\nfor c in CONTROLS:\n    st, age = status(c)\n    tally[st] = tally.get(st, 0) + 1\n    print(f\"{c['id']:<7} {st:<12} {str(age) if age is not None else '-':>10}  {c['text']}\")\nprint()\nprint(\"tally:\", tally)\nprint(f\"supported by current evidence: {tally.get('CURRENT', 0)} of {len(CONTROLS)} controls; the others are gaps to close, not failures to hide\")\nprint()\nprint(\"how to use this with real obligations: take the obligations that apply to your sector and jurisdiction from the legal and compliance team's own list, write each as a control statement like the ones above, map each to evidence this programme generates, and let the tool report gaps. The lesson does not list regulations: requirements differ by country and sector and change over time, and each must be read from the current text of the regulator or standard\")\nprint(\"reference points quoted elsewhere in this track, each to be re-checked before reliance: the NIST IR 8547 initial public draft (deprecation after 2030, disallowance after 2035 for RSA and ECDSA at 112-bit strength) and the NSM-10 goal of mitigating as much quantum risk as feasible by 2035 (quoted in IR 8547)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-compliance",
+              "language": "text",
+              "code": "date of the assessment 2027-06-01; evidence older than 120 days is stale\ncontrol status       age (days)  statement\nQC-01   CURRENT              22  A cryptographic inventory exists for in-scope systems\nQC-02   CURRENT               4  Approved-algorithm policy is enforced in CI and at deployment\nQC-03   CURRENT               4  Every in-scope asset has an accountable owner\nQC-04   STALE               132  Vendors holding tier 1 data meet the evidence requirement\nQC-05   NO EVIDENCE           -  A migration plan with owners and dates is approved\nQC-06   CURRENT              30  Migrated assets are re-verified by discovery on a schedule\n\ntally: {'CURRENT': 4, 'STALE': 1, 'NO EVIDENCE': 1}\nsupported by current evidence: 4 of 6 controls; the others are gaps to close, not failures to hide\n\nhow to use this with real obligations: take the obligations that apply to your sector and jurisdiction from the legal and compliance team's own list, write each as a control statement like the ones above, map each to evidence this programme generates, and let the tool report gaps. The lesson does not list regulations: requirements differ by country and sector and change over time, and each must be read from the current text of the regulator or standard\nreference points quoted elsewhere in this track, each to be re-checked before reliance: the NIST IR 8547 initial public draft (deprecation after 2030, disallowance after 2035 for RSA and ECDSA at 112-bit strength) and the NSM-10 goal of mitigating as much quantum risk as feasible by 2035 (quoted in IR 8547)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Four of six controls have **current** evidence (inventory export 22 days old, policy-engine run 4 days, ownership check 4 days, drift reports at 30 days); **QC-04** (vendor evidence) is **stale** at 132 days; **QC-05** (an approved migration plan with owners and dates) has **no evidence**. The tally is four current, one stale, one missing: the last two are gaps to close, not failures to hide.\n\n**Using it with real obligations.** Take the obligations that apply to your sector and jurisdiction from the legal and compliance team, write each as a control statement, map it to programme evidence and let the report show the gaps. The course text names examples of international and industry bodies and says regulators are expected to act (its statements about specific regulators are general and were not verified here); the two reference points quoted in this track, the NIST IR 8547 draft dates and the NSM-10 goal of mitigating quantum risk as far as feasible by 2035, must be re-checked before reliance. **Common mistake:** equating a policy document with compliance: the control is met when current evidence says so."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "When is a control's evidence called stale in the lesson?",
+              "options": [
+                "When the newest evidence is older than the agreed limit (120 days)",
+                "When it was written by a vendor",
+                "When it is a PDF"
+              ],
+              "correct_index": 0,
+              "explanation": "QC-04 was 132 days old."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does the lesson not list specific regulations?",
+              "options": [
+                "They differ by country and sector and change, so they must be read from current official texts",
+                "There are none",
+                "They are secret"
+              ],
+              "correct_index": 0,
+              "explanation": "The machinery works for any obligation."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does a control with no evidence represent?",
+              "options": [
+                "A gap to close, not a failure to hide",
+                "A passed control",
+                "An exception"
+              ],
+              "correct_index": 0,
+              "explanation": "QC-05 had no approved plan on file."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (risk management framework, governance and policy enforcement, regulatory compliance in the quantum-safe landscape) and Chapter 8 (sustaining crypto-agility)"
+            },
+            {
+              "book": "B85",
+              "locator": "NIST IR 8547 initial public draft: the NSM-10 quotation and the 2030 and 2035 milestones (reference points only)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The course text's statements about specific regulators and sector mandates (for example financial and health regulators) are general, were NOT verified against official sources, and are not repeated here as requirements. Control IDs are invented. CNSA 2.0 and other agency timelines were not retrieved in this session."
+          }
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "6.7 Architecture Review",
+          "summary": "An automated first-pass checklist over design documents producing approve, conditional or reject with named blockers, as a governance gate for new systems.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Architecture review is the governance gate that prevents **new** systems from becoming tomorrow's migration debt. A review board cannot read every design in depth, so a **first-pass checklist applied the same way to every design** decides where attention goes. The checks come straight from E4: cryptography behind a boundary (4.1), algorithms chosen by policy (4.3), key identifiers and a rotation and re-protection plan (4.4), room for larger post-quantum sizes (4.2), support for hybrid or multiple algorithms (4.6), emission of a CBOM (E2.1), a recorded secrecy lifetime and tier (E5.3) and listed third-party cryptography (E1.6). Some are **blockers**, others **conditions**.\n\nThe listing encodes eight checks and evaluates three invented designs (DEMO DATA): a new payments gateway, a partner portal and a sensor firmware update service. Any blocker stops go-live; three or more blockers mean rework rather than patching. Governance is mostly decisions, not computation, so the listings turn each governance artefact into something **testable**: a policy validator, a policy-as-code evaluator with dated algorithm statuses, ownership and escalation checks, evidence-based vendor scoring, gated procurement, a control-to-evidence map, a design-review checklist, a downtime simulation and an incident query. Every organisation, person, vendor, bid, control ID and number is **DEMO DATA / SIMULATION**; control IDs are invented and are **not** citations of any regulation. Nothing here is legal or compliance advice."
+            },
+            {
+              "type": "code",
+              "id": "c-arch-review",
+              "language": "python",
+              "code": "# Architecture review: an automated first pass over design documents (DEMO DATA), producing approve / conditional / reject with the reasons. A human reviewer decides; the checklist makes the questions unavoidable.\nCHECKS = [   # id, question, test, severity (\"blocker\" or \"condition\")\n    (\"A1\", \"cryptographic operations go through a central crypto boundary\", lambda d: d.get(\"crypto_boundary\") is True, \"blocker\"),\n    (\"A2\", \"algorithms are selected by policy/configuration, not in code\", lambda d: d.get(\"algorithm_source\") == \"policy\", \"blocker\"),\n    (\"A3\", \"message and key sizes are not hard-coded below 4 KB\", lambda d: d.get(\"max_field_bytes\", 0) >= 4096, \"condition\"),\n    (\"A4\", \"keys carry an identifier and algorithm; rotation and re-protection are designed\", lambda d: d.get(\"key_ids\") is True and d.get(\"reprotect_plan\") is True, \"blocker\"),\n    (\"A5\", \"the design supports hybrid or multiple algorithms concurrently\", lambda d: d.get(\"multi_algorithm\") is True, \"condition\"),\n    (\"A6\", \"the service emits a cryptographic bill of materials or inventory records\", lambda d: d.get(\"emits_cbom\") is True, \"condition\"),\n    (\"A7\", \"data secrecy lifetime and tier are recorded\", lambda d: d.get(\"data_lifetime_years\") is not None and d.get(\"tier\") is not None, \"blocker\"),\n    (\"A8\", \"third-party components with their own cryptography are listed with owners\", lambda d: d.get(\"third_party_crypto_listed\") is True, \"condition\"),\n]\nDESIGNS = {\n    \"new payments gateway\": {\"crypto_boundary\": True, \"algorithm_source\": \"policy\", \"max_field_bytes\": 16384, \"key_ids\": True, \"reprotect_plan\": True, \"multi_algorithm\": True, \"emits_cbom\": True, \"data_lifetime_years\": 10, \"tier\": 1, \"third_party_crypto_listed\": True},\n    \"partner portal v2\": {\"crypto_boundary\": True, \"algorithm_source\": \"code\", \"max_field_bytes\": 2048, \"key_ids\": True, \"reprotect_plan\": False, \"multi_algorithm\": False, \"emits_cbom\": False, \"data_lifetime_years\": 7, \"tier\": 2, \"third_party_crypto_listed\": False},\n    \"sensor firmware update service\": {\"crypto_boundary\": False, \"algorithm_source\": \"code\", \"max_field_bytes\": 256, \"key_ids\": False, \"reprotect_plan\": False, \"multi_algorithm\": False, \"emits_cbom\": False, \"data_lifetime_years\": None, \"tier\": None, \"third_party_crypto_listed\": False},\n}\nfor name, design in DESIGNS.items():\n    blockers = [(i, q) for i, q, t, sev in CHECKS if sev == \"blocker\" and not t(design)]\n    conds = [(i, q) for i, q, t, sev in CHECKS if sev == \"condition\" and not t(design)]\n    decision = \"REJECT: redesign required\" if len(blockers) >= 3 else \"CONDITIONAL: blockers must be fixed before go-live\" if blockers else \"APPROVE WITH CONDITIONS\" if conds else \"APPROVE\"\n    print(f\"== {name}: {decision}\")\n    for i, q in blockers: print(f\"   BLOCKER  {i} {q}\")\n    for i, q in conds: print(f\"   condition {i} {q}\")\nprint()\nprint(\"decision rule: any blocker stops go-live; three or more blockers mean the design should be reworked, not patched; conditions become dated actions with owners\")\nprint(\"the checklist is a first pass written as code so that it is applied to every design in the same way and its results are logged; the review board decides exceptions and records the reason and an expiry date\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-arch-review",
+              "language": "text",
+              "code": "== new payments gateway: APPROVE\n== partner portal v2: CONDITIONAL: blockers must be fixed before go-live\n   BLOCKER  A2 algorithms are selected by policy/configuration, not in code\n   BLOCKER  A4 keys carry an identifier and algorithm; rotation and re-protection are designed\n   condition A3 message and key sizes are not hard-coded below 4 KB\n   condition A5 the design supports hybrid or multiple algorithms concurrently\n   condition A6 the service emits a cryptographic bill of materials or inventory records\n   condition A8 third-party components with their own cryptography are listed with owners\n== sensor firmware update service: REJECT: redesign required\n   BLOCKER  A1 cryptographic operations go through a central crypto boundary\n   BLOCKER  A2 algorithms are selected by policy/configuration, not in code\n   BLOCKER  A4 keys carry an identifier and algorithm; rotation and re-protection are designed\n   BLOCKER  A7 data secrecy lifetime and tier are recorded\n   condition A3 message and key sizes are not hard-coded below 4 KB\n   condition A5 the design supports hybrid or multiple algorithms concurrently\n   condition A6 the service emits a cryptographic bill of materials or inventory records\n   condition A8 third-party components with their own cryptography are listed with owners\n\ndecision rule: any blocker stops go-live; three or more blockers mean the design should be reworked, not patched; conditions become dated actions with owners\nthe checklist is a first pass written as code so that it is applied to every design in the same way and its results are logged; the review board decides exceptions and records the reason and an expiry date",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The **payments gateway** passes every check: **APPROVE**. The **partner portal** has two blockers (A2: algorithms are chosen in code; A4: no rotation and re-protection plan) and four conditions (field sizes below 4 KB, no multi-algorithm support, no CBOM, third-party cryptography unlisted): **CONDITIONAL**, with go-live only after the blockers are fixed. The **sensor firmware update service** has four blockers (no crypto boundary, algorithms in code, no key identifiers or re-protection plan, no recorded data lifetime or tier) and four conditions: **REJECT**, redesign required.\n\n**How the gate should work.** The checklist is code, so it is applied uniformly and its results are logged; the review board decides exceptions and records the reason and an **expiry date**; conditions become dated actions with owners; and the checklist itself is reviewed when standards or the organisation's policy (6.2) change. **Common mistake:** an architecture review that asks about availability and cost but not about the cryptography that will have to change."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the gate do with three or more blockers?",
+              "options": [
+                "Recommend rework instead of patching (REJECT)",
+                "Approve",
+                "Ignore the design"
+              ],
+              "correct_index": 0,
+              "explanation": "The sensor service had four."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which check is a blocker in the lesson?",
+              "options": [
+                "Algorithms are selected in code instead of by policy",
+                "A CBOM is emitted",
+                "Field sizes are 2 KB"
+              ],
+              "correct_index": 0,
+              "explanation": "A2 is a blocker; A3, A5, A6 and A8 are conditions."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What should be recorded when the board grants an exception?",
+              "options": [
+                "The reason and an expiry date",
+                "Nothing",
+                "Only the vendor name"
+              ],
+              "correct_index": 0,
+              "explanation": "Exceptions are temporary."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (risk management framework, governance and policy enforcement, regulatory compliance in the quantum-safe landscape) and Chapter 8 (sustaining crypto-agility)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The checklist, the blocker versus condition split and the three-blocker rule are the lesson's design; the designs are DEMO DATA."
+          }
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "6.8 Business Continuity",
+          "summary": "A simulation of expected downtime across nine migration waves with and without a pilot and a tested rollback, showing that they reduce the number and the duration of outages respectively.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Migration activity must not create unacceptable operational risk. The two practical protections are the **pilot** (E5.8), which catches failures before they reach production and so reduces the **number** of outages, and a **tested rollback** (the configuration switch of E4.3), which limits the **duration** of those that do occur. Continuity also covers freeze windows (E5.10), monitoring during and after each wave (E5.11) and recovery objectives for each asset.\n\nThe listing is a **SIMULATION** with assumed numbers: nine waves, each step failing with probability 0.10; a failure costs 60 minutes of outage per impact point (impact 1 to 5) when a tested rollback of at most 30 minutes exists, or four times as long when there is none; the pilot catches 70% of failures before production. Four strategies are compared over 20,000 simulated programmes. Governance is mostly decisions, not computation, so the listings turn each governance artefact into something **testable**: a policy validator, a policy-as-code evaluator with dated algorithm statuses, ownership and escalation checks, evidence-based vendor scoring, gated procurement, a control-to-evidence map, a design-review checklist, a downtime simulation and an incident query. Every organisation, person, vendor, bid, control ID and number is **DEMO DATA / SIMULATION**; control IDs are invented and are **not** citations of any regulation. Nothing here is legal or compliance advice."
+            },
+            {
+              "type": "code",
+              "id": "c-continuity",
+              "language": "python",
+              "code": "import random, statistics\n# Business continuity: what does the way you migrate do to expected downtime? Monte Carlo over the nine waves of a plan. SIMULATION with ASSUMED probabilities and costs (not data from any organisation).\nWAVE_ASSETS = [(\"HSM\", 5), (\"internal PKI\", 5), (\"backup vault\", 3), (\"HR archive\", 2), (\"claims upload\", 4), (\"identity provider\", 5), (\"legacy ERP\", 4), (\"payments service\", 5), (\"customer portal\", 4)]    # name, business impact 1-5\nOUTAGE_MIN_PER_IMPACT = 60        # assumed minutes of outage per impact point if a migration step fails with no rollback\ndef simulate(label, p_fail, p_caught_in_pilot, rollback_minutes, runs=20000, seed=11):\n    rng = random.Random(seed)\n    totals = []\n    for _ in range(runs):\n        minutes = 0\n        for name, impact in WAVE_ASSETS:\n            if rng.random() < p_fail:\n                if rng.random() < p_caught_in_pilot: continue                  # failure found in the pilot, never reaches production\n                minutes += min(OUTAGE_MIN_PER_IMPACT * impact, rollback_minutes) if rollback_minutes is not None else OUTAGE_MIN_PER_IMPACT * impact * 4\n        totals.append(minutes)\n    totals.sort()\n    return statistics.fmean(totals), totals[int(0.95 * runs)], sum(1 for t in totals if t > 0) / runs\nprint(\"SIMULATION, 20,000 simulated programmes of nine waves. assumptions: each step fails with probability p; a failure causes an outage of 60 minutes x impact when there is a tested rollback of at most R minutes, or four times as long when there is none\")\nprint(f\"{'strategy':<56} {'mean downtime (min)':>20} {'95th percentile':>16} {'P(any outage)':>14}\")\nfor label, p, caught, rb in ((\"big bang: no pilot, no rollback\", 0.10, 0.0, None),\n                             (\"pilot only (70% of failures caught), no rollback\", 0.10, 0.7, None),\n                             (\"rollback only (tested, 30 minutes), no pilot\", 0.10, 0.0, 30),\n                             (\"pilot and tested rollback (30 minutes)\", 0.10, 0.7, 30)):\n    m, p95, anyp = simulate(label, p, caught, rb)\n    print(f\"{label:<56} {m:>20.0f} {p95:>16.0f} {anyp:>14.2f}\")\nprint()\nprint(\"reading: the pilot cuts the NUMBER of outages, the rollback cuts their DURATION; the two are complementary, and together reduce the expected downtime by more than an order of magnitude in this model. The numbers are assumptions chosen to show the structure: replace them with your own change-failure data\")\nprint(\"continuity measures that go with it: migration steps scheduled outside freeze windows (E5.10), a communicated rollback decision time, the monitoring of E5.11 during and after each wave, and recovery objectives recorded for each asset\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-continuity",
+              "language": "text",
+              "code": "SIMULATION, 20,000 simulated programmes of nine waves. assumptions: each step fails with probability p; a failure causes an outage of 60 minutes x impact when there is a tested rollback of at most R minutes, or four times as long when there is none\nstrategy                                                  mean downtime (min)  95th percentile  P(any outage)\nbig bang: no pilot, no rollback                                           888             2400           0.61\npilot only (70% of failures caught), no rollback                          265             1200           0.24\nrollback only (tested, 30 minutes), no pilot                               27               90           0.61\npilot and tested rollback (30 minutes)                                      8               30           0.24\n\nreading: the pilot cuts the NUMBER of outages, the rollback cuts their DURATION; the two are complementary, and together reduce the expected downtime by more than an order of magnitude in this model. The numbers are assumptions chosen to show the structure: replace them with your own change-failure data\ncontinuity measures that go with it: migration steps scheduled outside freeze windows (E5.10), a communicated rollback decision time, the monitoring of E5.11 during and after each wave, and recovery objectives recorded for each asset",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The **big-bang** approach (no pilot, no rollback) has a mean downtime of **888 minutes** per programme, a 95th percentile of 2,400 minutes and a 61% chance of at least one outage. **Pilot only** reduces the chance of an outage to 24% and the mean to 265 minutes; **rollback only** keeps the 61% chance but cuts the mean to 27 minutes and the 95th percentile to 90; **both together** give 24% and a mean of **8 minutes**. In this model the two measures are **complementary** and reduce the expected downtime by more than two orders of magnitude.\n\n**The numbers are assumptions chosen to show the structure**, not data from any organisation: replace them with your own change-failure rates, catch rates and recovery times. What carries over is the structure: pilots act on probability, rollbacks on impact, and a rollback that has never been rehearsed is a hope, not a control. **Common mistake:** presenting the simulation's minutes as a forecast."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does a pilot reduce in the model?",
+              "options": [
+                "The number of outages, by catching failures before production",
+                "The duration of each outage",
+                "The key size"
+              ],
+              "correct_index": 0,
+              "explanation": "P(any outage) fell from 0.61 to 0.24."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does a tested rollback reduce?",
+              "options": [
+                "The duration of outages",
+                "Their number",
+                "The inventory"
+              ],
+              "correct_index": 0,
+              "explanation": "Mean downtime fell from 888 to 27 minutes."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How should the simulation's output be treated?",
+              "options": [
+                "As an illustration of structure with assumed inputs, not a forecast",
+                "As a measurement",
+                "As a guarantee"
+              ],
+              "correct_index": 0,
+              "explanation": "Use your own failure data."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (risk management framework, governance and policy enforcement, regulatory compliance in the quantum-safe landscape) and Chapter 8 (sustaining crypto-agility)"
+            },
+            {
+              "book": "B26",
+              "locator": "NIST SP 800-30 Rev. 1: Section 2.3 (risk as likelihood times impact, and the effect of controls on each)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Failure probabilities, catch rate, impact scaling and rollback times are ASSUMED. The simulation structure (independent steps, a single failure model) is a simplification."
+          }
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "6.9 Incident Response",
+          "summary": "A hypothetical weakness in 'ALG-X' answered from the inventory: affected assets, owners, switch methods, a response timeline, and the exposures no process can fix in the moment.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A cryptographic incident can be a **weakness in a classical algorithm** broken earlier than expected, a **flaw in a post-quantum implementation**, or a **vendor advisory**. The response problem is the same: *where is it used, who owns it, how fast can we switch, and what do we do for what we cannot switch?* General incident-response practice (NIST SP 800-61) supplies the lifecycle of preparation, detection and analysis, containment, eradication and recovery, and lessons learned; the cryptographic-specific preparation is exactly the earlier modules: an **inventory** that makes the first question a query (E2), **configuration-driven algorithms** that make the switch a change (E4.3), and **owners** for every asset (6.3).\n\nThe listing is a **HYPOTHETICAL SCENARIO**: a weakness is reported in an algorithm called ALG-X (no such weakness is claimed for any real algorithm). It queries an invented inventory, separates the assets switchable by configuration from the others, and prints a tabletop timeline with the decision and the role at each step. Governance is mostly decisions, not computation, so the listings turn each governance artefact into something **testable**: a policy validator, a policy-as-code evaluator with dated algorithm statuses, ownership and escalation checks, evidence-based vendor scoring, gated procurement, a control-to-evidence map, a design-review checklist, a downtime simulation and an incident query. Every organisation, person, vendor, bid, control ID and number is **DEMO DATA / SIMULATION**; control IDs are invented and are **not** citations of any regulation. Nothing here is legal or compliance advice."
+            },
+            {
+              "type": "code",
+              "id": "c-incident",
+              "language": "python",
+              "code": "# Incident response for a cryptographic weakness. HYPOTHETICAL SCENARIO: a weakness is reported in \"ALG-X\" (no such vulnerability is claimed for any real algorithm). The point is how quickly an organisation can answer: where is it used, who owns it, how fast can we switch.\nINVENTORY = [   # asset, owner, algorithms used, how the algorithm is selected, estimated hours to switch\n    (\"customer portal\", \"web team\", {\"ALG-X\", \"AES-256-GCM\"}, \"policy file\", 2),\n    (\"partner API\", \"platform\", {\"ALG-X\"}, \"policy file\", 2),\n    (\"backup vault\", \"ops\", {\"AES-256-GCM\", \"RSA-2048\"}, \"policy file\", 4),\n    (\"meter firmware updater\", \"device team\", {\"ALG-X\"}, \"compiled into firmware\", 24 * 90),\n    (\"legacy ERP\", None, {\"ALG-X\"}, \"unknown\", None),\n    (\"HR archive\", \"HR IT\", {\"RSA-2048\"}, \"code\", 40),\n]\nFLAGGED = \"ALG-X\"\naffected = [a for a in INVENTORY if FLAGGED in a[2]]\nprint(f\"HYPOTHETICAL: weakness reported in {FLAGGED}. Query of the inventory ({len(INVENTORY)} assets, from E2):\")\nprint(f\"{'asset':<24} {'owner':<12} {'selected by':<24} {'time to switch':>16}\")\nfor name, owner, algs, how, hours in affected:\n    t = \"UNKNOWN\" if hours is None else (f\"{hours} h\" if hours < 24 * 14 else f\"{hours // 24} days\")\n    print(f\"{name:<24} {str(owner):<12} {how:<24} {t:>16}\")\nprint()\nfast = [a for a in affected if a[3] == \"policy file\"]\nslow = [a for a in affected if a[3] != \"policy file\"]\nprint(f\"switchable by configuration within hours: {[a[0] for a in fast]} (worst case {max(a[4] for a in fast)} hours)\")\nprint(f\"NOT switchable quickly: {[a[0] for a in slow]}\")\nprint()\nprint(\"response timeline (tabletop; hours from the report), decisions to take and who takes them:\")\nsteps = [(0, \"incident declared; security owner chairs; the vendor advisory and the technical detail are read\", \"CISO\"),\n         (1, \"inventory query run (above): affected assets, owners, switch method\", \"security architecture\"),\n         (2, \"decision: switch policy to the approved fallback for configuration-driven assets; communicate expected client effects\", \"CISO and asset owners\"),\n         (4, \"policy change deployed to the fast group, effect checked by discovery (E2/E5.11)\", \"platform\"),\n         (24, \"compensating controls for the slow group: isolate the legacy ERP segment, restrict meter update traffic to a gateway\", \"network and device teams\"),\n         (72, \"review: what the inventory did not know (ERP has no owner and an unknown selection method), actions assigned\", \"risk committee\")]\nfor h, what, who in steps: print(f\"  T+{h:>3} h  {what}  [{who}]\")\nprint()\nprint(\"lessons the numbers carry: the inventory turned a search into a query; configuration-driven algorithms (E4.3) made the fast group a two-hour change; the firmware compiled-in case (about 90 days) and the ownerless ERP are the exposures no process can fix in the moment, which is why E4.8 and E6.3 matter before the incident. The same playbook applies to a classical algorithm broken early or to a flaw in a post-quantum implementation\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-incident",
+              "language": "text",
+              "code": "HYPOTHETICAL: weakness reported in ALG-X. Query of the inventory (6 assets, from E2):\nasset                    owner        selected by                time to switch\ncustomer portal          web team     policy file                           2 h\npartner API              platform     policy file                           2 h\nmeter firmware updater   device team  compiled into firmware            90 days\nlegacy ERP               None         unknown                           UNKNOWN\n\nswitchable by configuration within hours: ['customer portal', 'partner API'] (worst case 2 hours)\nNOT switchable quickly: ['meter firmware updater', 'legacy ERP']\n\nresponse timeline (tabletop; hours from the report), decisions to take and who takes them:\n  T+  0 h  incident declared; security owner chairs; the vendor advisory and the technical detail are read  [CISO]\n  T+  1 h  inventory query run (above): affected assets, owners, switch method  [security architecture]\n  T+  2 h  decision: switch policy to the approved fallback for configuration-driven assets; communicate expected client effects  [CISO and asset owners]\n  T+  4 h  policy change deployed to the fast group, effect checked by discovery (E2/E5.11)  [platform]\n  T+ 24 h  compensating controls for the slow group: isolate the legacy ERP segment, restrict meter update traffic to a gateway  [network and device teams]\n  T+ 72 h  review: what the inventory did not know (ERP has no owner and an unknown selection method), actions assigned  [risk committee]\n\nlessons the numbers carry: the inventory turned a search into a query; configuration-driven algorithms (E4.3) made the fast group a two-hour change; the firmware compiled-in case (about 90 days) and the ownerless ERP are the exposures no process can fix in the moment, which is why E4.8 and E6.3 matter before the incident. The same playbook applies to a classical algorithm broken early or to a flaw in a post-quantum implementation",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The query returns four affected assets. The **customer portal** and the **partner API** are selected by a policy file and can be switched within about **2 hours** (a change plus a check by discovery); the **meter firmware updater** has the algorithm compiled into firmware and needs about **90 days**; and the **legacy ERP** has **no owner, an unknown selection method and an unknown time to switch**. The timeline follows from this: declare the incident (T+0), run the inventory query (T+1 h), decide and communicate the policy switch for the fast group (T+2 h), deploy and verify (T+4 h), apply compensating controls for the slow group (T+24 h: isolate the ERP segment, restrict meter update traffic to a gateway), and review what the inventory did not know (T+72 h).\n\n**Lessons built into the numbers.** The inventory turned a search into a query; configuration-driven selection made the fast group a two-hour change; and the two slow cases are exposures that no process can fix in the moment, which is why hardware agility (E4.8) and ownership (6.3) must be addressed **before** an incident. The same playbook applies to a classical algorithm broken early, to a post-quantum implementation flaw, and to a **downgrade** or key-compromise scenario. **Common mistake:** discovering during the incident that nobody knows where the algorithm is used."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What turns 'where is this algorithm used?' into a query?",
+              "options": [
+                "A current cryptographic inventory",
+                "A meeting",
+                "A vendor letter"
+              ],
+              "correct_index": 0,
+              "explanation": "Preparation from E2."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which assets could be switched within hours in the scenario?",
+              "options": [
+                "Those whose algorithm is selected by a policy file",
+                "Those compiled into firmware",
+                "Those with no owner"
+              ],
+              "correct_index": 0,
+              "explanation": "The portal and the partner API: about 2 hours."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the compensating control for assets that cannot be switched quickly?",
+              "options": [
+                "Isolation or gateway mediation while a longer fix is prepared",
+                "Ignore them",
+                "Switch them blindly"
+              ],
+              "correct_index": 0,
+              "explanation": "The ERP segment is isolated; meter traffic goes through a gateway."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (risk management framework, governance and policy enforcement, regulatory compliance in the quantum-safe landscape) and Chapter 8 (sustaining crypto-agility)"
+            },
+            {
+              "book": "B25",
+              "locator": "NIST SP 800-61 Rev. 3: incident-response recommendations and the lifecycle phases"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The scenario is HYPOTHETICAL: ALG-X is not a real algorithm and no vulnerability is claimed. Section locators in SP 800-61 Rev. 3 were not re-read; the lifecycle summary is general. Times in the timeline are examples."
+          }
+        }
+      ],
+      "quiz": [
+        {
+          "id": "e6-n01",
+          "prompt": "What makes a policy objective testable?",
+          "options": [
+            "An owner, a due date, a measurable KPI and a review cadence",
+            "A long description",
+            "An approval stamp"
+          ],
+          "correct_index": 0,
+          "explanation": "O3 failed all four.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 4, governance and policy enforcement"
+          }
+        },
+        {
+          "id": "e6-n02",
+          "prompt": "How should a policy engine treat an algorithm not in its catalogue?",
+          "options": [
+            "As a finding that blocks the change",
+            "As approved",
+            "As ignored"
+          ],
+          "correct_index": 0,
+          "explanation": "Unknown is never a pass.",
+          "source": {
+            "book": "B97",
+            "locator": "Policy-governed algorithm choice"
+          }
+        },
+        {
+          "id": "e6-n03",
+          "prompt": "Why give algorithm statuses effective dates?",
+          "options": [
+            "So approved algorithms can become dated findings and generate the backlog",
+            "To fill the file",
+            "TLS requires it"
+          ],
+          "correct_index": 0,
+          "explanation": "Same code, different dates.",
+          "source": {
+            "book": "B85",
+            "locator": "Table 2"
+          }
+        },
+        {
+          "id": "e6-n04",
+          "prompt": "How many accountable persons should a risk have?",
+          "options": [
+            "Exactly one",
+            "Two or more",
+            "A team alias"
+          ],
+          "correct_index": 0,
+          "explanation": "RACI: one A.",
+          "source": {
+            "book": "B26",
+            "locator": "Section 3.4"
+          }
+        },
+        {
+          "id": "e6-n05",
+          "prompt": "What should happen when a risk owner leaves the organisation?",
+          "options": [
+            "The risk is flagged and reassigned immediately",
+            "Nothing",
+            "It is closed"
+          ],
+          "correct_index": 0,
+          "explanation": "R1 escalated to the CISO.",
+          "source": {
+            "book": "B26",
+            "locator": "Section 3.4"
+          }
+        },
+        {
+          "id": "e6-n06",
+          "prompt": "How should a vendor that does not answer a questionnaire be scored?",
+          "options": [
+            "As zero evidence",
+            "As compliant",
+            "As average"
+          ],
+          "correct_index": 0,
+          "explanation": "No answer cannot pass.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 4, supply chain dependencies"
+          }
+        },
+        {
+          "id": "e6-n07",
+          "prompt": "Why apply hard gates before weighted scoring in procurement?",
+          "options": [
+            "A low price must not compensate for a structural defect",
+            "Scoring is illegal",
+            "Gates are cheaper"
+          ],
+          "correct_index": 0,
+          "explanation": "Bid B was cheapest and excluded.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 8, governance"
+          }
+        },
+        {
+          "id": "e6-n08",
+          "prompt": "What must support cover for a 10-year device?",
+          "options": [
+            "The whole service life",
+            "The first year",
+            "The warranty period"
+          ],
+          "correct_index": 0,
+          "explanation": "Support ending in 2030 fails a 2037 requirement.",
+          "source": {
+            "book": "B73",
+            "locator": "Module validation and lifecycle"
+          }
+        },
+        {
+          "id": "e6-n09",
+          "prompt": "What is stale evidence in a control map?",
+          "options": [
+            "Evidence older than the agreed limit",
+            "Evidence from a vendor",
+            "Evidence in a PDF"
+          ],
+          "correct_index": 0,
+          "explanation": "132 days against a 120-day limit.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 4, regulatory compliance"
+          }
+        },
+        {
+          "id": "e6-n10",
+          "prompt": "In an architecture review, what do three or more blockers mean?",
+          "options": [
+            "Rework the design instead of patching",
+            "Approve",
+            "Ignore"
+          ],
+          "correct_index": 0,
+          "explanation": "REJECT: redesign required.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 8"
+          }
+        },
+        {
+          "id": "e6-n11",
+          "prompt": "What does a pilot reduce in the continuity model, and what does a tested rollback reduce?",
+          "options": [
+            "Pilot: number of outages; rollback: duration of outages",
+            "Pilot: duration; rollback: number",
+            "Neither"
+          ],
+          "correct_index": 0,
+          "explanation": "They are complementary.",
+          "source": {
+            "book": "B26",
+            "locator": "Section 2.3"
+          }
+        },
+        {
+          "id": "e6-n12",
+          "prompt": "What turns the first incident-response question into a query?",
+          "options": [
+            "A current cryptographic inventory",
+            "An email chain",
+            "A new vendor"
+          ],
+          "correct_index": 0,
+          "explanation": "Preparation, not improvisation.",
+          "source": {
+            "book": "B25",
+            "locator": "Preparation phase"
+          }
+        }
+      ],
+      "estimated_minutes": 420,
+      "notes": "Rewrites the nine governance sections (6.1 to 6.9) as lessons with executed listings that make each governance artefact testable: policy validator, dated policy-as-code, ownership checks, evidence-scored vendors, gated procurement, a control-to-evidence map with invented control IDs, a design-review checklist, a downtime simulation and a hypothetical incident query. The Enterprise / Architect Capstone section is left unchanged. Statements about specific regulators are not repeated as requirements and are flagged as unverified.",
+      "learning_objectives": [
+        "Write a quantum-readiness policy whose objectives are testable and check it with a validator.",
+        "Express the cryptographic policy as dated code, enforce it on configurations and read the future findings as the migration backlog.",
+        "Assign and check risk ownership with escalation rules and a RACI.",
+        "Set vendor and procurement requirements from evidence levels and hard gates, and derive contract actions.",
+        "Map controls to current evidence for compliance and gate new designs with an architecture checklist.",
+        "Protect continuity during migration and prepare an inventory-driven response to a cryptographic incident."
+      ]
+    }
+  ]
+}
