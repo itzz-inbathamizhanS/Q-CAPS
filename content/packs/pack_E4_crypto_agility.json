@@ -1,0 +1,952 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B05",
+      "title": "Becoming Quantum Safe: Protect Your Business and Mitigate Risks with Post-Quantum Cryptography and Crypto-Agility",
+      "authors": "Jai Singh Arun, Ray Harishankar, Walid Rjaibi",
+      "edition": "1st edition",
+      "year": 2025,
+      "publisher": "Wiley"
+    },
+    {
+      "id": "B04",
+      "title": "FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B92",
+      "title": "FIPS 204: Module-Lattice-Based Digital Signature Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B93",
+      "title": "FIPS 205: Stateless Hash-Based Digital Signature Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B95",
+      "title": "NIST SP 800-227: Recommendations for Key-Encapsulation Mechanisms",
+      "authors": "Alagic, Barker, Chen, Moody, Robinson, Silberg, Waller",
+      "edition": "September 2025",
+      "year": 2025,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B97",
+      "title": "NIST SP 800-57 Part 1 Revision 5: Recommendation for Key Management: Part 1 - General",
+      "authors": "Elaine Barker",
+      "edition": "Revision 5",
+      "year": 2020,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B99",
+      "title": "CycloneDX Bill of Materials specification, version 1.6 (JSON schema with the Cryptography Bill of Materials extension)",
+      "authors": "OWASP CycloneDX",
+      "edition": "1.6",
+      "year": 2024,
+      "publisher": "OWASP Foundation"
+    },
+    {
+      "id": "B100",
+      "title": "cryptography (Python package) version 50.0.1, with ML-KEM and ML-DSA backed by OpenSSL",
+      "authors": "Python Cryptographic Authority",
+      "edition": "50.0.1",
+      "year": 2026
+    },
+    {
+      "id": "B161",
+      "title": "RFC 9846: The Transport Layer Security (TLS) Protocol Version 1.3 (obsoletes RFC 8446 and RFC 5246)",
+      "authors": "IETF",
+      "edition": "July 2026",
+      "year": 2026,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B162",
+      "title": "RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile",
+      "authors": "IETF",
+      "edition": "May 2008",
+      "year": 2008,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B22",
+      "title": "The Python Tutorial and The Python Standard Library (Python 3.14 documentation)",
+      "authors": "Python Software Foundation",
+      "edition": "3.14, accessed 2026-10-03",
+      "publisher": "docs.python.org"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_d_e4_crypto_agility",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "4.1 Algorithm Abstraction",
+          "summary": "One KEM interface behind which X25519, ECDH-P256, ML-KEM-768 and a hybrid run the same protocol code, and an algorithm added by registering a class.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Crypto-agility** is the ability to change cryptographic algorithms, parameters and keys without rewriting applications. The foundation is **algorithm abstraction**: application code asks for an operation (\"establish a shared secret\", \"sign this\") through an interface that does not name the algorithm, and a separate layer maps the operation to a concrete algorithm. The course text lists modularity and abstraction first among its crypto-agility principles: design systems so that cryptographic updates do not require rewriting applications.\n\nThe listing defines a **KEM interface** (`generate`, `encaps`, `decaps`) and four implementations: X25519, ECDH-P256, ML-KEM-768 and a **hybrid** that combines X25519 and ML-KEM-768 so that the shared secret is safe if either component holds. One unchanged function runs the protocol with every implementation. Then ML-KEM-1024 is added by registering one new class and the same function runs with it. The listings are working code: a small KEM interface with X25519, ECDH-P256, ML-KEM-768 and a hybrid combiner (built on the `cryptography` library's ML-KEM), a self-describing envelope, a policy loader, a key store, a certificate pipeline that issues RSA, ECDSA and ML-DSA-65 certificates, loopback TLS negotiation, and an AST-based retrofit demonstration. The hybrid combiner is **illustrative** (deployed hybrids follow the IETF specifications). Device budgets, client populations and the source tree are **DEMO DATA / SIMULATION** and are labelled where used."
+            },
+            {
+              "type": "code",
+              "id": "c-abstraction",
+              "language": "python",
+              "code": "import hashlib, os\nfrom cryptography.hazmat.primitives.asymmetric import ec, mlkem, x25519\nfrom cryptography.hazmat.primitives import serialization\n\n# ---- one interface, several algorithms: callers only see generate / encaps / decaps and a name ----\nclass KEM:\n    name = \"abstract\"\n    def generate(self): raise NotImplementedError          # -> (public key bytes, secret key object)\n    def encaps(self, pk): raise NotImplementedError        # -> (ciphertext, shared secret)\n    def decaps(self, sk, ct): raise NotImplementedError    # -> shared secret\n\ndef _kdf(*parts):\n    h = hashlib.sha3_256()\n    for p in parts: h.update(len(p).to_bytes(4, \"big\") + p)\n    return h.digest()\n\nclass X25519KEM(KEM):\n    name = \"X25519\"\n    def generate(self):\n        sk = x25519.X25519PrivateKey.generate()\n        return sk.public_key().public_bytes_raw(), sk\n    def encaps(self, pk):\n        eph = x25519.X25519PrivateKey.generate()\n        ss = eph.exchange(x25519.X25519PublicKey.from_public_bytes(pk)); ct = eph.public_key().public_bytes_raw()\n        return ct, _kdf(b\"x25519\", ss, ct, pk)\n    def decaps(self, sk, ct):\n        ss = sk.exchange(x25519.X25519PublicKey.from_public_bytes(ct))\n        return _kdf(b\"x25519\", ss, ct, sk.public_key().public_bytes_raw())\n\nclass P256KEM(KEM):\n    name = \"ECDH-P256\"\n    def generate(self):\n        sk = ec.generate_private_key(ec.SECP256R1())\n        return sk.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint), sk\n    def encaps(self, pk):\n        eph = ec.generate_private_key(ec.SECP256R1())\n        peer = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), pk)\n        ct = eph.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)\n        return ct, _kdf(b\"p256\", eph.exchange(ec.ECDH(), peer), ct, pk)\n    def decaps(self, sk, ct):\n        peer = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), ct)\n        pk = sk.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)\n        return _kdf(b\"p256\", sk.exchange(ec.ECDH(), peer), ct, pk)\n\nclass MLKEM768KEM(KEM):\n    name = \"ML-KEM-768\"\n    def generate(self):\n        sk = mlkem.MLKEM768PrivateKey.generate()\n        return sk.public_key().public_bytes_raw(), sk\n    def encaps(self, pk):\n        ss, ct = mlkem.MLKEM768PublicKey.from_public_bytes(pk).encapsulate()\n        return ct, ss\n    def decaps(self, sk, ct):\n        return sk.decapsulate(ct)\n\nclass HybridKEM(KEM):\n    \"\"\"classical + post-quantum: the secret is safe if EITHER component holds (illustrative combiner; deployed hybrids follow the IETF specifications)\"\"\"\n    def __init__(self, a, b):\n        self.a, self.b = a, b\n        self.name = f\"{a.name}+{b.name}\"\n    def generate(self):\n        pa, sa = self.a.generate(); pb, sb = self.b.generate()\n        return len(pa).to_bytes(4, \"big\") + pa + pb, (sa, sb, len(pa))\n    def encaps(self, pk):\n        n = int.from_bytes(pk[:4], \"big\"); pa, pb = pk[4:4 + n], pk[4 + n:]\n        ca, ssa = self.a.encaps(pa); cb, ssb = self.b.encaps(pb)\n        return len(ca).to_bytes(4, \"big\") + ca + cb, _kdf(b\"hybrid\", ssa, ssb, ca, cb)\n    def decaps(self, sk, ct):\n        sa, sb, _ = sk\n        n = int.from_bytes(ct[:4], \"big\"); ca, cb = ct[4:4 + n], ct[4 + n:]\n        return _kdf(b\"hybrid\", self.a.decaps(sa, ca), self.b.decaps(sb, cb), ca, cb)\n\nREGISTRY = {k.name: k for k in (X25519KEM(), P256KEM(), MLKEM768KEM(), HybridKEM(X25519KEM(), MLKEM768KEM()))}\n# The same protocol code runs with every algorithm: it depends only on the KEM interface. Adding an algorithm means registering a class, not editing callers.\ndef establish(kem_name):\n    kem = REGISTRY[kem_name]\n    pk, sk = kem.generate()\n    ct, secret_sender = kem.encaps(pk)\n    secret_receiver = kem.decaps(sk, ct)\n    return len(pk), len(ct), secret_sender == secret_receiver\nprint(f\"{'algorithm':<28} {'public key (bytes)':>18} {'ciphertext (bytes)':>19}  secrets agree\")\nfor name in REGISTRY:\n    pk, ct, ok = establish(name)\n    print(f\"{name:<28} {pk:>18} {ct:>19}  {ok}\")\nprint()\n# add a new algorithm WITHOUT touching establish(): ML-KEM-1024 from the same library\nclass MLKEM1024KEM(KEM):\n    name = \"ML-KEM-1024\"\n    def generate(self):\n        sk = mlkem.MLKEM1024PrivateKey.generate(); return sk.public_key().public_bytes_raw(), sk\n    def encaps(self, pk):\n        ss, ct = mlkem.MLKEM1024PublicKey.from_public_bytes(pk).encapsulate(); return ct, ss\n    def decaps(self, sk, ct): return sk.decapsulate(ct)\nREGISTRY[\"ML-KEM-1024\"] = MLKEM1024KEM()\npk, ct, ok = establish(\"ML-KEM-1024\")\nprint(f\"after registering one new class, the unchanged establish() works with ML-KEM-1024: public key {pk} bytes, ciphertext {ct} bytes, secrets agree: {ok}\")\nprint()\nprint(\"what the interface hides and what it cannot hide:\")\nprint(\"  hidden: algorithm-specific key objects, encodings and the combiner of the hybrid\")\nprint(\"  not hidden: sizes. The ML-KEM-768 public key is\", round(len(REGISTRY['ML-KEM-768'].generate()[0]) / 32), \"times the X25519 key; protocols, buffers, certificates and database columns that assumed 32 bytes must be reviewed\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-abstraction",
+              "language": "text",
+              "code": "algorithm                    public key (bytes)  ciphertext (bytes)  secrets agree\nX25519                                       32                  32  True\nECDH-P256                                    65                  65  True\nML-KEM-768                                 1184                1088  True\nX25519+ML-KEM-768                          1220                1124  True\n\nafter registering one new class, the unchanged establish() works with ML-KEM-1024: public key 1568 bytes, ciphertext 1568 bytes, secrets agree: True\n\nwhat the interface hides and what it cannot hide:\n  hidden: algorithm-specific key objects, encodings and the combiner of the hybrid\n  not hidden: sizes. The ML-KEM-768 public key is 37 times the X25519 key; protocols, buffers, certificates and database columns that assumed 32 bytes must be reviewed",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The function `establish` works for all four algorithms and the secrets agree. The table already shows the part of the problem that abstraction cannot remove: **sizes**. An X25519 public key is 32 bytes and a ciphertext 32 bytes; ECDH-P256 uses 65 and 65; ML-KEM-768 uses 1184 and 1088; the hybrid 1220 and 1124. After registering ML-KEM-1024 (public key and ciphertext 1568 bytes each) the unchanged caller works with it too. The ML-KEM-768 public key is about 37 times the X25519 key, so buffers, protocol fields, certificate extensions and database columns that assumed 32 bytes must be found and reviewed (the discovery of E2 helps).\n\n**What a good interface does.** It hides algorithm-specific objects and encodings, makes the hybrid combiner the library's concern, and gives the algorithm a *name* that can be recorded, configured (4.3) and audited. It does not make a migration free: sizes, performance and failure modes differ and must be tested. **Common mistake:** wrapping the algorithm in an interface that still exposes its key format (for example \"RSA key size\"), which leaks the algorithm into every caller."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the core idea of algorithm abstraction?",
+              "options": [
+                "Callers use an operation interface and a separate layer picks the algorithm",
+                "Callers choose the algorithm per call",
+                "Algorithms are compiled into each function"
+              ],
+              "correct_index": 0,
+              "explanation": "Registering a class adds an algorithm."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does abstraction NOT remove?",
+              "options": [
+                "Differences in key and ciphertext sizes",
+                "The need for an algorithm name",
+                "The need for interfaces"
+              ],
+              "correct_index": 0,
+              "explanation": "ML-KEM-768 keys are about 37 times the X25519 key."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why use a hybrid KEM during migration?",
+              "options": [
+                "The secret stays safe if either the classical or the post-quantum component holds",
+                "It is smaller",
+                "It needs no key"
+              ],
+              "correct_index": 0,
+              "explanation": "Illustrative combiner; deployed hybrids follow IETF specifications."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (crypto-agility principles, Figure 4-3: modularity and abstraction, automation, governance, monitoring, interoperability) and Chapter 8 (Achieving Crypto-Agility)"
+            },
+            {
+              "book": "B04",
+              "locator": "FIPS 203 (ML-KEM): Section 8 (parameter sets and the sizes of keys and ciphertexts)"
+            },
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227: Section 4 (KEM properties) and the discussion of combining key-establishment mechanisms"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The hybrid combiner in the listing is an illustration and is not a standardised construction. The size figures are measured with the cryptography library and match FIPS 203 for ML-KEM-768 (1184 and 1088) and ML-KEM-1024 (1568 and 1568); the locator inside FIPS 203 was not re-read."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "4.2 Crypto APIs",
+          "summary": "A purpose-level API with a self-describing, authenticated envelope: old data stays readable, policy can refuse an algorithm, and unknown or rewritten identifiers fail closed.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A crypto API determines whether agility is practical. A **low-level** API (`encrypt(key, nonce, data, mode)`) pushes algorithm, mode, nonce and format decisions into every caller, which is where hard-coded algorithms and misuse come from. A **high-level** API exposes *purposes* (\"seal for a recipient\", \"open\", \"sign\", \"verify\") and handles the details. For agility the API must also return **self-describing data**: a header with a format version and an **algorithm identifier**, authenticated together with the ciphertext, so that data written years ago can still be processed after the default has changed.\n\nThe listing implements `seal` and `open` over the KEM layer of 4.1 plus AES-256-GCM: the header (version, algorithm id) is the AEAD's additional authenticated data. It demonstrates that an old record remains readable after the default moves to the hybrid, that policy is applied at **opening** too, that rewriting the header is detected, and that unknown identifiers are refused. The listings are working code: a small KEM interface with X25519, ECDH-P256, ML-KEM-768 and a hybrid combiner (built on the `cryptography` library's ML-KEM), a self-describing envelope, a policy loader, a key store, a certificate pipeline that issues RSA, ECDSA and ML-DSA-65 certificates, loopback TLS negotiation, and an AST-based retrofit demonstration. The hybrid combiner is **illustrative** (deployed hybrids follow the IETF specifications). Device budgets, client populations and the source tree are **DEMO DATA / SIMULATION** and are labelled where used."
+            },
+            {
+              "type": "code",
+              "id": "c-crypto-api",
+              "language": "python",
+              "code": "import hashlib, os\nfrom cryptography.hazmat.primitives.asymmetric import ec, mlkem, x25519\nfrom cryptography.hazmat.primitives import serialization\n\n# ---- one interface, several algorithms: callers only see generate / encaps / decaps and a name ----\nclass KEM:\n    name = \"abstract\"\n    def generate(self): raise NotImplementedError          # -> (public key bytes, secret key object)\n    def encaps(self, pk): raise NotImplementedError        # -> (ciphertext, shared secret)\n    def decaps(self, sk, ct): raise NotImplementedError    # -> shared secret\n\ndef _kdf(*parts):\n    h = hashlib.sha3_256()\n    for p in parts: h.update(len(p).to_bytes(4, \"big\") + p)\n    return h.digest()\n\nclass X25519KEM(KEM):\n    name = \"X25519\"\n    def generate(self):\n        sk = x25519.X25519PrivateKey.generate()\n        return sk.public_key().public_bytes_raw(), sk\n    def encaps(self, pk):\n        eph = x25519.X25519PrivateKey.generate()\n        ss = eph.exchange(x25519.X25519PublicKey.from_public_bytes(pk)); ct = eph.public_key().public_bytes_raw()\n        return ct, _kdf(b\"x25519\", ss, ct, pk)\n    def decaps(self, sk, ct):\n        ss = sk.exchange(x25519.X25519PublicKey.from_public_bytes(ct))\n        return _kdf(b\"x25519\", ss, ct, sk.public_key().public_bytes_raw())\n\nclass P256KEM(KEM):\n    name = \"ECDH-P256\"\n    def generate(self):\n        sk = ec.generate_private_key(ec.SECP256R1())\n        return sk.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint), sk\n    def encaps(self, pk):\n        eph = ec.generate_private_key(ec.SECP256R1())\n        peer = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), pk)\n        ct = eph.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)\n        return ct, _kdf(b\"p256\", eph.exchange(ec.ECDH(), peer), ct, pk)\n    def decaps(self, sk, ct):\n        peer = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), ct)\n        pk = sk.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)\n        return _kdf(b\"p256\", sk.exchange(ec.ECDH(), peer), ct, pk)\n\nclass MLKEM768KEM(KEM):\n    name = \"ML-KEM-768\"\n    def generate(self):\n        sk = mlkem.MLKEM768PrivateKey.generate()\n        return sk.public_key().public_bytes_raw(), sk\n    def encaps(self, pk):\n        ss, ct = mlkem.MLKEM768PublicKey.from_public_bytes(pk).encapsulate()\n        return ct, ss\n    def decaps(self, sk, ct):\n        return sk.decapsulate(ct)\n\nclass HybridKEM(KEM):\n    \"\"\"classical + post-quantum: the secret is safe if EITHER component holds (illustrative combiner; deployed hybrids follow the IETF specifications)\"\"\"\n    def __init__(self, a, b):\n        self.a, self.b = a, b\n        self.name = f\"{a.name}+{b.name}\"\n    def generate(self):\n        pa, sa = self.a.generate(); pb, sb = self.b.generate()\n        return len(pa).to_bytes(4, \"big\") + pa + pb, (sa, sb, len(pa))\n    def encaps(self, pk):\n        n = int.from_bytes(pk[:4], \"big\"); pa, pb = pk[4:4 + n], pk[4 + n:]\n        ca, ssa = self.a.encaps(pa); cb, ssb = self.b.encaps(pb)\n        return len(ca).to_bytes(4, \"big\") + ca + cb, _kdf(b\"hybrid\", ssa, ssb, ca, cb)\n    def decaps(self, sk, ct):\n        sa, sb, _ = sk\n        n = int.from_bytes(ct[:4], \"big\"); ca, cb = ct[4:4 + n], ct[4 + n:]\n        return _kdf(b\"hybrid\", self.a.decaps(sa, ca), self.b.decaps(sb, cb), ca, cb)\n\nREGISTRY = {k.name: k for k in (X25519KEM(), P256KEM(), MLKEM768KEM(), HybridKEM(X25519KEM(), MLKEM768KEM()))}\nfrom cryptography.hazmat.primitives.ciphers.aead import AESGCM\n# A self-describing envelope: the algorithm id travels with the ciphertext and is authenticated, so old data stays readable after the default changes, and policy can refuse algorithms.\nALG_IDS = {1: \"X25519\", 2: \"ECDH-P256\", 3: \"ML-KEM-768\", 4: \"X25519+ML-KEM-768\"}\nID_OF = {v: k for k, v in ALG_IDS.items()}\ndef seal(pk, data, alg):\n    kem = REGISTRY[alg]\n    ct, secret = kem.encaps(pk)\n    header = bytes([1, ID_OF[alg]])                                   # format version 1, algorithm id\n    nonce = os.urandom(12)\n    body = AESGCM(secret).encrypt(nonce, data, header)                # header is authenticated (additional data)\n    return header + len(ct).to_bytes(4, \"big\") + ct + nonce + body\ndef open_(sk, blob, allowed):\n    version, alg_id = blob[0], blob[1]\n    if version != 1: raise ValueError(\"unknown envelope version\")\n    if alg_id not in ALG_IDS: raise ValueError(f\"unknown algorithm id {alg_id}\")\n    alg = ALG_IDS[alg_id]\n    if alg not in allowed: raise PermissionError(f\"policy refuses {alg}\")\n    n = int.from_bytes(blob[2:6], \"big\"); ct = blob[6:6 + n]; nonce = blob[6 + n:18 + n]; body = blob[18 + n:]\n    secret = REGISTRY[alg].decaps(sk, ct)\n    return AESGCM(secret).decrypt(nonce, body, blob[:2])\nkeys = {name: REGISTRY[name].generate() for name in (\"X25519\", \"ECDH-P256\", \"X25519+ML-KEM-768\")}\nold = seal(keys[\"X25519\"][0], b\"archive record written in 2025\", \"X25519\")\nnew = seal(keys[\"X25519+ML-KEM-768\"][0], b\"record written after the default changed\", \"X25519+ML-KEM-768\")\npolicy_today = {\"X25519\", \"ECDH-P256\", \"X25519+ML-KEM-768\"}\nprint(\"envelope sizes (bytes): old\", len(old), \" new hybrid\", len(new))\nprint(\"old record still readable after the default changed:\", open_(keys[\"X25519\"][1], old, policy_today))\nprint(\"new record:\", open_(keys[\"X25519+ML-KEM-768\"][1], new, policy_today))\ntests = []\ntry: open_(keys[\"X25519\"][1], old, {\"X25519+ML-KEM-768\"})\nexcept PermissionError as e: tests.append((\"policy removes X25519\", str(e)))\nbad = bytearray(old); bad[1] = ID_OF[\"ECDH-P256\"]\ntry: open_(keys[\"ECDH-P256\"][1], bytes(bad), policy_today)\nexcept Exception as e: tests.append((\"attacker rewrites the algorithm id\", \"rejected (\" + type(e).__name__ + \": the ciphertext does not parse as the claimed algorithm)\"))\n# the header is additional authenticated data: the right key and ciphertext with a rewritten header fail authentication\nfrom cryptography.exceptions import InvalidTag\nn_ = int.from_bytes(old[2:6], \"big\"); secret_ = REGISTRY[\"X25519\"].decaps(keys[\"X25519\"][1], old[6:6 + n_])\ntry: AESGCM(secret_).decrypt(old[6 + n_:18 + n_], old[18 + n_:], bytes([1, ID_OF[\"ECDH-P256\"]]))\nexcept InvalidTag: tests.append((\"header rewritten, key and ciphertext intact\", \"authentication failed (InvalidTag)\"))\nbad = bytearray(new); bad[1] = 99\ntry: open_(keys[\"X25519\"][1], bytes(bad), policy_today)\nexcept ValueError as e: tests.append((\"unknown algorithm id\", str(e)))\nfor what, result in tests:\n    print(f\"refused: {what:<38} -> {result}\")\nprint(\"design rules shown: (1) the API takes a purpose and returns a self-describing blob, never asks the caller to pick modes or nonces; (2) algorithm identity is part of the data and is authenticated; (3) policy is applied at decryption too, so a disabled algorithm can be refused; (4) unknown ids fail closed\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-crypto-api",
+              "language": "text",
+              "code": "envelope sizes (bytes): old 96  new hybrid 1198\nold record still readable after the default changed: b'archive record written in 2025'\nnew record: b'record written after the default changed'\nrefused: policy removes X25519                  -> policy refuses X25519\nrefused: attacker rewrites the algorithm id     -> rejected (ValueError: the ciphertext does not parse as the claimed algorithm)\nrefused: header rewritten, key and ciphertext intact -> authentication failed (InvalidTag)\nrefused: unknown algorithm id                   -> unknown algorithm id 99\ndesign rules shown: (1) the API takes a purpose and returns a self-describing blob, never asks the caller to pick modes or nonces; (2) algorithm identity is part of the data and is authenticated; (3) policy is applied at decryption too, so a disabled algorithm can be refused; (4) unknown ids fail closed",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "An old X25519 record is 96 bytes and a new hybrid record 1198 bytes, and both open after the default changed. With a policy that no longer allows X25519, opening the old record is **refused by policy**. Three tampering cases are refused: changing the identifier so that the ciphertext no longer parses as the claimed algorithm (ValueError), keeping the right key and ciphertext but rewriting the header (authentication fails with InvalidTag, which shows the header is authenticated) and using an unknown identifier (99). The size jump from 96 to 1198 bytes is the cost of the hybrid in storage.\n\n**API design rules this demonstrates.** The caller supplies a purpose and data, never a nonce or a mode. Algorithm identity is part of the data and authenticated, so an attacker cannot silently downgrade by editing it. Policy applies at decryption as well as encryption, so retiring an algorithm is enforceable. Unknown versions and algorithms fail closed. **Common mistake:** storing the algorithm in a database column next to the ciphertext, outside the authenticated data."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is the envelope header used as AEAD additional authenticated data?",
+              "options": [
+                "So that rewriting the algorithm identifier is detected",
+                "To encrypt the header",
+                "To shrink the ciphertext"
+              ],
+              "correct_index": 0,
+              "explanation": "InvalidTag when the header was rewritten."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why apply policy when opening data as well?",
+              "options": [
+                "So a retired algorithm can be refused, not only avoided for new data",
+                "To slow decryption",
+                "It is not needed"
+              ],
+              "correct_index": 0,
+              "explanation": "The policy removed X25519 and the old record was refused."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What should an API do with an unknown algorithm identifier?",
+              "options": [
+                "Fail closed",
+                "Guess the closest algorithm",
+                "Try all algorithms"
+              ],
+              "correct_index": 0,
+              "explanation": "Unknown id 99 was refused."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (crypto-agility principles, Figure 4-3: modularity and abstraction, automation, governance, monitoring, interoperability) and Chapter 8 (Achieving Crypto-Agility)"
+            },
+            {
+              "book": "B100",
+              "locator": "cryptography documentation: AEAD (AESGCM) and its associated-data parameter"
+            },
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227: Section 4.6 on combining mechanisms (background for the hybrid KEM)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The envelope format is a lesson design, not a standard. The authenticated-header property was verified by the listing's own test against AES-GCM."
+          }
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "4.3 Configuration-Driven Algorithms",
+          "summary": "A validated, fail-closed policy that switches algorithms by configuration only, with an audit log and a visible effect on legacy clients.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "When the algorithm lives in configuration instead of code, a change is an operational act (review, approve, deploy a file) instead of a software release. The configuration then becomes a **security-critical input** and must be handled like one: validated against a **catalogue** of known algorithms, checked for internal consistency (a preferred algorithm must be allowed and must not be disallowed), logged, and **fail closed**: if a new policy is invalid, the previous valid one stays in force.\n\nThe listing loads three policies into a policy object. Policy v1 prefers X25519 for key exchange; v2 prefers the hybrid X25519+ML-KEM-768, falls back to X25519 and disallows ECDH-P256; v3 is invalid (it prefers an algorithm outside the catalogue and not allowed). Three peers with different capabilities show what each policy chooses. The listings are working code: a small KEM interface with X25519, ECDH-P256, ML-KEM-768 and a hybrid combiner (built on the `cryptography` library's ML-KEM), a self-describing envelope, a policy loader, a key store, a certificate pipeline that issues RSA, ECDSA and ML-DSA-65 certificates, loopback TLS negotiation, and an AST-based retrofit demonstration. The hybrid combiner is **illustrative** (deployed hybrids follow the IETF specifications). Device budgets, client populations and the source tree are **DEMO DATA / SIMULATION** and are labelled where used."
+            },
+            {
+              "type": "code",
+              "id": "c-config-policy",
+              "language": "python",
+              "code": "import json\n# Algorithm choice from configuration. The configuration is validated and fails CLOSED: an invalid policy is rejected and the previous valid policy stays in force.\nCATALOGUE = {\"key_exchange\": {\"X25519\", \"ECDH-P256\", \"ML-KEM-768\", \"X25519+ML-KEM-768\"}, \"signature\": {\"RSA-2048\", \"ECDSA-P256\", \"ML-DSA-65\", \"ECDSA-P256+ML-DSA-65\"}}\nPOLICY_V1 = json.dumps({\"version\": 1, \"rules\": {\"key_exchange\": {\"preferred\": [\"X25519\"], \"allowed\": [\"X25519\", \"ECDH-P256\"]}, \"signature\": {\"preferred\": [\"ECDSA-P256\"], \"allowed\": [\"RSA-2048\", \"ECDSA-P256\"]}}})\nPOLICY_V2 = json.dumps({\"version\": 2, \"rules\": {\"key_exchange\": {\"preferred\": [\"X25519+ML-KEM-768\", \"X25519\"], \"allowed\": [\"X25519+ML-KEM-768\", \"X25519\"], \"disallowed\": [\"ECDH-P256\"]}, \"signature\": {\"preferred\": [\"ECDSA-P256\"], \"allowed\": [\"RSA-2048\", \"ECDSA-P256\"]}}})\nPOLICY_BAD = json.dumps({\"version\": 3, \"rules\": {\"key_exchange\": {\"preferred\": [\"ML-KEM-512\"], \"allowed\": [\"X25519\"]}}})\nclass Policy:\n    def __init__(self): self.active, self.log = None, []\n    def load(self, text):\n        try:\n            doc = json.loads(text)\n            for use, rule in doc[\"rules\"].items():\n                if use not in CATALOGUE: raise ValueError(f\"unknown use case {use}\")\n                for alg in rule[\"preferred\"] + rule[\"allowed\"]:\n                    if alg not in CATALOGUE[use]: raise ValueError(f\"{alg} is not in the algorithm catalogue\")\n                for alg in rule[\"preferred\"]:\n                    if alg not in rule[\"allowed\"]: raise ValueError(f\"preferred {alg} is not allowed\")\n                    if alg in rule.get(\"disallowed\", []): raise ValueError(f\"preferred {alg} is disallowed\")\n            self.active = doc; self.log.append(f\"v{doc['version']} accepted\")\n        except (ValueError, KeyError, json.JSONDecodeError) as e:\n            self.log.append(f\"REJECTED, previous policy stays in force: {e}\")\n    def choose(self, use, peer_supports):\n        rule = self.active[\"rules\"][use]\n        for alg in rule[\"preferred\"] + [a for a in rule[\"allowed\"] if a not in rule[\"preferred\"]]:\n            if alg in peer_supports: return alg\n        return None\np = Policy()\npeers = {\"modern client\": {\"X25519+ML-KEM-768\", \"X25519\", \"ECDH-P256\"}, \"older client\": {\"X25519\", \"ECDH-P256\"}, \"legacy client\": {\"ECDH-P256\"}}\ndef table(title):\n    print(f\"-- {title}\")\n    for peer, supports in peers.items():\n        print(f\"   {peer:<14} key exchange -> {p.choose('key_exchange', supports)}\")\np.load(POLICY_V1); table(\"policy v1 in force\")\np.load(POLICY_V2); table(\"after changing ONLY the configuration to v2 (no code change, no redeploy)\")\np.load(POLICY_BAD); table(\"after an invalid v3 was offered (still v2)\")\nprint()\nfor line in p.log: print(\"audit:\", line)\nprint(\"the legacy client now gets None: the connection is refused, which is a visible, intended effect of the policy; discovery (E2) tells you beforehand how many such clients exist\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-config-policy",
+              "language": "text",
+              "code": "-- policy v1 in force\n   modern client  key exchange -> X25519\n   older client   key exchange -> X25519\n   legacy client  key exchange -> ECDH-P256\n-- after changing ONLY the configuration to v2 (no code change, no redeploy)\n   modern client  key exchange -> X25519+ML-KEM-768\n   older client   key exchange -> X25519\n   legacy client  key exchange -> None\n-- after an invalid v3 was offered (still v2)\n   modern client  key exchange -> X25519+ML-KEM-768\n   older client   key exchange -> X25519\n   legacy client  key exchange -> None\n\naudit: v1 accepted\naudit: v2 accepted\naudit: REJECTED, previous policy stays in force: ML-KEM-512 is not in the algorithm catalogue\nthe legacy client now gets None: the connection is refused, which is a visible, intended effect of the policy; discovery (E2) tells you beforehand how many such clients exist",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Under v1 the modern and older clients get X25519 and the legacy client ECDH-P256. After changing **only the configuration** to v2, the modern client gets the hybrid, the older client still X25519, and the legacy client (ECDH-P256 only) gets **None**: its connection is refused, a visible and intended effect. The invalid v3 is rejected with the audit line \"ML-KEM-512 is not in the algorithm catalogue\" and v2 remains in force.\n\n**Operational points.** Discovery (E2) tells you before the change how many clients depend on a disallowed algorithm; the audit log records who changed what and when; and the configuration file needs the same access control and change management as code. Configuration-driven algorithms are not a licence to change algorithms without testing: the effect on performance and compatibility is the same as for code changes. **Common mistake:** letting an unvalidated configuration select the algorithm, which turns a typing error into a downgrade or an outage."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What happens when a new policy file is invalid?",
+              "options": [
+                "It is rejected and the previous valid policy stays in force",
+                "The system falls back to no encryption",
+                "The system stops"
+              ],
+              "correct_index": 0,
+              "explanation": "Fail closed with an audit entry."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does the legacy client get under policy v2?",
+              "options": [
+                "No agreed algorithm: the connection is refused",
+                "ECDH-P256",
+                "X25519+ML-KEM-768"
+              ],
+              "correct_index": 0,
+              "explanation": "A visible, intended effect of the policy."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why should configuration be validated against a catalogue?",
+              "options": [
+                "A typo or unknown name must not silently select an algorithm",
+                "Catalogues are faster",
+                "To hide algorithms"
+              ],
+              "correct_index": 0,
+              "explanation": "ML-KEM-512 was rejected."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (crypto-agility principles, Figure 4-3: modularity and abstraction, automation, governance, monitoring, interoperability) and Chapter 8 (Achieving Crypto-Agility)"
+            },
+            {
+              "book": "B97",
+              "locator": "NIST SP 800-57 Part 1 Rev. 5: guidance that cryptographic algorithm and key-length choices be policy-governed (Sections on cryptographic policy and the security-strength transition)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The policy format and validation rules are the lesson's design; the SP 800-57 citation is to the general idea of governed algorithm choice and was not re-read for a specific section number."
+          }
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "4.4 Key Lifecycle Abstraction",
+          "summary": "A key store with key identifiers, algorithms and states, rotation to a hybrid key while old keys decrypt, re-protection of old records and a safe destruction rule.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Keys have a life: created, activated, used, deprecated, destroyed. Agility for keys means the **key store hides the algorithm** and tracks each key's **identifier, algorithm and state**; records refer to the identifier, so rotating to a new key type does not change callers. The usual states are **pre-activation**, **active** (protect and process), **deprecated** (process only: decrypt or verify, no new protection) and **destroyed**, which is the shape of the key states in NIST SP 800-57.\n\nThe listing builds a small key store on the KEM layer. Five records are protected under an X25519 key; the store rotates to a hybrid key (the X25519 key becomes decrypt-only); old records stay readable; a re-protection job moves them to the new key; the old key is destroyed; and a record that was **not** re-protected is shown to become unreadable. The listings are working code: a small KEM interface with X25519, ECDH-P256, ML-KEM-768 and a hybrid combiner (built on the `cryptography` library's ML-KEM), a self-describing envelope, a policy loader, a key store, a certificate pipeline that issues RSA, ECDSA and ML-DSA-65 certificates, loopback TLS negotiation, and an AST-based retrofit demonstration. The hybrid combiner is **illustrative** (deployed hybrids follow the IETF specifications). Device budgets, client populations and the source tree are **DEMO DATA / SIMULATION** and are labelled where used."
+            },
+            {
+              "type": "code",
+              "id": "c-key-lifecycle",
+              "language": "python",
+              "code": "import hashlib, os\nfrom cryptography.hazmat.primitives.asymmetric import ec, mlkem, x25519\nfrom cryptography.hazmat.primitives import serialization\n\n# ---- one interface, several algorithms: callers only see generate / encaps / decaps and a name ----\nclass KEM:\n    name = \"abstract\"\n    def generate(self): raise NotImplementedError          # -> (public key bytes, secret key object)\n    def encaps(self, pk): raise NotImplementedError        # -> (ciphertext, shared secret)\n    def decaps(self, sk, ct): raise NotImplementedError    # -> shared secret\n\ndef _kdf(*parts):\n    h = hashlib.sha3_256()\n    for p in parts: h.update(len(p).to_bytes(4, \"big\") + p)\n    return h.digest()\n\nclass X25519KEM(KEM):\n    name = \"X25519\"\n    def generate(self):\n        sk = x25519.X25519PrivateKey.generate()\n        return sk.public_key().public_bytes_raw(), sk\n    def encaps(self, pk):\n        eph = x25519.X25519PrivateKey.generate()\n        ss = eph.exchange(x25519.X25519PublicKey.from_public_bytes(pk)); ct = eph.public_key().public_bytes_raw()\n        return ct, _kdf(b\"x25519\", ss, ct, pk)\n    def decaps(self, sk, ct):\n        ss = sk.exchange(x25519.X25519PublicKey.from_public_bytes(ct))\n        return _kdf(b\"x25519\", ss, ct, sk.public_key().public_bytes_raw())\n\nclass P256KEM(KEM):\n    name = \"ECDH-P256\"\n    def generate(self):\n        sk = ec.generate_private_key(ec.SECP256R1())\n        return sk.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint), sk\n    def encaps(self, pk):\n        eph = ec.generate_private_key(ec.SECP256R1())\n        peer = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), pk)\n        ct = eph.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)\n        return ct, _kdf(b\"p256\", eph.exchange(ec.ECDH(), peer), ct, pk)\n    def decaps(self, sk, ct):\n        peer = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), ct)\n        pk = sk.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)\n        return _kdf(b\"p256\", sk.exchange(ec.ECDH(), peer), ct, pk)\n\nclass MLKEM768KEM(KEM):\n    name = \"ML-KEM-768\"\n    def generate(self):\n        sk = mlkem.MLKEM768PrivateKey.generate()\n        return sk.public_key().public_bytes_raw(), sk\n    def encaps(self, pk):\n        ss, ct = mlkem.MLKEM768PublicKey.from_public_bytes(pk).encapsulate()\n        return ct, ss\n    def decaps(self, sk, ct):\n        return sk.decapsulate(ct)\n\nclass HybridKEM(KEM):\n    \"\"\"classical + post-quantum: the secret is safe if EITHER component holds (illustrative combiner; deployed hybrids follow the IETF specifications)\"\"\"\n    def __init__(self, a, b):\n        self.a, self.b = a, b\n        self.name = f\"{a.name}+{b.name}\"\n    def generate(self):\n        pa, sa = self.a.generate(); pb, sb = self.b.generate()\n        return len(pa).to_bytes(4, \"big\") + pa + pb, (sa, sb, len(pa))\n    def encaps(self, pk):\n        n = int.from_bytes(pk[:4], \"big\"); pa, pb = pk[4:4 + n], pk[4 + n:]\n        ca, ssa = self.a.encaps(pa); cb, ssb = self.b.encaps(pb)\n        return len(ca).to_bytes(4, \"big\") + ca + cb, _kdf(b\"hybrid\", ssa, ssb, ca, cb)\n    def decaps(self, sk, ct):\n        sa, sb, _ = sk\n        n = int.from_bytes(ct[:4], \"big\"); ca, cb = ct[4:4 + n], ct[4 + n:]\n        return _kdf(b\"hybrid\", self.a.decaps(sa, ca), self.b.decaps(sb, cb), ca, cb)\n\nREGISTRY = {k.name: k for k in (X25519KEM(), P256KEM(), MLKEM768KEM(), HybridKEM(X25519KEM(), MLKEM768KEM()))}\nfrom cryptography.hazmat.primitives.ciphers.aead import AESGCM\n# A key store behind an interface: keys have identifiers, an algorithm and a state, and records refer to key ids. Rotation to a new algorithm needs no change in the callers.\nclass KeyStore:\n    def __init__(self): self.keys, self.n = {}, 0\n    def create(self, purpose, alg):\n        self.n += 1; kid = f\"{purpose}-{self.n}\"\n        pk, sk = REGISTRY[alg].generate()\n        self.keys[kid] = {\"purpose\": purpose, \"alg\": alg, \"state\": \"pre-active\", \"pk\": pk, \"sk\": sk}\n        return kid\n    def activate(self, kid):\n        for k in self.keys.values():\n            if k[\"purpose\"] == self.keys[kid][\"purpose\"] and k[\"state\"] == \"active\": k[\"state\"] = \"deprecated (decrypt only)\"\n        self.keys[kid][\"state\"] = \"active\"\n    def current(self, purpose): return next(k_id for k_id, k in self.keys.items() if k[\"purpose\"] == purpose and k[\"state\"] == \"active\")\n    def destroy(self, kid): self.keys[kid][\"state\"] = \"destroyed\"; self.keys[kid][\"sk\"] = None\ndef protect(store, purpose, data):\n    kid = store.current(purpose); k = store.keys[kid]\n    ct, secret = REGISTRY[k[\"alg\"]].encaps(k[\"pk\"])\n    nonce = os.urandom(12)\n    return {\"kid\": kid, \"ct\": ct, \"nonce\": nonce, \"body\": AESGCM(secret).encrypt(nonce, data, kid.encode())}\ndef unprotect(store, rec):\n    k = store.keys[rec[\"kid\"]]\n    if k[\"state\"] == \"destroyed\": raise LookupError(\"key destroyed\")\n    return AESGCM(REGISTRY[k[\"alg\"]].decaps(k[\"sk\"], rec[\"ct\"])).decrypt(rec[\"nonce\"], rec[\"body\"], rec[\"kid\"].encode())\ndef report(store, title):\n    print(f\"-- {title}\")\n    for kid, k in store.keys.items(): print(f\"   {kid:<15} {k['alg']:<20} {k['state']}\")\nstore = KeyStore()\nk1 = store.create(\"customer-data\", \"X25519\"); store.activate(k1)\nrecords = [protect(store, \"customer-data\", f\"record {i}\".encode()) for i in range(5)]\nreport(store, \"before rotation\")\nk2 = store.create(\"customer-data\", \"X25519+ML-KEM-768\"); store.activate(k2)\nnew_rec = protect(store, \"customer-data\", b\"record 5\")\nreport(store, \"after rotation to the hybrid (callers unchanged)\")\nprint(\"old records readable with the deprecated key:\", all(unprotect(store, r) == f\"record {i}\".encode() for i, r in enumerate(records)), \"| new record uses\", new_rec[\"kid\"])\nmigrated = [protect(store, \"customer-data\", unprotect(store, r)) for r in records]\nstore.destroy(k1)\nreport(store, \"after re-protecting the old records and destroying the old key\")\nprint(\"migrated records readable:\", all(unprotect(store, r) == f\"record {i}\".encode() for i, r in enumerate(migrated)))\ntry: unprotect(store, records[0])\nexcept LookupError as e: print(\"an un-migrated record is now unreadable:\", e, \"-> destroy a key only after the re-protection job is verified complete\")\nprint(\"records per key id:\", {kid: sum(1 for r in migrated + [new_rec] if r['kid'] == kid) for kid in store.keys})"
+            },
+            {
+              "type": "code",
+              "id": "o-c-key-lifecycle",
+              "language": "text",
+              "code": "-- before rotation\n   customer-data-1 X25519               active\n-- after rotation to the hybrid (callers unchanged)\n   customer-data-1 X25519               deprecated (decrypt only)\n   customer-data-2 X25519+ML-KEM-768    active\nold records readable with the deprecated key: True | new record uses customer-data-2\n-- after re-protecting the old records and destroying the old key\n   customer-data-1 X25519               destroyed\n   customer-data-2 X25519+ML-KEM-768    active\nmigrated records readable: True\nan un-migrated record is now unreadable: key destroyed -> destroy a key only after the re-protection job is verified complete\nrecords per key id: {'customer-data-1': 0, 'customer-data-2': 6}",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Before rotation there is one active key. After rotation the old key is *deprecated (decrypt only)* and the hybrid key is *active*; all five old records still decrypt and the new record uses `customer-data-2`. After the re-protection job all migrated records are readable under the new key (six records now refer to `customer-data-2`, none to the old one) and the old key is destroyed. The original, un-migrated copy of a record is then unreadable (\"key destroyed\"), which is the intended property of destruction and the reason the rule is: **destroy a key only after the re-protection job has been verified complete** (including backups).\n\n**What makes this a migration enabler.** Callers never hold algorithms, only a purpose; the store can create keys of new types (larger post-quantum keys) without schema change as long as key material is stored as opaque bytes of any length; and the deprecated state gives a controlled period of coexistence. **Common mistake:** deleting the old key at rotation time, which makes archived data permanently unreadable."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What can a deprecated key do?",
+              "options": [
+                "Decrypt or verify existing data, but not protect new data",
+                "Encrypt new data",
+                "Nothing"
+              ],
+              "correct_index": 0,
+              "explanation": "Decrypt-only during coexistence."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "When is it safe to destroy the old key in a rotation?",
+              "options": [
+                "After all data protected by it has been re-protected and verified, including backups",
+                "Immediately at rotation",
+                "After one day"
+              ],
+              "correct_index": 0,
+              "explanation": "An un-migrated record became unreadable."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why do records store a key identifier?",
+              "options": [
+                "So the right key and algorithm are found after rotation without changing callers",
+                "To make records bigger",
+                "To avoid encryption"
+              ],
+              "correct_index": 0,
+              "explanation": "The store maps the identifier to the algorithm."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (crypto-agility principles, Figure 4-3: modularity and abstraction, automation, governance, monitoring, interoperability) and Chapter 8 (Achieving Crypto-Agility)"
+            },
+            {
+              "book": "B97",
+              "locator": "NIST SP 800-57 Part 1 Rev. 5: key states and transitions (pre-activation, active, deactivated, destroyed) and cryptoperiods"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The four states are a simplification of the SP 800-57 key states (which also include suspended, compromised and destroyed-compromised); the section locator was not re-read."
+          }
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "4.5 Certificate Agility",
+          "summary": "One issuing pipeline producing RSA, ECDSA and ML-DSA-65 certificates (measured sizes), a server holding two certificate types at once, and how certificate lifetime sets the migration speed.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "PKI is where agility is hardest: certificates are issued by CAs, trusted by clients you do not control and bound to algorithms that sit in many places. Agility here means the **issuance pipeline** treats the key type as a **profile parameter**, the **servers can hold certificates of more than one type** at once, and **lifetimes are short enough** that replacement happens through routine renewal.\n\nThe listing builds two roots, a classical one (ECDSA-P256) and a post-quantum one (ML-DSA-65), and issues leaf certificates with three profiles (RSA-2048, ECDSA-P256, ML-DSA-65) through the same function, verifying each against its issuer. Then it starts a loopback TLS server holding both an RSA and an ECDSA certificate and connects with clients that accept only RSA or only ECDSA suites. Sizes are rounded because ECDSA signatures and serial numbers vary by a byte or two. The listings are working code: a small KEM interface with X25519, ECDH-P256, ML-KEM-768 and a hybrid combiner (built on the `cryptography` library's ML-KEM), a self-describing envelope, a policy loader, a key store, a certificate pipeline that issues RSA, ECDSA and ML-DSA-65 certificates, loopback TLS negotiation, and an AST-based retrofit demonstration. The hybrid combiner is **illustrative** (deployed hybrids follow the IETF specifications). Device budgets, client populations and the source tree are **DEMO DATA / SIMULATION** and are labelled where used."
+            },
+            {
+              "type": "code",
+              "id": "c-cert-agility",
+              "language": "python",
+              "code": "import datetime, os, socket, ssl, tempfile, threading\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import ec, mldsa, rsa\nfrom cryptography.x509.oid import NameOID\n# One issuing pipeline, several certificate algorithms. The issuance PROFILE names the key type; nothing else in the pipeline changes.\nnow = datetime.datetime.now(datetime.timezone.utc)\ndef name(cn): return x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])\ndef new_key(profile):\n    return {\"rsa-2048\": lambda: rsa.generate_private_key(65537, 2048), \"ecdsa-p256\": lambda: ec.generate_private_key(ec.SECP256R1()), \"ml-dsa-65\": lambda: mldsa.MLDSA65PrivateKey.generate()}[profile]()\ndef sign_hash(key): return None if isinstance(key, mldsa.MLDSA65PrivateKey) else hashes.SHA256()\ndef issue(subject_cn, subject_key, issuer_cn, issuer_key, ca=False, days=90):\n    b = (x509.CertificateBuilder().subject_name(name(subject_cn)).issuer_name(name(issuer_cn)).public_key(subject_key.public_key()).serial_number(x509.random_serial_number())\n         .not_valid_before(now - datetime.timedelta(minutes=1)).not_valid_after(now + datetime.timedelta(days=days))\n         .add_extension(x509.BasicConstraints(ca=ca, path_length=None), critical=True))\n    if not ca: b = b.add_extension(x509.SubjectAlternativeName([x509.DNSName(subject_cn)]), critical=False)\n    return b.sign(issuer_key, sign_hash(issuer_key))\ndef verify(cert, issuer_cert):\n    pk = issuer_cert.public_key(); sig, tbs = cert.signature, cert.tbs_certificate_bytes\n    if isinstance(pk, rsa.RSAPublicKey):\n        from cryptography.hazmat.primitives.asymmetric import padding; pk.verify(sig, tbs, padding.PKCS1v15(), cert.signature_hash_algorithm)\n    elif isinstance(pk, ec.EllipticCurvePublicKey): pk.verify(sig, tbs, ec.ECDSA(cert.signature_hash_algorithm))\n    else: pk.verify(sig, tbs)\n    return True\n# two roots (a classical one and a post-quantum one), leaves of three algorithms\nroots = {\"classical root (ECDSA-P256)\": new_key(\"ecdsa-p256\"), \"post-quantum root (ML-DSA-65)\": new_key(\"ml-dsa-65\")}\nroot_certs = {n: issue(n, k, n, k, ca=True, days=3650) for n, k in roots.items()}\nplan = [(\"rsa-2048\", \"classical root (ECDSA-P256)\"), (\"ecdsa-p256\", \"classical root (ECDSA-P256)\"), (\"ml-dsa-65\", \"post-quantum root (ML-DSA-65)\")]\nprint(f\"{'leaf profile':<12} {'issued by':<32} {'certificate (~bytes)':>20} {'public key (bytes)':>19} {'signature (~bytes)':>19}  chain verifies\")\nleaves = {}\nfor profile, root_name in plan:\n    key = new_key(profile)\n    cert = issue(f\"{profile}.lab.test\", key, root_name, roots[root_name])\n    leaves[profile] = (key, cert)\n    pk_len = len(cert.public_key().public_bytes(serialization.Encoding.DER, serialization.PublicFormat.SubjectPublicKeyInfo))\n    print(f\"{profile:<12} {root_name:<32} {round(len(cert.public_bytes(serialization.Encoding.DER)), -2):>20} {pk_len:>19} {round(len(cert.signature), -1):>19}  {verify(cert, root_certs[root_name])}\")\nprint(\"sizes marked ~ are rounded (to 100 and 10 bytes) because DER-encoded ECDSA signatures and random serial numbers vary by a byte or two between runs\")\nprint()\n# a server holding TWO certificate types at once (RSA and ECDSA): the client's offer decides which one it receives\ntmp = tempfile.mkdtemp()\nctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); ctx.maximum_version = ssl.TLSVersion.TLSv1_2\nfor profile in (\"rsa-2048\", \"ecdsa-p256\"):\n    key, cert = leaves[profile]\n    cf, kf = os.path.join(tmp, profile + \".crt\"), os.path.join(tmp, profile + \".key\")\n    open(cf, \"wb\").write(cert.public_bytes(serialization.Encoding.PEM))\n    open(kf, \"wb\").write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))\n    ctx.load_cert_chain(cf, kf)\nsrv = socket.socket(); srv.bind((\"127.0.0.1\", 0)); srv.listen(8); port = srv.getsockname()[1]\ndef serve():\n    while True:\n        try: c, _ = srv.accept()\n        except OSError: return\n        try:\n            with ctx.wrap_socket(c, server_side=True): pass\n        except Exception: pass\nthreading.Thread(target=serve, daemon=True).start()\nfor label, ciphers in ((\"client that accepts only RSA suites\", \"ECDHE-RSA-AES128-GCM-SHA256\"), (\"client that accepts only ECDSA suites\", \"ECDHE-ECDSA-AES128-GCM-SHA256\")):\n    cc = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT); cc.check_hostname = False; cc.verify_mode = ssl.CERT_NONE; cc.maximum_version = ssl.TLSVersion.TLSv1_2; cc.set_ciphers(ciphers)\n    with socket.create_connection((\"127.0.0.1\", port), timeout=3) as raw, cc.wrap_socket(raw) as t:\n        got = x509.load_der_x509_certificate(t.getpeercert(binary_form=True))\n        print(f\"{label:<40} received the {got.subject.rfc4514_string().split('=')[1].split('.')[0]} certificate\")\nprint()\nprint(\"certificate lifetime sets the migration speed: with 90-day certificates renewed on schedule, the whole estate can carry new algorithms after at most 90 days once the pipeline issues them; with 3-year certificates it takes 3 years unless certificates are replaced early\")\nprint(\"not shown: a TLS handshake that authenticates with the ML-DSA-65 certificate (it depends on the TLS library build) and composite certificates; the size column is the cost every handshake pays\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-cert-agility",
+              "language": "text",
+              "code": "leaf profile issued by                        certificate (~bytes)  public key (bytes)  signature (~bytes)  chain verifies\nrsa-2048     classical root (ECDSA-P256)                       600                 294                  70  True\necdsa-p256   classical root (ECDSA-P256)                       400                  91                  70  True\nml-dsa-65    post-quantum root (ML-DSA-65)                    5500                1974                3310  True\nsizes marked ~ are rounded (to 100 and 10 bytes) because DER-encoded ECDSA signatures and random serial numbers vary by a byte or two between runs\n\nclient that accepts only RSA suites      received the rsa-2048 certificate\nclient that accepts only ECDSA suites    received the ecdsa-p256 certificate\n\ncertificate lifetime sets the migration speed: with 90-day certificates renewed on schedule, the whole estate can carry new algorithms after at most 90 days once the pipeline issues them; with 3-year certificates it takes 3 years unless certificates are replaced early\nnot shown: a TLS handshake that authenticates with the ML-DSA-65 certificate (it depends on the TLS library build) and composite certificates; the size column is the cost every handshake pays",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "All three leaves verify. The sizes tell the cost of post-quantum authentication: an ECDSA-P256 certificate is about 400 bytes (public key 91, signature about 70), an RSA-2048 certificate about 600 (public key 294), and an **ML-DSA-65 certificate about 5500 bytes** with a 1974-byte public key and a **3309-byte signature**. Every TLS handshake that sends a chain pays this. The dual-certificate server presents the RSA certificate to the client that accepts only RSA suites and the ECDSA certificate to the one that accepts only ECDSA suites, which is the mechanism by which a server can serve old and new clients at the same time.\n\n**Lifetime sets the speed.** With 90-day certificates renewed routinely, a pipeline that starts issuing new types reaches the whole estate within 90 days; with three-year certificates it takes three years unless certificates are replaced early. **Not shown**: a TLS handshake authenticated by the ML-DSA-65 certificate (that depends on the TLS library build), composite certificates and the browser trust-store question: public CAs and root programs decide when post-quantum certificates become usable on the public web. **Common mistake:** planning the server migration without asking whether the clients and the trust anchors will accept the new certificates."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does a dual-certificate server allow?",
+              "options": [
+                "Serving clients that need RSA and clients that need ECDSA at the same time",
+                "Removing TLS",
+                "Using one key for both"
+              ],
+              "correct_index": 0,
+              "explanation": "The client's offer decides which certificate it receives."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Roughly how large is an ML-DSA-65 certificate in the lesson?",
+              "options": [
+                "About 5500 bytes",
+                "About 400 bytes",
+                "About 100 bytes"
+              ],
+              "correct_index": 0,
+              "explanation": "Public key 1974 bytes, signature 3309 bytes."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why do short certificate lifetimes help migration?",
+              "options": [
+                "Routine renewal replaces keys across the estate without special projects",
+                "They are cheaper",
+                "They remove CAs"
+              ],
+              "correct_index": 0,
+              "explanation": "90 days against 3 years."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (crypto-agility principles, Figure 4-3: modularity and abstraction, automation, governance, monitoring, interoperability) and Chapter 8 (Achieving Crypto-Agility)"
+            },
+            {
+              "book": "B162",
+              "locator": "RFC 5280: Section 4.1 (certificate fields: signature algorithm, subject public key info, validity)"
+            },
+            {
+              "book": "B92",
+              "locator": "FIPS 204 (ML-DSA): parameter sets and the sizes of public keys and signatures"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The sizes were measured with the cryptography library on this machine and the ML-DSA-65 sizes agree with FIPS 204 (public key 1952 bytes raw, signature 3309); the ML-DSA X.509 profile used by the library was not compared with a published standard. TLS authentication with ML-DSA certificates was not tested."
+          }
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "4.6 Protocol Agility",
+          "summary": "Real loopback TLS version negotiation between servers and clients of different capabilities, and a simulation of server policy modes against growing hybrid adoption.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Protocol agility** is the ability of infrastructure to **negotiate** among protocol versions and algorithm sets so that migration is gradual: new clients get the new algorithms, old clients keep working, and the old option is removed when the population allows it. Negotiation has costs: the options a server still offers define its weakest permitted configuration, and a negotiation that is not authenticated can be **downgraded** by an attacker.\n\nThe first part of the listing is **real**: three loopback TLS servers (1.2 and 1.3, 1.2 only, 1.3 only) and two clients (1.2 and 1.3, 1.2 only) negotiate, and the listing prints the resulting version or failure. The second part is a **SIMULATION** (not a measurement): server policy modes (classical only, prefer hybrid and allow classical, require hybrid) against client populations in which 10%, 40% and 80% support a hybrid key exchange. The listings are working code: a small KEM interface with X25519, ECDH-P256, ML-KEM-768 and a hybrid combiner (built on the `cryptography` library's ML-KEM), a self-describing envelope, a policy loader, a key store, a certificate pipeline that issues RSA, ECDSA and ML-DSA-65 certificates, loopback TLS negotiation, and an AST-based retrofit demonstration. The hybrid combiner is **illustrative** (deployed hybrids follow the IETF specifications). Device budgets, client populations and the source tree are **DEMO DATA / SIMULATION** and are labelled where used."
+            },
+            {
+              "type": "code",
+              "id": "c-protocol-agility",
+              "language": "python",
+              "code": "import random, socket, ssl, threading\n# (1) REAL: protocol-version negotiation between servers and clients with different capabilities, over loopback TLS.\nimport datetime, os, tempfile\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import ec\nfrom cryptography.x509.oid import NameOID\nkey = ec.generate_private_key(ec.SECP256R1()); nm = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, \"neg.lab.test\")]); n = datetime.datetime.now(datetime.timezone.utc)\ncert = x509.CertificateBuilder().subject_name(nm).issuer_name(nm).public_key(key.public_key()).serial_number(1).not_valid_before(n - datetime.timedelta(days=1)).not_valid_after(n + datetime.timedelta(days=30)).sign(key, hashes.SHA256())\ntmp = tempfile.mkdtemp(); cf, kf = os.path.join(tmp, \"c.pem\"), os.path.join(tmp, \"k.pem\")\nopen(cf, \"wb\").write(cert.public_bytes(serialization.Encoding.PEM)); open(kf, \"wb\").write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))\ndef server(minv, maxv):\n    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER); ctx.minimum_version, ctx.maximum_version = minv, maxv; ctx.load_cert_chain(cf, kf)\n    s = socket.socket(); s.bind((\"127.0.0.1\", 0)); s.listen(8)\n    def run():\n        while True:\n            try: c, _ = s.accept()\n            except OSError: return\n            try:\n                with ctx.wrap_socket(c, server_side=True): pass\n            except Exception: pass\n    threading.Thread(target=run, daemon=True).start(); return s.getsockname()[1]\nT12, T13 = ssl.TLSVersion.TLSv1_2, ssl.TLSVersion.TLSv1_3\nservers = {\"server A (TLS 1.2 and 1.3)\": server(T12, T13), \"server B (TLS 1.2 only)\": server(T12, T12), \"server C (TLS 1.3 only)\": server(T13, T13)}\nclients = {\"client X (TLS 1.2 and 1.3)\": (T12, T13), \"client Y (TLS 1.2 only)\": (T12, T12)}\nprint(f\"{'':<28}\" + \"\".join(f\"{s:<30}\" for s in servers))\nfor cl, (lo, hi) in clients.items():\n    row = f\"{cl:<28}\"\n    for s, port in servers.items():\n        cc = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT); cc.check_hostname = False; cc.verify_mode = ssl.CERT_NONE; cc.minimum_version, cc.maximum_version = lo, hi\n        try:\n            with socket.create_connection((\"127.0.0.1\", port), timeout=3) as raw, cc.wrap_socket(raw) as t: row += f\"{t.version():<30}\"\n        except (ssl.SSLError, OSError): row += f\"{'FAILS':<30}\"\n    print(row)\nprint(\"a server that supports both versions serves every client; removing a version breaks exactly the clients that depend on it: gradual migration needs both to coexist for a period\")\nprint()\n# (2) SIMULATION (not a measurement): server policy modes against a client population that gradually adopts a hybrid key exchange.\nrandom.seed(3)\ndef run(mode, share_hybrid, n=100000):\n    protected = failed = 0\n    for _ in range(n):\n        hybrid_client = random.random() < share_hybrid\n        if mode == \"classical only\": protected += 0\n        elif mode == \"prefer hybrid, allow classical\": protected += hybrid_client\n        elif mode == \"require hybrid\":\n            if hybrid_client: protected += 1\n            else: failed += 1\n    return 100 * protected / n, 100 * failed / n\nprint(\"SIMULATION: share of connections with hybrid key exchange (protected) and refused connections (failed), by server mode and client adoption\")\nprint(f\"{'server mode':<34}\" + \"\".join(f\"{'adoption ' + str(int(a * 100)) + '%':>22}\" for a in (0.1, 0.4, 0.8)))\nfor mode in (\"classical only\", \"prefer hybrid, allow classical\", \"require hybrid\"):\n    cells = [run(mode, a) for a in (0.1, 0.4, 0.8)]\n    print(f\"{mode:<34}\" + \"\".join(f\"{f'{p:5.1f}% / {f_:5.1f}% failed':>22}\" for p, f_ in cells))\nprint(\"the middle mode protects every capable client and breaks none; the cost is that classical-only clients remain exposed, and an attacker who can strip the hybrid offer would force classical: downgrade protection depends on the protocol binding the negotiation into the authenticated handshake (TLS 1.3 does), which this simulation does not model\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-protocol-agility",
+              "language": "text",
+              "code": "                            server A (TLS 1.2 and 1.3)    server B (TLS 1.2 only)       server C (TLS 1.3 only)       \nclient X (TLS 1.2 and 1.3)  TLSv1.3                       TLSv1.2                       TLSv1.3                       \nclient Y (TLS 1.2 only)     TLSv1.2                       TLSv1.2                       FAILS                         \na server that supports both versions serves every client; removing a version breaks exactly the clients that depend on it: gradual migration needs both to coexist for a period\n\nSIMULATION: share of connections with hybrid key exchange (protected) and refused connections (failed), by server mode and client adoption\nserver mode                                 adoption 10%          adoption 40%          adoption 80%\nclassical only                      0.0% /   0.0% failed  0.0% /   0.0% failed  0.0% /   0.0% failed\nprefer hybrid, allow classical      9.9% /   0.0% failed 40.0% /   0.0% failed 79.9% /   0.0% failed\nrequire hybrid                      9.9% /  90.1% failed 40.2% /  59.8% failed 80.0% /  20.0% failed\nthe middle mode protects every capable client and breaks none; the cost is that classical-only clients remain exposed, and an attacker who can strip the hybrid offer would force classical: downgrade protection depends on the protocol binding the negotiation into the authenticated handshake (TLS 1.3 does), which this simulation does not model",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The version matrix: the dual-version client negotiates TLS 1.3 with servers A and C and TLS 1.2 with server B; the 1.2-only client gets TLS 1.2 from A and B and **fails against the 1.3-only server C**. So a server that supports both versions serves every client and removing a version breaks exactly the clients that depend on it.\n\nIn the simulation, *classical only* protects 0% at every adoption level; *prefer hybrid, allow classical* protects exactly the capable clients (9.9%, 40.0%, 79.9% of connections) and refuses none; *require hybrid* protects the same share but **refuses all the others** (90.1%, 59.8%, 20.0% failures). The middle mode is the transition mode; *require* is the end state, chosen when discovery shows few clients would fail. The residual risk of the transition mode is **downgrade**: an attacker who can strip the hybrid offer forces classical. Protection comes from the protocol binding the negotiation into the authenticated handshake (TLS 1.3 does this through its transcript), which this simulation does not model. **Common mistake:** declaring \"protocol agility\" while keeping every legacy option enabled forever."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the 1.2-only client experience against a TLS 1.3-only server?",
+              "options": [
+                "The handshake fails",
+                "TLS 1.3",
+                "TLS 1.2"
+              ],
+              "correct_index": 0,
+              "explanation": "Removing a version breaks the clients that need it."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does 'prefer hybrid, allow classical' do?",
+              "options": [
+                "Protects every capable client and refuses none, leaving classical-only clients exposed",
+                "Refuses all classical clients",
+                "Protects nobody"
+              ],
+              "correct_index": 0,
+              "explanation": "The usual transition mode."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which attack is the residual risk of the transition mode?",
+              "options": [
+                "Downgrade: stripping the hybrid offer to force classical",
+                "Overflow",
+                "Replay of certificates"
+              ],
+              "correct_index": 0,
+              "explanation": "The handshake must authenticate the negotiation."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (crypto-agility principles, Figure 4-3: modularity and abstraction, automation, governance, monitoring, interoperability) and Chapter 8 (Achieving Crypto-Agility)"
+            },
+            {
+              "book": "B161",
+              "locator": "RFC 9846 (TLS 1.3): Section 4.3.7 (supported groups) and the downgrade protection in the ServerHello random value and the authenticated handshake transcript"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The simulation is a model and not a measurement of any client population. The downgrade-protection mechanisms of TLS 1.3 are stated from the protocol design and were not tested in the listing."
+          }
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "4.7 Software Architecture (Crypto-Agility)",
+          "summary": "Counting cryptographic call sites outside a boundary with an AST scan, retrofitting a thin wrapper and switching every caller with one change, plus the retrofit's caveats.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Agility is an architectural property: it exists when **cryptographic calls live behind a boundary** that owns the algorithm decision. Existing systems usually have the opposite, calls scattered through the code base. The retrofit pattern (sometimes called *strangling*) introduces a **thin boundary module**, moves call sites behind it one by one, and then centralises the decision. It can be measured: the share of cryptographic call sites that go through the boundary is an **agility metric**.\n\nThe listing uses a small sample code base (DEMO DATA) of three files with four direct calls to `hashlib` using SHA-1, MD5 and SHA-256. An AST scan counts the direct calls; the retrofit version routes all calls through a `cryptoapi` module; a switch of the boundary's algorithm from SHA-256 to SHA3-256 then changes the output of every caller without editing any of them. The listings are working code: a small KEM interface with X25519, ECDH-P256, ML-KEM-768 and a hybrid combiner (built on the `cryptography` library's ML-KEM), a self-describing envelope, a policy loader, a key store, a certificate pipeline that issues RSA, ECDSA and ML-DSA-65 certificates, loopback TLS negotiation, and an AST-based retrofit demonstration. The hybrid combiner is **illustrative** (deployed hybrids follow the IETF specifications). Device budgets, client populations and the source tree are **DEMO DATA / SIMULATION** and are labelled where used."
+            },
+            {
+              "type": "code",
+              "id": "c-architecture",
+              "language": "python",
+              "code": "import ast, hashlib\n# Where do cryptographic calls live? Count call sites that bypass a crypto boundary, then retrofit with a thin wrapper and show that one change in the boundary switches every caller. Sample code (DEMO DATA).\nBEFORE = {\n \"orders.py\": \"import hashlib\\ndef order_id(x): return hashlib.sha1(x.encode()).hexdigest()\\n\",\n \"export.py\": \"import hashlib\\ndef checksum(b): return hashlib.sha1(b).hexdigest()\\ndef sign_name(n): return hashlib.md5(n.encode()).hexdigest()\\n\",\n \"audit.py\": \"import hashlib\\ndef log_hash(line): return hashlib.sha256(line.encode()).hexdigest()\\n\",\n}\nAFTER = {\n \"orders.py\": \"import cryptoapi\\ndef order_id(x): return cryptoapi.digest(x.encode())\\n\",\n \"export.py\": \"import cryptoapi\\ndef checksum(b): return cryptoapi.digest(b)\\ndef sign_name(n): return cryptoapi.digest(n.encode())\\n\",\n \"audit.py\": \"import cryptoapi\\ndef log_hash(line): return cryptoapi.digest(line.encode())\\n\",\n}\ndef direct_calls(files):\n    found = []\n    for fname, src in files.items():\n        for node in ast.walk(ast.parse(src)):\n            if isinstance(node, ast.Call) and isinstance(node.func, ast.Attribute) and ast.unparse(node.func.value) == \"hashlib\":\n                found.append((fname, node.lineno, ast.unparse(node.func)))\n    return sorted(found)\nb, a = direct_calls(BEFORE), direct_calls(AFTER)\nprint(f\"before the retrofit: {len(b)} direct cryptographic calls scattered over {len(set(f for f, _, _ in b))} files, with algorithms {sorted({x for _, _, x in b})}\")\nfor f, l, c in b: print(f\"   {f}:{l} {c}\")\nprint(f\"after the retrofit:  {len(a)} direct calls in application code (all go through the boundary module)\")\nprint()\n# the boundary: one place that decides the algorithm\nclass Boundary:\n    algorithm = \"sha256\"\n    @classmethod\n    def digest(cls, data): return hashlib.new(cls.algorithm, data).hexdigest()\nimport types\ncryptoapi = types.ModuleType(\"cryptoapi\"); cryptoapi.digest = Boundary.digest\nimport sys; sys.modules[\"cryptoapi\"] = cryptoapi\nns = {}\nfor fname, src in AFTER.items(): exec(src, ns)\nprint(\"application output with the boundary set to sha256:  \", ns[\"order_id\"](\"A-100\")[:24], \"...\")\nBoundary.algorithm = \"sha3_256\"\nprint(\"after ONE change in the boundary (sha3_256):         \", ns[\"order_id\"](\"A-100\")[:24], \"...  (all\", len(AFTER), \"files changed behaviour, none was edited)\")\nprint()\nprint(\"caveats of the retrofit: stored values (the old SHA-1 order ids) must be migrated or versioned, because the same input now produces a different output; the boundary is itself a dependency that needs tests; and the pattern covers call sites in your code, not algorithms chosen inside third-party libraries (those are handled by upgrading or replacing the library)\")\nprint(\"agility measure for a code base: share of cryptographic call sites that go through the boundary =\", f\"{100 * (1 - len(a) / max(len(b), 1)):.0f}% after, 0% before\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-architecture",
+              "language": "text",
+              "code": "before the retrofit: 4 direct cryptographic calls scattered over 3 files, with algorithms ['hashlib.md5', 'hashlib.sha1', 'hashlib.sha256']\n   audit.py:2 hashlib.sha256\n   export.py:2 hashlib.sha1\n   export.py:3 hashlib.md5\n   orders.py:2 hashlib.sha1\nafter the retrofit:  0 direct calls in application code (all go through the boundary module)\n\napplication output with the boundary set to sha256:   424e5c70d76e009683fa5777 ...\nafter ONE change in the boundary (sha3_256):          91bdefd07ee3b1bde829fed3 ...  (all 3 files changed behaviour, none was edited)\n\ncaveats of the retrofit: stored values (the old SHA-1 order ids) must be migrated or versioned, because the same input now produces a different output; the boundary is itself a dependency that needs tests; and the pattern covers call sites in your code, not algorithms chosen inside third-party libraries (those are handled by upgrading or replacing the library)\nagility measure for a code base: share of cryptographic call sites that go through the boundary = 100% after, 0% before",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Before the retrofit there are **4 direct cryptographic calls in 3 files** (algorithms SHA-1, MD5 and SHA-256); after it, none in application code. With the boundary on `sha256` the order identifier digests to one value and after **one change in the boundary** to `sha3_256` the same call returns a different digest, with none of the three files edited. The agility measure moves from 0% to 100% of call sites behind the boundary.\n\n**Caveats.** Stored values change meaning: an identifier computed with SHA-1 yesterday cannot be recomputed today, so persisted hashes must be versioned or migrated. The boundary becomes a critical dependency and needs tests. The pattern covers **your** call sites; algorithms chosen inside third-party libraries are handled by upgrading or replacing the library (the dependency map of E2.7 identifies them). And an abstraction that is never exercised rots: schedule algorithm-change drills (the top level of the maturity model in E3.5). **Common mistake:** wrapping a library once and then calling the library directly again in new code."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is a useful agility metric for a code base?",
+              "options": [
+                "The share of cryptographic call sites that go through the boundary",
+                "The number of files",
+                "The number of developers"
+              ],
+              "correct_index": 0,
+              "explanation": "0% before and 100% after in the lesson."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why must persisted values be handled in a retrofit?",
+              "options": [
+                "The same input produces a different output after the algorithm changes",
+                "Databases forbid it",
+                "Hashes are secret"
+              ],
+              "correct_index": 0,
+              "explanation": "Version or migrate stored hashes."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does the boundary pattern not cover?",
+              "options": [
+                "Algorithms chosen inside third-party libraries",
+                "Calls in your own code",
+                "Configuration of the boundary"
+              ],
+              "correct_index": 0,
+              "explanation": "Those need upgrades or replacement."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (crypto-agility principles, Figure 4-3: modularity and abstraction, automation, governance, monitoring, interoperability) and Chapter 8 (Achieving Crypto-Agility)"
+            },
+            {
+              "book": "B22",
+              "locator": "Python documentation: the ast module and hashlib"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The code base is DEMO DATA. Counting call sites by AST finds direct, literal uses only; wrappers and dynamic names are invisible (as in E2.6)."
+          }
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "4.8 Hardware Considerations",
+          "summary": "Measured post-quantum sizes against assumed device budgets, the constraint of a root of trust fixed in ROM, and what must be measured on the target.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Software agility stops at hardware that cannot change: a **root of trust fixed in ROM**, an HSM whose firmware the vendor will not update, an embedded device with a small update header and little RAM. Post-quantum algorithms stress such devices through **size** (keys, ciphertexts and signatures are 10 to 200 times larger than their elliptic-curve counterparts) and through **resources** (RAM, stack and time), and through **lifetime**: a device deployed for 15 years in 2026 will still be in service when the policy dates arrive.\n\nThe listing prints measured sizes (ML-KEM-768 and ML-DSA with the cryptography library, SLH-DSA from the FIPS 205 parameter table, classical signatures for comparison) and checks them against three **assumed** device budgets (DEMO DATA): a smart-meter microcontroller with a 128-byte signature field and a fixed ROM verifier, an industrial gateway with 4096 bytes, and an HSM with 8192 bytes. It prints which signature types fit and what each device's constraint means. The listings are working code: a small KEM interface with X25519, ECDH-P256, ML-KEM-768 and a hybrid combiner (built on the `cryptography` library's ML-KEM), a self-describing envelope, a policy loader, a key store, a certificate pipeline that issues RSA, ECDSA and ML-DSA-65 certificates, loopback TLS negotiation, and an AST-based retrofit demonstration. The hybrid combiner is **illustrative** (deployed hybrids follow the IETF specifications). Device budgets, client populations and the source tree are **DEMO DATA / SIMULATION** and are labelled where used."
+            },
+            {
+              "type": "code",
+              "id": "c-hardware",
+              "language": "python",
+              "code": "from cryptography.hazmat.primitives.asymmetric import mldsa, mlkem\n# Hardware constraints. Sizes of real post-quantum keys, ciphertexts and signatures (generated now; SLH-DSA sizes from the FIPS 205 parameter table) against ASSUMED device budgets (DEMO DATA).\nsizes = {\n    \"ML-KEM-768 public key\":      len(mlkem.MLKEM768PrivateKey.generate().public_key().public_bytes_raw()),\n    \"ML-KEM-768 ciphertext\":      len(mlkem.MLKEM768PrivateKey.generate().public_key().encapsulate()[1]),\n    \"ML-DSA-44 signature\":        len(mldsa.MLDSA44PrivateKey.generate().sign(b\"firmware\")),\n    \"ML-DSA-65 signature\":        len(mldsa.MLDSA65PrivateKey.generate().sign(b\"firmware\")),\n    \"ML-DSA-65 public key\":       len(mldsa.MLDSA65PrivateKey.generate().public_key().public_bytes_raw()),\n    \"SLH-DSA-SHA2-128s signature\": 7856,\n    \"SLH-DSA-SHA2-128f signature\": 17088,\n    \"ECDSA-P256 signature (DER, max)\": 72,\n    \"Ed25519 signature\":          64,\n}\nprint(\"sizes in bytes (ML-KEM and ML-DSA measured with the cryptography library; SLH-DSA from FIPS 205; classical for comparison)\")\nfor k, v in sizes.items(): print(f\"  {k:<34} {v:>7}\")\nprint()\ndevices = [  # name, firmware-signature field in the update header (bytes), secure-boot ROM can be changed?, assumed message buffer (bytes)\n    (\"smart-meter MCU (DEMO)\",         128,  False, 1024),\n    (\"industrial gateway (DEMO)\",     4096,  True,  16384),\n    (\"HSM with signed firmware (DEMO)\", 8192, True, 65536),\n]\nneed = {\"ECDSA-P256\": 72, \"ML-DSA-44\": sizes[\"ML-DSA-44 signature\"], \"ML-DSA-65\": sizes[\"ML-DSA-65 signature\"], \"SLH-DSA-128s\": 7856, \"SLH-DSA-128f\": 17088}\nprint(f\"{'device (assumed budgets)':<34} {'header field':>12} \" + \"\".join(f\"{k:>14}\" for k in need))\nfor name, field, _, _ in devices:\n    print(f\"{name:<34} {field:>12} \" + \"\".join(f\"{('fits' if v <= field else 'TOO BIG'):>14}\" for v in need.values()))\nprint()\nprint(f\"{'device':<34} {'ROM algorithm can change?':<28} consequence\")\nfor name, field, mutable, buf in devices:\n    if not mutable: c = \"root of trust fixed in ROM: the classical signature check cannot be replaced; options: hybrid at the next layer, replace the device at end of life, plan for ML-KEM/ML-DSA only in new hardware\"\n    elif field < sizes[\"ML-DSA-65 signature\"]: c = \"update format must be extended before ML-DSA-65 signatures fit\"\n    else: c = \"post-quantum signatures fit; verify RAM and verification time on the real device\"\n    print(f\"{name:<34} {str(mutable):<28} {c}\")\nprint()\nprint(\"what no listing here can tell you: execution time, stack and RAM use on a given microcontroller, and whether an HSM vendor will ship a firmware update at all: those need a measurement on the target and a written statement from the vendor (procurement, module E6). Assumed budgets above are illustrative\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-hardware",
+              "language": "text",
+              "code": "sizes in bytes (ML-KEM and ML-DSA measured with the cryptography library; SLH-DSA from FIPS 205; classical for comparison)\n  ML-KEM-768 public key                 1184\n  ML-KEM-768 ciphertext                 1088\n  ML-DSA-44 signature                   2420\n  ML-DSA-65 signature                   3309\n  ML-DSA-65 public key                  1952\n  SLH-DSA-SHA2-128s signature           7856\n  SLH-DSA-SHA2-128f signature          17088\n  ECDSA-P256 signature (DER, max)         72\n  Ed25519 signature                       64\n\ndevice (assumed budgets)           header field     ECDSA-P256     ML-DSA-44     ML-DSA-65  SLH-DSA-128s  SLH-DSA-128f\nsmart-meter MCU (DEMO)                      128           fits       TOO BIG       TOO BIG       TOO BIG       TOO BIG\nindustrial gateway (DEMO)                  4096           fits          fits          fits       TOO BIG       TOO BIG\nHSM with signed firmware (DEMO)            8192           fits          fits          fits          fits       TOO BIG\n\ndevice                             ROM algorithm can change?    consequence\nsmart-meter MCU (DEMO)             False                        root of trust fixed in ROM: the classical signature check cannot be replaced; options: hybrid at the next layer, replace the device at end of life, plan for ML-KEM/ML-DSA only in new hardware\nindustrial gateway (DEMO)          True                         post-quantum signatures fit; verify RAM and verification time on the real device\nHSM with signed firmware (DEMO)    True                         post-quantum signatures fit; verify RAM and verification time on the real device\n\nwhat no listing here can tell you: execution time, stack and RAM use on a given microcontroller, and whether an HSM vendor will ship a firmware update at all: those need a measurement on the target and a written statement from the vendor (procurement, module E6). Assumed budgets above are illustrative",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Measured sizes: ML-KEM-768 public key 1184 and ciphertext 1088 bytes; ML-DSA-44 signature 2420 and ML-DSA-65 signature 3309 (public key 1952); SLH-DSA-SHA2-128s signature 7856 and 128f 17088 (FIPS 205); against 72 for ECDSA-P256 (DER maximum) and 64 for Ed25519. In the budget table only ECDSA fits the 128-byte meter field; the gateway (4096) fits both ML-DSA sets but neither SLH-DSA variant; the HSM (8192) also fits SLH-DSA-128s but not 128f. For the meter with a **fixed ROM verifier** the size is not the main issue: the classical check cannot be replaced at all, so the options are a hybrid at the next layer, replacing the device at end of life, or buying post-quantum-capable hardware for new deployments.\n\n**What these numbers do not say.** They say whether a signature fits a field, not whether the device can verify it in acceptable time with its RAM; that needs a measurement on the target, and an HSM vendor's willingness to ship a post-quantum firmware update needs a **written statement** (procurement and vendor requirements, E6.4 and E6.5). **Common mistake:** buying new hardware for a ten-year life without asking whether its cryptographic functions are updatable."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the main constraint of a root of trust fixed in ROM?",
+              "options": [
+                "Its classical signature check cannot be replaced",
+                "It is too fast",
+                "It has too much RAM"
+              ],
+              "correct_index": 0,
+              "explanation": "Plan hybrid at the next layer or hardware replacement."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "How large is an ML-DSA-65 signature compared with ECDSA-P256 in the lesson?",
+              "options": [
+                "3309 bytes against at most 72",
+                "About the same",
+                "Smaller"
+              ],
+              "correct_index": 0,
+              "explanation": "SLH-DSA is larger still."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What cannot be learned from size figures alone?",
+              "options": [
+                "Execution time and RAM use on the target device",
+                "The signature length",
+                "The key length"
+              ],
+              "correct_index": 0,
+              "explanation": "Measure on the real device."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (crypto-agility principles, Figure 4-3: modularity and abstraction, automation, governance, monitoring, interoperability) and Chapter 8 (Achieving Crypto-Agility)"
+            },
+            {
+              "book": "B93",
+              "locator": "FIPS 205 (SLH-DSA): parameter table with signature sizes (SLH-DSA-SHA2-128s 7856 bytes, 128f 17088 bytes)"
+            },
+            {
+              "book": "B92",
+              "locator": "FIPS 204 (ML-DSA): sizes of public keys and signatures"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Device budgets are DEMO assumptions and no real device was measured. The ML-KEM-768 and ML-DSA sizes were measured with the cryptography library and agree with the standards as I recall them; SLH-DSA sizes are read from the FIPS 205 table."
+          }
+        }
+      ],
+      "quiz": [
+        {
+          "id": "e4-n01",
+          "prompt": "What is the core of algorithm abstraction?",
+          "options": [
+            "Callers use operations while a separate layer chooses the algorithm",
+            "One algorithm everywhere",
+            "Callers choose per call"
+          ],
+          "correct_index": 0,
+          "explanation": "Registering a class adds an algorithm.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 4, Figure 4-3"
+          }
+        },
+        {
+          "id": "e4-n02",
+          "prompt": "What does an algorithm interface not hide?",
+          "options": [
+            "Sizes of keys and ciphertexts",
+            "Key object types",
+            "Encodings"
+          ],
+          "correct_index": 0,
+          "explanation": "ML-KEM-768 public keys are 1184 bytes.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 8"
+          }
+        },
+        {
+          "id": "e4-n03",
+          "prompt": "Why include an algorithm identifier in the authenticated header of an envelope?",
+          "options": [
+            "So tampering with it is detected and old data stays processable",
+            "To encrypt it",
+            "To save space"
+          ],
+          "correct_index": 0,
+          "explanation": "Header is AEAD additional data.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 8"
+          }
+        },
+        {
+          "id": "e4-n04",
+          "prompt": "Why must policy also apply when opening old data?",
+          "options": [
+            "So retired algorithms can be refused",
+            "To slow things down",
+            "It need not"
+          ],
+          "correct_index": 0,
+          "explanation": "Enforceable retirement.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 8"
+          }
+        },
+        {
+          "id": "e4-n05",
+          "prompt": "What should happen with an invalid new algorithm policy?",
+          "options": [
+            "Reject it and keep the previous valid policy",
+            "Disable encryption",
+            "Apply it anyway"
+          ],
+          "correct_index": 0,
+          "explanation": "Fail closed with an audit entry.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 8"
+          }
+        },
+        {
+          "id": "e4-n06",
+          "prompt": "When can a deprecated key be destroyed?",
+          "options": [
+            "After verified re-protection of everything it protected",
+            "At rotation",
+            "Never"
+          ],
+          "correct_index": 0,
+          "explanation": "Include backups.",
+          "source": {
+            "book": "B97",
+            "locator": "Key states"
+          }
+        },
+        {
+          "id": "e4-n07",
+          "prompt": "What can a deprecated (process-only) key do?",
+          "options": [
+            "Decrypt or verify existing data",
+            "Encrypt new data",
+            "Sign new data"
+          ],
+          "correct_index": 0,
+          "explanation": "No new protection.",
+          "source": {
+            "book": "B97",
+            "locator": "Key states"
+          }
+        },
+        {
+          "id": "e4-n08",
+          "prompt": "Roughly what is the size of an ML-DSA-65 signature?",
+          "options": [
+            "3309 bytes",
+            "64 bytes",
+            "72 bytes"
+          ],
+          "correct_index": 0,
+          "explanation": "Public key 1952 bytes.",
+          "source": {
+            "book": "B92",
+            "locator": "Parameter sets"
+          }
+        },
+        {
+          "id": "e4-n09",
+          "prompt": "What does a server holding RSA and ECDSA certificates give?",
+          "options": [
+            "Support for clients needing either type",
+            "No TLS",
+            "Smaller certificates"
+          ],
+          "correct_index": 0,
+          "explanation": "The client's offer selects the certificate.",
+          "source": {
+            "book": "B162",
+            "locator": "Section 4.1"
+          }
+        },
+        {
+          "id": "e4-n10",
+          "prompt": "Why is 'prefer hybrid, allow classical' a transition mode?",
+          "options": [
+            "It protects capable clients and breaks none",
+            "It refuses classical clients",
+            "It disables TLS"
+          ],
+          "correct_index": 0,
+          "explanation": "The residual risk is downgrade.",
+          "source": {
+            "book": "B161",
+            "locator": "Section 4.3.7"
+          }
+        },
+        {
+          "id": "e4-n11",
+          "prompt": "What is a useful agility metric for code?",
+          "options": [
+            "Share of cryptographic call sites behind the boundary",
+            "Lines of code",
+            "Number of tests"
+          ],
+          "correct_index": 0,
+          "explanation": "Measurable by AST scan.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 8"
+          }
+        },
+        {
+          "id": "e4-n12",
+          "prompt": "What is the SLH-DSA-SHA2-128s signature size?",
+          "options": [
+            "7856 bytes",
+            "64 bytes",
+            "3309 bytes"
+          ],
+          "correct_index": 0,
+          "explanation": "Read from the FIPS 205 table.",
+          "source": {
+            "book": "B93",
+            "locator": "Parameter table"
+          }
+        }
+      ],
+      "estimated_minutes": 410,
+      "notes": "Rewrites the eight outline sections as lessons with working code: a KEM interface with X25519, ECDH-P256, ML-KEM-768 and an illustrative hybrid, an authenticated self-describing envelope, a validated fail-closed policy, a key store with rotation and re-protection, a certificate pipeline issuing RSA, ECDSA and ML-DSA-65 certificates, loopback TLS negotiation plus a labelled simulation, an AST retrofit demonstration and measured post-quantum sizes against assumed device budgets.",
+      "learning_objectives": [
+        "Design an algorithm-abstraction layer and add an algorithm without changing callers, while accounting for size differences.",
+        "Design a purpose-level crypto API with a self-describing authenticated envelope and fail-closed behaviour.",
+        "Run algorithm choice from validated, fail-closed configuration with an audit trail.",
+        "Manage key lifecycle through rotation, deprecation, re-protection and safe destruction.",
+        "Operate certificate pipelines with several algorithms and relate lifetime to migration speed.",
+        "Plan protocol negotiation, software retrofit and hardware limits for a gradual migration."
+      ]
+    }
+  ]
+}
