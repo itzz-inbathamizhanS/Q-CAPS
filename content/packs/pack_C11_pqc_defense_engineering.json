@@ -1,0 +1,1271 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B04",
+      "title": "FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B92",
+      "title": "FIPS 204: Module-Lattice-Based Digital Signature Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B93",
+      "title": "FIPS 205: Stateless Hash-Based Digital Signature Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B95",
+      "title": "NIST SP 800-227: Recommendations for Key-Encapsulation Mechanisms",
+      "authors": "Alagic, Barker, Chen, Moody, Robinson, Silberg, Waller",
+      "edition": "September 2025",
+      "year": 2025,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B98",
+      "title": "RFC 10024: Post-Quantum Traditional (PQ/T) Hybrid Key Agreement Mechanisms for TLS 1.3",
+      "authors": "K. Kwiatkowski, P. Kampanakis, B. E. Westerbaan, D. Stebila",
+      "edition": "August 2026 (Proposed Standard)",
+      "year": 2026,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B184",
+      "title": "SP 800-90A Revision 1: Recommendation for Random Number Generation Using Deterministic Random Bit Generators",
+      "authors": "NIST",
+      "edition": "June 2015",
+      "year": 2015,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B90",
+      "title": "kyber-py: a pure Python implementation of ML-KEM (FIPS 203), version 1.2.0 (PyPI package metadata)",
+      "authors": "Package authors",
+      "edition": "1.2.0",
+      "year": 2025
+    },
+    {
+      "id": "B91",
+      "title": "dilithium-py: a pure Python implementation of ML-DSA (FIPS 204), version 1.4.0 (PyPI package metadata)",
+      "authors": "Package authors",
+      "edition": "1.4.0",
+      "year": 2025
+    },
+    {
+      "id": "B100",
+      "title": "cryptography (Python package) version 50.0.1, with ML-KEM and ML-DSA backed by OpenSSL",
+      "authors": "Python Cryptographic Authority",
+      "edition": "50.0.1",
+      "year": 2026
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_c_c11_pqc_defense_engineering",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "11.1 Secure Implementation (Overview)",
+          "summary": "A control matrix that pairs each attack of module C10 with a control and a live test, and what such tests cannot show.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Defence engineering turns the attack surface of C10 into **controls**, and a control only counts if it has a **test**. NIST SP 800-227 collects the requirements for implementing KEMs in a few headings that this module follows: **input checking** (even benign faults such as accepting an input that is too long or too short can have serious consequences), **failure handling** (a failed operation must not leak information outside the cryptographic module), **side-channel protection** (constant-time implementations, protected memory), **destruction of cryptographic data** as soon as it is no longer needed, and **correct handling of randomness**. FIPS 203 adds that the algorithm's internal functions must not be exposed and that randomness must be generated inside the module (FIPS 203, section 3.3). These requirements are not an implementation guide; the standards say conformance does not by itself guarantee security.\n\nThe listing builds a **control matrix** for the ML-KEM reference module of the lab: eight threats from C10, the control that answers each, and a **live test** that runs now and prints PASS or FAIL. The table is the model for every review: no row without a test, and every limitation written down. Everything here runs on your own machine against code and keys that exist only inside the lesson. Where a physical effect is involved (power leakage, injected faults) it is SIMULATED and labelled so. The reference libraries are slow pure-Python code: the lessons show how controls are built and, above all, how to test them."
+            },
+            {
+              "type": "code",
+              "id": "c-control-matrix",
+              "language": "python",
+              "code": "import hashlib, hmac, os\nfrom kyber_py.ml_kem import ML_KEM_768\n\n# A control matrix: every threat from lesson C10 is paired with a control and a LIVE test that the control works in the lesson's reference module.\nkem = ML_KEM_768\nk = kem.k\nek, dk = kem.keygen()\nkey, ct = kem.encaps(ek)\n\ndef raises(fn):\n    try:\n        fn(); return False\n    except ValueError:\n        return True\n\ndef test_input_validation():\n    return raises(lambda: kem.encaps(ek[:-1])) and raises(lambda: kem.decaps(dk, ct[:-1]))\ndef test_modulus_check():\n    bad = bytearray(ek); bad[0:2] = (4000 | (bad[1] << 8 & 0xF000)).to_bytes(2, \"little\")\n    return raises(lambda: kem.encaps(bytes(bad)))\ndef test_implicit_rejection():\n    t = bytearray(ct); t[7] ^= 1\n    out = kem.decaps(dk, bytes(t))\n    return out != key and out == hashlib.shake_256(dk[-32:] + bytes(t)).digest(32)\ndef test_no_distinguishable_failure():\n    results = []\n    for i in (0, 100, 500, 1000):\n        t = bytearray(ct); t[i] ^= 1\n        results.append(len(kem.decaps(dk, bytes(t))))\n    return len(set(results)) == 1                                            # same output shape for every kind of invalid ciphertext\ndef test_constant_time_compare():\n    return hmac.compare_digest(key, key) and not hmac.compare_digest(key, bytes(32))\ndef test_key_integrity():\n    # an authenticated wrapper around the stored decapsulation key\n    wrap_key = os.urandom(32)\n    tag = hmac.new(wrap_key, dk, \"sha256\").digest()\n    damaged = bytearray(dk); damaged[5] ^= 1\n    return hmac.compare_digest(hmac.new(wrap_key, dk, \"sha256\").digest(), tag) and not hmac.compare_digest(hmac.new(wrap_key, bytes(damaged), \"sha256\").digest(), tag)\ndef test_zeroization():\n    buf = bytearray(dk[:64]); view = memoryview(buf)\n    for i in range(len(buf)): buf[i] = 0\n    return not any(view)\ndef test_randomness_from_module():\n    return kem.keygen()[0] != kem.keygen()[0] and kem.encaps(ek)[1] != kem.encaps(ek)[1]\n\nmatrix = [\n    (\"malformed or truncated input\", \"input validation (type checks)\", test_input_validation, \"C10.8\"),\n    (\"out-of-range key coefficients\", \"modulus check of FIPS 203 7.2\", test_modulus_check, \"C10.8\"),\n    (\"chosen-ciphertext oracle\", \"implicit rejection K = J(z || c)\", test_implicit_rejection, \"C10.5\"),\n    (\"failure that is visible to the peer\", \"same output shape for every invalid ciphertext\", test_no_distinguishable_failure, \"C10.5\"),\n    (\"timing of secret comparisons\", \"constant-time comparison\", test_constant_time_compare, \"C10.1\"),\n    (\"corrupted stored key\", \"integrity tag over the stored key\", test_key_integrity, \"C10.5\"),\n    (\"secrets left in memory\", \"wipeable buffers\", test_zeroization, \"C10.12\"),\n    (\"predictable randomness\", \"randomness generated inside the module\", test_randomness_from_module, \"C10.6\"),\n]\nprint(f\"{'threat':<38} {'control':<48} {'live test':>10} {'lesson'}\")\nfor threat, control, test, lesson in matrix:\n    print(f\"{threat:<38} {control:<48} {'PASS' if test() else 'FAIL':>10} {lesson}\")\nprint()\nprint(\"not covered by tests of this kind (they need other methods): timing and cache behaviour of the compiled code (11.2, 11.10), power and fault behaviour of the hardware (11.5, 11.6),\")\nprint(\"the quality of the entropy source (11.3), supply-chain integrity of the build (11.12). A control that has no test is an assumption.\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-control-matrix",
+              "language": "text",
+              "code": "threat                                 control                                           live test lesson\nmalformed or truncated input           input validation (type checks)                         PASS C10.8\nout-of-range key coefficients          modulus check of FIPS 203 7.2                          PASS C10.8\nchosen-ciphertext oracle               implicit rejection K = J(z || c)                       PASS C10.5\nfailure that is visible to the peer    same output shape for every invalid ciphertext         PASS C10.5\ntiming of secret comparisons           constant-time comparison                               PASS C10.1\ncorrupted stored key                   integrity tag over the stored key                      PASS C10.5\nsecrets left in memory                 wipeable buffers                                       PASS C10.12\npredictable randomness                 randomness generated inside the module                 PASS C10.6\n\nnot covered by tests of this kind (they need other methods): timing and cache behaviour of the compiled code (11.2, 11.10), power and fault behaviour of the hardware (11.5, 11.6),\nthe quality of the entropy source (11.3), supply-chain integrity of the build (11.12). A control that has no test is an assumption.",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "All eight controls pass their tests in the reference module: truncated and out-of-range inputs are refused, an invalid ciphertext gives the standard's pseudo-random key without an error, every invalid ciphertext produces the same output shape (no visible failure), comparisons of secrets use a constant-time function, an integrity tag detects a corrupted stored key, a key buffer can be wiped, and randomness comes from inside the module. What the matrix deliberately does **not** claim is as important: timing and cache behaviour of *compiled* code, power and fault behaviour of the hardware, the quality of the entropy source and the integrity of the build cannot be shown by tests of this kind; the following lessons give each its own method. **A control that has no test is an assumption.**\n\n**How to use it.** Start every project with the matrix; add a row for each new threat (a new protocol, a new device); write the test before the control; and keep the \"not covered\" list visible in the review, because that list is the residual risk."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What makes a security control meaningful in a review?",
+              "options": [
+                "It has a test that demonstrates it works",
+                "It is described in a policy",
+                "It is used by other products"
+              ],
+              "correct_index": 0,
+              "explanation": "The control matrix pairs every control with a live test."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which of these can the lesson's tests not establish?",
+              "options": [
+                "Constant-time behaviour of compiled code",
+                "That truncated inputs are refused",
+                "That implicit rejection returns SHAKE256(z || c)"
+              ],
+              "correct_index": 0,
+              "explanation": "That needs methods covered in 11.2 and 11.10."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "According to SP 800-227, what should happen to failure information?",
+              "options": [
+                "It should not leak outside the cryptographic module",
+                "It should be logged to the caller",
+                "It should be hashed"
+              ],
+              "correct_index": 0,
+              "explanation": "Leaking information about failures and aborts should be avoided."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, the implementation requirements: 'Input checking', handling of failures and aborts, 'Side-channel protection' and destruction of cryptographic data"
+            },
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 3.3 (requirements for implementations: controlled access to internal functions, randomness from an approved RBG)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The matrix is a teaching construction built for the reference module; it is not a conformance test and does not cover the full set of SP 800-227 requirements."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "11.2 Constant-Time Design",
+          "summary": "Branch-free building blocks verified exhaustively, and a bytecode-level tracer that checks that control flow does not depend on the secret, including a blind spot of the simpler line-level tracer.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Constant-time design** means that the sequence of instructions executed, the memory addresses accessed and the operands of variable-latency instructions do not depend on secret data. The usual rules are no secret-dependent branches, no secret-dependent table indices, no secret operands for division or variable shifts, and comparisons that always process every byte. The standard building blocks are **masks** instead of branches: `ct_select(bit, a, b)` computes (a AND mask) OR (b AND NOT mask) with mask = −bit; a conditional subtraction computes t = x − q and adds q back using the sign of t as a mask; a comparison accumulates the OR of the XORs of all bytes and tests the result once at the end.\n\nWriting such code is half the job; **checking** it is the other half. A practical technique at the source level is to run the function on different secret values and **compare the traces of what executes**; at the binary level the same idea appears as dudect-style statistical timing tests and secret-tainting under a memory checker (11.10). The listing implements the branch-free helpers, verifies each exhaustively against its specification, and then builds two tracers for Python code: one records source lines, the finer one records every bytecode instruction. It uses them on four functions and shows what each tracer can and cannot see. Python is not itself constant time, so this is an exercise in structure and method, not a certification of anything. Everything here runs on your own machine against code and keys that exist only inside the lesson. Where a physical effect is involved (power leakage, injected faults) it is SIMULATED and labelled so. The reference libraries are slow pure-Python code: the lessons show how controls are built and, above all, how to test them."
+            },
+            {
+              "type": "code",
+              "id": "c-constant-time",
+              "language": "python",
+              "code": "import itertools, sys\n\n# Constant-time building blocks written with masks instead of branches. (Python itself is not constant time; the point is the STRUCTURE of the code\n# and how to check it: record the sequence of executed lines for different secrets and require the sequences to be identical.)\nMASK32 = 0xFFFFFFFF\n\ndef ct_is_zero(x):                                  # returns 1 if x == 0 else 0, without a branch (x is a 32-bit value)\n    return ((~x & MASK32) & ((x - 1) & MASK32)) >> 31\ndef ct_select(bit, a, b):                           # a if bit == 1 else b\n    mask = (-bit) & MASK32\n    return (a & mask) | (b & ~mask & MASK32)\ndef ct_swap(bit, a, b):                             # swap a and b if bit == 1\n    t = (a ^ b) & ((-bit) & MASK32)\n    return a ^ t, b ^ t\ndef ct_equal_bytes(a, b):\n    diff = 0\n    for x, y in zip(a, b):\n        diff |= x ^ y\n    return ct_is_zero(diff)\ndef cond_sub_q(x, q=3329):                          # reduce x in [0, 2q) into [0, q) without a branch: subtract q, add it back if the result went negative\n    t = x - q\n    return t + (q & -(t >> 31 & 1)) if t < 0 else t\n\n# functional correctness, exhaustively where the range is small\nassert all(ct_is_zero(x) == (x == 0) for x in range(70000))\nassert all(ct_select(b, 11, 22) == (11 if b else 22) for b in (0, 1))\nassert all(ct_swap(b, 5, 9) == ((9, 5) if b else (5, 9)) for b in (0, 1))\nassert all(cond_sub_q(x) == (x - 3329 if x >= 3329 else x) for x in range(2 * 3329))\nprint(\"branch-free helpers match their specification: ct_is_zero on 70,000 values, ct_select, ct_swap, conditional subtraction of q on all 6,658 inputs of [0, 2q)\")\n\n# a tracer: record what executes while the function runs, so control flow can be compared across secret values.\n# level \"line\" records source lines; level \"opcode\" records every bytecode instruction (finer: it can see a conditional expression inside one line)\ndef trace_of(fn, level, *args):\n    events = []\n    def tracer(frame, event, arg):\n        if event == \"call\":\n            frame.f_trace_opcodes = (level == \"opcode\")\n        elif event == \"line\" and level == \"line\":\n            events.append((frame.f_code.co_name, frame.f_lineno))\n        elif event == \"opcode\" and level == \"opcode\":\n            events.append((frame.f_code.co_name, frame.f_lasti))\n        return tracer\n    sys.settrace(tracer)\n    try:\n        fn(*args)                                                         # the first traced call of a function delivers no opcode events: discard it\n        events.clear()\n        fn(*args)\n    finally:\n        sys.settrace(None)\n    return tuple(events)\n\nsecret = b\"\\x13\\x37\\xc0\\xde\"\ndef leaky_equal(guess):\n    for a, b in zip(secret, guess):\n        if a != b:\n            return 0\n    return 1\ndef ct_equal(guess):\n    return ct_equal_bytes(secret, guess)\ndef leaky_cond_sub(x, q=3329):\n    if x >= q:\n        x -= q\n    return x\ndef ct_cond_sub(x):\n    return cond_sub_q(x)\n\ndef verdict(name, fn, inputs, level):\n    for _ in range(40):                                                   # warm up: CPython specialises bytecode after a few calls, which would otherwise show up as differences\n        for i in inputs:\n            fn(i)\n    traces = {trace_of(fn, level, i) for i in inputs}\n    print(f\"{name:<52} {level:>6} traces over {len(inputs):>2} inputs: {len(traces):>2} -> {'constant' if len(traces) == 1 else 'DEPENDS ON THE INPUT'}\")\ndef ct_cond_sub_masked(x, q=3329):\n    t = x - q\n    return t + (q & -((t >> 63) & 1))              # arithmetic shift of the sign: all-ones if t is negative\nassert all(ct_cond_sub_masked(x) == (x - 3329 if x >= 3329 else x) for x in range(2 * 3329))\nguesses = [secret, bytes([0x00, 0x37, 0xC0, 0xDE]), bytes([0x13, 0x00, 0xC0, 0xDE]), bytes([0x13, 0x37, 0x00, 0xDE]), bytes([0x13, 0x37, 0xC0, 0x00]), bytes(4)]\nsample = [0, 1, 1000, 3328, 3329, 5000, 6657]\nfor level in (\"line\", \"opcode\"):\n    verdict(\"comparison with early exit\", leaky_equal, guesses, level)\n    verdict(\"comparison with accumulated difference\", ct_equal, guesses, level)\n    verdict(\"conditional subtraction with an if statement\", leaky_cond_sub, sample, level)\n    verdict(\"'branch-free' version containing a ternary expression\", ct_cond_sub, sample, level)\n    verdict(\"conditional subtraction, mask only\", ct_cond_sub_masked, sample, level)\n    print()\nprint(\"the line-level tracer misses the ternary expression because the whole expression sits on one source line; the opcode-level tracer sees it\")\nprint(\"the mask-only version is correct for all 6,658 inputs and has one trace at both levels: it is the form used in constant-time reference code\")\nprint(\"limits: this checks control flow of the Python bytecode, not instruction timing or memory access patterns of compiled code; compiled code needs binary-level tools (dudect-style statistical timing tests, secret-tainting under valgrind)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-constant-time",
+              "language": "text",
+              "code": "branch-free helpers match their specification: ct_is_zero on 70,000 values, ct_select, ct_swap, conditional subtraction of q on all 6,658 inputs of [0, 2q)\ncomparison with early exit                             line traces over  6 inputs:  5 -> DEPENDS ON THE INPUT\ncomparison with accumulated difference                 line traces over  6 inputs:  1 -> constant\nconditional subtraction with an if statement           line traces over  7 inputs:  2 -> DEPENDS ON THE INPUT\n'branch-free' version containing a ternary expression   line traces over  7 inputs:  1 -> constant\nconditional subtraction, mask only                     line traces over  7 inputs:  1 -> constant\n\ncomparison with early exit                           opcode traces over  6 inputs:  5 -> DEPENDS ON THE INPUT\ncomparison with accumulated difference               opcode traces over  6 inputs:  1 -> constant\nconditional subtraction with an if statement         opcode traces over  7 inputs:  2 -> DEPENDS ON THE INPUT\n'branch-free' version containing a ternary expression opcode traces over  7 inputs:  2 -> DEPENDS ON THE INPUT\nconditional subtraction, mask only                   opcode traces over  7 inputs:  1 -> constant\n\nthe line-level tracer misses the ternary expression because the whole expression sits on one source line; the opcode-level tracer sees it\nthe mask-only version is correct for all 6,658 inputs and has one trace at both levels: it is the form used in constant-time reference code\nlimits: this checks control flow of the Python bytecode, not instruction timing or memory access patterns of compiled code; compiled code needs binary-level tools (dudect-style statistical timing tests, secret-tainting under valgrind)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The helpers match their specifications for 70,000 values of `ct_is_zero`, both bits of select and swap, and all 6,658 inputs of [0, 2q) for the conditional subtraction. The traces separate the functions as intended: the early-exit comparison produces five different traces for six inputs (the work depends on how much of the guess matched), and the `if` version of the conditional subtraction two; the accumulate-and-test comparison and the mask-only subtraction each produce one trace at both levels. The interesting row is the \"branch-free\" version that still contains a **ternary expression** on one line: the **line-level tracer reports it as constant**, because the whole expression is a single source line, while the **opcode-level tracer reports two different traces**. A tool with a blind spot gives false assurance, so a reviewer must know the resolution of the tool used and prefer the finer one.\n\n**Limits.** The bytecode view still says nothing about the timing of individual instructions, cache behaviour or what a compiler or CPU does with the code. For C and Rust code the equivalent checks run on the compiled binary: statistical timing tests over many secrets, secret-taint tracking, and inspection of the assembly for branches the compiler introduced. **Common mistakes:** trusting a compiler to preserve constant-time source, using comparison operators on secrets, and optimising a \"slow\" masked helper back into a branch."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does a constant-time comparison do differently from an early-exit one?",
+              "options": [
+                "It processes every byte and decides once at the end",
+                "It compares hashes",
+                "It sorts the bytes"
+              ],
+              "correct_index": 0,
+              "explanation": "The accumulated XOR difference is tested a single time."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why did the line-level tracer report the ternary version as constant?",
+              "options": [
+                "The whole conditional expression sits on one source line, so line events cannot distinguish the paths",
+                "It was actually constant",
+                "The tracer was disabled"
+              ],
+              "correct_index": 0,
+              "explanation": "The opcode-level tracer found two traces."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is source-level tracing not enough for real deployments?",
+              "options": [
+                "Compilers and CPUs can introduce branches and timing differences the source does not show",
+                "Source code has no branches",
+                "Tracing is illegal"
+              ],
+              "correct_index": 0,
+              "explanation": "Binary-level timing tests and taint tracking are needed."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, 'Side-channel protection' (constant-time implementations, protecting memory from leakage)"
+            },
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Algorithms for Compress, Decompress and the modulus-q arithmetic whose implementation must be constant-time"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Dudect-style testing and secret tainting are named from general knowledge and are not demonstrated. The tracer results depend on CPython 3.14's bytecode; other versions may show different opcode sequences."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "11.3 Secure Randomness",
+          "summary": "An HMAC_DRBG written from SP 800-90A with its properties tested, and continuous health tests that detect a stuck or biased noise source.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "FIPS 203, 204 and 205 all require their random inputs to come from an **approved random bit generator (RBG)** built as in the SP 800-90 series: a **noise source** (SP 800-90B) feeds an entropy source whose output seeds a **deterministic random bit generator (DRBG)** (SP 800-90A) that expands it into as many random bytes as needed, reseeding periodically. HMAC_DRBG is one of the approved constructions. It keeps a key K and a value V; the update function mixes new data into both, and generation repeatedly computes V = HMAC(K, V) and outputs V, then updates the state (SP 800-90A Rev. 1, section 10.1.2: instantiate with seed_material = entropy_input ‖ nonce ‖ personalization string, K = 0x00…00, V = 0x01…01, update, and a reseed counter with a reseed interval of 10,000 requests for SHA-256 and a request limit of 7,500 bits).\n\nThe listing implements HMAC_DRBG from the algorithm in the standard and tests the properties any correct implementation must have: determinism, sensitivity to every input (entropy, nonce, personalization), advancing state, effect of reseeding, and the request-size limit. Then it implements two **continuous health tests** in the spirit of SP 800-90B, a repetition count test and an adaptive proportion test, and applies them to a healthy source, a source stuck at one value and a biased source. Everything here runs on your own machine against code and keys that exist only inside the lesson. Where a physical effect is involved (power leakage, injected faults) it is SIMULATED and labelled so. The reference libraries are slow pure-Python code: the lessons show how controls are built and, above all, how to test them."
+            },
+            {
+              "type": "code",
+              "id": "c-drbg",
+              "language": "python",
+              "code": "import hashlib, hmac, math, os, random\n\n# --- HMAC_DRBG with SHA-256, written from NIST SP 800-90A Rev. 1, section 10.1.2 (instantiate, update, generate)\nclass HmacDrbg:\n    OUTLEN = 32\n    RESEED_INTERVAL = 10_000\n    MAX_BYTES_PER_REQUEST = 7500 // 8\n    def _hmac(self, key, data):\n        return hmac.new(key, data, hashlib.sha256).digest()\n    def _update(self, provided_data=b\"\"):\n        self.K = self._hmac(self.K, self.V + b\"\\x00\" + provided_data)                # step 1\n        self.V = self._hmac(self.K, self.V)                                          # step 2\n        if not provided_data:\n            return                                                                   # step 3\n        self.K = self._hmac(self.K, self.V + b\"\\x01\" + provided_data)                # step 4\n        self.V = self._hmac(self.K, self.V)                                          # step 5\n    def __init__(self, entropy_input, nonce, personalization=b\"\"):\n        seed_material = entropy_input + nonce + personalization\n        self.K = b\"\\x00\" * self.OUTLEN\n        self.V = b\"\\x01\" * self.OUTLEN\n        self._update(seed_material)\n        self.reseed_counter = 1\n    def reseed(self, entropy_input, additional=b\"\"):\n        self._update(entropy_input + additional)\n        self.reseed_counter = 1\n    def generate(self, n_bytes, additional=b\"\"):\n        if n_bytes > self.MAX_BYTES_PER_REQUEST:\n            raise ValueError(\"request too large\")\n        if self.reseed_counter > self.RESEED_INTERVAL:\n            raise RuntimeError(\"reseed required\")\n        if additional:\n            self._update(additional)\n        temp = b\"\"\n        while len(temp) < n_bytes:\n            self.V = self._hmac(self.K, self.V)\n            temp += self.V\n        self._update(additional)\n        self.reseed_counter += 1\n        return temp[:n_bytes]\n\n# properties that must hold for any implementation of the specification\nentropy, nonce = hashlib.sha256(b\"entropy input for the lesson\").digest() + bytes(16), b\"nonce-16-bytes!!\"\na, b = HmacDrbg(entropy, nonce, b\"app\"), HmacDrbg(entropy, nonce, b\"app\")\nprint(\"same seed material gives the same output (deterministic):\", a.generate(32) == b.generate(32))\nprint(\"different personalization string gives different output:\", HmacDrbg(entropy, nonce, b\"app\").generate(32) != HmacDrbg(entropy, nonce, b\"other\").generate(32))\nprint(\"different entropy gives different output:\", HmacDrbg(entropy[:-1] + b\"X\", nonce).generate(32) != HmacDrbg(entropy, nonce).generate(32))\ndrbg = HmacDrbg(entropy, nonce)\nfirst, second = drbg.generate(32), drbg.generate(32)\nprint(\"consecutive outputs differ and the counter advances:\", first != second, drbg.reseed_counter == 3)\ntwin_a, twin_b = HmacDrbg(entropy, nonce), HmacDrbg(entropy, nonce)\ntwin_b.reseed(b\"fresh entropy obtained later\")\nprint(\"reseeding changes the future output stream (two identical generators diverge after one is reseeded):\", twin_a.generate(32) != twin_b.generate(32))\ntry:\n    HmacDrbg(entropy, nonce).generate(938)\n    print(\"a request of 938 bytes was accepted\")\nexcept ValueError:\n    print(\"a single request above 7500 bits (937 bytes) is refused, as in the standard's maximum request size\")\nprint(\"no published known-answer vector is available to this lesson; before use, compare with the NIST CAVP vectors for HMAC_DRBG\")\n\n# --- continuous health tests on a noise source, in the spirit of SP 800-90B (repetition count test and adaptive proportion test)\ndef repetition_count_test(samples, cutoff):\n    run, last = 1, None\n    for s in samples:\n        run = run + 1 if s == last else 1\n        last = s\n        if run >= cutoff:\n            return False\n    return True\ndef adaptive_proportion_test(samples, window, cutoff):\n    for start in range(0, len(samples) - window + 1, window):\n        block = samples[start:start + window]\n        if block.count(block[0]) >= cutoff:\n            return False\n    return True\nrng = random.Random(3)\ngood = [rng.randrange(256) for _ in range(20000)]                                    # a healthy byte source\nstuck = good[:5000] + [77] * 200 + good[5200:]                                       # source that sticks for 200 samples\nbiased = [0 if rng.random() < 0.4 else rng.randrange(256) for _ in range(20000)]     # one value far too frequent\nalpha_cut_rct = 1 + math.ceil(20 / 8)                                                # cutoff for 8 bits of entropy per sample at false-positive rate 2^-20 (RCT: 1 + 20/H)\nprint()\nprint(f\"{'source':<26} {'repetition count test':>22} {'adaptive proportion test':>26}\")\nfor name, src in ((\"healthy\", good), (\"stuck at one value\", stuck), (\"biased towards 0\", biased)):\n    print(f\"{name:<26} {'pass' if repetition_count_test(src, alpha_cut_rct + 2) else 'FAIL':>22} {'pass' if adaptive_proportion_test(src, 512, 13) else 'FAIL':>26}\")\nprint(\"the thresholds follow the shape of SP 800-90B (cutoffs derived from the claimed entropy per sample and a false-positive rate); the values here were chosen for the lesson, not copied from the standard\")\nprint(\"health tests detect a failed source; they do not prove that a source has the entropy claimed. That needs an entropy assessment of the design (SP 800-90B) and a validated generator\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-drbg",
+              "language": "text",
+              "code": "same seed material gives the same output (deterministic): True\ndifferent personalization string gives different output: True\ndifferent entropy gives different output: True\nconsecutive outputs differ and the counter advances: True True\nreseeding changes the future output stream (two identical generators diverge after one is reseeded): True\na single request above 7500 bits (937 bytes) is refused, as in the standard's maximum request size\nno published known-answer vector is available to this lesson; before use, compare with the NIST CAVP vectors for HMAC_DRBG\n\nsource                      repetition count test   adaptive proportion test\nhealthy                                      pass                       pass\nstuck at one value                           FAIL                       FAIL\nbiased towards 0                             FAIL                       FAIL\nthe thresholds follow the shape of SP 800-90B (cutoffs derived from the claimed entropy per sample and a false-positive rate); the values here were chosen for the lesson, not copied from the standard\nhealth tests detect a failed source; they do not prove that a source has the entropy claimed. That needs an entropy assessment of the design (SP 800-90B) and a validated generator",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The DRBG behaves as the specification requires: identical seed material gives identical output, a different entropy input or personalization string gives different output, consecutive outputs differ while the reseed counter advances, a reseed makes two otherwise identical generators diverge, and a single request above the limit is refused. The honest limitation is stated in the output: **no published known-answer vector is available in this lesson**, so the implementation is verified against the algorithm's properties and not against the standard's own test vectors, and must be compared with the NIST CAVP vectors before any use. The health tests flag the stuck and the biased sources and pass the healthy one; their cutoffs were chosen for the lesson and not copied from SP 800-90B.\n\n**What the pieces mean.** A DRBG is only as unpredictable as its seed, so the real security lies in the entropy source and its assessment; health tests detect a *failed* source (a stuck sensor, a stuck line), they do not prove that a source has the entropy claimed, and a deterministic generator cannot create entropy it was not given. **Practice:** use the operating system's validated generator, reseed after fork or snapshot restore (10.7), run the start-up and continuous tests of the source in products that carry their own, and never let a caller inject randomness."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does HMAC_DRBG's generate step compute?",
+              "options": [
+                "Repeatedly V = HMAC(K, V), outputting V, then updates the state",
+                "A hash of the clock",
+                "AES in counter mode"
+              ],
+              "correct_index": 0,
+              "explanation": "SP 800-90A Rev. 1, section 10.1.2.5."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What do health tests on a noise source establish?",
+              "options": [
+                "That the source has not visibly failed, not that it has the claimed entropy",
+                "That the generator is secure",
+                "That seeds are secret"
+              ],
+              "correct_index": 0,
+              "explanation": "Entropy must be assessed by analysing the source design."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why was the HMAC_DRBG listing compared with properties and not with standard vectors?",
+              "options": [
+                "No published vector was available in the lab; CAVP vectors must be used before real use",
+                "Vectors do not exist",
+                "Properties are stronger than vectors"
+              ],
+              "correct_index": 0,
+              "explanation": "The limitation is stated in the lesson output."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B184",
+              "locator": "NIST SP 800-90A Rev. 1, Section 10.1.2 (HMAC_DRBG: update function 10.1.2.2, instantiation 10.1.2.3, generation 10.1.2.5) and Appendix B.2 (the HMAC_DRBG example parameters: SHA-256, request limit 7,500 bits, reseed interval 10,000)"
+            },
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 3.3 (randomness generation from an approved RBG per SP 800-90A, 90B, 90C)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "SP 800-90B (entropy sources and health tests) is not on disk: the repetition count and adaptive proportion tests are described from general knowledge with lesson-chosen cutoffs. The DRBG was checked against the algorithm text and its properties, not against NIST test vectors."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "11.4 Key Protection",
+          "summary": "Envelope encryption with authenticated headers, rotation, and threshold secret sharing of a seed, each tested against tampering and against too few custodians.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Keys need protection at rest, in use and during recovery. The standard pattern for **keys at rest** is **envelope encryption**: the private key is stored only after being encrypted (\"wrapped\") under a **key-encryption key (KEK)** that lives somewhere else, ideally in a hardware security module or a key-management service. The wrapping must be **authenticated** (an AEAD such as AES-GCM), and the **header** that says which algorithm, version and key identifier the blob belongs to must be bound to the ciphertext as associated data, so that an attacker cannot swap labels (an ML-KEM key presented as ML-KEM-512, an old key identifier). **Rotation** replaces the KEK without exposing or changing the wrapped key. For **recovery**, a seed can be split among several custodians with **threshold secret sharing** (Shamir): any t shares reconstruct the secret and fewer than t reveal nothing.\n\nSP 800-227 adds the lifecycle point: cryptographic data must be destroyed as soon as it is no longer needed, including intermediate values and the randomness generated for an encapsulation. The listing wraps an ML-KEM-768 decapsulation key with AES-256-GCM under a header-bound derived key, tests tampering of blob, header and KEK, rotates the KEK, and splits a 64-byte seed 3-of-5 over a prime field, showing that any three shares work and that two shares are consistent with every possible secret. Everything here runs on your own machine against code and keys that exist only inside the lesson. Where a physical effect is involved (power leakage, injected faults) it is SIMULATED and labelled so. The reference libraries are slow pure-Python code: the lessons show how controls are built and, above all, how to test them."
+            },
+            {
+              "type": "code",
+              "id": "c-key-protection",
+              "language": "python",
+              "code": "import hashlib, os, random\nfrom cryptography.exceptions import InvalidTag\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.ciphers.aead import AESGCM\nfrom cryptography.hazmat.primitives.kdf.hkdf import HKDF\nfrom kyber_py.ml_kem import ML_KEM_768\n\n# --- envelope encryption: the decapsulation key is stored only wrapped under a key-encryption key (KEK); the header is authenticated, not secret\nkem = ML_KEM_768\nek, dk = kem.keygen()\nkek = os.urandom(32)                                                       # in practice held by an HSM or key-management service, never stored beside the data\ndef wrap(kek, key_id, algorithm, secret, version=1):\n    header = f\"v{version}|{algorithm}|{key_id}\".encode()\n    nonce = os.urandom(12)\n    data_key = HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b\"dk-wrap|\" + header).derive(kek)       # a different derived key per header\n    return header, nonce, AESGCM(data_key).encrypt(nonce, secret, header)\ndef unwrap(kek, header, nonce, blob):\n    data_key = HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b\"dk-wrap|\" + header).derive(kek)\n    return AESGCM(data_key).decrypt(nonce, blob, header)\nheader, nonce, blob = wrap(kek, \"key-2026-10-a\", \"ML-KEM-768\", dk)\nprint(\"wrapped key blob:\", len(blob), \"bytes for a\", len(dk), \"byte key (+16 byte tag); header\", header.decode())\nprint(\"unwrap restores the key:\", unwrap(kek, header, nonce, blob) == dk)\ndef fails(fn):\n    try:\n        fn(); return False\n    except InvalidTag:\n        return True\ndamaged = bytearray(blob); damaged[100] ^= 1\nprint(\"a flipped bit in the blob is detected:\", fails(lambda: unwrap(kek, header, nonce, bytes(damaged))))\nprint(\"a changed header (algorithm confusion, key-id swap) is detected:\", fails(lambda: unwrap(kek, header.replace(b\"ML-KEM-768\", b\"ML-KEM-512\"), nonce, blob)))\nprint(\"a wrong KEK is detected:\", fails(lambda: unwrap(os.urandom(32), header, nonce, blob)))\nnew_kek = os.urandom(32)\nrewrapped = wrap(new_kek, \"key-2026-10-b\", \"ML-KEM-768\", unwrap(kek, header, nonce, blob))\nprint(\"rotation: unwrap with the old KEK, re-wrap under a new one, and the key itself is unchanged:\", unwrap(new_kek, *rewrapped) == dk, \"| the old KEK no longer opens the new blob:\", fails(lambda: unwrap(kek, *rewrapped)))\n\n# --- splitting the seed among custodians with Shamir secret sharing over a prime field (3 of 5)\nP = 2 ** 521 - 1                                                          # a Mersenne prime larger than any 64-byte secret\ndef split(secret_int, threshold, shares, rng):\n    coeffs = [secret_int] + [rng.randrange(P) for _ in range(threshold - 1)]\n    return [(x, sum(c * pow(x, i, P) for i, c in enumerate(coeffs)) % P) for x in range(1, shares + 1)]\ndef combine(points):\n    total = 0\n    for i, (xi, yi) in enumerate(points):\n        num = den = 1\n        for j, (xj, _) in enumerate(points):\n            if i != j:\n                num = num * (-xj) % P\n                den = den * (xi - xj) % P\n        total = (total + yi * num * pow(den, -1, P)) % P\n    return total\nrng = random.Random(14)\nseed = hashlib.shake_256(b\"the 64-byte ML-KEM seed of the lesson\").digest(64)\nshares = split(int.from_bytes(seed, \"big\"), 3, 5, rng)\nprint()\nprint(\"any 3 of the 5 shares reconstruct the seed:\", all(combine(list(c)).to_bytes(64, \"big\") == seed for c in __import__(\"itertools\").combinations(shares, 3)))\ntwo = shares[:2]\nwrong_candidates = [combine(two + [(3, rng.randrange(P))]) for _ in range(3)]\nprint(\"2 shares plus an arbitrary third point give different 'secrets' each time (2 shares fix nothing):\", len(set(wrong_candidates)) == 3 and all(c.to_bytes(66, \"big\")[2:] != seed for c in wrong_candidates))\ndef poly_through(two_shares, candidate_secret):\n    # solve for a1, a2 in  y = candidate + a1 x + a2 x^2  through the two known shares (x = 1 and x = 2)\n    (x1, y1), (x2, y2) = two_shares\n    det = (x1 * x2 * x2 - x2 * x1 * x1) % P\n    r1, r2 = (y1 - candidate_secret) % P, (y2 - candidate_secret) % P\n    a1 = (r1 * x2 * x2 - r2 * x1 * x1) * pow(det, -1, P) % P\n    a2 = (x1 * r2 - x2 * r1) * pow(det, -1, P) % P\n    return a1, a2\ndef check(two_shares, candidate_secret):\n    a1, a2 = poly_through(two_shares, candidate_secret)\n    return all((candidate_secret + a1 * x + a2 * x * x) % P == y for x, y in two_shares)\nprint(\"for ANY candidate secret there is a degree-2 polynomial through the two known shares, so two shares are consistent with every possible seed:\", all(check(two, c) for c in (0, 1, 12345, int.from_bytes(seed, \"big\"), P - 1)))\nprint(\"operational rules: the KEK lives in an HSM or key service, wrapped keys carry authenticated headers, rotation re-wraps, recovery shares go to separate custodians, every use of a key is logged\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-key-protection",
+              "language": "text",
+              "code": "wrapped key blob: 2416 bytes for a 2400 byte key (+16 byte tag); header v1|ML-KEM-768|key-2026-10-a\nunwrap restores the key: True\na flipped bit in the blob is detected: True\na changed header (algorithm confusion, key-id swap) is detected: True\na wrong KEK is detected: True\nrotation: unwrap with the old KEK, re-wrap under a new one, and the key itself is unchanged: True | the old KEK no longer opens the new blob: True\n\nany 3 of the 5 shares reconstruct the seed: True\n2 shares plus an arbitrary third point give different 'secrets' each time (2 shares fix nothing): True\nfor ANY candidate secret there is a degree-2 polynomial through the two known shares, so two shares are consistent with every possible seed: True\noperational rules: the KEK lives in an HSM or key service, wrapped keys carry authenticated headers, rotation re-wraps, recovery shares go to separate custodians, every use of a key is logged",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The wrapped blob has 16 bytes of authentication tag beyond the 2,400-byte key; it decrypts only with the exact header and KEK, and a flipped bit, a changed algorithm label or a wrong KEK is detected (each raises an authentication error). Rotation re-wraps the key under a new KEK and the old KEK no longer opens the new blob. The sharing results show the two directions of a threshold scheme: every one of the ten combinations of three shares reconstructs the same seed, and for two shares an explicit polynomial exists through them for **every** candidate secret (0, 1, an arbitrary value, the true seed, the largest field element), so two custodians together learn nothing about the secret.\n\n**Operational rules.** The KEK never sits beside the data it protects; wrapping uses an AEAD with the header authenticated; every use of a key is logged and, where possible, rate-limited; rotation is scheduled and tested; shares are held by independent custodians with their own access control; and the wrapped copy is covered by the same integrity monitoring as the rest of the key store (9.4 showed that a private key's built-in checks cover only part of it)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why bind the algorithm and key identifier into the AEAD as associated data?",
+              "options": [
+                "So labels cannot be swapped without detection",
+                "To encrypt the label",
+                "To shorten the blob"
+              ],
+              "correct_index": 0,
+              "explanation": "A changed header made decryption fail."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does a 3-of-5 threshold scheme guarantee about two shares?",
+              "options": [
+                "They are consistent with every possible secret and reveal nothing",
+                "They reveal half of the secret",
+                "They reveal the polynomial"
+              ],
+              "correct_index": 0,
+              "explanation": "The lesson constructed a consistent polynomial for each of five candidate secrets."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Where should the key-encryption key be held?",
+              "options": [
+                "In an HSM or key-management service, separate from the wrapped data",
+                "Next to the wrapped key",
+                "In the application source"
+              ],
+              "correct_index": 0,
+              "explanation": "A KEK stored beside the data adds no protection."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, general guidance on destroying cryptographic data and protecting keys"
+            },
+            {
+              "book": "B100",
+              "locator": "cryptography: AESGCM and HKDF used for the key wrapping"
+            },
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 3.3 and Section 7.1 (the seed (d, z) as the compact private-key form)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Shamir secret sharing and envelope encryption are standard techniques described from general knowledge; key-management standards (for example SP 800-57 and SP 800-130) were not read for this lesson. The lesson's HKDF-derived wrapping key per header is a design choice, not a standard format."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "11.5 Side-Channel Resistance",
+          "summary": "Arithmetic masking of a secret polynomial: correct product from shares, single shares that carry no trace of the secret, simulated leakage correlations, and the second-order attack that brings some back.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Constant-time code removes leaks of timing and addresses. **Power and electromagnetic** leakage depends on the *data* being processed, so the remedy is different: **masking** (secret sharing inside the computation). The secret value is split into shares that sum to the secret, for example s = s1 + s2 (mod q) in **arithmetic masking** with a fresh random s1 for every execution; the device handles only the shares, and linear operations are done on each share separately, so that no single intermediate value depends on the secret. This works well for linear steps such as multiplying a secret polynomial by a public one. The hard parts are the **non-linear** operations (comparison, compression and decompression, hashing), which need dedicated masked gadgets and conversions between arithmetic and Boolean masking; masked implementations of lattice schemes are an active research area and are considerably more expensive than unmasked ones. The order of a masking scheme is the number of shares minus one: order-d masking resists attacks that combine up to d measurement points.\n\nThis listing is a **SIMULATION** with a Hamming-weight leakage model on a polynomial of the ML-KEM ring. It shows: the product of the secret with a public polynomial is computed from the shares and equals the unmasked product; the distribution of a single share looks the same for two very different secrets (compared with the sampling noise of drawing the same secret twice); the simulated correlation between leakage and secret for unmasked versus masked handling; and a second-order attack that multiplies the centred leakages of the two shares. Everything here runs on your own machine against code and keys that exist only inside the lesson. Where a physical effect is involved (power leakage, injected faults) it is SIMULATED and labelled so. The reference libraries are slow pure-Python code: the lessons show how controls are built and, above all, how to test them."
+            },
+            {
+              "type": "code",
+              "id": "c-masking",
+              "language": "python",
+              "code": "import numpy as np\n\n# SIMULATION: arithmetic masking of the secret polynomial of a lattice scheme. The secret s is never handled directly: only two shares s1, s2 with\n# s1 + s2 = s (mod q) are, and every linear operation is done share by share. The leakage model is the Hamming weight of 12-bit values plus noise.\nq, n = 3329, 256\nrng = np.random.default_rng(31)\nHW = np.array([bin(i).count(\"1\") for i in range(4096)])\n\ndef negacyclic_mul(f, g):\n    c = np.convolve(f, g)\n    c = np.concatenate((c, np.zeros(2 * n - len(c), dtype=c.dtype)))\n    return (c[:n] - c[n:]) % q\n\ns = rng.integers(-2, 3, n) % q                                           # a small secret, as in ML-KEM (coefficients in {-2..2} mod q)\ns1 = rng.integers(0, q, n)                                               # fresh uniform mask\ns2 = (s - s1) % q\nu = rng.integers(0, q, n)                                                # a public ciphertext component\n\n# correctness: the product is computed on the shares, and combined only at the end\ndirect = negacyclic_mul(s, u)\nshared = (negacyclic_mul(s1, u) + negacyclic_mul(s2, u)) % q\nprint(\"masked computation gives the same product as the unmasked one:\", np.array_equal(direct, shared))\n\n# security of a single share: its distribution does not depend on the secret (test with two very different secrets)\ndef share_histogram(secret, trials=4000):\n    counts = np.zeros(q)\n    for _ in range(trials):\n        mask = rng.integers(0, q, n)\n        counts += np.bincount(mask, minlength=q)            # the first share is the mask itself, uniform by construction\n        counts += np.bincount((secret - mask) % q, minlength=q)\n    return counts / counts.sum()\nzero_secret, big_secret = np.zeros(n, dtype=np.int64), np.full(n, 2, dtype=np.int64)\nh0, h0_again, h1 = share_histogram(zero_secret, 300), share_histogram(zero_secret, 300), share_histogram(big_secret, 300)\ntv = lambda a, b: 0.5 * np.abs(a - b).sum()\nprint(f\"distance between share distributions: same secret drawn twice {tv(h0, h0_again):.4f} (pure sampling noise); different secrets 'all 0' and 'all 2' {tv(h0, h1):.4f}\")\nprint(\"the two distances are of the same size: the distribution of a single share carries no visible trace of the secret\")\n\n# leakage: correlation between the observed leakage and the true secret coefficient, with and without masking\ndef correlation(values_handled, secret_values, noise=1.0, traces=60000):\n    idx = rng.integers(0, n, traces)\n    leakage = HW[values_handled[idx] % 4096] + rng.normal(0, noise, traces)\n    return abs(np.corrcoef(leakage, HW[secret_values[idx] % 4096])[0, 1])\nsecret_small = (s % q)\nunmasked = correlation(s, secret_small)\nmasked_share_1 = correlation(s1, secret_small)\nmasked_share_2 = correlation(s2, secret_small)\nprint(f\"correlation of the leakage with the secret: unmasked {unmasked:.3f}; handling only share 1 {masked_share_1:.3f}; handling only share 2 {masked_share_2:.3f}\")\n# a second-order attack combines the leakage of both shares: the product of the centred leakages correlates with the secret\nidx = rng.integers(0, n, 200000)\nl1 = HW[s1[idx]] + rng.normal(0, 1.0, len(idx))\nl2 = HW[s2[idx]] + rng.normal(0, 1.0, len(idx))\ncombined = (l1 - l1.mean()) * (l2 - l2.mean())\nsecond_order = abs(np.corrcoef(combined, HW[s[idx]])[0, 1])\nprint(f\"second-order attack combining the leakage of both shares: correlation {second_order:.3f}\")\nprint(\"first-order masking removes the first-order correlation; combining two measurement points can bring a (smaller) correlation back, which is why a stated masking order and its cost matter\")\nprint(\"the hard parts in a real scheme are the non-linear steps (decompression, comparison, hashing), which need dedicated masked gadgets; the linear arithmetic shown here is the easy case\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-masking",
+              "language": "text",
+              "code": "masked computation gives the same product as the unmasked one: True\ndistance between share distributions: same secret drawn twice 0.0824 (pure sampling noise); different secrets 'all 0' and 'all 2' 0.0850\nthe two distances are of the same size: the distribution of a single share carries no visible trace of the secret\ncorrelation of the leakage with the secret: unmasked 0.963; handling only share 1 0.017; handling only share 2 0.047\nsecond-order attack combining the leakage of both shares: correlation 0.180\nfirst-order masking removes the first-order correlation; combining two measurement points can bring a (smaller) correlation back, which is why a stated masking order and its cost matter\nthe hard parts in a real scheme are the non-linear steps (decompression, comparison, hashing), which need dedicated masked gadgets; the linear arithmetic shown here is the easy case",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The masked computation gives the same product. The distance between the share distributions for two different secrets (0.0850) is of the same size as the distance between two draws for the *same* secret (0.0824), which is pure sampling noise: a single share carries no visible trace of the secret. In the leakage model the correlation with the secret is 0.963 when the secret is handled directly and only 0.017 and 0.047 for handling a single share. The second-order attack, which combines the leakage of both shares, brings a correlation of about 0.18 back: masking has not made the secret safe against an attacker who can observe both share computations, it has raised the cost, because the attacker now needs the two measurement points and many more traces (the cost of such attacks grows with the masking order and the noise).\n\n**Takeaways.** Masking trades speed and area for resistance to a stated order of attack; the claim must name the order, the leakage model and the platform; a masked implementation must itself be tested with leakage-evaluation methods (statistical tests on measured traces) because a mistake in a gadget can leak at first order; and masking combines with hiding (noise, shuffling) and with protocol limits on key use. **Common mistake:** masking the arithmetic but unmasking for the comparison or the hash, which brings the secret back into a single value."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does arithmetic masking do to the secret?",
+              "options": [
+                "Splits it into shares s1 + s2 = s so that no single handled value depends on it",
+                "Encrypts it with AES",
+                "Hashes it"
+              ],
+              "correct_index": 0,
+              "explanation": "The shares are handled separately and combined only at the end."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What did the second-order attack show?",
+              "options": [
+                "Combining the leakage of both shares restores some correlation, so masking only raises the cost",
+                "Masking is useless",
+                "Shares are public"
+              ],
+              "correct_index": 0,
+              "explanation": "The simulated correlation rose from about 0.02 to about 0.18."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which operations are hardest to mask in a lattice scheme?",
+              "options": [
+                "Non-linear steps such as comparison, compression and hashing",
+                "Polynomial additions",
+                "Multiplication by public values"
+              ],
+              "correct_index": 0,
+              "explanation": "They need dedicated masked gadgets and share conversions."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, 'Side-channel protection': countermeasures are application dependent and often costly"
+            },
+            {
+              "book": "B92",
+              "locator": "FIPS 204, the paragraphs on side-channel and fault attacks (implementations must be protected)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Masking, share conversions and the cost claims for masked lattice implementations are described from general knowledge; no on-disk source treats them. All numbers come from a simulated Hamming-weight model and apply only to it."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "11.6 Fault Detection",
+          "summary": "Measured detection rates of verify-before-release and recompute-and-compare for 300 injected RSA-CRT faults, ML-DSA output faults, redundant ML-KEM decapsulation, and the faults these checks cannot catch.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "10.5 showed that one faulty output can reveal a key. **Fault detection** adds checks so that a faulty result is **never released**. The main techniques are: **verify before release** (a signer verifies its own signature with the public key before output; it costs one verification), **redundancy** (compute twice, or compute the inverse operation, and compare), **integrity checks on keys and constants** (9.4), **control-flow integrity** (so one glitch cannot skip a check), and **hedged randomness** in signatures, which FIPS 204 says makes fault attacks easier to mitigate than the deterministic variant. The weakness of every software check is that it is itself software: an attacker who can skip the comparison, or inject the same fault twice, defeats a naive version.\n\nThe listing injects 300 random single-bit faults into the two halves of an RSA-CRT signature and records the outcome of three signers: unprotected, verify-before-release, and recompute-and-compare. It then corrupts 120 finished ML-DSA-44 signatures at random positions behind a signer that verifies its output, and runs redundant ML-KEM decapsulation with a transient fault in one of the two runs. All faults are **SIMULATED in software**. Everything here runs on your own machine against code and keys that exist only inside the lesson. Where a physical effect is involved (power leakage, injected faults) it is SIMULATED and labelled so. The reference libraries are slow pure-Python code: the lessons show how controls are built and, above all, how to test them."
+            },
+            {
+              "type": "code",
+              "id": "c-fault-detection",
+              "language": "python",
+              "code": "import hashlib, random\nfrom cryptography.hazmat.primitives.asymmetric import rsa\nfrom kyber_py.ml_kem import ML_KEM_768\nfrom dilithium_py.ml_dsa import ML_DSA_44\n\nrng = random.Random(16)\n# SIMULATION of single-bit faults injected in software. Detection rate = fraction of injected faults for which a faulty result is NEVER released.\n\n# --- 1. RSA-CRT signing with three protection levels\nnumbers = rsa.generate_private_key(65537, 1024).private_numbers()\np, q, e = numbers.p, numbers.q, numbers.public_numbers.e\nn = p * q\ndp, dq, qinv = numbers.dmp1, numbers.dmq1, numbers.iqmp\ndef crt(m, flip_p=None, flip_q=None):\n    sp, sq = pow(m, dp, p), pow(m, dq, q)\n    if flip_p is not None: sp ^= 1 << flip_p\n    if flip_q is not None: sq ^= 1 << flip_q\n    return sq + (qinv * (sp - sq) % p) * q\ndef unprotected(m, fault):\n    return crt(m, *fault)\ndef verify_then_release(m, fault):\n    s = crt(m, *fault)\n    return s if pow(s, e, n) == m else None\ndef redundant_and_compare(m, fault):\n    first = crt(m, *fault)\n    second = crt(m)                                                       # the second execution is assumed fault-free here; an attacker with two faults could defeat a naive repeat\n    return first if first == second else None\ntrials = 300\nstats = {\"no countermeasure\": 0, \"verify before release\": 0, \"recompute and compare\": 0}\nleaked_factor = 0\nfor _ in range(trials):\n    m = rng.randrange(2, n)\n    fault = (None, rng.randrange(0, 512)) if rng.random() < 0.5 else (rng.randrange(0, 512), None)\n    good = pow(m, numbers.d, n)\n    out = unprotected(m, fault)\n    if out != good:\n        stats[\"no countermeasure\"] += 1\n        import math\n        leaked_factor += math.gcd(pow(out, e, n) - m, n) in (p, q)\n    stats[\"verify before release\"] += verify_then_release(m, fault) is None\n    stats[\"recompute and compare\"] += redundant_and_compare(m, fault) is None\nprint(f\"{trials} random single-bit faults in the CRT halves:\")\nprint(f\"  unprotected signer released a faulty signature {stats['no countermeasure']} times, and {leaked_factor} of them revealed a prime factor of n\")\nprint(f\"  verify-before-release withheld {stats['verify before release']} of {trials} faulty results; recompute-and-compare withheld {stats['recompute and compare']} of {trials}\")\n\n# --- 2. ML-DSA: the signer verifies its own signature before releasing it (costs one verification)\ndsa = ML_DSA_44\npk, sk = dsa.keygen()\ndef sign_protected(message, fault_position=None):\n    sig = bytearray(dsa.sign(sk, message))\n    if fault_position is not None:\n        sig[fault_position] ^= 1 << rng.randrange(8)                       # a fault that corrupts the finished signature\n    sig = bytes(sig)\n    return sig if dsa.verify(pk, message, sig) else None\nreleased_bad = withheld = 0\nfor _ in range(120):\n    msg = bytes(rng.getrandbits(8) for _ in range(20))\n    out = sign_protected(msg, rng.randrange(2420))\n    withheld += out is None\n    released_bad += out is not None and not dsa.verify(pk, msg, out)\nprint(f\"ML-DSA-44, 120 faults in the output signature: withheld {withheld}, faulty signatures released {released_bad}\")\nprint(\"faults that occur in the signing computation BEFORE the signature is formed usually produce signatures that fail verification, and the same check catches them\")\nprint(\"what the check cannot catch: a fault that skips the verification itself (use redundancy and control-flow integrity), and faults in the private key before it is used (a faulty key is a different key and signs 'validly')\")\n\n# --- 3. ML-KEM: decapsulating twice and comparing detects transient faults; permanent faults need the key integrity checks of 9.4\nkem = ML_KEM_768\nek, dk = kem.keygen()\nkey, ct = kem.encaps(ek)\ndef decaps_redundant(dk_bytes, c, fault=None):\n    first = kem.decaps(dk_bytes if fault is None else dk_bytes, c)\n    if fault is not None:\n        first = bytes(b ^ (1 << fault) if i == 0 else b for i, b in enumerate(first))      # transient fault corrupts the first result only\n    second = kem.decaps(dk_bytes, c)\n    return first if first == second else None\nprint(\"ML-KEM redundant decapsulation: no fault ->\", decaps_redundant(dk, ct) == key, \"| transient fault in one run -> result withheld:\", decaps_redundant(dk, ct, fault=3) is None)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-fault-detection",
+              "language": "text",
+              "code": "300 random single-bit faults in the CRT halves:\n  unprotected signer released a faulty signature 300 times, and 300 of them revealed a prime factor of n\n  verify-before-release withheld 300 of 300 faulty results; recompute-and-compare withheld 300 of 300\nML-DSA-44, 120 faults in the output signature: withheld 120, faulty signatures released 0\nfaults that occur in the signing computation BEFORE the signature is formed usually produce signatures that fail verification, and the same check catches them\nwhat the check cannot catch: a fault that skips the verification itself (use redundancy and control-flow integrity), and faults in the private key before it is used (a faulty key is a different key and signs 'validly')\nML-KEM redundant decapsulation: no fault -> True | transient fault in one run -> result withheld: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The unprotected signer released a faulty signature in all 300 cases and **every one of them revealed a prime factor** of the modulus. Verify-before-release and recompute-and-compare each withheld all 300 faulty results. The ML-DSA signer that verifies its output withheld all 120 corrupted signatures and released no faulty one, and redundant ML-KEM decapsulation withheld the result when one of the two runs was disturbed, while passing the fault-free case. Two honest caveats are written into the listing: the recompute-and-compare version assumes the second computation is fault free (an attacker with two matching faults defeats a naive repeat), and **a fault in the private key before it is used** produces a different but valid key that signs \"correctly\", so integrity of stored keys is a separate control.\n\n**Design guidance.** Choose the check by what it costs and what it covers: verification is cheap for RSA and expensive for ML-DSA (about the cost of a verification, ~10 ms in the pure-Python reference of 9.10); redundancy doubles the work; hardware fault sensors and shielding address the physical side. Combine checks so that no single glitch can both cause the fault and skip the check, and test the checks with a fault-injection campaign as the lesson does, reporting the detection rate and the cases not covered."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does verify-before-release add to a signer?",
+              "options": [
+                "A faulty signature is never output because it fails verification",
+                "A longer signature",
+                "Faster signing"
+              ],
+              "correct_index": 0,
+              "explanation": "All 300 faulty RSA-CRT results were withheld."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does a naive recompute-and-compare check not defend against?",
+              "options": [
+                "An attacker who injects the same fault twice or skips the comparison",
+                "A single transient fault",
+                "A random bit flip"
+              ],
+              "correct_index": 0,
+              "explanation": "The listing assumes the second computation is fault free."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why does FIPS 204 prefer hedged signing on platforms exposed to fault attacks?",
+              "options": [
+                "The deterministic variant makes fault attacks more difficult to mitigate",
+                "Hedged signatures are shorter",
+                "Deterministic signing is slower"
+              ],
+              "correct_index": 0,
+              "explanation": "FIPS 204, section 3.2."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B92",
+              "locator": "FIPS 204, Section 3.2 (hedged variant helps against side-channel attacks; deterministic variant makes fault attacks more difficult to mitigate)"
+            },
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, handling of failures, aborts and faults in cryptographic modules"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The fault-injection campaign is a software simulation of single-bit faults and does not model real glitch physics or an attacker who targets the countermeasure itself. The cost remark about verification uses the 9.10 sample timings from one machine."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "11.7 Secure APIs",
+          "summary": "A public-key encryption format built from a KEM, a standard AEAD and a strict versioned header, attacked with algorithm confusion, replay across contexts, version tampering and truncation.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "9.8 gave the rules for a hard-to-misuse API; this lesson applies them to a **message format**. A KEM does not encrypt data. The standard construction (SP 800-227 describes KEMs as the basis for KEM/DEM public-key encryption) uses the KEM to agree a key and a standard **AEAD** to encrypt the data with it, and the details that make it secure are in the format: the header names the algorithms and the version; the derived key is **bound to the header and the KEM ciphertext** so that nothing can be changed without breaking decryption; a **context string** ties a message to its purpose; parsing is **strict** (exact lengths, known identifiers, matching key type) and all failures produce the **same error**, raised before any secret-dependent processing where possible.\n\nThe listing implements the format \"magic | version | KEM id | AEAD id | context length | context | KEM ciphertext | nonce | AEAD ciphertext\" with ML-KEM-768 or ML-KEM-1024 selected by an identifier and AES-256-GCM, and then attacks it: wrong expected context, a header that names another KEM (algorithm confusion), an unknown version, flipped bits in each part, truncation and the wrong recipient key. Everything here runs on your own machine against code and keys that exist only inside the lesson. Where a physical effect is involved (power leakage, injected faults) it is SIMULATED and labelled so. The reference libraries are slow pure-Python code: the lessons show how controls are built and, above all, how to test them."
+            },
+            {
+              "type": "code",
+              "id": "c-sealed-format",
+              "language": "python",
+              "code": "import os, struct\nfrom cryptography.exceptions import InvalidTag\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import mlkem, mldsa\nfrom cryptography.hazmat.primitives.ciphers.aead import AESGCM\nfrom cryptography.hazmat.primitives.kdf.hkdf import HKDF\n\n# A public-key encryption format built the safe way: a KEM produces a key, a standard AEAD encrypts, and a strict, versioned header is authenticated.\n# Format: magic(4) | version(1) | kem_id(1) | aead_id(1) | context_len(1) | context | kem_ciphertext | nonce(12) | aead_ciphertext\nMAGIC = b\"QSEA\"\nKEM_IDS = {1: (\"ML-KEM-768\", mlkem.MLKEM768PrivateKey, mlkem.MLKEM768PublicKey, 1088), 2: (\"ML-KEM-1024\", mlkem.MLKEM1024PrivateKey, mlkem.MLKEM1024PublicKey, 1568)}\nAEAD_IDS = {1: \"AES-256-GCM\"}\nACCEPTED_VERSIONS = {1}\n\ndef seal(public_key, kem_id, plaintext, context=b\"\"):\n    name, priv_cls, pub_cls, ct_len = KEM_IDS[kem_id]\n    shared, kem_ct = public_key.encapsulate()\n    header = MAGIC + struct.pack(\"BBBB\", 1, kem_id, 1, len(context)) + context\n    key = HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b\"sealed-v1|\" + header + kem_ct).derive(shared)        # the key is bound to the header and the KEM ciphertext\n    nonce = os.urandom(12)\n    return header + kem_ct + nonce + AESGCM(key).encrypt(nonce, plaintext, header + kem_ct)\n\nclass FormatError(Exception):\n    pass\n\ndef open_sealed(private_key, blob, expected_context=b\"\"):\n    # strict parsing: every failure is the same FormatError, raised before any decryption\n    if len(blob) < 8 or blob[:4] != MAGIC:\n        raise FormatError(\"invalid message\")\n    version, kem_id, aead_id, ctx_len = struct.unpack(\"BBBB\", blob[4:8])\n    if version not in ACCEPTED_VERSIONS or kem_id not in KEM_IDS or aead_id not in AEAD_IDS:\n        raise FormatError(\"invalid message\")\n    name, priv_cls, pub_cls, ct_len = KEM_IDS[kem_id]\n    if not isinstance(private_key, priv_cls):\n        raise FormatError(\"invalid message\")                                         # algorithm confusion: the key type must match the declared KEM\n    pos = 8\n    context = blob[pos:pos + ctx_len]; pos += ctx_len\n    if context != expected_context or len(blob) < pos + ct_len + 12 + 16:\n        raise FormatError(\"invalid message\")\n    header = blob[:pos]\n    kem_ct = blob[pos:pos + ct_len]; pos += ct_len\n    nonce, body = blob[pos:pos + 12], blob[pos + 12:]\n    shared = private_key.decapsulate(kem_ct)\n    key = HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b\"sealed-v1|\" + header + kem_ct).derive(shared)\n    try:\n        return AESGCM(key).decrypt(nonce, body, header + kem_ct)\n    except InvalidTag:\n        raise FormatError(\"invalid message\")\n\ndef outcome(fn):\n    try:\n        return \"accepted: \" + fn().decode()\n    except FormatError as exc:\n        return f\"FormatError ({exc})\"\n\nrecipient768 = mlkem.MLKEM768PrivateKey.generate()\nrecipient1024 = mlkem.MLKEM1024PrivateKey.generate()\nblob = seal(recipient768.public_key(), 1, b\"quarterly report\", context=b\"finance\")\nprint(\"message size\", len(blob), \"bytes = header 15 + KEM ciphertext 1,088 + nonce 12 + plaintext 16 + tag 16 =\", 15 + 1088 + 12 + 16 + 16)\nprint(\"honest open:\", outcome(lambda: open_sealed(recipient768, blob, b\"finance\")))\nprint(\"wrong expected context (replay in another purpose):\", outcome(lambda: open_sealed(recipient768, blob, b\"hr\")))\ntampered_header = bytearray(blob); tampered_header[5] = 2\nprint(\"header says ML-KEM-1024 but the key is ML-KEM-768 (algorithm confusion):\", outcome(lambda: open_sealed(recipient768, bytes(tampered_header), b\"finance\")))\nunknown_version = bytearray(blob); unknown_version[4] = 9\nprint(\"unknown version number:\", outcome(lambda: open_sealed(recipient768, bytes(unknown_version), b\"finance\")))\nflipped = bytearray(blob); flipped[-1] ^= 1\nprint(\"one bit flipped in the authenticated ciphertext:\", outcome(lambda: open_sealed(recipient768, bytes(flipped), b\"finance\")))\nflipped_kem = bytearray(blob); flipped_kem[30] ^= 1\nprint(\"one bit flipped in the KEM ciphertext (implicit rejection, then the AEAD fails):\", outcome(lambda: open_sealed(recipient768, bytes(flipped_kem), b\"finance\")))\nprint(\"truncated message:\", outcome(lambda: open_sealed(recipient768, blob[:-1], b\"finance\")))\nprint(\"wrong recipient key:\", outcome(lambda: open_sealed(mlkem.MLKEM768PrivateKey.generate(), blob, b\"finance\")))\nblob2 = seal(recipient1024.public_key(), 2, b\"quarterly report\", context=b\"finance\")\nprint(\"same format with ML-KEM-1024 selected by the identifier:\", outcome(lambda: open_sealed(recipient1024, blob2, b\"finance\")), \"| size\", len(blob2))\nprint(\"all failures return the same message and happen before or inside authenticated decryption; no variant reveals which check failed\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-sealed-format",
+              "language": "text",
+              "code": "message size 1147 bytes = header 15 + KEM ciphertext 1,088 + nonce 12 + plaintext 16 + tag 16 = 1147\nhonest open: accepted: quarterly report\nwrong expected context (replay in another purpose): FormatError (invalid message)\nheader says ML-KEM-1024 but the key is ML-KEM-768 (algorithm confusion): FormatError (invalid message)\nunknown version number: FormatError (invalid message)\none bit flipped in the authenticated ciphertext: FormatError (invalid message)\none bit flipped in the KEM ciphertext (implicit rejection, then the AEAD fails): FormatError (invalid message)\ntruncated message: FormatError (invalid message)\nwrong recipient key: FormatError (invalid message)\nsame format with ML-KEM-1024 selected by the identifier: accepted: quarterly report | size 1627\nall failures return the same message and happen before or inside authenticated decryption; no variant reveals which check failed",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The honest message opens; the message size is exactly the sum of its parts (15 + 1,088 + 12 + 16 + 16 = 1,147 bytes for a 16-byte plaintext). Every attack ends in the same `FormatError (invalid message)` with no detail: a message sealed for the \"finance\" context is refused for \"hr\", a header naming ML-KEM-1024 is refused by an ML-KEM-768 key (algorithm confusion), an unknown version is refused, and flipped bits in the AEAD part or in the KEM ciphertext are refused (for the KEM ciphertext, implicit rejection produces an unrelated key and the AEAD then fails). The same code path handles ML-KEM-1024 by changing one identifier, which is the agility of 11.8 in practice.\n\n**Design notes.** The version and algorithm identifiers are part of what is authenticated, so a downgrade of the format cannot be done without breaking the tag; the list of accepted versions is an explicit set so that old versions can be retired; keys are bound to the KEM ciphertext, as SP 800-227 asks of combiners; and plaintext length is not hidden. **Common mistakes:** choosing the algorithm from unauthenticated header fields without checking the key type, returning distinguishable errors, accepting any version, and building a home-made hybrid encryption instead of KEM plus AEAD."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is the AEAD key derived from the shared secret, the header and the KEM ciphertext?",
+              "options": [
+                "So any change to the header or ciphertext breaks decryption",
+                "To lengthen the key",
+                "To make the key public"
+              ],
+              "correct_index": 0,
+              "explanation": "The derivation binds the key to the whole message framing."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does the format do when the header names a different KEM than the recipient key?",
+              "options": [
+                "Refuses the message with the same generic error",
+                "Tries both algorithms",
+                "Decrypts anyway"
+              ],
+              "correct_index": 0,
+              "explanation": "Algorithm confusion is blocked by checking the key type."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why return the same error for every parse or decrypt failure?",
+              "options": [
+                "Different errors form an oracle for an attacker",
+                "Errors are expensive",
+                "The AEAD requires it"
+              ],
+              "correct_index": 0,
+              "explanation": "The lesson's attacks all returned the identical message."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, KEM/DEM constructions and the requirements on using shared secrets (approved key derivation)"
+            },
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 3.3 (approved usage of the shared secret key)"
+            },
+            {
+              "book": "B100",
+              "locator": "cryptography: ML-KEM-768/1024, AESGCM and HKDF used to build the format"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The format is a teaching design and is not a standard; HPKE (RFC 9180), which standardises a similar KEM-based construction, was not read for this lesson."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "11.8 Algorithm Agility",
+          "summary": "A registry-and-policy layer that swaps algorithms by configuration, enforces deprecation dates, and an inventory check that shows where agility does not reach.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Algorithm agility** is the ability to change cryptographic algorithms without redesigning the system. It matters for two reasons: the migration to post-quantum algorithms is not a one-off event (parameters and algorithms will continue to change as analysis improves, as 8.10 and the NIST status reports show), and a flaw discovered in one algorithm must be removable quickly. Agility has three parts: a **registry** that maps algorithm identifiers to implementations, a **policy** (kept in configuration, versioned and signed) that says which identifiers are allowed, deprecated with a **sunset date**, or forbidden, and **identifiers carried in every key, certificate, ciphertext and signature** so that old and new data can be processed side by side (11.7).\n\nAgility has a cost and a risk. The cost is complexity and more code paths to test; the risk is **downgrade**: a system that supports many algorithms can be pushed to the weakest (10.9), so the policy must remove weak options, not just add new ones. The listing implements the registry and the policy, requests algorithms (default, deprecated, unknown, not allowed), shows a deprecated algorithm being refused after its sunset date, changes the default KEM by editing the policy, and checks an (invented) usage log against the registry to find usage that bypasses it. Everything here runs on your own machine against code and keys that exist only inside the lesson. Where a physical effect is involved (power leakage, injected faults) it is SIMULATED and labelled so. The reference libraries are slow pure-Python code: the lessons show how controls are built and, above all, how to test them."
+            },
+            {
+              "type": "code",
+              "id": "c-agility",
+              "language": "python",
+              "code": "import datetime, json\nfrom cryptography.hazmat.primitives.asymmetric import mlkem, mldsa, ec\nfrom cryptography.hazmat.primitives import hashes\n\n# --- algorithm agility through a registry and a policy that lives in configuration, not in code\nREGISTRY = {\n    \"ml-kem-768\": {\"kind\": \"kem\", \"make\": mlkem.MLKEM768PrivateKey.generate, \"level\": 3},\n    \"ml-kem-1024\": {\"kind\": \"kem\", \"make\": mlkem.MLKEM1024PrivateKey.generate, \"level\": 5},\n    \"ml-dsa-44\": {\"kind\": \"sig\", \"make\": mldsa.MLDSA44PrivateKey.generate, \"level\": 2},\n    \"ml-dsa-65\": {\"kind\": \"sig\", \"make\": mldsa.MLDSA65PrivateKey.generate, \"level\": 3},\n    \"ecdsa-p256\": {\"kind\": \"sig\", \"make\": lambda: ec.generate_private_key(ec.SECP256R1()), \"level\": 1},\n}\nPOLICY_JSON = \"\"\"\n{\"version\": 7,\n \"kem\": {\"default\": \"ml-kem-768\", \"allowed\": [\"ml-kem-768\", \"ml-kem-1024\"]},\n \"sig\": {\"default\": \"ml-dsa-65\", \"allowed\": [\"ml-dsa-65\", \"ml-dsa-44\", \"ecdsa-p256\"],\n         \"deprecated\": {\"ecdsa-p256\": \"2027-12-31\"}, \"forbidden\": []}}\n\"\"\"\npolicy = json.loads(POLICY_JSON)\n\ndef make_key(kind, requested=None, today=datetime.date(2026, 10, 4)):\n    name = requested or policy[kind][\"default\"]\n    entry = policy[kind]\n    if name not in REGISTRY or REGISTRY[name][\"kind\"] != kind:\n        raise ValueError(f\"unknown {kind} algorithm {name!r}\")\n    if name in entry.get(\"forbidden\", []) or name not in entry[\"allowed\"]:\n        raise ValueError(f\"{name} is not allowed by policy version {policy['version']}\")\n    note = \"\"\n    if name in entry.get(\"deprecated\", {}):\n        sunset = datetime.date.fromisoformat(entry[\"deprecated\"][name])\n        if today > sunset:\n            raise ValueError(f\"{name} passed its sunset date {sunset}\")\n        note = f\" (deprecated, sunset {sunset}, {(sunset - today).days} days left)\"\n    return name, REGISTRY[name][\"make\"](), note\n\nfor kind, requested in ((\"kem\", None), (\"sig\", None), (\"sig\", \"ecdsa-p256\"), (\"kem\", \"ml-kem-512\"), (\"sig\", \"ml-dsa-87\")):\n    try:\n        name, key, note = make_key(kind, requested)\n        print(f\"{kind} request {str(requested):<12} -> {name}{note}\")\n    except ValueError as exc:\n        print(f\"{kind} request {str(requested):<12} -> refused: {exc}\")\nlater = datetime.date(2028, 1, 15)\ntry:\n    make_key(\"sig\", \"ecdsa-p256\", today=later)\nexcept ValueError as exc:\n    print(f\"on {later}: refused: {exc}\")\n\n# changing the algorithm is a configuration change: the same application code, a different default\npolicy[\"kem\"][\"default\"] = \"ml-kem-1024\"\npolicy[\"version\"] = 8\nname, key, _ = make_key(\"kem\")\nprint(\"after policy version 8 the default KEM is\", name, \"- no code change, but every stored ciphertext format must carry the algorithm identifier (11.7) so old and new data can both be read\")\n\n# an inventory query: which algorithms does the application's own usage log still rely on?\n# DEMO DATA: an invented usage log for illustration, not a measurement of any system\nusage_log = [(\"ecdsa-p256\", 4120), (\"ml-dsa-65\", 310), (\"ml-kem-768\", 2300), (\"rsa-2048\", 85)]\nprint()\nprint(\"DEMO DATA (invented usage counts):\")\nprint(f\"{'algorithm in use':<18} {'operations':>11} {'registered':>11} {'policy status'}\")\nfor name, count in usage_log:\n    registered = name in REGISTRY\n    if not registered:\n        status = \"NOT REGISTERED: legacy code path outside the agility layer\"\n    elif name in policy[\"sig\"].get(\"deprecated\", {}):\n        status = \"deprecated: migrate before \" + policy[\"sig\"][\"deprecated\"][name]\n    elif name in policy[\"sig\"][\"allowed\"] + policy[\"kem\"][\"allowed\"]:\n        status = \"allowed\"\n    else:\n        status = \"not allowed\"\n    print(f\"{name:<18} {count:>11,} {str(registered):>11} {status}\")\nprint(\"agility is only as real as its coverage: usage that bypasses the registry (here rsa-2048) cannot be migrated by changing the configuration\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-agility",
+              "language": "text",
+              "code": "kem request None         -> ml-kem-768\nsig request None         -> ml-dsa-65\nsig request ecdsa-p256   -> ecdsa-p256 (deprecated, sunset 2027-12-31, 453 days left)\nkem request ml-kem-512   -> refused: unknown kem algorithm 'ml-kem-512'\nsig request ml-dsa-87    -> refused: unknown sig algorithm 'ml-dsa-87'\non 2028-01-15: refused: ecdsa-p256 passed its sunset date 2027-12-31\nafter policy version 8 the default KEM is ml-kem-1024 - no code change, but every stored ciphertext format must carry the algorithm identifier (11.7) so old and new data can both be read\n\nDEMO DATA (invented usage counts):\nalgorithm in use    operations  registered policy status\necdsa-p256               4,120        True deprecated: migrate before 2027-12-31\nml-dsa-65                  310        True allowed\nml-kem-768               2,300        True allowed\nrsa-2048                    85       False NOT REGISTERED: legacy code path outside the agility layer\nagility is only as real as its coverage: usage that bypasses the registry (here rsa-2048) cannot be migrated by changing the configuration",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The default requests resolve to ML-KEM-768 and ML-DSA-65; ECDSA P-256 is still allowed but marked deprecated with 453 days left before its sunset date (2027-12-31), and on 2028-01-15 the same request is refused; ML-KEM-512 and ML-DSA-87 are refused because the policy does not list them. After editing the policy to version 8 the default KEM becomes ML-KEM-1024 with **no code change**, which is the point of agility, but it only works for data whose format carries the algorithm identifier. The last table (**DEMO DATA**: invented counts, not a measurement) shows the limit of agility: usage that does not go through the registry, here an `rsa-2048` path, cannot be migrated by editing the configuration and has to be found, which is exactly the job of the cryptographic inventory in E2.\n\n**Rules.** Make the policy a signed, versioned artifact with an owner; give every deprecated algorithm a date; log which algorithm every operation used and review the log; test that each registered algorithm round-trips and that each forbidden one is refused; and plan removal, because an unused but still-enabled algorithm is an attack surface."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What three parts make up algorithm agility?",
+              "options": [
+                "A registry, a policy with allowed, deprecated and forbidden entries, and identifiers carried with every object",
+                "A bigger key, a longer hash, a new protocol",
+                "A firewall, a proxy and a log"
+              ],
+              "correct_index": 0,
+              "explanation": "Registry, policy and identifiers."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the main risk of supporting many algorithms?",
+              "options": [
+                "Downgrade to the weakest supported option",
+                "Larger keys",
+                "Slower hashing"
+              ],
+              "correct_index": 0,
+              "explanation": "The policy must remove weak options, not only add new ones."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What did the usage log reveal in the lesson's demo data?",
+              "options": [
+                "A path (rsa-2048) outside the registry that configuration changes cannot migrate",
+                "Too many ML-KEM operations",
+                "A broken policy file"
+              ],
+              "correct_index": 0,
+              "explanation": "Agility only covers usage that goes through the agility layer."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, Section 4.6 (multi-algorithm schemes) for the need to combine and replace algorithms; NIST IR 8545 for the evolving status of candidate algorithms (B94 in module B10)"
+            },
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Table 2 (three parameter sets as the unit of selection)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The registry and policy design is engineering practice and not a standard; the usage log in the listing is invented DEMO DATA. The remark that algorithms and parameters will keep changing is a judgement supported by the NIST status reports, not a prediction."
+          },
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "11.9 Hybrid Deployment",
+          "summary": "The X25519MLKEM768 key exchange built to the byte layout of RFC 10024, with sizes, the break-one-component experiment, the failure behaviour of each part, and the operational costs.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Most early deployments use **hybrid** key exchange: a classical and a post-quantum exchange run together and their secrets are combined, so the result stays secure if either holds (10.10 covered the combiner). For TLS the group **X25519MLKEM768** is specified in RFC 10024: the client's key-exchange value is the ML-KEM-768 encapsulation key followed by the X25519 share (1,184 + 32 = 1,216 bytes); the server's is the ML-KEM ciphertext followed by its X25519 share (1,088 + 32 = 1,120 bytes); and the shared secret is the **ML-KEM secret followed by the X25519 secret**, 64 bytes, fed to the protocol's HKDF-based key schedule. Both sides must perform the all-zero check on the X25519 secret and abort if it fails. (The group's name lists X25519 first while the concatenation puts ML-KEM first, for historical reasons the RFC notes; ML-KEM's secret comes first so that a FIPS-validated ML-KEM implementation satisfies the SP 800-56C condition that the first secret comes from an approved scheme.)\n\nThe listing implements exactly that byte layout with OpenSSL-backed keys, checks sizes and agreement, and then experiments: it gives the attacker the X25519 secret and then the ML-KEM secret in turn, and shows what a tampered ciphertext and malformed shares do. Everything here runs on your own machine against code and keys that exist only inside the lesson. Where a physical effect is involved (power leakage, injected faults) it is SIMULATED and labelled so. The reference libraries are slow pure-Python code: the lessons show how controls are built and, above all, how to test them."
+            },
+            {
+              "type": "code",
+              "id": "c-hybrid-deployment",
+              "language": "python",
+              "code": "import os\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import mlkem\nfrom cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey\nfrom cryptography.hazmat.primitives.kdf.hkdf import HKDF\n\nraw = lambda pub: pub.public_bytes_raw()\n\n# --- the X25519MLKEM768 key exchange as specified in RFC 10024, sections 4.1 to 4.3 (the byte layout is the point)\ndef client_share():\n    kem_private = mlkem.MLKEM768PrivateKey.generate()\n    x_private = X25519PrivateKey.generate()\n    share = raw(kem_private.public_key()) + raw(x_private.public_key())              # ML-KEM encapsulation key first, then the X25519 share\n    return share, (kem_private, x_private)\ndef server_respond(share):\n    ek, x_peer = share[:1184], share[1184:]\n    if len(share) != 1216:\n        raise ValueError(\"bad client share length\")\n    shared_kem, kem_ct = mlkem.MLKEM768PublicKey.from_public_bytes(ek).encapsulate()\n    x_private = X25519PrivateKey.generate()\n    shared_x = x_private.exchange(X25519PublicKey.from_public_bytes(x_peer))\n    if shared_x == bytes(32):\n        raise ValueError(\"all-zero X25519 shared secret: abort\")                       # RFC 10024 section 4.3 requires this check\n    return kem_ct + raw(x_private.public_key()), shared_kem + shared_x               # server share, 64-byte shared secret (ML-KEM part first)\ndef client_finish(server_share, client_state):\n    kem_private, x_private = client_state\n    if len(server_share) != 1120:\n        raise ValueError(\"bad server share length\")\n    kem_ct, x_peer = server_share[:1088], server_share[1088:]\n    shared_kem = kem_private.decapsulate(kem_ct)\n    shared_x = x_private.exchange(X25519PublicKey.from_public_bytes(x_peer))\n    if shared_x == bytes(32):\n        raise ValueError(\"all-zero X25519 shared secret: abort\")\n    return shared_kem + shared_x\n\nshare, state = client_share()\nserver_share, secret_server = server_respond(share)\nsecret_client = client_finish(server_share, state)\nprint(f\"client share {len(share)} bytes (1,184 ML-KEM + 32 X25519), server share {len(server_share)} bytes (1,088 + 32), shared secret {len(secret_client)} bytes (32 + 32): sizes as in RFC 10024\")\nprint(\"both sides derive the same 64-byte secret:\", secret_client == secret_server)\nagree = 0\nfor _ in range(25):\n    sh, st = client_share(); ss, sec_s = server_respond(sh)\n    agree += client_finish(ss, st) == sec_s\nprint(\"25 further exchanges agree:\", agree == 25, \"| the two components are independent values:\", secret_client[:32] != secret_client[32:])\nkey_schedule = lambda secret: HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b\"handshake key\").derive(secret)\nprint(\"the 64-byte secret feeds the protocol's key derivation (HKDF in TLS 1.3):\", len(key_schedule(secret_client)), \"byte key\")\n\n# --- the point of a hybrid: break ONE component and the other still protects the key\ndef derived_key(kem_part, x_part):\n    return key_schedule(kem_part + x_part)\ntrue_key = derived_key(secret_client[:32], secret_client[32:])\nprint()\nprint(\"SIMULATION: attacker learns the X25519 secret (quantum adversary) but must guess the ML-KEM secret:\", derived_key(os.urandom(32), secret_client[32:]) == true_key, \"(key not recovered)\")\nprint(\"SIMULATION: attacker learns the ML-KEM secret (a flaw in the new algorithm) but must guess the X25519 secret:\", derived_key(secret_client[:32], os.urandom(32)) == true_key, \"(key not recovered)\")\nprint(\"only when BOTH components are known does the attacker obtain the key:\", derived_key(secret_client[:32], secret_client[32:]) == true_key)\n\n# --- failure behaviour: what happens if one component fails or is attacked\nbad_server = bytearray(server_share); bad_server[7] ^= 1                             # the ML-KEM ciphertext is tampered with\ntampered_secret = client_finish(bytes(bad_server), state)\nprint()\nprint(\"tampered ML-KEM ciphertext: no exception, the ML-KEM part changes (implicit rejection) and the X25519 part does not:\", tampered_secret[:32] != secret_client[:32], tampered_secret[32:] == secret_client[32:], \"-> the handshake fails later at the Finished check\")\nfor length_case, blob in ((\"truncated client share\", share[:-1]), (\"empty client share\", b\"\")):\n    try:\n        server_respond(blob); print(length_case, \"accepted\")\n    except ValueError as exc:\n        print(f\"{length_case}: refused ({exc})\")\ntry:\n    server_respond(share[:1184] + bytes(32))\nexcept ValueError as exc:\n    print(\"client share whose X25519 part is the all-zero (low-order) point: refused, ->\", exc)\nprint(\"operational costs of the hybrid: the first flight grows by about 1.2 KB each way, the client and server both pay for two key exchanges, and both algorithms must be kept patched\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-hybrid-deployment",
+              "language": "text",
+              "code": "client share 1216 bytes (1,184 ML-KEM + 32 X25519), server share 1120 bytes (1,088 + 32), shared secret 64 bytes (32 + 32): sizes as in RFC 10024\nboth sides derive the same 64-byte secret: True\n25 further exchanges agree: True | the two components are independent values: True\nthe 64-byte secret feeds the protocol's key derivation (HKDF in TLS 1.3): 32 byte key\n\nSIMULATION: attacker learns the X25519 secret (quantum adversary) but must guess the ML-KEM secret: False (key not recovered)\nSIMULATION: attacker learns the ML-KEM secret (a flaw in the new algorithm) but must guess the X25519 secret: False (key not recovered)\nonly when BOTH components are known does the attacker obtain the key: True\n\ntampered ML-KEM ciphertext: no exception, the ML-KEM part changes (implicit rejection) and the X25519 part does not: True True -> the handshake fails later at the Finished check\ntruncated client share: refused (bad client share length)\nempty client share: refused (bad client share length)\nclient share whose X25519 part is the all-zero (low-order) point: refused, -> Error computing shared key.\noperational costs of the hybrid: the first flight grows by about 1.2 KB each way, the client and server both pay for two key exchanges, and both algorithms must be kept patched",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The sizes are those of the RFC (1,216 and 1,120 bytes, a 64-byte secret), and the two sides agree in all 26 exchanges tried. The break-one-component experiment shows the purpose of the design: an attacker who knows only the X25519 secret (the quantum case) or only the ML-KEM secret (the case of a flaw in the new algorithm) cannot derive the key, and only knowing both does. A tampered ML-KEM ciphertext changes the ML-KEM part (implicit rejection) and not the X25519 part, so the handshake fails later at the Finished check; malformed or truncated shares and the all-zero X25519 point are refused.\n\n**Operational costs and risks.** The first flight grows by about 1.2 KB in each direction; both parties compute two key exchanges; both algorithms must be patched, because an attacker has to break both exchanges but a bug or side channel in either implementation can still leak its half, so each component needs its own assurance; a client that offers the hybrid and also classical groups can be downgraded (10.9), so policy matters; and inspection devices that do not understand the larger key shares may drop or fail the connection, so rollout needs the testing described in E5. The hybrid is a **transition** measure: its removal date should be part of the migration plan."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How long is the X25519MLKEM768 client share?",
+              "options": [
+                "1,216 bytes (1,184 ML-KEM + 32 X25519)",
+                "32 bytes",
+                "1,120 bytes"
+              ],
+              "correct_index": 0,
+              "explanation": "RFC 10024, section 4.1."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does the hybrid achieve when the attacker breaks only X25519?",
+              "options": [
+                "The key stays secret because the ML-KEM part is still unknown",
+                "The key is revealed",
+                "The handshake fails"
+              ],
+              "correct_index": 0,
+              "explanation": "Both secrets feed the key derivation."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is the ML-KEM secret placed first in the concatenation?",
+              "options": [
+                "So a certified ML-KEM implementation satisfies the approved-scheme-first condition of SP 800-56C",
+                "Because ML-KEM is faster",
+                "Because X25519 is weaker"
+              ],
+              "correct_index": 0,
+              "explanation": "RFC 10024 explains this in its regulatory context section."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B98",
+              "locator": "RFC 10024, Section 4.1 (client share, 1,216 bytes), 4.2 (server share, 1,120 bytes), 4.3 (shared secret and the all-zero check) and Section 5 (regulatory context: why the ML-KEM secret is first)"
+            },
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, Section 4.6 (combining post-quantum and classical key establishment)"
+            },
+            {
+              "book": "B100",
+              "locator": "cryptography: ML-KEM-768 and X25519 keys used to build the exchange"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement that middleboxes may mishandle larger key shares is a general rollout concern and not sourced here. The listing builds the key-exchange values only; it is not a TLS implementation."
+          },
+          "after": "sec-8"
+        },
+        {
+          "slug": "sec-10",
+          "action": "replace",
+          "title": "11.10 Testing",
+          "summary": "A mutation fuzzer run against ML-KEM and ML-DSA parsers with outcome classification, cross-checked against OpenSSL, and what fuzzing does and does not prove.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Testing a cryptographic component has layers that earlier lessons built one at a time: **known-answer tests** (9.12), **differential testing** against an independent implementation (9.11), **property tests** (round trips, determinism), **negative tests** (invalid inputs), **timing and constant-time tests** (11.2), and **fuzzing**. Fuzzing feeds a program large numbers of automatically mutated inputs and watches for failures: crashes, hangs, memory errors (under sanitizers), and *unexpected* behaviour. For a parser of untrusted bytes the **oracle** is simple to state: the result must be one of a small set of acceptable outcomes: a valid answer or a clean, expected refusal, never an unexpected exception, a hang or an accepted forgery.\n\nThe listing implements a small **mutation fuzzer** (bit flips, byte substitution, truncation, extension, splicing, runs of zeros and of 0xFF) and applies it to four parsers: ML-KEM-768 decapsulation (1,500 mutated ciphertexts), ML-KEM encapsulation key parsing (1,500 mutated keys), ML-DSA-44 verification (400 mutated signatures and 200 mutated public keys), and then compares the verdicts of the pure-Python and OpenSSL implementations on 300 mutated signatures. Every outcome is classified, and anything outside the expected set would be reported as UNEXPECTED. Everything here runs on your own machine against code and keys that exist only inside the lesson. Where a physical effect is involved (power leakage, injected faults) it is SIMULATED and labelled so. The reference libraries are slow pure-Python code: the lessons show how controls are built and, above all, how to test them."
+            },
+            {
+              "type": "code",
+              "id": "c-fuzzing",
+              "language": "python",
+              "code": "import random\nfrom collections import Counter\nfrom cryptography.exceptions import InvalidSignature\nfrom cryptography.hazmat.primitives.asymmetric import mlkem, mldsa\nfrom kyber_py.ml_kem import ML_KEM_768\nfrom dilithium_py.ml_dsa import ML_DSA_44\n\nrng = random.Random(1110)\n\ndef mutate(data):\n    data = bytearray(data)\n    kind = rng.choice((\"bitflip\", \"byte\", \"truncate\", \"extend\", \"splice\", \"zero-run\", \"ff-run\"))\n    if kind == \"bitflip\" and data:\n        for _ in range(rng.randint(1, 4)):\n            data[rng.randrange(len(data))] ^= 1 << rng.randrange(8)\n    elif kind == \"byte\" and data:\n        data[rng.randrange(len(data))] = rng.randrange(256)\n    elif kind == \"truncate\" and data:\n        del data[rng.randrange(len(data)):]\n    elif kind == \"extend\":\n        data += bytes(rng.getrandbits(8) for _ in range(rng.randint(1, 40)))\n    elif kind == \"splice\" and len(data) > 8:\n        i, j = rng.randrange(len(data)), rng.randrange(len(data))\n        data[i:i + 4] = data[j:j + 4]\n    elif kind == \"zero-run\" and data:\n        i = rng.randrange(len(data)); data[i:i + rng.randint(1, 64)] = bytes(min(64, len(data) - i))\n    elif kind == \"ff-run\" and data:\n        i = rng.randrange(len(data)); n = min(rng.randint(1, 64), len(data) - i); data[i:i + n] = b\"\\xff\" * n\n    return bytes(data), kind\n\ndef classify(fn):\n    try:\n        result = fn()\n        return \"returned\"\n    except (ValueError, InvalidSignature):\n        return \"refused (expected error type)\"\n    except Exception as exc:\n        return \"UNEXPECTED \" + type(exc).__name__\n\n# --- ML-KEM decapsulation: every mutated ciphertext must either be refused for length or yield SOME 32-byte key (implicit rejection); never anything else\nkem = ML_KEM_768\nek, dk = kem.key_derive(bytes(range(64)))                                   # fixed keys and message keep the run reproducible\nkey, ct = kem._encaps_internal(ek, bytes(32))\noutcomes, lengths_ok = Counter(), Counter()\nfor _ in range(1500):\n    bad, kind = mutate(ct)\n    got = []\n    outcome = classify(lambda: got.append(kem.decaps(dk, bad)))\n    outcomes[outcome] += 1\n    if got:\n        lengths_ok[(len(bad) == len(ct), len(got[0]) == 32, got[0] == key)] += 1\nprint(\"ML-KEM-768 decaps, 1,500 mutated ciphertexts:\", dict(outcomes))\nprint(\"  among those that returned a key: (correct length, 32-byte key, equals the honest key):\", dict(lengths_ok))\n\n# --- ML-KEM encapsulation-key parsing, mutated public keys\noutcomes = Counter()\nfor _ in range(1500):\n    bad, kind = mutate(ek)\n    outcomes[classify(lambda: kem.encaps(bad))] += 1\nprint(\"ML-KEM-768 encaps on 1,500 mutated public keys:\", dict(outcomes))\n\n# --- ML-DSA verification with mutated signatures, messages and keys: the verdict must be a boolean or a clean refusal\ndsa = ML_DSA_44\npk, sk = dsa.key_derive(bytes(32))\nmsg = b\"fuzz target message\"\nsig = dsa.sign(sk, msg, deterministic=True)\nverdicts = Counter()\nfor _ in range(400):\n    bad, kind = mutate(sig)\n    box = []\n    out = classify(lambda: box.append(dsa.verify(pk, msg, bad)))\n    verdicts[out if not box else (\"accepted\" if box[0] else \"rejected\")] += 1\nprint(\"ML-DSA-44 verify on 400 mutated signatures:\", dict(verdicts))\nverdicts = Counter()\nfor _ in range(200):\n    bad, kind = mutate(pk)\n    box = []\n    out = classify(lambda: box.append(dsa.verify(bad, msg, sig)))\n    verdicts[out if not box else (\"accepted\" if box[0] else \"rejected\")] += 1\nprint(\"ML-DSA-44 verify under 200 mutated public keys:\", dict(verdicts))\n\n# --- the independent implementation under the same mutated inputs: do both libraries give the same verdict?\nssl_pub = mldsa.MLDSA44PrivateKey.from_seed_bytes(bytes(32)).public_key()\npk0, sk0 = dsa.key_derive(bytes(32))\nsig0 = dsa.sign(sk0, msg, deterministic=True)\nsame = total = 0\nfor _ in range(300):\n    bad, kind = mutate(sig0)\n    try:\n        ssl_pub.verify(bad, msg); ssl_verdict = True\n    except (InvalidSignature, ValueError):\n        ssl_verdict = False\n    py_verdict = dsa.verify(pk0, msg, bad)\n    same += py_verdict == ssl_verdict\n    total += 1\nprint(f\"verdicts of the two implementations on {total} mutated signatures agree in {same} cases\")\nprint(\"a fuzzing run like this proves the ABSENCE of crashes only for the inputs tried; real campaigns run for hours with coverage guidance and sanitizers on the compiled code\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-fuzzing",
+              "language": "text",
+              "code": "ML-KEM-768 decaps, 1,500 mutated ciphertexts: {'refused (expected error type)': 642, 'returned': 858}\n  among those that returned a key: (correct length, 32-byte key, equals the honest key): {(True, True, False): 858}\nML-KEM-768 encaps on 1,500 mutated public keys: {'returned': 531, 'refused (expected error type)': 969}\nML-DSA-44 verify on 400 mutated signatures: {'rejected': 400}\nML-DSA-44 verify under 200 mutated public keys: {'rejected': 115, 'refused (expected error type)': 85}\nverdicts of the two implementations on 300 mutated signatures agree in 300 cases\na fuzzing run like this proves the ABSENCE of crashes only for the inputs tried; real campaigns run for hours with coverage guidance and sanitizers on the compiled code",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "No unexpected exception occurred. For decapsulation the 642 mutated ciphertexts with the wrong length were refused and the 858 same-length ones all returned a 32-byte key different from the honest one (implicit rejection, never an error and never the honest key). For public keys 969 mutants were refused (wrong length or out-of-range coefficients) and 531 were accepted as valid keys, which is correct: a mutation in a still-valid position yields another valid key. All 400 mutated signatures were rejected, mutated public keys led to rejection or a clean refusal, and the two implementations agreed on all 300 mutated signatures. The result is a statement about *these inputs*: fuzzing can show that failures exist and cannot prove their absence, and real campaigns run for hours or days with **coverage guidance** (so mutations reach new code paths) and **sanitizers** on the compiled code, which find memory errors that a high-level language hides.\n\n**Practice.** Keep the corpus of inputs that found bugs as regression tests; fuzz every format parser (keys, ciphertexts, certificates, messages); define the outcome oracle before fuzzing; run fuzzing in continuous integration for a bounded time and offline for longer; and treat a hang as a failure. **Common mistake:** fuzzing the algorithm but not the wrapper that parses the network format, which is where most real bugs live."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the correct outcome for a mutated ML-KEM ciphertext of the right length?",
+              "options": [
+                "A 32-byte key, different from the honest one, with no error",
+                "An exception",
+                "The honest key"
+              ],
+              "correct_index": 0,
+              "explanation": "Implicit rejection returned a different key in all 858 cases."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does a fuzzing run without failures prove?",
+              "options": [
+                "Only that the inputs tried caused no failure",
+                "That the code is secure",
+                "That the code is constant time"
+              ],
+              "correct_index": 0,
+              "explanation": "Fuzzing finds bugs; it cannot prove their absence."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What do coverage guidance and sanitizers add to a real fuzzing campaign?",
+              "options": [
+                "Mutations that reach new code paths, and detection of memory errors in compiled code",
+                "Faster hashing",
+                "Smaller inputs"
+              ],
+              "correct_index": 0,
+              "explanation": "They make fuzzing effective on C and Rust implementations."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Sections 7.2 and 7.3 (input checks) and Algorithm 21 (implicit rejection) as the oracle for the decapsulation outcomes"
+            },
+            {
+              "book": "B92",
+              "locator": "FIPS 204, ML-DSA.Verify and the signature and key encodings"
+            },
+            {
+              "book": "B100",
+              "locator": "cryptography: OpenSSL ML-DSA verification as the independent implementation in the comparison"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Coverage-guided fuzzers, sanitizers and dudect-style tests are described from general knowledge and not demonstrated. The pure-Python fuzzing says nothing about memory safety of compiled implementations."
+          },
+          "after": "sec-9"
+        },
+        {
+          "slug": "sec-11",
+          "action": "replace",
+          "title": "11.11 Formal-Verification Concepts",
+          "summary": "Verification by exhaustion of Montgomery and Barrett reduction over their whole input ranges, and an explicit-state model check of the downgrade scenario, with a clear statement of what each proves.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Formal verification** replaces \"we tested it\" with a proof that holds for *all* inputs within a stated model. It comes in several strengths. The most accessible is **verification by exhaustion**: when the input domain is small enough, check every input; the result is a complete proof for that domain and it fails loudly if a constant is wrong. At the other end, **proof assistants and verified toolchains** (machine-checked proofs of functional correctness, of constant-time behaviour and of security reductions, for example with Coq, EasyCrypt, Jasmin or Cryptol/SAW-style tools) prove statements about code or specifications of real implementations; they require expertise and time, and I describe them here from general knowledge without having used them in this lab. In between, **model checking** explores every reachable state of a finite model of a protocol and checks a property in each.\n\nThe listing does two verifications that can be run in seconds. First, the **Montgomery** and **Barrett** reductions used in ML-KEM-style reference code: it checks, for every input in the documented range (218,169,343 values for Montgomery with |a| < q·2^15, and all 65,536 signed 16-bit values for Barrett), that the result is congruent to the right value modulo q and lies in the claimed range, and shows that a constant that is off by one passes the congruence check but fails the range check. Second, an **explicit-state model** of the downgrade of 10.9 with four binary parameters (16 states): it evaluates the safety property in every state, with and without the client policy rule. Everything here runs on your own machine against code and keys that exist only inside the lesson. Where a physical effect is involved (power leakage, injected faults) it is SIMULATED and labelled so. The reference libraries are slow pure-Python code: the lessons show how controls are built and, above all, how to test them."
+            },
+            {
+              "type": "code",
+              "id": "c-verification",
+              "language": "python",
+              "code": "import itertools\nimport numpy as np\n\nq = 3329\n\n# --- 1. verification by exhaustion of the modular-reduction routines used in ML-KEM reference-style code\nQINV = pow(q, -1, 1 << 16)                                                  # q^-1 mod 2^16, as a signed 16-bit value\nQINV_SIGNED = QINV - (1 << 16) if QINV >= (1 << 15) else QINV\nprint(\"q^-1 mod 2^16 =\", QINV, \"(signed\", QINV_SIGNED, \")\")\n\ndef montgomery_reduce_vec(a):\n    # t = (int16)(a * QINV);  result = (a - t * q) >> 16   -- returns a * 2^-16 mod q, as a small signed value\n    t = ((a * QINV_SIGNED + (1 << 15)) & 0xFFFF) - (1 << 15)               # the low 16 bits of a*QINV interpreted as signed\n    return (a - t * q) >> 16\n\nlimit = q << 15                                                            # the documented input range: |a| < q * 2^15\nbad_congruence = 0\nworst_low, worst_high = 0, 0\ntotal = 0\nR_INV = pow(1 << 16, -1, q)\nfor start in range(-limit + 1, limit, 1 << 22):\n    a = np.arange(start, min(start + (1 << 22), limit), dtype=np.int64)\n    r = montgomery_reduce_vec(a)\n    bad_congruence += int(np.count_nonzero((r - a * R_INV) % q))\n    worst_low, worst_high = min(worst_low, int(r.min())), max(worst_high, int(r.max()))\n    total += len(a)\nprint(f\"Montgomery reduction checked for all {total:,} inputs with |a| < q * 2^15: congruence a * 2^-16 mod q violated {bad_congruence} times; results lie in [{worst_low}, {worst_high}] within (-q, q): {-q < worst_low and worst_high < q}\")\n\nV = ((1 << 26) + q // 2) // q                                              # the Barrett constant round(2^26 / q)\na16 = np.arange(-(1 << 15), 1 << 15, dtype=np.int64)\nt = (V * a16 + (1 << 25)) >> 26\nr = a16 - t * q\nprint(f\"Barrett reduction with v = {V}: checked for all {len(a16):,} signed 16-bit inputs; congruent to a mod q in all cases: {bool(np.all((r - a16) % q == 0))}; results lie in [{int(r.min())}, {int(r.max())}] (about +/- q/2: {int(r.max()) <= (q + 1) // 2 and int(r.min()) >= -(q + 1) // 2})\")\nprint(\"an exhaustive check over the input range IS a proof for that range: no sampling, no assumption beyond the stated bounds, and it fails loudly if a constant is wrong\")\nwrong_v = V - 1\nt = (wrong_v * a16 + (1 << 25)) >> 26\nr_bad = a16 - t * q\nprint(f\"the same check with v = {wrong_v} (one off): results leave the range [-q/2, q/2]: min {int(r_bad.min())}, max {int(r_bad.max())}; the congruence still holds, so only the range check catches this bug\")\n\n# --- 2. explicit-state model checking of the downgrade scenario of lesson C10.9: enumerate EVERY combination of attacker capability, client policy and server support\ndef handshake(client_requires_pq, server_supports_pq, attacker_strips, attacker_breaks_classical):\n    offer = [\"PQ\", \"classical\"]\n    if attacker_strips:\n        offer = [g for g in offer if g != \"PQ\"]\n    chosen = \"PQ\" if (\"PQ\" in offer and server_supports_pq) else \"classical\"\n    if client_requires_pq and chosen != \"PQ\":\n        return \"aborted\"                                                   # client policy refuses classical-only key exchange\n    if attacker_strips and chosen == \"classical\":\n        # the transcript MAC is keyed from the classical secret; it detects the stripped offer only if the attacker cannot break it\n        return \"established with classical (forged)\" if attacker_breaks_classical else \"aborted\"\n    return \"established with \" + chosen\n\nprint()\nprint(\"model: every combination of the four binary parameters (16 states); property P = 'the connection is never established with the classical group while the client requires PQ'\")\nprint(f\"{'client requires PQ':>19} {'server has PQ':>14} {'attacker strips':>16} {'attacker breaks classical':>26} {'outcome':<36} {'P holds'}\")\nviolations = 0\nfor cr, sp, st, br in itertools.product((False, True), repeat=4):\n    outcome = handshake(cr, sp, st, br)\n    holds = not (cr and outcome.endswith(\"classical\") or cr and \"classical (forged)\" in outcome)\n    violations += not holds\n    print(f\"{str(cr):>19} {str(sp):>14} {str(st):>16} {str(br):>26} {outcome:<36} {holds}\")\nprint(f\"P is violated in {violations} of 16 states\")\nunprotected = [(cr, sp, st, br) for cr, sp, st, br in itertools.product((False, True), repeat=4) if handshake(cr, sp, st, br).startswith(\"established with classical\")]\nprint(\"states where a connection ends on the classical group:\", len(unprotected), \"| among them those with the client requiring PQ:\", sum(1 for u in unprotected if u[0]))\nprint(\"the model checker finds the property holds in all 16 states of THIS model because the client policy aborts; remove the policy rule and the same enumeration exposes the attack states\")\ndef handshake_no_policy(sp, st, br):\n    return handshake(False, sp, st, br)\nviolating_without_policy = [(sp, st, br) for sp, st, br in itertools.product((False, True), repeat=3) if \"forged\" in handshake_no_policy(sp, st, br)]\nprint(\"without the policy rule, the forged-downgrade states are:\", violating_without_policy, \"(the attacker strips PQ AND can break the classical group)\")\nprint(\"limits: a model checks the model; it says nothing about code that differs from it, about parameters left out of the model, or about attackers more capable than the ones enumerated\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-verification",
+              "language": "text",
+              "code": "q^-1 mod 2^16 = 62209 (signed -3327 )\nMontgomery reduction checked for all 218,169,343 inputs with |a| < q * 2^15: congruence a * 2^-16 mod q violated 0 times; results lie in [-3328, 3328] within (-q, q): True\nBarrett reduction with v = 20159: checked for all 65,536 signed 16-bit inputs; congruent to a mod q in all cases: True; results lie in [-1664, 1664] (about +/- q/2: True)\nan exhaustive check over the input range IS a proof for that range: no sampling, no assumption beyond the stated bounds, and it fails loudly if a constant is wrong\nthe same check with v = 20158 (one off): results leave the range [-q/2, q/2]: min -1665, max 1665; the congruence still holds, so only the range check catches this bug\n\nmodel: every combination of the four binary parameters (16 states); property P = 'the connection is never established with the classical group while the client requires PQ'\n client requires PQ  server has PQ  attacker strips  attacker breaks classical outcome                              P holds\n              False          False            False                      False established with classical           True\n              False          False            False                       True established with classical           True\n              False          False             True                      False aborted                              True\n              False          False             True                       True established with classical (forged)  True\n              False           True            False                      False established with PQ                  True\n              False           True            False                       True established with PQ                  True\n              False           True             True                      False aborted                              True\n              False           True             True                       True established with classical (forged)  True\n               True          False            False                      False aborted                              True\n               True          False            False                       True aborted                              True\n               True          False             True                      False aborted                              True\n               True          False             True                       True aborted                              True\n               True           True            False                      False established with PQ                  True\n               True           True            False                       True established with PQ                  True\n               True           True             True                      False aborted                              True\n               True           True             True                       True aborted                              True\nP is violated in 0 of 16 states\nstates where a connection ends on the classical group: 4 | among them those with the client requiring PQ: 0\nthe model checker finds the property holds in all 16 states of THIS model because the client policy aborts; remove the policy rule and the same enumeration exposes the attack states\nwithout the policy rule, the forged-downgrade states are: [(False, True, True), (True, True, True)] (the attacker strips PQ AND can break the classical group)\nlimits: a model checks the model; it says nothing about code that differs from it, about parameters left out of the model, or about attackers more capable than the ones enumerated",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The Montgomery reduction is congruent to a·2^-16 modulo q for all 218,169,343 inputs and its outputs lie in [−3328, 3328], within (−q, q); the Barrett reduction with v = 20159 is congruent to a for all 65,536 inputs and its results lie in [−1664, 1664]. With v = 20158 the congruence still holds but the range reaches ±1665: **only the range check catches the bug**, which is a reminder that a verification checks exactly the properties it states and nothing else. The model check evaluates all 16 states: the property \"the connection is never established with the classical group while the client requires post-quantum\" holds in every state *because* the client policy aborts, and the enumeration without that rule finds the forged-downgrade states (the attacker strips the post-quantum group **and** can break the classical group).\n\n**What formal methods give and what they don't.** They give certainty about a specified property of a specified model or program, replacing sampling with proof. They do not cover what is not specified (side channels, if the model does not include timing; hardware faults; the compiler's behaviour, unless the compiler is verified), and the proof is only as good as the specification: a verified implementation of the wrong specification is still wrong. They are most valuable for small, critical, well-understood components (arithmetic routines, parsers, protocol state machines) and for the security proofs of constructions; post-quantum implementations with machine-checked correctness and constant-time proofs exist in the literature, but I did not evaluate them here."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is an exhaustive check over an input range a proof?",
+              "options": [
+                "It examines every input of the range, so no input is left to chance",
+                "It uses random sampling",
+                "It checks the compiler"
+              ],
+              "correct_index": 0,
+              "explanation": "The Montgomery check covered all 218,169,343 inputs."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why did the off-by-one Barrett constant pass the congruence check?",
+              "options": [
+                "The result is still congruent to a modulo q; only its range changes",
+                "The check was random",
+                "Barrett is always correct"
+              ],
+              "correct_index": 0,
+              "explanation": "A verification checks exactly the properties stated."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What can a verified implementation still get wrong?",
+              "options": [
+                "Anything the specification omits, such as side channels, or a wrong specification",
+                "Nothing",
+                "Only the licence"
+              ],
+              "correct_index": 0,
+              "explanation": "Proofs are relative to the model and specification."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 4 (arithmetic modulo q = 3329, compression and the NTT) as the specification of the routines whose reductions are verified"
+            },
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, general discussion of implementation assurance"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The Montgomery and Barrett routines are reference-style formulations written for the lesson from the standard technique (q^-1 mod 2^16 and v = round(2^26 / q)); they were verified over their ranges here but not compared with any specific library's source. Proof assistants and verified toolchains (Coq, EasyCrypt, Jasmin, Cryptol/SAW) are named from general knowledge and were not used or read."
+          },
+          "after": "sec-10"
+        },
+        {
+          "slug": "sec-12",
+          "action": "replace",
+          "title": "11.12 Security Evaluation",
+          "summary": "An evidence-based evaluation report that runs checks, records PASS or FAIL, and reports everything not assessed as 'No verified result available', ending in an overall verdict that cannot be better than the evidence.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **security evaluation** answers a question for a decision-maker: *is this component acceptable for this use?* A useful evaluation has a scope (which version, which platform, which threat model), a list of **claims** to be examined, **evidence** for each claim and a clear statement of what was **not** examined. The common failure is a report that is a list of passed tests, which reads as safe, with the untested risks missing. In Q-CAPS the rule is stricter: **if a result cannot be obtained reliably, the report says \"No verified result available\" and does not substitute an assumption**, and a verdict cannot be better than the weakest missing evidence.\n\nThe listing builds a small evaluation of the ML-KEM-768 and ML-DSA-44 reference modules of this lab. Ten checks are defined; five are executed (known-answer reproducibility, agreement with an independent implementation over 18 cross-checks, refusal of malformed inputs, implicit rejection, and detection of key corruption in four regions of a stored private key) and five are declared **NOT ASSESSED** because they need methods this evaluation did not run (constant-time of compiled code, power analysis, fault resistance on hardware, entropy-source assessment, supply-chain provenance). The report is printed as a table and as a machine-readable record, followed by the overall verdict. Everything here runs on your own machine against code and keys that exist only inside the lesson. Where a physical effect is involved (power leakage, injected faults) it is SIMULATED and labelled so. The reference libraries are slow pure-Python code: the lessons show how controls are built and, above all, how to test them."
+            },
+            {
+              "type": "code",
+              "id": "c-evaluation",
+              "language": "python",
+              "code": "import hashlib, hmac, json, random\nfrom cryptography.hazmat.primitives.asymmetric import mlkem, mldsa\nfrom kyber_py.ml_kem import ML_KEM_768\nfrom dilithium_py.ml_dsa import ML_DSA_44\n\n# A security evaluation reports EVIDENCE, and says plainly what has not been assessed. Statuses: PASS (evidence produced here), FAIL, NOT ASSESSED (no verified result available).\nrng = random.Random(1112)\nkem = ML_KEM_768\n\ndef check_known_answer():\n    def run():\n        h = hashlib.sha256()\n        for i in range(5):\n            ek, dk = kem.key_derive(hashlib.shake_256(b\"seed%d\" % i).digest(64))\n            key, ct = kem._encaps_internal(ek, hashlib.shake_256(b\"m%d\" % i).digest(32))\n            h.update(ek + dk + ct + key)\n        return h.hexdigest()\n    return run() == run(), \"fingerprint reproducible over 5 fixed-seed runs\"\ndef check_cross_implementation():\n    ok = 0\n    for _ in range(15):\n        seed = bytes(rng.getrandbits(8) for _ in range(64))\n        ek, dk = kem.key_derive(seed)\n        key, ct = kem.encaps(ek)\n        ok += mlkem.MLKEM768PrivateKey.from_seed_bytes(seed).decapsulate(ct) == key\n    dsa = ML_DSA_44\n    for _ in range(3):\n        seed = bytes(rng.getrandbits(8) for _ in range(32))\n        pk, sk = dsa.key_derive(seed)\n        sig = mldsa.MLDSA44PrivateKey.from_seed_bytes(seed).sign(b\"m\")\n        ok += dsa.verify(pk, b\"m\", sig)\n    return ok == 18, f\"{ok} of 18 cross-checks agree with OpenSSL\"\ndef check_input_validation():\n    ek, dk = kem.keygen(); key, ct = kem.encaps(ek)\n    def refused(fn):\n        try: fn(); return False\n        except ValueError: return True\n    results = [refused(lambda: kem.encaps(ek[:-1])), refused(lambda: kem.decaps(dk, ct[:-1])), refused(lambda: kem.decaps(dk[:-1], ct))]\n    return all(results), f\"{sum(results)} of 3 malformed inputs refused\"\ndef check_implicit_rejection():\n    ek, dk = kem.keygen(); key, ct = kem.encaps(ek)\n    bad = bytearray(ct); bad[3] ^= 1\n    out = kem.decaps(dk, bytes(bad))\n    return out == hashlib.shake_256(dk[-32:] + bytes(bad)).digest(32), \"tampered ciphertext returns SHAKE256(z || c)\"\ndef check_key_integrity_coverage():\n    ek, dk = kem.keygen()\n    covered = 0\n    for region in (range(0, 100), range(1200, 1250), range(2340, 2350), range(2380, 2400)):          # secret vector, embedded ek, H(ek), z\n        pos = list(region)[0]\n        bad = bytearray(dk); bad[pos] ^= 1\n        try:\n            kem.decaps(bytes(bad), kem.encaps(ek)[1]); detected = False\n        except ValueError:\n            detected = True\n        covered += detected\n    return False, f\"built-in checks detected corruption in {covered} of 4 key regions (secret vector, embedded ek, H(ek), z); an external integrity tag is required for the rest\"\n\nCHECKS = [\n    (\"F1\", \"functional\", \"deterministic known-answer fingerprint\", check_known_answer),\n    (\"F2\", \"interoperability\", \"agreement with an independent implementation\", check_cross_implementation),\n    (\"S1\", \"input handling\", \"malformed inputs are refused\", check_input_validation),\n    (\"S2\", \"protocol\", \"invalid ciphertexts handled by implicit rejection\", check_implicit_rejection),\n    (\"S3\", \"key storage\", \"corruption of a stored private key is detected in every region\", check_key_integrity_coverage),\n    (\"S4\", \"side channels\", \"timing and cache behaviour of the COMPILED code is constant-time\", None),\n    (\"S5\", \"side channels\", \"resistance to power and electromagnetic analysis (physical device)\", None),\n    (\"S6\", \"faults\", \"resistance to fault injection on the target hardware\", None),\n    (\"S7\", \"randomness\", \"entropy source assessed and health tests running in the product\", None),\n    (\"S8\", \"supply chain\", \"provenance and reproducible build of every dependency\", None),\n]\nreport = []\nfor cid, category, text, fn in CHECKS:\n    if fn is None:\n        report.append({\"id\": cid, \"category\": category, \"check\": text, \"status\": \"NOT ASSESSED\", \"evidence\": \"No verified result available (needs a method this evaluation did not run)\"})\n    else:\n        ok, evidence = fn()\n        report.append({\"id\": cid, \"category\": category, \"check\": text, \"status\": \"PASS\" if ok else \"FAIL\", \"evidence\": evidence})\n\nprint(f\"{'id':<4} {'category':<17} {'status':<13} {'check'}\")\nfor r in report:\n    print(f\"{r['id']:<4} {r['category']:<17} {r['status']:<13} {r['check']}\")\nprint()\nfor r in report:\n    print(f\"{r['id']}: {r['evidence']}\")\ncounts = {s: sum(1 for r in report if r[\"status\"] == s) for s in (\"PASS\", \"FAIL\", \"NOT ASSESSED\")}\nprint()\nprint(\"summary:\", counts)\nverdict = \"CANNOT BE RATED: required evidence is missing\" if counts[\"NOT ASSESSED\"] else (\"NOT ACCEPTABLE\" if counts[\"FAIL\"] else \"ACCEPTABLE\")\nif counts[\"FAIL\"] and not counts[\"NOT ASSESSED\"]:\n    verdict = \"NOT ACCEPTABLE\"\nprint(\"overall:\", verdict + (f\" ({counts['FAIL']} failing, {counts['NOT ASSESSED']} not assessed)\" if counts[\"FAIL\"] or counts[\"NOT ASSESSED\"] else \"\"))\nprint(\"a passing functional suite is necessary and not sufficient; missing evidence is reported as missing, never filled in with an assumption\")\nprint()\nprint(\"machine-readable form of the first record:\", json.dumps(report[0]))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-evaluation",
+              "language": "text",
+              "code": "id   category          status        check\nF1   functional        PASS          deterministic known-answer fingerprint\nF2   interoperability  PASS          agreement with an independent implementation\nS1   input handling    PASS          malformed inputs are refused\nS2   protocol          PASS          invalid ciphertexts handled by implicit rejection\nS3   key storage       FAIL          corruption of a stored private key is detected in every region\nS4   side channels     NOT ASSESSED  timing and cache behaviour of the COMPILED code is constant-time\nS5   side channels     NOT ASSESSED  resistance to power and electromagnetic analysis (physical device)\nS6   faults            NOT ASSESSED  resistance to fault injection on the target hardware\nS7   randomness        NOT ASSESSED  entropy source assessed and health tests running in the product\nS8   supply chain      NOT ASSESSED  provenance and reproducible build of every dependency\n\nF1: fingerprint reproducible over 5 fixed-seed runs\nF2: 18 of 18 cross-checks agree with OpenSSL\nS1: 3 of 3 malformed inputs refused\nS2: tampered ciphertext returns SHAKE256(z || c)\nS3: built-in checks detected corruption in 2 of 4 key regions (secret vector, embedded ek, H(ek), z); an external integrity tag is required for the rest\nS4: No verified result available (needs a method this evaluation did not run)\nS5: No verified result available (needs a method this evaluation did not run)\nS6: No verified result available (needs a method this evaluation did not run)\nS7: No verified result available (needs a method this evaluation did not run)\nS8: No verified result available (needs a method this evaluation did not run)\n\nsummary: {'PASS': 4, 'FAIL': 1, 'NOT ASSESSED': 5}\noverall: CANNOT BE RATED: required evidence is missing (1 failing, 5 not assessed)\na passing functional suite is necessary and not sufficient; missing evidence is reported as missing, never filled in with an assumption\n\nmachine-readable form of the first record: {\"id\": \"F1\", \"category\": \"functional\", \"check\": \"deterministic known-answer fingerprint\", \"status\": \"PASS\", \"evidence\": \"fingerprint reproducible over 5 fixed-seed runs\"}",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Four checks pass, one fails and five are not assessed. The failure is a **real finding of this lesson series**: the built-in checks of the decapsulation key detect corruption in only two of its four regions (the embedded encapsulation key and its hash), not in the secret vector or in z, so an external integrity mechanism is required (9.4). The five unassessed items are listed with the text \"No verified result available (needs a method this evaluation did not run)\" and the overall verdict is **CANNOT BE RATED: required evidence is missing**. That is the correct conclusion: a functional suite passing on a reference implementation says nothing about side channels, hardware faults or provenance.\n\n**Using the pattern.** Fix the scope and the threat model first (a laptop library and a payment HSM need different evidence); require evidence for every claim, in a form someone else can rerun; keep the machine-readable record with the version and date; and treat NOT ASSESSED as a result with consequences, not as a blank. Where a standard or programme requires validation (for example module validation under a national scheme), the evaluation prepares for it and does not replace it. This closes the module: attacks (C10) mapped to controls with tests (11.1 to 11.11) and to an honest account of what remains unproven."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What should an evaluation say about a claim it could not examine?",
+              "options": [
+                "That no verified result is available, and the verdict reflects that",
+                "That it is probably fine",
+                "Nothing"
+              ],
+              "correct_index": 0,
+              "explanation": "Missing evidence is reported as missing, never filled in with an assumption."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which finding did the lesson's own evaluation produce?",
+              "options": [
+                "The decapsulation key's built-in checks detect corruption in only two of four regions",
+                "All checks passed",
+                "The algorithm was broken"
+              ],
+              "correct_index": 0,
+              "explanation": "The secret vector and z are not covered by the hash check."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why can the overall verdict not be better than the missing evidence allows?",
+              "options": [
+                "A passing functional suite does not address side channels, faults, entropy or provenance",
+                "Verdicts are random",
+                "Functional tests are worthless"
+              ],
+              "correct_index": 0,
+              "explanation": "Those risks remain unexamined."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, the implementation requirements (input checking, failure handling, side-channel protection, randomness, destruction of data) as the checklist the evaluation items are drawn from"
+            },
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 7 (input and key checks) and Section 3.3 (requirements for implementations)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The evaluation structure is a teaching format and not an accredited methodology (such as Common Criteria or national module validation), which were not studied here. The ten checks are a sample, not a complete list."
+          },
+          "after": "sec-11"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "c11-n01",
+          "prompt": "What makes a security control meaningful in a review?",
+          "options": [
+            "A test that shows it works",
+            "A policy that names it",
+            "A vendor claim"
+          ],
+          "correct_index": 0,
+          "explanation": "A control without a test is an assumption.",
+          "source": {
+            "book": "B95",
+            "locator": "Implementation requirements"
+          }
+        },
+        {
+          "id": "c11-n02",
+          "prompt": "What does a constant-time comparison do?",
+          "options": [
+            "Processes every byte and decides once at the end",
+            "Stops at the first difference",
+            "Compares hashes of the inputs"
+          ],
+          "correct_index": 0,
+          "explanation": "Work then does not depend on how much of the guess matched.",
+          "source": {
+            "book": "B95",
+            "locator": "Side-channel protection"
+          }
+        },
+        {
+          "id": "c11-n03",
+          "prompt": "What does HMAC_DRBG's generate step output?",
+          "options": [
+            "Successive values V = HMAC(K, V) followed by a state update",
+            "The clock",
+            "AES counter blocks"
+          ],
+          "correct_index": 0,
+          "explanation": "SP 800-90A Rev. 1 section 10.1.2.5.",
+          "source": {
+            "book": "B184",
+            "locator": "Section 10.1.2"
+          }
+        },
+        {
+          "id": "c11-n04",
+          "prompt": "What does a health test on a noise source show?",
+          "options": [
+            "That the source has not visibly failed, not its entropy",
+            "That the generator is secure",
+            "That seeds are secret"
+          ],
+          "correct_index": 0,
+          "explanation": "Entropy must be assessed by analysing the source.",
+          "source": {
+            "book": "B184",
+            "locator": "Overview of the RBG construction"
+          }
+        },
+        {
+          "id": "c11-n05",
+          "prompt": "Why is the header authenticated as associated data in key wrapping?",
+          "options": [
+            "So labels such as the algorithm cannot be swapped",
+            "To hide the label",
+            "To shorten the blob"
+          ],
+          "correct_index": 0,
+          "explanation": "A changed header made decryption fail.",
+          "source": {
+            "book": "B95",
+            "locator": "Cryptographic data protection"
+          }
+        },
+        {
+          "id": "c11-n06",
+          "prompt": "What does arithmetic masking do?",
+          "options": [
+            "Splits a secret into shares so no single handled value depends on it",
+            "Encrypts the secret",
+            "Hashes the secret"
+          ],
+          "correct_index": 0,
+          "explanation": "Linear steps are done share by share.",
+          "source": {
+            "book": "B95",
+            "locator": "Side-channel protection"
+          }
+        },
+        {
+          "id": "c11-n07",
+          "prompt": "What does verify-before-release prevent?",
+          "options": [
+            "Output of a faulty signature",
+            "Slow signing",
+            "Key reuse"
+          ],
+          "correct_index": 0,
+          "explanation": "All 300 faulty RSA-CRT signatures were withheld.",
+          "source": {
+            "book": "B92",
+            "locator": "Section 3.2"
+          }
+        },
+        {
+          "id": "c11-n08",
+          "prompt": "Why return one generic error for every failure in a message format?",
+          "options": [
+            "Distinguishable errors form an oracle",
+            "Errors cost time",
+            "It saves bytes"
+          ],
+          "correct_index": 0,
+          "explanation": "Every attack in the lesson returned the same message.",
+          "source": {
+            "book": "B95",
+            "locator": "Failure handling"
+          }
+        },
+        {
+          "id": "c11-n09",
+          "prompt": "What is the main risk of algorithm agility?",
+          "options": [
+            "Downgrade to the weakest supported algorithm",
+            "Larger keys",
+            "Faster hashing"
+          ],
+          "correct_index": 0,
+          "explanation": "The policy must remove weak options.",
+          "source": {
+            "book": "B95",
+            "locator": "Section 4.6"
+          }
+        },
+        {
+          "id": "c11-n10",
+          "prompt": "What is the X25519MLKEM768 shared secret?",
+          "options": [
+            "The ML-KEM secret followed by the X25519 secret, 64 bytes",
+            "Only the ML-KEM secret",
+            "The XOR of the two"
+          ],
+          "correct_index": 0,
+          "explanation": "RFC 10024 section 4.3.",
+          "source": {
+            "book": "B98",
+            "locator": "Section 4.3"
+          }
+        },
+        {
+          "id": "c11-n11",
+          "prompt": "What does fuzzing without failures prove?",
+          "options": [
+            "Only that the tried inputs caused none",
+            "That the code is secure",
+            "That the code is constant time"
+          ],
+          "correct_index": 0,
+          "explanation": "Fuzzing finds bugs but cannot prove their absence.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 7"
+          }
+        },
+        {
+          "id": "c11-n12",
+          "prompt": "How should an evaluation treat claims it did not examine?",
+          "options": [
+            "Report 'No verified result available' and let the verdict reflect it",
+            "Assume they pass",
+            "Omit them"
+          ],
+          "correct_index": 0,
+          "explanation": "A verdict cannot be better than the missing evidence allows.",
+          "source": {
+            "book": "B95",
+            "locator": "Implementation requirements"
+          }
+        }
+      ],
+      "estimated_minutes": 645,
+      "notes": "Rewrites twelve outline sections (11.1 to 11.12; the capstone and certificate sections are untouched) as lessons with executed listings: a control matrix with live tests, constant-time helpers with a bytecode-level tracer, an HMAC_DRBG with health tests, envelope encryption and Shamir sharing, simulated masking, measured fault detection, a strict sealed-message format, an agility registry, the RFC 10024 hybrid layout, a mutation fuzzer, exhaustive verification of Montgomery and Barrett reduction with a model check, and an evidence-based evaluation report.",
+      "learning_objectives": [
+        "Build a control matrix that pairs each attack with a control and a test, and name what the tests cannot cover.",
+        "Write and check constant-time building blocks and explain the resolution limits of source-level trace tools.",
+        "Implement an HMAC_DRBG from the standard, test its properties, and apply continuous health tests.",
+        "Protect keys with authenticated wrapping, rotation and threshold sharing, and test the failure cases.",
+        "Apply masking and fault-detection countermeasures and measure what they achieve and what remains.",
+        "Design agile, hard-to-misuse formats and hybrid deployments, and verify them by fuzzing, exhaustive checks and model checking.",
+        "Produce an evaluation that reports missing evidence as missing."
+      ]
+    }
+  ]
+}
