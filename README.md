@@ -1,8 +1,40 @@
 # Q-CAPS
 
-Quantum Cybersecurity Assessment, Preparedness & Skills platform: an adaptive learning and assessment
-platform for quantum-safe cryptography, with server-graded quizzes, book-sourced lessons, and a
-cryptographic reconnaissance scanner.
+**Quantum Cybersecurity Assessment, Preparedness & Skills Platform**: an adaptive learning and assessment platform for
+quantum-safe (post-quantum) cryptography, with server-graded quizzes, book-sourced lessons, scenario labs, decision
+missions, and a cryptographic reconnaissance scanner that detects hybrid post-quantum key exchange.
+
+**Live demo:** [qcaps.vercel.app](https://qcaps.vercel.app) (the API runs on a free tier and can take about a minute to wake
+after being idle; the hosted database is rebuilt on each restart, and the scanner is not deployed publicly).
+
+## Why
+
+Quantum computers are expected to break RSA and elliptic-curve cryptography, and attackers can record encrypted traffic
+today to decrypt it later ("harvest now, decrypt later"). Migrating takes years and needs people with the right skills.
+Q-CAPS teaches those skills, measures them on the server, and lets learners observe real TLS posture.
+
+## At a glance
+
+| | |
+|---|---|
+| Curriculum | 4 tracks, 36 modules, 360 sections with executed code listings, checkpoints and sources |
+| Assessment | 599 quiz items graded on the server; answer keys are never sent to the browser |
+| Practice | 38 scenario labs and 11 decision missions, shown inside the lesson section they belong to |
+| Gamification | XP, 90 badges, 5 certificates, leaderboard (all computed by the server) |
+| Scanner | DNS, WHOIS, TLS, certificate, headers, TLS 1.3 key-exchange probe; SSRF-protected; ownership-gated active checks |
+| Stack | React, TypeScript, Vite, Zustand · FastAPI, SQLAlchemy, SQLite · Flask scanner |
+
+Track A Foundations (8 modules) · Track B Intermediate (11) · Track C Advanced (11) · Track D Enterprise (6).
+
+## Documentation
+
+- **[Full project overview](docs/PROJECT_OVERVIEW.md)**: everything about the project in one place
+- [System understanding](docs/architecture/SYSTEM_UNDERSTANDING.md): how it actually works, findings, open items
+- [Scanner](docs/architecture/SCANNER.md) · [Frontend structure](docs/architecture/FRONTEND_STRUCTURE.md)
+- [Book to course map](docs/content-authoring/BOOK_COURSE_MAP.md): sources and lesson status per module
+
+Simulated content is always labelled `SIMULATION` or `DEMO DATA`. There has been no user study yet, so no learning-outcome
+claims are made.
 
 ## Repository layout
 
