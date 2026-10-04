@@ -204,7 +204,7 @@ def test_existing_question_cannot_change_meaning(db, course, admin_user, quiz_di
 def test_quiz_cannot_be_retired_below_five_active_questions(db, course, admin_user, quiz_dir):
     ids = [q.id for q in db.query(models.QuizItem).filter_by(module_id=A3)]
     with pytest.raises(PackError, match="at least 5"):
-        import_pack(db, _pack(sections=[], retire=ids[:1]), "pack-admin", quiz_dir=quiz_dir)
+        import_pack(db, _pack(sections=[], retire=ids[:len(ids) - 4]), "pack-admin", quiz_dir=quiz_dir)
 
 
 def test_quiz_tags_must_be_complete_and_known(db, course, admin_user, quiz_dir):

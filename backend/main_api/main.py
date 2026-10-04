@@ -25,6 +25,7 @@ from services import evidence_service
 from closure.engine import process_closure_verification
 from course_content.admin_routes import create_admin_router
 from course_content.public_routes import create_public_router
+from activities import create_activities_router
 from course_content.ratelimit import login_limiter
 from config import load_jwt_secret
 
@@ -131,6 +132,7 @@ app.add_middleware(
 )
 
 app.include_router(create_public_router(get_current_user))
+app.include_router(create_activities_router(get_current_user))
 app.include_router(create_admin_router(require_admin))
 
 @app.on_event("startup")

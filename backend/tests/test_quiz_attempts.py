@@ -21,6 +21,12 @@ from main import app
 MODULE = "track_a_a1_computing_foundations"
 
 
+def bank_size(Session):
+    """Number of active questions in the module's bank: the quiz uses the whole bank, and the content packs grow it."""
+    with Session() as db:
+        return db.query(models.QuizItem).filter_by(module_id=MODULE, active=True).count()
+
+
 @pytest.fixture()
 def env():
     engine = create_engine("sqlite://", connect_args={"check_same_thread": False}, poolclass=StaticPool)
@@ -75,7 +81,7 @@ def test_seed_loads_all_content(env):
 
 
 def test_form_contains_no_answer_key(env):
-    client, _ = env
+    client, Session = env
     _, h = signup(client, "alice")
     r = client.post(f"/api/quizzes/{MODULE}/attempts", headers=h)
     assert r.status_code == 200
@@ -83,7 +89,7 @@ def test_form_contains_no_answer_key(env):
     for forbidden in ("correct_index", "correctindex", "correct_position", "explanation"):
         assert forbidden not in raw
     body = r.json()
-    assert body["total_questions"] == len(body["questions"]) == 5
+    assert body["total_questions"] == len(body["questions"]) == bank_size(Session)
     assert all(set(q) == {"item_id", "prompt", "options"} for q in body["questions"])
 
 
@@ -107,8 +113,8 @@ def test_perfect_attempt_scored_by_server(env):
                       json={"answers": answer_all(Session, att)}, headers=h)
     assert res.status_code == 200, res.text
     r = res.json()
-    assert (r["correct_answers"], r["total_questions"], r["score_percent"], r["passed"]) == (5, 5, 100.0, True)
-    assert r["xp_awarded"] == 250
+    assert (r["correct_answers"], r["total_questions"], r["score_percent"], r["passed"]) == (bank_size(Session), bank_size(Session), 100.0, True)
+    assert r["xp_awarded"] == 50 * bank_size(Session)
     assert all(i["correct"] and i["explanation"] for i in r["items"])
 
 
@@ -121,8 +127,8 @@ def test_wrong_answers_fail_and_are_recorded(env):
     assert (r["correct_answers"], r["score_percent"], r["passed"], r["xp_awarded"]) == (0, 0.0, False, 0)
     with Session() as db:
         a = db.get(models.QuizAttempt, att["attempt_id"])
-        assert a.status == "graded" and a.passed is False and a.total_questions == 5
-        assert db.query(models.QuizResponse).filter_by(attempt_id=a.id).count() == 5  # failures are kept
+        assert a.status == "graded" and a.passed is False and a.total_questions == bank_size(Session)
+        assert db.query(models.QuizResponse).filter_by(attempt_id=a.id).count() == bank_size(Session)  # failures are kept
 
 
 def test_unanswered_items_count_as_incorrect(env):
@@ -131,7 +137,7 @@ def test_unanswered_items_count_as_incorrect(env):
     att = client.post(f"/api/quizzes/{MODULE}/attempts", headers=h).json()
     partial = answer_all(Session, att)[:2]
     r = client.post(f"/api/quizzes/attempts/{att['attempt_id']}/submit", json={"answers": partial}, headers=h).json()
-    assert (r["correct_answers"], r["total_questions"], r["score_percent"]) == (2, 5, 40.0)
+    assert (r["correct_answers"], r["total_questions"], r["score_percent"]) == (2, bank_size(Session), round(100 * 2 / bank_size(Session), 2))
 
 
 def test_retake_does_not_farm_xp(env):
@@ -143,9 +149,9 @@ def test_retake_does_not_farm_xp(env):
         r = client.post(f"/api/quizzes/attempts/{att['attempt_id']}/submit",
                         json={"answers": answer_all(Session, att)}, headers=h).json()
         xps.append(r["xp_awarded"])
-    assert xps == [250, 0, 0]
+    assert xps == [50 * bank_size(Session), 0, 0]
     with Session() as db:
-        assert db.get(models.User, uid).xp == 250
+        assert db.get(models.User, uid).xp == 50 * bank_size(Session)
 
 
 def test_double_submit_rejected(env):
@@ -259,17 +265,17 @@ def test_per_question_flow_matches_server_grade(env):
     att = start(client, h)
     for n, q in enumerate(att["questions"]):
         right = key_position(Session, att, q["item_id"])
-        pos = right if n < 4 else (right + 1) % len(q["options"])  # last one wrong
+        pos = right if n < len(att["questions"]) - 1 else (right + 1) % len(q["options"])  # last one wrong
         fb = client.post(f"/api/quizzes/attempts/{att['attempt_id']}/answers",
                          json={"item_id": q["item_id"], "selected_position": pos}, headers=h)
         assert fb.status_code == 200
         f = fb.json()
-        assert f["correct"] == (n < 4) and f["correct_position"] == right and f["explanation"]
+        assert f["correct"] == (n < len(att["questions"]) - 1) and f["correct_position"] == right and f["explanation"]
     r = client.post(f"/api/quizzes/attempts/{att['attempt_id']}/submit", json={"answers": []}, headers=h).json()
-    assert (r["correct_answers"], r["score_percent"], r["passed"], r["xp_awarded"]) == (4, 80.0, True, 200)
+    assert (r["correct_answers"], r["score_percent"], r["passed"], r["xp_awarded"]) == (bank_size(Session) - 1, round(100 * (bank_size(Session) - 1) / bank_size(Session), 2), True, 50 * (bank_size(Session) - 1))
     with Session() as db:
-        assert db.get(models.User, uid).xp == 200
-        assert db.query(models.QuizResponse).filter_by(attempt_id=att["attempt_id"]).count() == 5
+        assert db.get(models.User, uid).xp == 50 * (bank_size(Session) - 1)
+        assert db.query(models.QuizResponse).filter_by(attempt_id=att["attempt_id"]).count() == bank_size(Session)
 
 
 def test_recorded_answer_is_locked(env):
@@ -331,4 +337,4 @@ def test_per_question_retake_does_not_farm_xp(env):
                         headers=h)
         xps.append(client.post(f"/api/quizzes/attempts/{att['attempt_id']}/submit",
                                json={"answers": []}, headers=h).json()["xp_awarded"])
-    assert xps == [250, 0]
+    assert xps == [50 * bank_size(Session), 0]

@@ -376,3 +376,36 @@ class QuizResponse(Base):
     selected_original_index = Column(Integer, nullable=True)
     is_correct = Column(Boolean, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class ActivityCompletion(Base):
+    """A practice lab or mission a learner has completed. The server awards XP and the badge,
+    once per user and activity, so the client cannot claim them."""
+    __tablename__ = "activity_completions"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    kind = Column(String, nullable=False)           # "lab" or "mission"
+    activity_id = Column(String, nullable=False)
+    xp_awarded = Column(Integer, nullable=False, default=0)
+    badge = Column(String, nullable=True)
+    completed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+    __table_args__ = (
+        UniqueConstraint("user_id", "kind", "activity_id", name="uq_activity_completion"),
+        CheckConstraint("kind IN ('lab', 'mission')", name="ck_activity_kind"),
+    )
+
+
+class MissionRun(Base):
+    """One play-through of a mission. The state (variables, answers, hidden simulation data) lives
+    here, so the outcome is computed by the server from the learner's choices."""
+    __tablename__ = "mission_runs"
+
+    id = Column(String, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    mission_id = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="active")   # "active" or "finished"
+    state = Column(JSON, nullable=False)
+    band = Column(String, nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
