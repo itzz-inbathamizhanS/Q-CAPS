@@ -1,0 +1,1078 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B158",
+      "title": "Quantum error correction below the surface code threshold (arXiv:2408.13687)",
+      "authors": "Rajeev Acharya et al. (Google Quantum AI)",
+      "edition": "2024",
+      "year": 2024
+    },
+    {
+      "id": "B159",
+      "title": "Surface codes: Towards practical large-scale quantum computation (arXiv:1208.0928)",
+      "authors": "Austin G. Fowler, Matteo Mariantoni, John M. Martinis, Andrew N. Cleland",
+      "edition": "2012",
+      "year": 2012
+    },
+    {
+      "id": "B113",
+      "title": "From Classical to Quantum Shannon Theory (Quantum Information Theory, 2nd edition draft, arXiv:1106.1445v8)",
+      "authors": "Mark M. Wilde",
+      "edition": "arXiv v8, 14 July 2019",
+      "year": 2019,
+      "publisher": "Cambridge University Press (draft on arXiv, CC BY-NC-SA 3.0)"
+    },
+    {
+      "id": "B114",
+      "title": "Qiskit Aer 0.17.1 API documentation: qiskit_aer.noise (accessed 2026-10-04)",
+      "authors": "Qiskit Development Team",
+      "edition": "0.17.1",
+      "year": 2025,
+      "publisher": "IBM"
+    },
+    {
+      "id": "B111",
+      "title": "Qiskit SDK documentation and guides (quantum.cloud.ibm.com/docs), accessed 2026-10-04",
+      "authors": "IBM Quantum",
+      "edition": "accessed 2026-10-04",
+      "year": 2026,
+      "publisher": "IBM"
+    },
+    {
+      "id": "B110",
+      "title": "Qiskit Textbook (GitHub repository Qiskit/textbook, notebooks), accessed 2026-10-04",
+      "authors": "Qiskit community",
+      "edition": "accessed 2026-10-04",
+      "year": 2023,
+      "publisher": "IBM and the Qiskit community"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_c_c3_quantum_error_correction",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "3.1 Noise Models (Formal Treatment)",
+          "summary": "Thermal relaxation as a Kraus channel checked against Qiskit Aer, the T2 <= 2 T1 constraint from complete positivity, Pauli twirling, and the cost of waiting.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Error correction starts from a model of the noise. The standard physical model of a superconducting or spin qubit idling for a time t is **thermal relaxation**: amplitude damping with probability γ = 1 − e^(−t/T1) (the qubit decays towards |0⟩) combined with pure dephasing, so that the off-diagonal elements of the density matrix decay as e^(−t/T2). Both are completely positive trace-preserving channels with explicit Kraus operators (lesson 1.4). The two time constants are not independent: **T2 ≤ 2·T1**, because the decay of the populations alone already shrinks the coherences by √(1 − γ) = e^(−t/2T1). The requirement shows up mathematically as a failure of complete positivity: a map with T2 > 2T1 has a Choi matrix with a negative eigenvalue and is not a physical channel.\n\nA **Pauli channel** applies I, X, Y or Z with fixed probabilities; it is the noise model for which error-correction analysis is easiest. Any channel can be turned into a Pauli channel with the same average fidelity by **Pauli twirling** (conjugating by random Paulis, which hardware can do), so the Pauli approximation is justified for studying codes. The listing builds the thermal-relaxation channel from T1, T2 and t, compares it with Qiskit Aer's `thermal_relaxation_error`, tests the T2 ≤ 2T1 constraint through the Choi matrix, verifies the twirling formula for amplitude damping, and tabulates the fidelity of idle qubits against waiting time. The labs are simulations written for the lesson: exact Pauli enumeration, state vectors, a stabilizer helper class and a minimum-weight matching decoder (an exact dynamic programme), with Qiskit used as a cross-check where noted. Random instances use fixed seeds. Monte Carlo rates carry statistical error, which the lessons state; none of this is a hardware result."
+            },
+            {
+              "type": "code",
+              "id": "c-noise-models",
+              "language": "python",
+              "code": "import math\nimport numpy as np\nfrom qiskit.quantum_info import DensityMatrix\nfrom qiskit_aer.noise import thermal_relaxation_error\n\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]]); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]])\ndef thermal_kraus(t, T1, T2):\n    \"\"\"amplitude damping towards |0> plus pure dephasing, valid for T2 <= 2 T1\"\"\"\n    gamma = 1 - math.exp(-t / T1)                                               # probability of relaxation during t\n    coherence = math.exp(-t / T2)                                               # decay of the off-diagonal elements\n    lam = 1 - coherence / math.sqrt(1 - gamma)                                    # damping already shrinks coherences by sqrt(1 - gamma); dephasing supplies the remaining factor 1 - lam\n    amp = [np.array([[1, 0], [0, math.sqrt(1 - gamma)]]), np.array([[0, math.sqrt(gamma)], [0, 0]])]\n    deph = [math.sqrt(1 - lam / 2) * I2, math.sqrt(lam / 2) * Z]\n    return [A @ D for A in amp for D in deph], gamma, lam\ndef apply(K, rho):\n    return sum(k @ rho @ k.conj().T for k in K)\ndef bloch(rho):\n    return np.array([np.trace(rho @ P).real for P in (X, Y, Z)])\ndef state_from_bloch(r):\n    return (I2 + r[0] * X + r[1] * Y + r[2] * Z) / 2\n\nT1, T2, t = 100.0, 80.0, 25.0                                                    # microseconds\nK, gamma, lam = thermal_kraus(t, T1, T2)\nprint(f\"T1 = {T1} us, T2 = {T2} us, idle time {t} us: relaxation probability gamma = {gamma:.4f}, extra dephasing lambda = {lam:.4f}\")\nprint(\"trace preserving:\", np.allclose(sum(k.conj().T @ k for k in K), I2))\nr0 = np.array([0.8, 0.0, 0.5])\nr1 = bloch(apply(K, state_from_bloch(r0)))\nprint(\"Bloch vector before\", r0, \"after\", np.round(r1, 4))\nprint(\"x decays by exp(-t/T2) =\", round(math.exp(-t / T2), 4), \"->\", round(0.8 * math.exp(-t / T2), 4), \"| z relaxes towards +1 with exp(-t/T1):\", round(1 - (1 - 0.5) * math.exp(-t / T1), 4), \"(measured\", round(r1[2], 4), \")\")\nrho = state_from_bloch(r0)\naer_output = DensityMatrix(rho).evolve(thermal_relaxation_error(T1, T2, t).to_quantumchannel()).data\nprint(\"Qiskit Aer's thermal_relaxation_error gives the same output state:\", np.allclose(aer_output, apply(K, rho), atol=1e-8))\n\n# --- the physical constraint T2 <= 2 T1: coherences cannot outlive relaxation by more than a factor of two\ndef choi_of_bloch_map(t, T1, T2):\n    g, c = math.exp(-t / T1), math.exp(-t / T2)\n    images = {\"I\": np.eye(2) + (1 - g) * Z, \"X\": c * X, \"Y\": c * Y, \"Z\": g * Z}           # the linear extension of (x, y, z) -> (c x, c y, 1 - g + g z)\n    def N(M):                                                                              # M = a I + bx X + by Y + bz Z\n        a, bx, by, bz = np.trace(M) / 2, np.trace(M @ X) / 2, np.trace(M @ Y) / 2, np.trace(M @ Z) / 2\n        return a * images[\"I\"] + bx * images[\"X\"] + by * images[\"Y\"] + bz * images[\"Z\"]\n    J = np.zeros((4, 4), dtype=complex)\n    for i in range(2):\n        for j in range(2):\n            E = np.zeros((2, 2)); E[i, j] = 1\n            J += np.kron(E, N(E))\n    return J\nprint()\nprint(f\"{'T1 (us)':>8} {'T2 (us)':>8} {'smallest Choi eigenvalue':>26} {'verdict'}\")\nfor T2_try in (50.0, 100.0, 200.0, 210.0, 400.0):\n    J = choi_of_bloch_map(25.0, 100.0, T2_try)\n    smallest = np.linalg.eigvalsh((J + J.conj().T) / 2).min()\n    smallest = smallest if abs(smallest) > 1e-9 else 0.0                                   # remove rounding noise\n    print(f\"{100.0:>8} {T2_try:>8} {smallest:>26.5f} {'valid channel' if smallest > -1e-9 else 'NOT completely positive: T2 > 2 T1 is unphysical'}\")\n\n# --- Pauli twirling turns the amplitude-damping part into a Pauli channel with p_x = p_y = gamma/4 and p_z = 1/2 - gamma/4 - sqrt(1 - gamma)/2\ng = 0.3\nKad = [np.array([[1, 0], [0, math.sqrt(1 - g)]]), np.array([[0, math.sqrt(g)], [0, 0]])]\ndef twirl(rho):\n    return sum(P @ apply(Kad, P @ rho @ P) @ P for P in (I2, X, Y, Z)) / 4\ntest = state_from_bloch([0.3, -0.4, 0.5])\npx = g / 4; pz = 0.5 - g / 4 - math.sqrt(1 - g) / 2; pi = 1 - 2 * px - pz\npauli_channel = pi * test + px * (X @ test @ X) + px * (Y @ test @ Y) + pz * (Z @ test @ Z)\nprint()\nprint(f\"twirled amplitude damping (gamma = {g}) equals the Pauli channel with p_x = p_y = {px:.4f}, p_z = {pz:.4f}:\", np.allclose(twirl(test), pauli_channel))\nprint(\"this is why QEC analyses use Pauli noise: twirling (random Pauli frames, available in hardware) converts any noise into a Pauli channel with the same average fidelity\")\n# --- idle error versus waiting time: the logical memory problem\nprint()\nprint(f\"{'wait time (us)':>15} {'state fidelity of |+> after waiting':>38} {'of |1> (worst case for relaxation)':>36}\")\nfor tt in (1, 10, 50, 100, 300):\n    Kt, _, _ = thermal_kraus(tt, 100.0, 80.0)\n    plus = state_from_bloch([1, 0, 0]); one = state_from_bloch([0, 0, -1])\n    print(f\"{tt:>15} {np.trace(plus @ apply(Kt, plus)).real:>38.4f} {np.trace(one @ apply(Kt, one)).real:>36.4f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-noise-models",
+              "language": "text",
+              "code": "T1 = 100.0 us, T2 = 80.0 us, idle time 25.0 us: relaxation probability gamma = 0.2212, extra dephasing lambda = 0.1710\ntrace preserving: True\nBloch vector before [0.8 0.  0.5] after [0.5853 0.     0.6106]\nx decays by exp(-t/T2) = 0.7316 -> 0.5853 | z relaxes towards +1 with exp(-t/T1): 0.6106 (measured 0.6106 )\nQiskit Aer's thermal_relaxation_error gives the same output state: True\n\n T1 (us)  T2 (us)   smallest Choi eigenvalue verdict\n   100.0     50.0                    0.00000 valid channel\n   100.0    100.0                    0.00000 valid channel\n   100.0    200.0                    0.00000 valid channel\n   100.0    210.0                   -0.00523 NOT completely positive: T2 > 2 T1 is unphysical\n   100.0    400.0                   -0.05650 NOT completely positive: T2 > 2 T1 is unphysical\n\ntwirled amplitude damping (gamma = 0.3) equals the Pauli channel with p_x = p_y = 0.0750, p_z = 0.0067: True\nthis is why QEC analyses use Pauli noise: twirling (random Pauli frames, available in hardware) converts any noise into a Pauli channel with the same average fidelity\n\n wait time (us)    state fidelity of |+> after waiting   of |1> (worst case for relaxation)\n              1                                 0.9938                               0.9900\n             10                                 0.9412                               0.9048\n             50                                 0.7676                               0.6065\n            100                                 0.6433                               0.3679\n            300                                 0.5118                               0.0498",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "For T1 = 100 µs, T2 = 80 µs and an idle time of 25 µs the relaxation probability is γ = 0.2212 and the extra dephasing λ = 0.1710. The Bloch vector (0.8, 0, 0.5) becomes (0.5853, 0, 0.6106): x decays by e^(−t/T2) = 0.7316 and z relaxes towards +1 by e^(−t/T1), and the output state equals Aer's `thermal_relaxation_error` output. The Choi test separates physical from unphysical parameters: for T1 = 100 µs the channel is valid for T2 = 50, 100 and 200 µs (the limit 2T1) and not completely positive for T2 = 210 µs (smallest eigenvalue −0.0052) or 400 µs (−0.0565). The twirl of amplitude damping with γ = 0.3 equals the Pauli channel with p_x = p_y = γ/4 = 0.075 and p_z = 1/2 − γ/4 − √(1−γ)/2 = 0.0067.\n\nThe last table shows why memories need active protection: after 10 µs the fidelity of |+⟩ is 0.909, after 100 µs 0.568 and after 300 µs 0.501 (a completely dephased state), while |1⟩ decays to 0.37 after 100 µs and 0.05 after 300 µs. Everything an error-correcting code does must fit inside these times: the **error-correction cycle** must be much shorter than T1 and T2. **Common mistakes:** quoting T2 > 2T1 for a device (it signals a measurement artefact, not physics), and treating gate error and idle error as one number (idle error grows with the time the qubit waits for other operations)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why must T2 be at most 2 T1?",
+              "options": [
+                "Relaxation alone shrinks coherences by sqrt(1 - gamma); a slower decay is not completely positive",
+                "T2 is always measured wrongly",
+                "Dephasing is faster than relaxation by definition"
+              ],
+              "correct_index": 0,
+              "explanation": "The Choi matrix has a negative eigenvalue for T2 > 2 T1."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does Pauli twirling do?",
+              "options": [
+                "Turns any channel into a Pauli channel with the same average fidelity",
+                "Removes all noise",
+                "Doubles the coherence time"
+              ],
+              "correct_index": 0,
+              "explanation": "The twirled amplitude damping channel has p_x = p_y = gamma/4."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What happens to |+⟩ after waiting a time much longer than T2?",
+              "options": [
+                "It becomes maximally mixed (fidelity about 0.5)",
+                "It stays |+⟩",
+                "It becomes |0⟩"
+              ],
+              "correct_index": 0,
+              "explanation": "The lesson shows 0.501 after 300 us for T2 = 80 us."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B114",
+              "locator": "Qiskit Aer 0.17.1: qiskit_aer.noise.thermal_relaxation_error (the model of T1, T2 and gate time)"
+            },
+            {
+              "book": "B113",
+              "locator": "Wilde, From Classical to Quantum Shannon Theory: Section 4.7 (amplitude damping and dephasing channels) and Section 4.4 (Kraus, Choi)"
+            },
+            {
+              "book": "B158",
+              "locator": "Google Quantum AI, Quantum error correction below the surface code threshold (arXiv 2408.13687): coherence times and error rates of an experimental device"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The Pauli twirling formula for amplitude damping and the T2 <= 2 T1 constraint are standard results stated from the literature and checked numerically here. The experimental paper was not re-read in this pass; its figures are not quoted."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "3.2 Bit-Flip and Phase-Flip Codes",
+          "summary": "The three-qubit repetition codes as stabilizer codes, their exact logical error rate 3p^2 - 2p^3 and pseudo-threshold 1/2, and what happens when the wrong kind of noise hits them.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The simplest error-correcting code is the **three-qubit bit-flip code**: |0⟩ → |000⟩, |1⟩ → |111⟩. It is a **stabilizer code** (lesson 3.5) with generators ZZI and IZZ: measuring them gives a two-bit **syndrome** that identifies which single qubit flipped, without revealing the encoded state, and the correction is one X gate. The measurement of ZZ asks only whether two qubits agree; it commutes with the logical information. With independent bit flips of probability p the code fails when two or more qubits flip, so the **logical error rate is 3p²(1−p) + p³ = 3p² − 2p³**, better than p exactly when p < 1/2, the **pseudo-threshold**. The **phase-flip code** is the Hadamard-conjugate (|+++⟩ and |−−−⟩, stabilizers XXI and IXX) and corrects Z errors the same way.\n\nNeither code corrects the error type it was not designed for, and quantum noise contains both. The listing uses the stabilizer helper class (binary symplectic representation, syndrome by commutation, lookup decoder, logical-operator test) to build both codes, computes the logical error rate **exactly** by enumerating all eight error patterns, compares it with 3p² − 2p³, tests each code against the other noise type, and runs a Monte Carlo with independent X and Z errors. The labs are simulations written for the lesson: exact Pauli enumeration, state vectors, a stabilizer helper class and a minimum-weight matching decoder (an exact dynamic programme), with Qiskit used as a cross-check where noted. Random instances use fixed seeds. Monte Carlo rates carry statistical error, which the lessons state; none of this is a hardware result."
+            },
+            {
+              "type": "code",
+              "id": "c-repetition-codes",
+              "language": "python",
+              "code": "import itertools, math\nimport numpy as np\n\nclass StabilizerCode:\n    # a stabilizer code on n qubits given by generator strings over I, X, Y, Z and (for k = 1) logical X and Z operators\n    def __init__(self, stabilizers, logical_x=None, logical_z=None):\n        self.n = len(stabilizers[0])\n        self.S = [self.vec(s) for s in stabilizers]\n        self.LX = self.vec(logical_x) if logical_x else None\n        self.LZ = self.vec(logical_z) if logical_z else None\n    @staticmethod\n    def vec(s):\n        x = np.array([c in \"XY\" for c in s], dtype=np.uint8); z = np.array([c in \"ZY\" for c in s], dtype=np.uint8)\n        return np.concatenate([x, z])\n    def label(self, v):\n        n = self.n\n        return \"\".join(\"IXZY\"[int(v[i]) + 2 * int(v[n + i])] for i in range(n))\n    def commutes(self, a, b):                                                # symplectic product: Paulis commute iff it is 0\n        n = self.n\n        return int(a[:n] @ b[n:] + a[n:] @ b[:n]) % 2 == 0\n    def syndrome(self, e):\n        return tuple(0 if self.commutes(e, s) else 1 for s in self.S)\n    def weight(self, v):\n        n = self.n\n        return int(np.count_nonzero(v[:n] | v[n:]))\n    def in_stabilizer_group(self, v):\n        # v (commuting with all generators) is in the group iff it commutes with both logical operators (k = 1)\n        return self.commutes(v, self.LX) and self.commutes(v, self.LZ)\n    def all_errors(self, max_weight, letters=\"XYZ\"):\n        n = self.n\n        for w in range(max_weight + 1):\n            for pos in itertools.combinations(range(n), w):\n                for paulis in itertools.product(letters, repeat=w):\n                    s = [\"I\"] * n\n                    for p, c in zip(pos, paulis): s[p] = c\n                    yield \"\".join(s)\n    def build_decoder(self, max_weight, letters=\"XYZ\"):\n        table = {}\n        for e in self.all_errors(max_weight, letters):                                # lowest-weight error first, so the first one stored per syndrome is minimal\n            table.setdefault(self.syndrome(self.vec(e)), e)\n        return table\n    def distance(self, limit=6):\n        for w in range(1, limit + 1):\n            for e in self.all_errors(w):\n                if self.weight(self.vec(e)) != w: continue\n                v = self.vec(e)\n                if all(self.commutes(v, s) for s in self.S) and not self.in_stabilizer_group(v):\n                    return w, e\n        return None, None\n# --- the three-qubit bit-flip code: stabilizers ZZI and IZZ, logical X = XXX and logical Z = ZII (any single Z)\nbitflip = StabilizerCode([\"ZZI\", \"IZZ\"], logical_x=\"XXX\", logical_z=\"ZII\")\nphaseflip = StabilizerCode([\"XXI\", \"IXX\"], logical_x=\"XII\", logical_z=\"ZZZ\")\nprint(\"bit-flip code: stabilizer generators ZZI, IZZ; distance against ALL Pauli errors:\", bitflip.distance()[0], \"(it only protects against X errors)\")\ndec = bitflip.build_decoder(1, letters=\"X\")                                   # a decoder for bit-flip noise only: X corrections\nprint(\"syndrome table of the bit-flip code for X noise (syndrome -> minimum-weight correction):\", {s: e for s, e in sorted(dec.items())})\n\n# --- exact logical error rate under independent bit flips with probability p: enumerate all 2^3 patterns\ndef logical_error_rate_X(code, p, decoder):\n    total = 0.0\n    for pattern in itertools.product((0, 1), repeat=code.n):\n        prob = np.prod([p if b else 1 - p for b in pattern])\n        err = \"\".join(\"X\" if b else \"I\" for b in pattern)\n        corr = decoder[code.syndrome(code.vec(err))]\n        residual = (code.vec(err) + code.vec(corr)) % 2                       # product of two Paulis in the binary symplectic picture (X-only here)\n        if not code.in_stabilizer_group(residual):\n            total += prob\n    return total\nprint()\nprint(f\"{'p':>7} {'logical error rate (exact)':>27} {'3p^2 - 2p^3':>13} {'uncoded qubit (p)':>19} {'helps?':>7}\")\nfor p in (0.001, 0.01, 0.05, 0.1, 0.3, 0.5, 0.6):\n    L = logical_error_rate_X(bitflip, p, dec)\n    print(f\"{p:>7} {L:>27.6f} {3 * p ** 2 - 2 * p ** 3:>13.6f} {p:>19} {str(L < p):>7}\")\nprint(\"the code reduces the error for p < 1/2 (the pseudo-threshold) and makes it worse above: the error probability drops from first order p to second order 3p^2\")\n\n# --- phase flips are not corrected by the bit-flip code, but the Hadamard-conjugate code fixes them\ndef logical_error_rate_Z(code, p, decoder):\n    total = 0.0\n    for pattern in itertools.product((0, 1), repeat=code.n):\n        prob = np.prod([p if b else 1 - p for b in pattern])\n        err = \"\".join(\"Z\" if b else \"I\" for b in pattern)\n        corr = decoder[code.syndrome(code.vec(err))]\n        residual = (code.vec(err) + code.vec(corr)) % 2\n        if not code.in_stabilizer_group(residual):\n            total += prob\n    return total\ndec_p = phaseflip.build_decoder(1, letters=\"Z\")\np = 0.05\nprint()\nprint(f\"phase flips at p = {p}: bit-flip code logical error {logical_error_rate_Z(bitflip, p, dec):.5f} (worse than the bare {p}: it has no defence and three qubits give three chances), phase-flip code {logical_error_rate_Z(phaseflip, p, dec_p):.5f} (= 3p^2 - 2p^3 = {3 * p ** 2 - 2 * p ** 3:.5f})\")\n# --- both error types together (independent X and Z with probability p each): neither code is enough\ndef logical_error_rate_XZ(code, p, decoder, trials=40000, seed=1):\n    rng = np.random.default_rng(seed)\n    fails = 0\n    for _ in range(trials):\n        xs = rng.random(code.n) < p; zs = rng.random(code.n) < p\n        err = \"\".join(\"IXZY\"[int(x) + 2 * int(z)] for x, z in zip(xs, zs))\n        syn = code.syndrome(code.vec(err))\n        corr = decoder.get(syn)\n        if corr is None:\n            fails += 1; continue\n        residual = (code.vec(err) + code.vec(corr)) % 2\n        fails += not code.in_stabilizer_group(residual)\n    return fails / trials\ndec_all_b, dec_all_p = bitflip.build_decoder(1), phaseflip.build_decoder(1)\nprint(f\"independent X and Z errors at p = {p} (Monte Carlo, 40,000 trials, decoder over all single-qubit Paulis): bit-flip code {logical_error_rate_XZ(bitflip, p, dec_all_b):.4f}, phase-flip code {logical_error_rate_XZ(phaseflip, p, dec_all_p):.4f}, bare qubit (any error) {1 - (1 - p) ** 2:.4f}\")\nprint(\"a code that corrects both needs more qubits: the smallest is the five-qubit [[5,1,3]] code; Shor's nine-qubit code (3.3) concatenates the two repetition codes\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-repetition-codes",
+              "language": "text",
+              "code": "bit-flip code: stabilizer generators ZZI, IZZ; distance against ALL Pauli errors: 1 (it only protects against X errors)\nsyndrome table of the bit-flip code for X noise (syndrome -> minimum-weight correction): {(0, 0): 'III', (0, 1): 'IIX', (1, 0): 'XII', (1, 1): 'IXI'}\n\n      p  logical error rate (exact)   3p^2 - 2p^3   uncoded qubit (p)  helps?\n  0.001                    0.000003      0.000003               0.001    True\n   0.01                    0.000298      0.000298                0.01    True\n   0.05                    0.007250      0.007250                0.05    True\n    0.1                    0.028000      0.028000                 0.1    True\n    0.3                    0.216000      0.216000                 0.3    True\n    0.5                    0.500000      0.500000                 0.5   False\n    0.6                    0.648000      0.648000                 0.6   False\nthe code reduces the error for p < 1/2 (the pseudo-threshold) and makes it worse above: the error probability drops from first order p to second order 3p^2\n\nphase flips at p = 0.05: bit-flip code logical error 0.13550 (worse than the bare 0.05: it has no defence and three qubits give three chances), phase-flip code 0.00725 (= 3p^2 - 2p^3 = 0.00725)\nindependent X and Z errors at p = 0.05 (Monte Carlo, 40,000 trials, decoder over all single-qubit Paulis): bit-flip code 0.1415, phase-flip code 0.2412, bare qubit (any error) 0.0975\na code that corrects both needs more qubits: the smallest is the five-qubit [[5,1,3]] code; Shor's nine-qubit code (3.3) concatenates the two repetition codes",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The exact enumeration reproduces 3p² − 2p³ at every p tested: 3×10⁻⁶ for p = 0.001, 0.000298 for p = 0.01, 0.0073 for p = 0.05, 0.028 for p = 0.1, and exactly 0.5 at p = 0.5, where the code stops helping (at p = 0.6 it makes things worse, 0.648). The distance against all Pauli errors is 1: the bit-flip code has no defence against phase flips. Under phase flips at p = 0.05 the bit-flip code has logical error 0.1355, worse than the bare qubit's 0.05, because three qubits give three chances for an odd number of Z errors, whereas the phase-flip code gives 0.00725 = 3p² − 2p³. With independent X and Z errors at p = 0.05 the bare qubit fails with probability 0.0975, the bit-flip code with 0.1415 and the phase-flip code with 0.2412: **a code for one kind of noise can be worse than no code when the noise has two kinds.**\n\n**Lessons.** A code is matched to its noise model; the decoder must be restricted to the error types that the code handles (a decoder that picks Y for a Z syndrome turns a correctable error into a logical one, a mistake the lesson's first attempt made and corrected); and a code that handles both needs at least five qubits (3.4) and a syndrome extraction that does not itself introduce errors (3.8)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the logical error rate of the three-qubit bit-flip code under independent bit flips of probability p?",
+              "options": [
+                "3p^2 - 2p^3",
+                "p^3",
+                "3p"
+              ],
+              "correct_index": 0,
+              "explanation": "The code fails when two or more qubits flip."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "At what value of p does the bit-flip code stop helping?",
+              "options": [
+                "p = 1/2",
+                "p = 1/3",
+                "p = 0.1"
+              ],
+              "correct_index": 0,
+              "explanation": "The pseudo-threshold: 3p^2 - 2p^3 equals p."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why does the bit-flip code fail against phase flips?",
+              "options": [
+                "Z errors commute with its stabilizers, so the syndrome never sees them",
+                "Phase flips are too fast",
+                "It uses too few qubits"
+              ],
+              "correct_index": 0,
+              "explanation": "Its logical error rate under Z noise was 0.1355 at p = 0.05."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B158",
+              "locator": "Google Quantum AI (arXiv 2408.13687): experimental repetition and surface-code memories for context"
+            },
+            {
+              "book": "B159",
+              "locator": "Fowler et al., Surface codes: Towards practical large-scale quantum computation (arXiv 1208.0928): the repetition code as the 1D building block"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The stabilizer formalism and the repetition codes are standard textbook material (Nielsen and Chuang, Gottesman) that is not on disk in this lab; the lesson verifies every claim by exact enumeration. The cited papers were not re-read for these specific formulas."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "3.3 Shor's Code (Error Correction)",
+          "summary": "The nine-qubit code as a stabilizer code, exhaustive verification of single-error correction including arbitrary unitary errors, degeneracy, and the quadratic logical error rate.",
+          "estimated_minutes": 65,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Shor's nine-qubit code** (1995) was the first code to correct an arbitrary error on one qubit. It **concatenates** the two repetition codes: three blocks of three qubits each protect against bit flips inside the block (ZZ pair checks), and the three blocks together form a phase-flip code (X-type checks over two blocks at a time). Eight stabilizer generators leave a 2-dimensional code space, one logical qubit. The key insight is the **discretisation of errors**: any single-qubit error, including a continuous rotation, is a linear combination of I, X, Y and Z; measuring the syndrome projects it onto one of those four, and correcting that Pauli restores the state exactly.\n\nThe code is **degenerate**: some different single-qubit errors differ by a stabilizer element (for example Z on any of the three qubits of a block act identically on the code space), so they have the same syndrome and one correction fixes them all. The listing builds the code with the stabilizer helper, checks that the generators commute and that the logical operators are valid, finds the distance by exhaustive search, enumerates the syndromes of the 27 single-qubit errors, builds the code space as a projector on 9 qubits and verifies correction **with real quantum states** for random single-qubit unitaries on every qubit, and measures the logical failure rate under depolarizing noise. The labs are simulations written for the lesson: exact Pauli enumeration, state vectors, a stabilizer helper class and a minimum-weight matching decoder (an exact dynamic programme), with Qiskit used as a cross-check where noted. Random instances use fixed seeds. Monte Carlo rates carry statistical error, which the lessons state; none of this is a hardware result."
+            },
+            {
+              "type": "code",
+              "id": "c-shor-code",
+              "language": "python",
+              "code": "import itertools, math\nimport numpy as np\n\nclass StabilizerCode:\n    # a stabilizer code on n qubits given by generator strings over I, X, Y, Z and (for k = 1) logical X and Z operators\n    def __init__(self, stabilizers, logical_x=None, logical_z=None):\n        self.n = len(stabilizers[0])\n        self.S = [self.vec(s) for s in stabilizers]\n        self.LX = self.vec(logical_x) if logical_x else None\n        self.LZ = self.vec(logical_z) if logical_z else None\n    @staticmethod\n    def vec(s):\n        x = np.array([c in \"XY\" for c in s], dtype=np.uint8); z = np.array([c in \"ZY\" for c in s], dtype=np.uint8)\n        return np.concatenate([x, z])\n    def label(self, v):\n        n = self.n\n        return \"\".join(\"IXZY\"[int(v[i]) + 2 * int(v[n + i])] for i in range(n))\n    def commutes(self, a, b):                                                # symplectic product: Paulis commute iff it is 0\n        n = self.n\n        return int(a[:n] @ b[n:] + a[n:] @ b[:n]) % 2 == 0\n    def syndrome(self, e):\n        return tuple(0 if self.commutes(e, s) else 1 for s in self.S)\n    def weight(self, v):\n        n = self.n\n        return int(np.count_nonzero(v[:n] | v[n:]))\n    def in_stabilizer_group(self, v):\n        # v (commuting with all generators) is in the group iff it commutes with both logical operators (k = 1)\n        return self.commutes(v, self.LX) and self.commutes(v, self.LZ)\n    def all_errors(self, max_weight, letters=\"XYZ\"):\n        n = self.n\n        for w in range(max_weight + 1):\n            for pos in itertools.combinations(range(n), w):\n                for paulis in itertools.product(letters, repeat=w):\n                    s = [\"I\"] * n\n                    for p, c in zip(pos, paulis): s[p] = c\n                    yield \"\".join(s)\n    def build_decoder(self, max_weight, letters=\"XYZ\"):\n        table = {}\n        for e in self.all_errors(max_weight, letters):                                # lowest-weight error first, so the first one stored per syndrome is minimal\n            table.setdefault(self.syndrome(self.vec(e)), e)\n        return table\n    def distance(self, limit=6):\n        for w in range(1, limit + 1):\n            for e in self.all_errors(w):\n                if self.weight(self.vec(e)) != w: continue\n                v = self.vec(e)\n                if all(self.commutes(v, s) for s in self.S) and not self.in_stabilizer_group(v):\n                    return w, e\n        return None, None\nimport numpy as np\n\n# --- Shor's nine-qubit code: eight stabilizers, logical X = Z...  built by concatenating the phase-flip code with three bit-flip codes\nstabs = [\"ZZIIIIIII\", \"IZZIIIIII\", \"IIIZZIIII\", \"IIIIZZIII\", \"IIIIIIZZI\", \"IIIIIIIZZ\", \"XXXXXXIII\", \"IIIXXXXXX\"]\nshor = StabilizerCode(stabs, logical_x=\"ZZZZZZZZZ\", logical_z=\"XXXXXXXXX\")\nprint(\"Shor's code: 9 qubits, 8 stabilizer generators, so 2^(9-8) = 2 logical states (one logical qubit)\")\nprint(\"all generators commute with each other:\", all(shor.commutes(a, b) for a in shor.S for b in shor.S), \"| logical operators commute with the stabilizers:\", all(shor.commutes(shor.LX, s) and shor.commutes(shor.LZ, s) for s in shor.S), \"| logical X and Z anticommute:\", not shor.commutes(shor.LX, shor.LZ))\nd, witness = shor.distance(limit=3)\nprint(\"code distance found by exhaustive search over errors of weight <= 3:\", d, \"(a minimum-weight logical operator is\", witness + \")\")\n\n# --- decoding table: every single-qubit X, Y or Z error has a different syndrome from every other single error, up to equivalent degenerate cases\ndec = shor.build_decoder(1)\nsingle = list(shor.all_errors(1))\nunique = {}\nfor e in single:\n    unique.setdefault(shor.syndrome(shor.vec(e)), []).append(e)\nprint(\"single-qubit errors:\", len(single) - 1, \"| distinct syndromes among them:\", len(unique) - 1, \"| syndromes shared by several errors (degenerate: they differ by a stabilizer, so one correction fixes all):\", sum(1 for k, v in unique.items() if len(v) > 1 and any(k)))\nprint(\"a degenerate example: errors\", [v for v in unique.values() if len(v) > 1 and any(shor.syndrome(shor.vec(e)) for e in v)][0], \"share a syndrome and differ by a stabilizer element\")\ndef all_single_errors_corrected():\n    for e in single[1:]:\n        corr = dec[shor.syndrome(shor.vec(e))]\n        residual = (shor.vec(e) + shor.vec(corr)) % 2\n        if not shor.in_stabilizer_group(residual):\n            return False\n    return True\nprint(\"every single-qubit Pauli error is corrected:\", all_single_errors_corrected())\n\n# --- verify with actual quantum states: encode |psi>, apply an ARBITRARY single-qubit error, measure the syndrome, correct, and compare with the original\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]]); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]])\ndef pauli_op(label):\n    M = np.array([[1.0]])\n    for c in label: M = np.kron(M, {\"I\": I2, \"X\": X, \"Y\": Y, \"Z\": Z}[c])\n    return M\n# the code space is the +1 eigenspace of all stabilizers; build the projector and a basis by projecting basis states\nP = np.eye(512, dtype=complex)\nfor s in stabs:\n    P = P @ (np.eye(512) + pauli_op(s)) / 2\nw, v = np.linalg.eigh(P)\nbasis = v[:, w > 0.5]\nprint()\nprint(\"dimension of the code space (rank of the stabilizer projector):\", basis.shape[1])\nLX, LZ = pauli_op(\"ZZZZZZZZZ\"), pauli_op(\"XXXXXXXXX\")\n# choose |0_L> as the +1 eigenvector of the logical Z (here the operator written as X on all nine qubits); build a logical basis from the 2-dim code space\nM = basis.conj().T @ LZ @ basis\nev, evec = np.linalg.eigh(M)\nzero_L, one_L = basis @ evec[:, 1], basis @ evec[:, 0]\nrng = np.random.default_rng(33)\nalpha, beta = rng.normal(size=2) + 1j * rng.normal(size=2); nrm = math.sqrt(abs(alpha) ** 2 + abs(beta) ** 2); alpha, beta = alpha / nrm, beta / nrm\npsi_L = alpha * zero_L + beta * one_L\ndef syndrome_of_state(state):\n    # the stabilizers have exact +1 / -1 eigenvalues on a state that is a Pauli error applied to a code state\n    return tuple(0 if np.vdot(state, pauli_op(s) @ state).real > 0 else 1 for s in stabs)\nworst, branches, weight_check = 1.0, 0, 1.0\nfor q in range(9):\n    for _ in range(5):\n        A = rng.normal(size=(2, 2)) + 1j * rng.normal(size=(2, 2))\n        U, _s = np.linalg.qr(A)                                              # a random single-qubit unitary: an arbitrary error, not only a Pauli\n        coeffs = {pc: np.trace({\"I\": I2, \"X\": X, \"Y\": Y, \"Z\": Z}[pc].conj().T @ U) / 2 for pc in \"IXYZ\"}          # E = sum_P c_P P\n        weight_check = min(weight_check, sum(abs(c) ** 2 for c in coeffs.values()))\n        for pc, c in coeffs.items():\n            if abs(c) < 1e-12: continue\n            branch_state = pauli_op(\"I\" * q + pc + \"I\" * (8 - q)) @ psi_L            # the syndrome measurement collapses E|psi> onto this Pauli branch\n            corrected = pauli_op(dec[syndrome_of_state(branch_state)]) @ branch_state\n            worst = min(worst, abs(np.vdot(psi_L, corrected)) ** 2)\n            branches += 1\nprint(f\"45 random single-qubit unitary errors (5 per qubit; a continuum of errors, not only Paulis): {branches} Pauli branches checked, worst recovered fidelity {worst:.8f}; the Pauli weights always sum to {weight_check:.6f}\")\nprint(\"an arbitrary single-qubit error is a combination of I, X, Y, Z; the syndrome measurement projects it onto one of them and the correction undoes that one: the discretisation of errors\")\n\n# --- logical error rate for independent depolarizing errors: the leading term is quadratic\ndef logical_failure_rate(p, trials=40000, seed=5):\n    rng = np.random.default_rng(seed)\n    fails = 0\n    for _ in range(trials):\n        err = \"\".join(rng.choice([\"I\", \"X\", \"Y\", \"Z\"], p=[1 - p, p / 3, p / 3, p / 3]) for _ in range(9))\n        corr = dec.get(shor.syndrome(shor.vec(err)))\n        if corr is None:\n            fails += 1; continue\n        residual = (shor.vec(err) + shor.vec(corr)) % 2\n        fails += not shor.in_stabilizer_group(residual)\n    return fails / trials\nprint()\nprint(f\"{'p (depolarizing)':>17} {'logical failure rate (Monte Carlo, 40,000 trials)':>52} {'bare qubit':>11}\")\nfor p in (0.001, 0.003, 0.01, 0.03):\n    print(f\"{p:>17} {logical_failure_rate(p):>52.5f} {p:>11}\")\nprint(\"at small p the logical failure rate falls well below the physical rate (quadratic), but the code is not a threshold-level code: nine qubits and a lookup decoder already show the principle\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-shor-code",
+              "language": "text",
+              "code": "Shor's code: 9 qubits, 8 stabilizer generators, so 2^(9-8) = 2 logical states (one logical qubit)\nall generators commute with each other: True | logical operators commute with the stabilizers: True | logical X and Z anticommute: True\ncode distance found by exhaustive search over errors of weight <= 3: 3 (a minimum-weight logical operator is XXXIIIIII)\nsingle-qubit errors: 27 | distinct syndromes among them: 21 | syndromes shared by several errors (degenerate: they differ by a stabilizer, so one correction fixes all): 3\na degenerate example: errors ['ZIIIIIIII', 'IZIIIIIII', 'IIZIIIIII'] share a syndrome and differ by a stabilizer element\nevery single-qubit Pauli error is corrected: True\n\ndimension of the code space (rank of the stabilizer projector): 2\n45 random single-qubit unitary errors (5 per qubit; a continuum of errors, not only Paulis): 180 Pauli branches checked, worst recovered fidelity 1.00000000; the Pauli weights always sum to 1.000000\nan arbitrary single-qubit error is a combination of I, X, Y, Z; the syndrome measurement projects it onto one of them and the correction undoes that one: the discretisation of errors\n\n p (depolarizing)    logical failure rate (Monte Carlo, 40,000 trials)  bare qubit\n            0.001                                              0.00003       0.001\n            0.003                                              0.00022       0.003\n             0.01                                              0.00308        0.01\n             0.03                                              0.02445        0.03\nat small p the logical failure rate falls well below the physical rate (quadratic), but the code is not a threshold-level code: nine qubits and a lookup decoder already show the principle",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The eight generators commute, the logical X (ZZZZZZZZZ) and Z (XXXXXXXXX) are valid and anticommute, and the exhaustive search finds distance 3 with a weight-3 logical operator (XXXIIIIII). The 27 single-qubit Pauli errors produce 21 distinct non-trivial syndromes: three syndromes are shared by groups of errors (Z on the three qubits of a block) that differ by a stabilizer, the degeneracy described above, and every single-qubit Pauli error is corrected. The code space has dimension 2, and for 45 random single-qubit **unitary** errors (5 per qubit, a continuum of errors and not only Paulis) the 180 Pauli branches of the syndrome measurement were all restored with worst-case fidelity 1.00000000, while the Pauli weights summed to 1.000000.\n\nThe logical failure rate under depolarizing noise is 0.00003 for p = 0.001, 0.00022 for p = 0.003, 0.00308 for p = 0.01 and 0.02445 for p = 0.03 (40,000 trials each, statistical error visible in the last digits): quadratic at small p and nearly the bare rate (0.03) at p = 0.03. So the code **helps only below roughly p ≈ 0.03 in this idealised, perfect-syndrome setting** and the real threshold, with faulty syndrome extraction, is lower. **Common mistakes:** assuming a continuous error needs a continuous correction (it does not), and forgetting degeneracy when counting syndromes."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does correcting only I, X, Y and Z errors suffice for arbitrary single-qubit errors?",
+              "options": [
+                "Any single-qubit operation is a linear combination of the four Paulis and the syndrome measurement projects onto one of them",
+                "Quantum errors are always Pauli",
+                "Rotations cannot occur"
+              ],
+              "correct_index": 0,
+              "explanation": "The lesson verified it with 45 random unitaries."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is meant by a degenerate code?",
+              "options": [
+                "Different errors with the same syndrome differ by a stabilizer element, so one correction fixes all",
+                "A code with a bad distance",
+                "A code without logical qubits"
+              ],
+              "correct_index": 0,
+              "explanation": "Z errors on the three qubits of one block share a syndrome."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the distance of Shor's code?",
+              "options": [
+                "3",
+                "9",
+                "1"
+              ],
+              "correct_index": 0,
+              "explanation": "A weight-3 logical operator exists; every error of weight 1 is correctable."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B159",
+              "locator": "Fowler et al. (arXiv 1208.0928): background on codes and thresholds"
+            },
+            {
+              "book": "B113",
+              "locator": "Wilde, Section 4.4: Kraus operators and the decomposition of arbitrary errors (the Pauli basis)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Shor's original paper (Scheme for reducing decoherence in quantum computer memory, 1995) and Gottesman's thesis were not read; the code, its stabilizers and the discretisation of errors are standard results checked here by exhaustive computation."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "3.4 Steane's Code",
+          "summary": "The [[7,1,3]] CSS code built from the Hamming code: stabilizers, a non-degenerate syndrome table, transversal gates checked on the code space, why T is not transversal, and the measured p^2 coefficient.",
+          "estimated_minutes": 65,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Steane's code** is a **CSS code** (Calderbank-Shor-Steane): both its X-type and its Z-type stabilizers come from the parity-check matrix of the classical [7,4,3] **Hamming code**, three checks each, giving six generators on 7 qubits and one logical qubit. The distance is 3. It is **non-degenerate**: the 21 single-qubit errors have 21 distinct syndromes, and the syndrome of an X error on qubit j, read from the three Z-type checks, is the binary representation of j. The code has a property that makes it a favourite for fault tolerance: Clifford gates are **transversal**, meaning a logical gate is the same physical gate applied to each of the 7 qubits (H, S, and CNOT between two blocks), so a single fault cannot spread within a block through the gate.\n\nThe listing builds the code, verifies the generators commute and the distance by exhaustive search, checks the non-degeneracy, builds the 2-dimensional code space as a projector on 7 qubits, and tests which transversal single-qubit gates preserve it and what logical operation they implement. It then measures the logical failure rate under depolarizing noise with a lookup decoder (minimum-weight Pauli for every syndrome). The T gate is not transversal for this code, and the **Eastin-Knill theorem** says no code can have a universal transversal gate set. The labs are simulations written for the lesson: exact Pauli enumeration, state vectors, a stabilizer helper class and a minimum-weight matching decoder (an exact dynamic programme), with Qiskit used as a cross-check where noted. Random instances use fixed seeds. Monte Carlo rates carry statistical error, which the lessons state; none of this is a hardware result."
+            },
+            {
+              "type": "code",
+              "id": "c-steane",
+              "language": "python",
+              "code": "import itertools, math\nimport numpy as np\n\nclass StabilizerCode:\n    # a stabilizer code on n qubits given by generator strings over I, X, Y, Z and (for k = 1) logical X and Z operators\n    def __init__(self, stabilizers, logical_x=None, logical_z=None):\n        self.n = len(stabilizers[0])\n        self.S = [self.vec(s) for s in stabilizers]\n        self.LX = self.vec(logical_x) if logical_x else None\n        self.LZ = self.vec(logical_z) if logical_z else None\n    @staticmethod\n    def vec(s):\n        x = np.array([c in \"XY\" for c in s], dtype=np.uint8); z = np.array([c in \"ZY\" for c in s], dtype=np.uint8)\n        return np.concatenate([x, z])\n    def label(self, v):\n        n = self.n\n        return \"\".join(\"IXZY\"[int(v[i]) + 2 * int(v[n + i])] for i in range(n))\n    def commutes(self, a, b):                                                # symplectic product: Paulis commute iff it is 0\n        n = self.n\n        return int(a[:n] @ b[n:] + a[n:] @ b[:n]) % 2 == 0\n    def syndrome(self, e):\n        return tuple(0 if self.commutes(e, s) else 1 for s in self.S)\n    def weight(self, v):\n        n = self.n\n        return int(np.count_nonzero(v[:n] | v[n:]))\n    def in_stabilizer_group(self, v):\n        # v (commuting with all generators) is in the group iff it commutes with both logical operators (k = 1)\n        return self.commutes(v, self.LX) and self.commutes(v, self.LZ)\n    def all_errors(self, max_weight, letters=\"XYZ\"):\n        n = self.n\n        for w in range(max_weight + 1):\n            for pos in itertools.combinations(range(n), w):\n                for paulis in itertools.product(letters, repeat=w):\n                    s = [\"I\"] * n\n                    for p, c in zip(pos, paulis): s[p] = c\n                    yield \"\".join(s)\n    def build_decoder(self, max_weight, letters=\"XYZ\"):\n        table = {}\n        for e in self.all_errors(max_weight, letters):                                # lowest-weight error first, so the first one stored per syndrome is minimal\n            table.setdefault(self.syndrome(self.vec(e)), e)\n        return table\n    def distance(self, limit=6):\n        for w in range(1, limit + 1):\n            for e in self.all_errors(w):\n                if self.weight(self.vec(e)) != w: continue\n                v = self.vec(e)\n                if all(self.commutes(v, s) for s in self.S) and not self.in_stabilizer_group(v):\n                    return w, e\n        return None, None\nimport numpy as np\n\n# --- Steane's [[7,1,3]] code from the classical Hamming code: X-type and Z-type stabilizers use the same three parity checks\nH = [\"1010101\", \"0110011\", \"0001111\"]                                       # parity-check matrix of the [7,4,3] Hamming code (column j is the binary number j)\nstabs = [\"\".join(\"X\" if c == \"1\" else \"I\" for c in row) for row in H] + [\"\".join(\"Z\" if c == \"1\" else \"I\" for c in row) for row in H]\nsteane = StabilizerCode(stabs, logical_x=\"XXXXXXX\", logical_z=\"ZZZZZZZ\")\nprint(\"Steane code stabilizers:\", stabs)\nprint(\"generators commute:\", all(steane.commutes(a, b) for a in steane.S for b in steane.S), \"| 7 qubits - 6 generators = 1 logical qubit | distance (exhaustive):\", steane.distance(limit=3)[0], \"with witness\", steane.distance(limit=3)[1])\ndec = steane.build_decoder(1)\ndec2 = steane.build_decoder(2)\nsingle = [e for e in steane.all_errors(1) if e != \"I\" * 7]\nprint(\"21 single-qubit errors have\", len({steane.syndrome(steane.vec(e)) for e in single}), \"distinct non-trivial syndromes:\", len({steane.syndrome(steane.vec(e)) for e in single}) == 21, \"(non-degenerate code: every single error has its own syndrome)\")\nprint(\"every single-qubit error corrected:\", all(steane.in_stabilizer_group((steane.vec(e) + steane.vec(dec[steane.syndrome(steane.vec(e))])) % 2) for e in single))\nprint(\"the syndrome of an X error on qubit j (read from the three Z checks) is the binary representation of j:\", [(j + 1, tuple(0 if steane.commutes(steane.vec(\"I\" * j + \"X\" + \"I\" * (6 - j)), steane.vec(s)) else 1 for s in stabs[3:])) for j in range(7)][:4], \"...\")\n\n# --- exact simulation of the 7-qubit code space: logical states and transversal gates\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]]); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]])\nHd = np.array([[1, 1], [1, -1]]) / np.sqrt(2); S = np.diag([1, 1j]); T = np.diag([1, np.exp(1j * np.pi / 4)])\ndef op(label):\n    M = np.array([[1.0]])\n    for c in label: M = np.kron(M, {\"I\": I2, \"X\": X, \"Y\": Y, \"Z\": Z}[c])\n    return M\nP = np.eye(128, dtype=complex)\nfor s in stabs: P = P @ (np.eye(128) + op(s)) / 2\nw, v = np.linalg.eigh(P)\ncode = v[:, w > 0.5]\nprint()\nprint(\"code space dimension:\", code.shape[1], \"(2: one logical qubit)\")\nLZ = op(\"ZZZZZZZ\"); LX = op(\"XXXXXXX\")\nm = code.conj().T @ LZ @ code\nev, evec = np.linalg.eigh(m)\nzero_L, one_L = code @ evec[:, 1], code @ evec[:, 0]\nif abs(np.vdot(zero_L, LX @ one_L)) < 0.99: raise SystemExit(\"unexpected logical structure\")\ndef kron_all(gate, n=7):\n    M = gate\n    for _ in range(n - 1): M = np.kron(M, gate)\n    return M\nlogical = lambda U: np.array([[np.vdot(a, U @ b) for b in (zero_L, one_L)] for a in (zero_L, one_L)])\ndef preserves_code(U):\n    return np.allclose(P @ U @ code, U @ code, atol=1e-9)\nprint(f\"{'transversal gate (same gate on each of the 7 qubits)':<56} {'preserves the code space':>26} {'logical action':>40}\")\nfor name, U in ((\"X on every qubit\", kron_all(X)), (\"Z on every qubit\", kron_all(Z)), (\"H on every qubit\", kron_all(Hd)), (\"S on every qubit\", kron_all(S)), (\"T on every qubit\", kron_all(T))):\n    L = logical(U)\n    cstr = lambda z: \"0\" if abs(z) < 1e-9 else ((\"%.3g\" % (round(z.real, 3) + 0.0)) if abs(z.imag) < 1e-9 else ((\"%.3gi\" % (round(z.imag, 3) + 0.0)) if abs(z.real) < 1e-9 else \"%.3g%+.3gi\" % (round(z.real, 3) + 0.0, round(z.imag, 3) + 0.0)))\n    desc = \"[[\" + \", \".join(cstr(z) for z in L[0]) + \"], [\" + \", \".join(cstr(z) for z in L[1]) + \"]]\" if preserves_code(U) else \"leaves the code space\"\n    print(f\"{name:<56} {str(preserves_code(U)):>26} {desc:>40}\")\nprint(\"X, Z and H applied to every qubit are logical X, Z and H, and S on every qubit is the logical S-dagger (all up to the sign convention of the logical basis states I chose); the transversal T leaves the code space, so T is NOT a transversal logical gate of this code\")\n# transversal CNOT between two code blocks needs 14 qubits; check it on the stabilizer level: a CNOT applied qubit-by-qubit maps stabilizers of two blocks to stabilizers of the product code\nprint(\"CNOT is transversal for CSS codes such as Steane: it acts bitwise between two blocks and preserves the joint stabilizer group (checked structurally: X-type checks and Z-type checks use the same matrix H, and CNOT maps X1->X1X2, Z2->Z1Z2)\")\n# --- magic: the Eastin-Knill theorem says no code with these properties has a universal transversal gate set, so T needs another route\nprint(\"by the Eastin-Knill theorem no quantum code can implement a universal gate set transversally, so fault-tolerant T gates use magic-state distillation or code switching\")\n\n# --- Monte Carlo logical failure rate with depolarizing noise on each qubit\ndef failure_rate(p, trials=50000, seed=7):\n    rng = np.random.default_rng(seed); fails = 0\n    for _ in range(trials):\n        err = \"\".join(rng.choice([\"I\", \"X\", \"Y\", \"Z\"], p=[1 - p, p / 3, p / 3, p / 3]) for _ in range(7))\n        corr = dec2.get(steane.syndrome(steane.vec(err)))                      # the decoder knows corrections of weight up to 2 (every syndrome has one)\n        residual = (steane.vec(err) + steane.vec(corr)) % 2\n        fails += not steane.in_stabilizer_group(residual)\n    return fails / trials\nprint()\nprint(f\"{'p':>7} {'logical failure rate (50,000 trials)':>38} {'ratio to p^2':>13} {'bare qubit':>11}\")\nfor p in (0.001, 0.003, 0.01, 0.03, 0.1):\n    f = failure_rate(p)\n    print(f\"{p:>7} {f:>38.5f} {f / p ** 2:>13.1f} {p:>11}\")\nprint(\"at small p the failure rate is a constant times p^2 (the ratio column): pairs of faults fool a distance-3 decoder; the code helps only while that constant times p stays below 1\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-steane",
+              "language": "text",
+              "code": "Steane code stabilizers: ['XIXIXIX', 'IXXIIXX', 'IIIXXXX', 'ZIZIZIZ', 'IZZIIZZ', 'IIIZZZZ']\ngenerators commute: True | 7 qubits - 6 generators = 1 logical qubit | distance (exhaustive): 3 with witness XXXIIII\n21 single-qubit errors have 21 distinct non-trivial syndromes: True (non-degenerate code: every single error has its own syndrome)\nevery single-qubit error corrected: True\nthe syndrome of an X error on qubit j (read from the three Z checks) is the binary representation of j: [(1, (1, 0, 0)), (2, (0, 1, 0)), (3, (1, 1, 0)), (4, (0, 0, 1))] ...\n\ncode space dimension: 2 (2: one logical qubit)\ntransversal gate (same gate on each of the 7 qubits)       preserves the code space                           logical action\nX on every qubit                                                               True                       [[0, -1], [-1, 0]]\nZ on every qubit                                                               True                        [[1, 0], [0, -1]]\nH on every qubit                                                               True      [[0.707, -0.707], [-0.707, -0.707]]\nS on every qubit                                                               True                       [[1, 0], [0, -1i]]\nT on every qubit                                                              False                    leaves the code space\nX, Z and H applied to every qubit are logical X, Z and H, and S on every qubit is the logical S-dagger (all up to the sign convention of the logical basis states I chose); the transversal T leaves the code space, so T is NOT a transversal logical gate of this code\nCNOT is transversal for CSS codes such as Steane: it acts bitwise between two blocks and preserves the joint stabilizer group (checked structurally: X-type checks and Z-type checks use the same matrix H, and CNOT maps X1->X1X2, Z2->Z1Z2)\nby the Eastin-Knill theorem no quantum code can implement a universal gate set transversally, so fault-tolerant T gates use magic-state distillation or code switching\n\n      p   logical failure rate (50,000 trials)  ratio to p^2  bare qubit\n  0.001                                0.00002          20.0       0.001\n  0.003                                0.00012          13.3       0.003\n   0.01                                0.00164          16.4        0.01\n   0.03                                0.01284          14.3        0.03\n    0.1                                0.11374          11.4         0.1\nat small p the failure rate is a constant times p^2 (the ratio column): pairs of faults fool a distance-3 decoder; the code helps only while that constant times p stays below 1",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The generators commute, the distance is 3 (witness XXXIIII), the 21 single errors have 21 distinct syndromes and all are corrected. Transversal X, Z, H and S preserve the code space and act as logical X, Z, H and S-dagger (up to the sign convention of the logical basis states chosen in the listing), while the **transversal T leaves the code space**, so T needs another route (the magic-state technique of lesson 3.7). The logical failure rate falls quadratically: 2×10⁻⁵ at p = 0.001, 1.2×10⁻⁴ at 0.003, 0.00164 at 0.01, 0.0128 at 0.03 and 0.114 at 0.1; dividing by p² gives a coefficient between 11 and 20 (statistical error is large at the smallest p), consistent with the exact count in 3.7. At p = 0.1 the encoded qubit is **worse** than the bare one (0.114 against 0.1).\n\n**Why Steane's code matters beyond its size.** Because Clifford gates are transversal and the structure is classical-code based, it is the standard small example for fault-tolerant gadget design, concatenation (7^k qubits at level k) and the threshold theorem (3.9). Its price is the need for ancilla-based syndrome extraction (3.8) and non-Clifford resources."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How is Steane's code constructed?",
+              "options": [
+                "As a CSS code from the [7,4,3] Hamming code, with X- and Z-type stabilizers from the same checks",
+                "By concatenating three repetition codes",
+                "From the surface code"
+              ],
+              "correct_index": 0,
+              "explanation": "Three X-type and three Z-type generators on 7 qubits."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does transversal mean for a logical gate?",
+              "options": [
+                "The same physical gate is applied to every qubit of the block, so a fault cannot spread within the block",
+                "The gate is applied twice",
+                "The gate is applied to one qubit only"
+              ],
+              "correct_index": 0,
+              "explanation": "H, S and CNOT are transversal for the Steane code."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is the T gate a problem for Steane's code?",
+              "options": [
+                "Transversal T leaves the code space; by Eastin-Knill no code has a universal transversal set",
+                "T is too slow",
+                "T is not unitary"
+              ],
+              "correct_index": 0,
+              "explanation": "Magic-state distillation provides fault-tolerant T gates."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B159",
+              "locator": "Fowler et al. (arXiv 1208.0928): codes, transversal gates and fault tolerance background"
+            },
+            {
+              "book": "B158",
+              "locator": "Google Quantum AI (arXiv 2408.13687): experimental surface-code memory for comparison"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Steane's paper (Error correcting codes in quantum theory, 1996), the CSS construction and the Eastin-Knill theorem are described from general knowledge and not read here; the lesson verifies the code's structure, transversal gates and the T failure by explicit computation."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "3.5 Stabilizer Formalism",
+          "summary": "Paulis as binary vectors with the symplectic commutation test, the five-qubit perfect code, the stabilizer group and normalizer, and Gottesman-Knill: a tableau cross-checked against state vectors and used at 60 qubits.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **stabilizer formalism** describes states and codes through the group of Pauli operators that leave them unchanged. A Pauli operator on n qubits, up to a phase, is a binary vector (x | z) of length 2n; two Paulis commute exactly when their **symplectic product** x·z′ + z·x′ is 0 (mod 2), and the product of Paulis is addition of vectors. An **[[n,k,d]] stabilizer code** is the common +1 eigenspace of n−k independent commuting Paulis (the generators); it encodes k logical qubits. The syndrome of an error is the set of commutation values with the generators, the **normalizer** of the stabilizer group contains the logical operators (the elements that commute with every generator), and the distance d is the weight of the lightest normalizer element that is not in the stabilizer group.\n\nThe **five-qubit code** [[5,1,3]], generated by the cyclic shifts of XZZXI, is the smallest code correcting an arbitrary single-qubit error, and it is **perfect**: its 16 syndromes correspond exactly to the identity and the 15 single-qubit errors. The **Gottesman-Knill theorem** says that circuits of Clifford gates (H, S, CNOT) on stabilizer states with Pauli measurements can be simulated classically in polynomial time by tracking the generators in a tableau of about n(2n+1) bits. The listing shows the Pauli algebra by bits, analyses the five-qubit code (generators, distance, perfection, group and normalizer sizes) and cross-checks Qiskit's tableau simulator against a state-vector simulation on random 5-qubit Clifford circuits, before running a 60-qubit stabilizer state. The labs are simulations written for the lesson: exact Pauli enumeration, state vectors, a stabilizer helper class and a minimum-weight matching decoder (an exact dynamic programme), with Qiskit used as a cross-check where noted. Random instances use fixed seeds. Monte Carlo rates carry statistical error, which the lessons state; none of this is a hardware result."
+            },
+            {
+              "type": "code",
+              "id": "c-stabilizer-formalism",
+              "language": "python",
+              "code": "import itertools, math\nimport numpy as np\n\nclass StabilizerCode:\n    # a stabilizer code on n qubits given by generator strings over I, X, Y, Z and (for k = 1) logical X and Z operators\n    def __init__(self, stabilizers, logical_x=None, logical_z=None):\n        self.n = len(stabilizers[0])\n        self.S = [self.vec(s) for s in stabilizers]\n        self.LX = self.vec(logical_x) if logical_x else None\n        self.LZ = self.vec(logical_z) if logical_z else None\n    @staticmethod\n    def vec(s):\n        x = np.array([c in \"XY\" for c in s], dtype=np.uint8); z = np.array([c in \"ZY\" for c in s], dtype=np.uint8)\n        return np.concatenate([x, z])\n    def label(self, v):\n        n = self.n\n        return \"\".join(\"IXZY\"[int(v[i]) + 2 * int(v[n + i])] for i in range(n))\n    def commutes(self, a, b):                                                # symplectic product: Paulis commute iff it is 0\n        n = self.n\n        return int(a[:n] @ b[n:] + a[n:] @ b[:n]) % 2 == 0\n    def syndrome(self, e):\n        return tuple(0 if self.commutes(e, s) else 1 for s in self.S)\n    def weight(self, v):\n        n = self.n\n        return int(np.count_nonzero(v[:n] | v[n:]))\n    def in_stabilizer_group(self, v):\n        # v (commuting with all generators) is in the group iff it commutes with both logical operators (k = 1)\n        return self.commutes(v, self.LX) and self.commutes(v, self.LZ)\n    def all_errors(self, max_weight, letters=\"XYZ\"):\n        n = self.n\n        for w in range(max_weight + 1):\n            for pos in itertools.combinations(range(n), w):\n                for paulis in itertools.product(letters, repeat=w):\n                    s = [\"I\"] * n\n                    for p, c in zip(pos, paulis): s[p] = c\n                    yield \"\".join(s)\n    def build_decoder(self, max_weight, letters=\"XYZ\"):\n        table = {}\n        for e in self.all_errors(max_weight, letters):                                # lowest-weight error first, so the first one stored per syndrome is minimal\n            table.setdefault(self.syndrome(self.vec(e)), e)\n        return table\n    def distance(self, limit=6):\n        for w in range(1, limit + 1):\n            for e in self.all_errors(w):\n                if self.weight(self.vec(e)) != w: continue\n                v = self.vec(e)\n                if all(self.commutes(v, s) for s in self.S) and not self.in_stabilizer_group(v):\n                    return w, e\n        return None, None\nimport numpy as np\nfrom qiskit.quantum_info import StabilizerState, Statevector, random_clifford\n\n# --- Paulis as binary vectors (x | z); commutation is the symplectic product; the product of Paulis is addition mod 2 (up to a phase)\ncode1 = StabilizerCode([\"Z\"])\nsym = lambda a, b: int(code1.commutes(StabilizerCode.vec(a), StabilizerCode.vec(b)) is False)\nprint(\"Pauli algebra by bits: X = (1|0), Z = (0|1), Y = (1|1); anticommuting pairs (symplectic product 1):\", {pair: sym(*pair) for pair in ((\"X\", \"Z\"), (\"X\", \"Y\"), (\"Y\", \"Z\"), (\"X\", \"X\"), (\"Z\", \"Z\"))})\n\n# --- the five-qubit code [[5,1,3]]: cyclic shifts of XZZXI; distance and the perfect-code count\nfive = StabilizerCode([\"XZZXI\", \"IXZZX\", \"XIXZZ\", \"ZXIXZ\"], logical_x=\"XXXXX\", logical_z=\"ZZZZZ\")\nprint()\nprint(\"five-qubit code: generators commute:\", all(five.commutes(a, b) for a in five.S for b in five.S), \"| logical operators valid:\", all(five.commutes(five.LX, s) and five.commutes(five.LZ, s) for s in five.S), not five.commutes(five.LX, five.LZ))\nd, witness = five.distance(limit=4)\nprint(\"distance by exhaustive search:\", d, \"witness\", witness, \"| smallest possible code correcting one arbitrary error (Quantum Hamming bound: 1 + 3n <= 2^(n-k) gives n >= 5)\")\nprint(\"number of single-qubit errors\", 3 * 5, \"+ identity =\", 16, \"= number of syndromes 2^4: a PERFECT code, every syndrome corresponds to exactly one correctable error:\", len({five.syndrome(five.vec(e)) for e in five.all_errors(1)}) == 16)\ndec = five.build_decoder(1)\nprint(\"all single-qubit errors corrected:\", all(five.in_stabilizer_group((five.vec(e) + five.vec(dec[five.syndrome(five.vec(e))])) % 2) for e in five.all_errors(1)))\n\n# --- the size of the stabilizer group, and the logical operators as elements of the normalizer\ndef group_elements(code):\n    elems = {tuple([0] * (2 * code.n))}\n    for g in code.S:\n        elems |= {tuple((np.array(e) + g) % 2) for e in elems}\n    return elems\nprint(\"stabilizer group of the five-qubit code has\", len(group_elements(five)), \"elements (2^4), and its normalizer has\", len(group_elements(five)) * 4, \"(times 2^(2k)): the extra elements are the logical operators\")\n\n# --- Gottesman-Knill: Clifford circuits on stabilizer states are simulated efficiently; here a cross-check of Qiskit's tableau against the state vector for random circuits\nrng = np.random.default_rng(35)\nagree = 0\ntrials = 25\nfor t in range(trials):\n    n = 5\n    cliff = random_clifford(n, seed=int(rng.integers(1 << 30)))\n    sv = Statevector.from_label(\"0\" * n).evolve(cliff)\n    stab = StabilizerState(cliff)\n    probs_tableau = stab.probabilities_dict()\n    probs_vector = sv.probabilities_dict()\n    keys = set(probs_tableau) | set(probs_vector)\n    agree += all(abs(probs_tableau.get(k, 0) - probs_vector.get(k, 0)) < 1e-9 for k in keys)\nprint()\nprint(f\"random 5-qubit Clifford circuits: tableau and state-vector output distributions agree in {agree} of {trials} cases\")\nsizes = (50, 200, 500)\nprint(\"a tableau of an n-qubit stabilizer state needs about n(2n+1) bits; the state vector needs 2^n amplitudes:\")\nfor n in sizes:\n    print(f\"  n = {n:>4}: tableau about {n * (2 * n + 1):>10,} bits; state vector would need 2^{n} amplitudes\")\nbig = random_clifford(60, seed=1)\nstab_big = StabilizerState(big)\nprint(\"a random 60-qubit Clifford circuit is simulated with the tableau (a state vector would need 2^60 amplitudes); measurement probabilities of qubit 0:\", {k: round(v, 3) for k, v in stab_big.probabilities_dict(qargs=[0]).items()})\nprint(\"Gottesman-Knill: circuits of Clifford gates (H, S, CNOT), Pauli measurements and stabilizer inputs are classically simulable in polynomial time; the T gate breaks this and is what gives quantum computers their power beyond the stabilizer world\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-stabilizer-formalism",
+              "language": "text",
+              "code": "Pauli algebra by bits: X = (1|0), Z = (0|1), Y = (1|1); anticommuting pairs (symplectic product 1): {('X', 'Z'): 1, ('X', 'Y'): 1, ('Y', 'Z'): 1, ('X', 'X'): 0, ('Z', 'Z'): 0}\n\nfive-qubit code: generators commute: True | logical operators valid: True True\ndistance by exhaustive search: 3 witness XYXII | smallest possible code correcting one arbitrary error (Quantum Hamming bound: 1 + 3n <= 2^(n-k) gives n >= 5)\nnumber of single-qubit errors 15 + identity = 16 = number of syndromes 2^4: a PERFECT code, every syndrome corresponds to exactly one correctable error: True\nall single-qubit errors corrected: True\nstabilizer group of the five-qubit code has 16 elements (2^4), and its normalizer has 64 (times 2^(2k)): the extra elements are the logical operators\n\nrandom 5-qubit Clifford circuits: tableau and state-vector output distributions agree in 25 of 25 cases\na tableau of an n-qubit stabilizer state needs about n(2n+1) bits; the state vector needs 2^n amplitudes:\n  n =   50: tableau about      5,050 bits; state vector would need 2^50 amplitudes\n  n =  200: tableau about     80,200 bits; state vector would need 2^200 amplitudes\n  n =  500: tableau about    500,500 bits; state vector would need 2^500 amplitudes\na random 60-qubit Clifford circuit is simulated with the tableau (a state vector would need 2^60 amplitudes); measurement probabilities of qubit 0: {'0': 0.5, '1': 0.5}\nGottesman-Knill: circuits of Clifford gates (H, S, CNOT), Pauli measurements and stabilizer inputs are classically simulable in polynomial time; the T gate breaks this and is what gives quantum computers their power beyond the stabilizer world",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The symplectic product reproduces the Pauli algebra: X and Z, X and Y, Y and Z anticommute, and each Pauli commutes with itself. The five-qubit code's generators commute, its logical operators are valid and anticommute, the exhaustive search finds distance 3 (witness XYXII), its 16 syndromes are exactly the identity plus the 15 single-qubit errors (a perfect code, saturating the quantum Hamming bound 1 + 3n ≤ 2^(n−k), which forces n ≥ 5), and all single-qubit errors are corrected. The stabilizer group has 16 = 2⁴ elements and the normalizer 64 (a factor 2^(2k) larger), the extra elements being the logical operators. On 25 random 5-qubit Clifford circuits the tableau and the state-vector simulations give identical output distributions, and the same tableau simulates a random 60-qubit circuit (a state vector would need 2^60 amplitudes) in a fraction of a second; the tableau of a 500-qubit state has about 500,500 bits.\n\n**Why this matters.** Almost all error-correction analysis (syndromes, decoders, gadgets) is stabilizer arithmetic, which is why large-scale simulations of surface codes are possible. The theorem also marks the boundary of quantum computing power: stabilizer circuits are classically easy, so the **T gate** (or any non-Clifford resource) is what makes a quantum computer potentially more powerful than a classical one, and what makes it costly in a fault-tolerant machine (3.7, 3.10)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "When do two Pauli operators commute in the binary representation?",
+              "options": [
+                "When their symplectic product is 0 mod 2",
+                "When their weights are equal",
+                "When their x parts are equal"
+              ],
+              "correct_index": 0,
+              "explanation": "x.z' + z.x' mod 2."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What makes the five-qubit code perfect?",
+              "options": [
+                "Its 16 syndromes correspond exactly to the identity and the 15 single-qubit errors",
+                "It has distance 5",
+                "It uses five logical qubits"
+              ],
+              "correct_index": 0,
+              "explanation": "It saturates the quantum Hamming bound."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does the Gottesman-Knill theorem say?",
+              "options": [
+                "Clifford circuits on stabilizer states with Pauli measurements are classically simulable in polynomial time",
+                "Quantum computers can be simulated classically in general",
+                "The T gate is classically simulable"
+              ],
+              "correct_index": 0,
+              "explanation": "A 60-qubit random Clifford circuit was simulated with the tableau."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B111",
+              "locator": "Qiskit SDK documentation: qiskit.quantum_info StabilizerState, Clifford and random_clifford"
+            },
+            {
+              "book": "B159",
+              "locator": "Fowler et al. (arXiv 1208.0928): stabilizer codes as the foundation of the surface code"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Gottesman's thesis and the Gottesman-Knill theorem are described from general knowledge and not read; the lesson verifies the code structure exhaustively and cross-checks the tableau against state vectors. The quantum Hamming bound is stated and applied without derivation."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "3.6 Surface Codes",
+          "summary": "A planar surface code built from scratch: qubit and stabilizer counts, commutation, logical operators of weight d, and a minimum-weight matching decoder that corrects every error up to weight (d-1)/2.",
+          "estimated_minutes": 65,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **surface code** (B159) arranges data qubits on a two-dimensional grid with two kinds of stabilizers: **Z-type plaquette checks** that detect X errors and **X-type star checks** that detect Z errors, each acting on the (at most four) neighbouring data qubits. All checks involve only nearest neighbours, which suits planar hardware, and the code has a high threshold. A distance-d planar patch has d² + (d−1)² data qubits and encodes one logical qubit; the logical operators are strings across the patch of weight d. An error appears in the syndrome as a pair of **defects** at the ends of an error chain; decoding means finding the most likely chain connecting the defects, which for independent errors is a **minimum-weight perfect matching** problem on the defects, where a defect may also be matched to a boundary. The correction succeeds if the error chain and the correction chain together do not wrap into a logical string.\n\nThe listing builds the unrotated planar code from scratch (qubits at grid positions with even coordinate sum), counts qubits and stabilizers for d = 3, 5, 7, checks commutation and the logical operators, and implements an exact matching decoder (breadth-first search for the graph distances and a dynamic programme over subsets of defects). It tests every X-error pattern of weight up to (d+1)/2 for d = 3 and 5. The labs are simulations written for the lesson: exact Pauli enumeration, state vectors, a stabilizer helper class and a minimum-weight matching decoder (an exact dynamic programme), with Qiskit used as a cross-check where noted. Random instances use fixed seeds. Monte Carlo rates carry statistical error, which the lessons state; none of this is a hardware result."
+            },
+            {
+              "type": "code",
+              "id": "c-surface-code",
+              "language": "python",
+              "code": "import itertools, math\nfrom collections import deque\nfrom functools import lru_cache\nimport numpy as np\n\nclass PlanarSurfaceCode:\n    # unrotated planar surface code of distance d on a (2d-1) x (2d-1) grid. Data qubits sit at positions (r, c) with r + c even;\n    # Z-type stabilizers (which detect X errors) at (r odd, c even) and X-type stabilizers at (r even, c odd), each acting on its grid neighbours.\n    def __init__(self, d):\n        self.d, self.L = d, 2 * d - 1\n        L = self.L\n        self.data = [(r, c) for r in range(L) for c in range(L) if (r + c) % 2 == 0]\n        self.index = {q: i for i, q in enumerate(self.data)}\n        near = lambda r, c: [(r + dr, c + dc) for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)) if 0 <= r + dr < L and 0 <= c + dc < L]\n        self.zstabs = [(r, c) for r in range(1, L, 2) for c in range(0, L, 2)]\n        self.xstabs = [(r, c) for r in range(0, L, 2) for c in range(1, L, 2)]\n        self.zsupport = {s: [self.index[q] for q in near(*s)] for s in self.zstabs}\n        self.xsupport = {s: [self.index[q] for q in near(*s)] for s in self.xstabs}\n        self.logical_z = [self.index[(0, c)] for c in range(0, L, 2)]             # a Z string along the top row\n        self.logical_x = [self.index[(r, 0)] for r in range(0, L, 2)]             # an X string down the left column\n        # matching graph for X errors: nodes are Z stabilizers plus two boundary nodes; every data qubit is an edge\n        self.nodes = {s: i for i, s in enumerate(self.zstabs)}\n        TOP, BOTTOM = len(self.zstabs), len(self.zstabs) + 1\n        self.edges = []                                                          # (node u, node v, data qubit)\n        for q, (r, c) in enumerate(self.data):\n            touching = [self.nodes[s] for s in self.zstabs if q in self.zsupport[s]]\n            if len(touching) == 2: self.edges.append((touching[0], touching[1], q))\n            else: self.edges.append((touching[0], TOP if r == 0 else BOTTOM, q))\n        self.TOP, self.BOTTOM = TOP, BOTTOM\n        n_nodes = len(self.zstabs) + 2\n        adj = [[] for _ in range(n_nodes)]\n        for u, v, q in self.edges:\n            adj[u].append((v, q)); adj[v].append((u, q))\n        self.dist, self.path = {}, {}\n        for src in range(n_nodes):                                                # breadth-first search from every node\n            dist = {src: 0}; prev = {src: None}; queue = deque([src])\n            while queue:\n                u = queue.popleft()\n                for v, q in adj[u]:\n                    if v not in dist:\n                        dist[v] = dist[u] + 1; prev[v] = (u, q); queue.append(v)\n            self.dist[src] = dist\n            self.path[src] = prev\n    def syndrome_X(self, error_qubits):\n        e = set(error_qubits)\n        return [i for i, s in enumerate(self.zstabs) if sum(1 for q in self.zsupport[s] if q in e) % 2 == 1]\n    def path_qubits(self, a, b):\n        qs, node = [], b\n        while node != a:\n            u, q = self.path[a][node]\n            qs.append(q); node = u\n        return qs\n    def decode_X(self, defects):\n        # minimum-weight perfect matching of the defects, where a defect may also be matched to a boundary; exact dynamic programme over subsets\n        k = len(defects)\n        if k == 0: return []\n        to_boundary = [min((self.dist[defects[i]].get(self.TOP, 10 ** 9), self.TOP), (self.dist[defects[i]].get(self.BOTTOM, 10 ** 9), self.BOTTOM)) for i in range(k)]\n        @lru_cache(maxsize=None)\n        def best(mask):\n            if mask == (1 << k) - 1: return 0, ()\n            i = next(j for j in range(k) if not mask >> j & 1)\n            options = [(to_boundary[i][0] + best(mask | 1 << i)[0], (i, None))]\n            for j in range(i + 1, k):\n                if not mask >> j & 1:\n                    options.append((self.dist[defects[i]][defects[j]] + best(mask | 1 << i | 1 << j)[0], (i, j)))\n            cost, choice = min(options, key=lambda t: t[0])\n            rest = best(mask | 1 << choice[0] | (1 << choice[1] if choice[1] is not None else 0))[1]\n            return cost, (choice,) + rest\n        correction = []\n        for i, j in best(0)[1]:\n            if j is None: correction += self.path_qubits(defects[i], to_boundary[i][1])\n            else: correction += self.path_qubits(defects[i], defects[j])\n        return correction\n    def logical_failure_X(self, error_qubits):\n        defects = self.syndrome_X(error_qubits)\n        correction = self.decode_X(defects)\n        residual = set(error_qubits) ^ set(correction)\n        assert not self.syndrome_X(residual), \"decoder must clear the syndrome\"\n        return sum(1 for q in residual if q in set(self.logical_z)) % 2 == 1        # odd overlap with the logical Z string: the residual is a logical X\nimport itertools\nimport numpy as np\n\nprint(f\"{'d':>3} {'data qubits d^2+(d-1)^2':>25} {'Z stabilizers':>14} {'X stabilizers':>14} {'logical qubits k = n - #stabilizers':>38}\")\nfor d in (3, 5, 7):\n    code = PlanarSurfaceCode(d)\n    n = len(code.data)\n    print(f\"{d:>3} {n:>25} {len(code.zstabs):>14} {len(code.xstabs):>14} {n - len(code.zstabs) - len(code.xstabs):>38}\")\n\n# --- structural checks: stabilizers commute, logical operators commute with stabilizers and anticommute with each other\ndef overlap(a, b):\n    return len(set(a) & set(b))\nfor d in (3, 5):\n    code = PlanarSurfaceCode(d)\n    z_x_commute = all(overlap(code.zsupport[z], code.xsupport[x]) % 2 == 0 for z in code.zstabs for x in code.xstabs)\n    lz_ok = all(overlap(code.logical_z, code.xsupport[x]) % 2 == 0 for x in code.xstabs)\n    lx_ok = all(overlap(code.logical_x, code.zsupport[z]) % 2 == 0 for z in code.zstabs)\n    anti = overlap(code.logical_z, code.logical_x) % 2 == 1\n    print(f\"d = {d}: every Z stabilizer commutes with every X stabilizer: {z_x_commute}; logical Z string commutes with X stabilizers: {lz_ok}; logical X string commutes with Z stabilizers: {lx_ok}; the two logical operators anticommute: {anti}; their weight is {len(code.logical_z)} = d\")\n\n# --- a distance-d code corrects every X-error pattern of weight up to (d-1)/2 (exhaustive), and some patterns of weight (d+1)/2 fail\nprint()\nprint(f\"{'d':>3} {'error weight w':>15} {'patterns tested':>16} {'patterns that cause a logical error':>38}\")\nfor d, weights in ((3, (1, 2)), (5, (1, 2, 3))):\n    code = PlanarSurfaceCode(d)\n    n = len(code.data)\n    for w in weights:\n        patterns = list(itertools.combinations(range(n), w))\n        failures = sum(code.logical_failure_X(p) for p in patterns)\n        print(f\"{d:>3} {w:>15} {len(patterns):>16} {failures:>38}\")\nprint(\"every pattern of weight at most (d-1)/2 is corrected (0 failures); at weight (d+1)/2 a fraction of patterns fools the decoder; the shortest logical X operator has weight d (the code distance)\")\ncode = PlanarSurfaceCode(3)\nprint(\"a weight-3 error along the logical X string is invisible to every stabilizer:\", code.syndrome_X(code.logical_x) == [], \"(it is a logical operator, not a correctable error)\")\nprint(\"the logical string and the boundaries: X-error chains end on the top and bottom boundaries, where a data qubit touches a single Z stabilizer\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-surface-code",
+              "language": "text",
+              "code": "  d   data qubits d^2+(d-1)^2  Z stabilizers  X stabilizers    logical qubits k = n - #stabilizers\n  3                        13              6              6                                      1\n  5                        41             20             20                                      1\n  7                        85             42             42                                      1\nd = 3: every Z stabilizer commutes with every X stabilizer: True; logical Z string commutes with X stabilizers: True; logical X string commutes with Z stabilizers: True; the two logical operators anticommute: True; their weight is 3 = d\nd = 5: every Z stabilizer commutes with every X stabilizer: True; logical Z string commutes with X stabilizers: True; logical X string commutes with Z stabilizers: True; the two logical operators anticommute: True; their weight is 5 = d\n\n  d  error weight w  patterns tested    patterns that cause a logical error\n  3               1               13                                      0\n  3               2               78                                     25\n  5               1               41                                      0\n  5               2              820                                      0\n  5               3            10660                                    274\nevery pattern of weight at most (d-1)/2 is corrected (0 failures); at weight (d+1)/2 a fraction of patterns fools the decoder; the shortest logical X operator has weight d (the code distance)\na weight-3 error along the logical X string is invisible to every stabilizer: True (it is a logical operator, not a correctable error)\nthe logical string and the boundaries: X-error chains end on the top and bottom boundaries, where a data qubit touches a single Z stabilizer",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The qubit counts follow d² + (d−1)² (13, 41 and 85 for d = 3, 5, 7) with 6, 20 and 42 stabilizers of each type, leaving k = 1. Every Z stabilizer commutes with every X stabilizer, the logical Z string (top row) commutes with the X checks and the logical X string (left column) with the Z checks, the two logical operators anticommute, and each has weight d. Decoding is exhaustive for the small cases: every X-error pattern of weight 1 (13 patterns) for d = 3 and of weight 1 and 2 (41 and 820 patterns) for d = 5 is corrected (0 failures), consistent with correcting up to (d−1)/2 errors, while 25 of the 78 weight-2 patterns for d = 3 and 274 of the 10,660 weight-3 patterns for d = 5 cause a logical error (the matching decoder breaks ties arbitrarily). A weight-3 chain along the logical X string is invisible to every stabilizer, which is exactly why it is a logical operator and not a correctable error.\n\n**Practical remarks.** Real implementations use the **rotated** layout (2d² − 1 qubits for distance d), repeated rounds of noisy syndrome measurement (so decoding is three-dimensional) and faster matching algorithms; the lesson models perfect syndrome measurement on one error type to isolate the geometry (3.9 adds noise, in the code-capacity model). The decoder is exact but exponential in the number of defects, which is fine for small instances and is why production decoders use blossom or union-find algorithms."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How many data qubits does a distance-d planar surface code have?",
+              "options": [
+                "d^2 + (d-1)^2",
+                "2d",
+                "d^3"
+              ],
+              "correct_index": 0,
+              "explanation": "13, 41 and 85 for d = 3, 5, 7."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does the decoder find?",
+              "options": [
+                "A minimum-weight matching of the syndrome defects, possibly to the boundary",
+                "The logical state",
+                "The stabilizer generators"
+              ],
+              "correct_index": 0,
+              "explanation": "The correction chain should not combine with the error chain into a logical string."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How many errors can a distance-d surface code correct?",
+              "options": [
+                "Up to (d-1)/2",
+                "d",
+                "d^2"
+              ],
+              "correct_index": 0,
+              "explanation": "No pattern of weight 1 (d = 3) or 1 and 2 (d = 5) caused a failure."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B159",
+              "locator": "Fowler, Mariantoni, Martinis, Cleland, Surface codes: Towards practical large-scale quantum computation (arXiv 1208.0928)"
+            },
+            {
+              "book": "B158",
+              "locator": "Google Quantum AI, Quantum error correction below the surface code threshold (arXiv 2408.13687): surface-code memories of distance 3, 5 and 7"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The lesson's planar code is the unrotated layout built here and is not the layout of the cited experiment (rotated). The cited papers were not re-read for geometric details; every structural claim is checked by explicit computation on the lesson's own construction."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "3.7 Logical Qubits",
+          "summary": "Logical operators and distances of three codes, the exact leading coefficient A of the logical error rate and the resulting break-even error rate, and a T gate performed by magic-state teleportation.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **logical qubit** is a qubit encoded in a code: its operators are the logical Paulis, elements of the normalizer outside the stabilizer group, and its quality is the **logical error rate** per round or per gate. The code distance d is the minimum weight of a logical operator; a distance-3 code fails only when at least two faults conspire, so the logical error rate behaves like A·p² for small physical error rate p, where A counts the weight-2 fault patterns that the decoder cannot handle. The encoded qubit is better than the physical one only below the **break-even** rate p* ≈ 1/A, and in a real device the circuits that measure the syndrome add their own faults (3.8), so the break-even rate is lower still.\n\nA universal logical gate set also needs a non-Clifford gate. Clifford gates are often transversal or implemented by lattice surgery, but **no code has a universal transversal set** (Eastin-Knill), so the **T gate** is performed by **gate teleportation** consuming a **magic state** |A⟩ = T|+⟩: a CNOT between the data and the magic qubit, a Z measurement, and a Clifford correction. The magic states are produced noisy and **distilled** by Clifford-only protocols, which is the dominant cost of fault-tolerant computation. The listing compares the logical operators of the Steane, five-qubit and Shor codes, computes the coefficient A **exactly** by enumerating all weight-2 Paulis for the Steane and five-qubit codes, and verifies T-gate teleportation with state vectors. The labs are simulations written for the lesson: exact Pauli enumeration, state vectors, a stabilizer helper class and a minimum-weight matching decoder (an exact dynamic programme), with Qiskit used as a cross-check where noted. Random instances use fixed seeds. Monte Carlo rates carry statistical error, which the lessons state; none of this is a hardware result."
+            },
+            {
+              "type": "code",
+              "id": "c-logical-qubits",
+              "language": "python",
+              "code": "import itertools, math\nimport numpy as np\n\nclass StabilizerCode:\n    # a stabilizer code on n qubits given by generator strings over I, X, Y, Z and (for k = 1) logical X and Z operators\n    def __init__(self, stabilizers, logical_x=None, logical_z=None):\n        self.n = len(stabilizers[0])\n        self.S = [self.vec(s) for s in stabilizers]\n        self.LX = self.vec(logical_x) if logical_x else None\n        self.LZ = self.vec(logical_z) if logical_z else None\n    @staticmethod\n    def vec(s):\n        x = np.array([c in \"XY\" for c in s], dtype=np.uint8); z = np.array([c in \"ZY\" for c in s], dtype=np.uint8)\n        return np.concatenate([x, z])\n    def label(self, v):\n        n = self.n\n        return \"\".join(\"IXZY\"[int(v[i]) + 2 * int(v[n + i])] for i in range(n))\n    def commutes(self, a, b):                                                # symplectic product: Paulis commute iff it is 0\n        n = self.n\n        return int(a[:n] @ b[n:] + a[n:] @ b[:n]) % 2 == 0\n    def syndrome(self, e):\n        return tuple(0 if self.commutes(e, s) else 1 for s in self.S)\n    def weight(self, v):\n        n = self.n\n        return int(np.count_nonzero(v[:n] | v[n:]))\n    def in_stabilizer_group(self, v):\n        # v (commuting with all generators) is in the group iff it commutes with both logical operators (k = 1)\n        return self.commutes(v, self.LX) and self.commutes(v, self.LZ)\n    def all_errors(self, max_weight, letters=\"XYZ\"):\n        n = self.n\n        for w in range(max_weight + 1):\n            for pos in itertools.combinations(range(n), w):\n                for paulis in itertools.product(letters, repeat=w):\n                    s = [\"I\"] * n\n                    for p, c in zip(pos, paulis): s[p] = c\n                    yield \"\".join(s)\n    def build_decoder(self, max_weight, letters=\"XYZ\"):\n        table = {}\n        for e in self.all_errors(max_weight, letters):                                # lowest-weight error first, so the first one stored per syndrome is minimal\n            table.setdefault(self.syndrome(self.vec(e)), e)\n        return table\n    def distance(self, limit=6):\n        for w in range(1, limit + 1):\n            for e in self.all_errors(w):\n                if self.weight(self.vec(e)) != w: continue\n                v = self.vec(e)\n                if all(self.commutes(v, s) for s in self.S) and not self.in_stabilizer_group(v):\n                    return w, e\n        return None, None\nimport itertools\nimport numpy as np\n\n# --- logical operators: weights and commutation relations of the three codes\nsteane = StabilizerCode([\"XIXIXIX\", \"IXXIIXX\", \"IIIXXXX\", \"ZIZIZIZ\", \"IZZIIZZ\", \"IIIZZZZ\"], logical_x=\"XXXXXXX\", logical_z=\"ZZZZZZZ\")\nfive = StabilizerCode([\"XZZXI\", \"IXZZX\", \"XIXZZ\", \"ZXIXZ\"], logical_x=\"XXXXX\", logical_z=\"ZZZZZ\")\nshor = StabilizerCode([\"ZZIIIIIII\", \"IZZIIIIII\", \"IIIZZIIII\", \"IIIIZZIII\", \"IIIIIIZZI\", \"IIIIIIIZZ\", \"XXXXXXIII\", \"IIIXXXXXX\"], logical_x=\"ZZZZZZZZZ\", logical_z=\"XXXXXXXXX\")\nprint(f\"{'code':<14} {'[[n,k,d]]':>10} {'logical X weight as chosen':>28} {'minimum weight found for a logical operator':>46}\")\nfor name, code in ((\"Steane\", steane), (\"five-qubit\", five), (\"Shor\", shor)):\n    d, witness = code.distance(limit=3)\n    print(f\"{name:<14} {'[[%d,1,%d]]' % (code.n, d):>10} {code.weight(code.LX):>28} {witness + ' (weight ' + str(d) + ')':>46}\")\nprint(\"a logical operator can be chosen of any weight of the same coset; the code distance is the MINIMUM weight, and it is what a few faults can reach\")\n\n# --- the leading coefficient of the logical error rate: count the weight-2 fault patterns that fool the lookup decoder (exact enumeration, depolarizing noise)\ndef leading_coefficient(code, decoder):\n    bad = 0\n    for e in code.all_errors(2):\n        if code.weight(code.vec(e)) != 2: continue\n        corr = decoder.get(code.syndrome(code.vec(e)))\n        residual = (code.vec(e) + code.vec(corr)) % 2\n        bad += not code.in_stabilizer_group(residual)\n    return bad\nprint()\nprint(f\"{'code':<12} {'weight-2 Pauli patterns':>25} {'fooling the decoder':>21} {'p_L = A p^2 with A = (fooling) / 9':>36} {'break-even p* ~ 1/A':>21}\")\nfor name, code in ((\"Steane\", steane), (\"five-qubit\", five)):\n    dec = code.build_decoder(2)                                                # lookup decoder: the minimum-weight Pauli for every syndrome, up to weight 2\n    total = sum(1 for e in code.all_errors(2) if code.weight(code.vec(e)) == 2)\n    bad = leading_coefficient(code, dec)\n    A = bad / 9                                                                # each Pauli of a depolarizing fault has probability p/3, so a pair has (p/3)^2\n    print(f\"{name:<12} {total:>25} {bad:>21} {A:>36.2f} {1 / A:>21.3f}\")\nprint(\"below the break-even rate the encoded qubit is better than the bare one; the encoding must also not introduce more faults than it removes (faulty gates and syndrome extraction: 3.8)\")\n\n# --- non-Clifford logical gates by gate teleportation of a magic state: T on an (unencoded) qubit, verified on state vectors\nI2 = np.eye(2); Hd = np.array([[1, 1], [1, -1]]) / np.sqrt(2); S = np.diag([1, 1j]); T = np.diag([1, np.exp(1j * np.pi / 4)])\nCNOT = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]])\nrng = np.random.default_rng(37)\npsi = rng.normal(size=2) + 1j * rng.normal(size=2); psi /= np.linalg.norm(psi)\nmagic = T @ Hd @ np.array([1, 0])                                              # |A> = T|+> = (|0> + e^{i pi/4} |1>) / sqrt(2)\nstate = np.kron(psi, magic)                                                    # data qubit first, magic state second\nstate = CNOT @ state                                                           # CNOT with the data as control\noutcomes = {}\nfor m in (0, 1):\n    proj = np.kron(np.eye(2), np.outer(np.eye(2)[m], np.eye(2)[m]))            # measure the second qubit (the original magic qubit) in the Z basis\n    branch = proj @ state\n    prob = float(np.linalg.norm(branch) ** 2)\n    out = branch.reshape(2, 2)[:, m]; out = out / np.linalg.norm(out)\n    corrected = out if m == 0 else S @ out                                      # outcome 1 leaves T-dagger|psi>, and S T-dagger = T: a Clifford correction\n    outcomes[m] = (prob, abs(np.vdot(T @ psi, out)) ** 2, abs(np.vdot(T @ psi, corrected)) ** 2)\nprint()\nprint(\"T gate teleportation with a magic state |A> = T|+>: outcome probabilities and fidelity of the output with T|psi>:\")\nfor m, (prob, raw, fixed) in outcomes.items():\n    print(f\"  measurement outcome {m}: probability {prob:.4f}, fidelity before correction {raw:.4f}, after the Clifford correction {fixed:.4f}\")\nprint(\"the correction after outcome 1 is the Clifford gate S (it turns T-dagger|psi> into T|psi>), so only the preparation of |A> needs the expensive non-Clifford resource; |A> is distilled from many noisy copies by a Clifford-only protocol\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-logical-qubits",
+              "language": "text",
+              "code": "code            [[n,k,d]]   logical X weight as chosen    minimum weight found for a logical operator\nSteane          [[7,1,3]]                            7                             XXXIIII (weight 3)\nfive-qubit      [[5,1,3]]                            5                               XYXII (weight 3)\nShor            [[9,1,3]]                            9                           XXXIIIIII (weight 3)\na logical operator can be chosen of any weight of the same coset; the code distance is the MINIMUM weight, and it is what a few faults can reach\n\ncode           weight-2 Pauli patterns   fooling the decoder   p_L = A p^2 with A = (fooling) / 9   break-even p* ~ 1/A\nSteane                             189                   147                                16.33                 0.061\nfive-qubit                          90                    90                                10.00                 0.100\nbelow the break-even rate the encoded qubit is better than the bare one; the encoding must also not introduce more faults than it removes (faulty gates and syndrome extraction: 3.8)\n\nT gate teleportation with a magic state |A> = T|+>: outcome probabilities and fidelity of the output with T|psi>:\n  measurement outcome 0: probability 0.5000, fidelity before correction 1.0000, after the Clifford correction 1.0000\n  measurement outcome 1: probability 0.5000, fidelity before correction 0.6770, after the Clifford correction 1.0000\nthe correction after outcome 1 is the Clifford gate S (it turns T-dagger|psi> into T|psi>), so only the preparation of |A> needs the expensive non-Clifford resource; |A> is distilled from many noisy copies by a Clifford-only protocol",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "All three codes have minimum logical weight 3 even though the logical operators written as the weight-7, 5 and 9 products are not minimal: the distance is the weight of the lightest representative (XXXIIII for Steane, XYXII for the five-qubit code, XXXIIIIII for Shor's code). The exact counting gives 147 of 189 weight-2 Pauli patterns that fool the Steane decoder, hence A = 147/9 = 16.33 and a break-even rate p* ≈ 0.061, which agrees with the Monte Carlo ratio of 11 to 20 measured in 3.4, and for the five-qubit code all 90 weight-2 patterns fool the decoder (A = 10, p* ≈ 0.10), as expected for a perfect code in which every weight-2 error looks like a weight-1 error. Gate teleportation works: both measurement outcomes occur with probability 1/2, outcome 0 gives T|ψ⟩ with fidelity 1, and outcome 1 gives 0.677 before and 1.0000 after the Clifford correction S (which turns T†|ψ⟩ into T|ψ⟩).\n\n**What follows.** The quality of a logical qubit is a number the architecture can plan with, but the numbers above are for ideal syndrome extraction: with faulty circuits the break-even moves down, and for the surface code the relevant measure is the suppression factor Λ per increase of d by 2 (3.9). Magic-state production, not Clifford operations, dominates the footprint (3.10). **Common mistake:** equating the weight of the chosen logical operator with the distance."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the distance of a code in terms of logical operators?",
+              "options": [
+                "The minimum weight of a logical operator (an element of the normalizer outside the stabilizer group)",
+                "The weight of the logical X as written",
+                "The number of stabilizers"
+              ],
+              "correct_index": 0,
+              "explanation": "XXXIIII has weight 3 for Steane, though XXXXXXX has weight 7."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does a distance-3 code give a logical error rate of order p^2?",
+              "options": [
+                "It fails only when two or more faults combine, and A counts the harmful pairs",
+                "It fails whenever one fault occurs",
+                "It never fails"
+              ],
+              "correct_index": 0,
+              "explanation": "A = 16.33 for the Steane code."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How is the T gate applied to a logical qubit?",
+              "options": [
+                "By teleportation with a magic state, using Clifford operations and measurement",
+                "By a transversal T on the code",
+                "By measuring the stabilizers"
+              ],
+              "correct_index": 0,
+              "explanation": "Outcome 1 needs the Clifford correction S."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B159",
+              "locator": "Fowler et al. (arXiv 1208.0928): logical qubits, lattice surgery context and magic-state overhead"
+            },
+            {
+              "book": "B158",
+              "locator": "Google Quantum AI (arXiv 2408.13687): logical error suppression Lambda for surface-code memories"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Magic-state distillation (Bravyi and Kitaev) and gate teleportation are described from general knowledge and not read here; the teleportation identity is verified on state vectors. The break-even estimate uses the lesson's ideal-syndrome model."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "3.8 Fault Tolerance",
+          "summary": "Pauli-error propagation through a syndrome-extraction circuit: one ancilla spreads a single fault to three data qubits, a cat-state ancilla confines it to one, and how the number of fault locations controls the logical rate.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Error correction is itself a circuit made of faulty gates, so correcting errors can create them. **Fault tolerance** is the design discipline that makes the correction circuit not make things worse: a single fault anywhere must lead to at most one error in each code block (an error the code can still correct). The central hazard is **error propagation**: through a CNOT, an X error on the control spreads to the target (X_c → X_c X_t) and a Z error on the target spreads to the control (Z_t → Z_c Z_t), so a single fault on an ancilla qubit that interacts with several data qubits can become a multi-qubit data error.\n\nThe listing implements Pauli propagation through CNOT circuits and applies it to the measurement of a weight-4 Z-type operator two ways: with **one ancilla** that every data qubit controls, and with a **four-qubit cat-state ancilla** in which each ancilla qubit touches only one data qubit (Shor's method; the preparation and verification of the cat state are separate gadgets and are not simulated here). It enumerates every single-fault location and Pauli type and records the weight of the resulting data error. A third method, **flag qubits**, detects dangerous faults at the price of one more qubit and two gates; it is mentioned without a demonstration. The labs are simulations written for the lesson: exact Pauli enumeration, state vectors, a stabilizer helper class and a minimum-weight matching decoder (an exact dynamic programme), with Qiskit used as a cross-check where noted. Random instances use fixed seeds. Monte Carlo rates carry statistical error, which the lessons state; none of this is a hardware result."
+            },
+            {
+              "type": "code",
+              "id": "c-fault-tolerance",
+              "language": "python",
+              "code": "import itertools\n\n# Pauli-error propagation through a Clifford circuit made of CNOTs. A Pauli on qubit q is a pair of bits (x, z); the propagation rules are\n# CNOT(control c, target t):  X_c -> X_c X_t,  Z_t -> Z_c Z_t,  X_t -> X_t,  Z_c -> Z_c.\ndef propagate(circuit, faults):\n    \"\"\"faults: list of (after_gate_index, qubit, pauli) injected AFTER the given gate (index -1 means before the circuit). Returns the final x and z bit dictionaries.\"\"\"\n    qubits = {q for g in circuit for q in g[1:]} | {f[1] for f in faults}\n    x = {q: 0 for q in qubits}; z = {q: 0 for q in qubits}\n    def inject(after):\n        for idx, q, p in faults:\n            if idx == after:\n                if p in \"XY\": x[q] ^= 1\n                if p in \"ZY\": z[q] ^= 1\n    inject(-1)\n    for i, (name, c, t) in enumerate(circuit):\n        assert name == \"CNOT\"\n        x[t] ^= x[c]                                                        # X on the control spreads to the target\n        z[c] ^= z[t]                                                        # Z on the target spreads to the control\n        inject(i)\n    return x, z\n\ndef data_error_weight(x, z, data):\n    return sum(1 for q in data if x[q] or z[q])\ndef fault_locations(circuit, qubits_touched):\n    # a fault location is the position right after a gate, on either qubit that gate touched, plus the initial position of every qubit\n    locs = []\n    for i, (name, c, t) in enumerate(circuit):\n        locs += [(i, c), (i, t)]\n    return locs\n\ndata = [0, 1, 2, 3]\n# --- 1. measure the weight-4 operator Z0 Z1 Z2 Z3 with ONE ancilla (qubit 4): each data qubit controls a CNOT onto the ancilla\nnaive = [(\"CNOT\", d, 4) for d in data]\n# --- 2. the same measurement with a 4-qubit cat-state ancilla (qubits 4..7): CNOT i-th data qubit -> i-th cat qubit, each cat qubit touches ONE data qubit\ncat = [(\"CNOT\", d, 4 + i) for i, d in enumerate(data)]\n\ndef worst_single_faults(circuit, data, paulis=\"XZY\"):\n    results = []\n    for loc in fault_locations(circuit, None):\n        for p in paulis:\n            x, z = propagate(circuit, [(loc[0], loc[1], p)])\n            results.append((data_error_weight(x, z, data), loc, p))\n    return results\nfor name, circuit, ancillas in ((\"single ancilla\", naive, \"1\"), (\"cat-state ancilla\", cat, \"4\")):\n    results = worst_single_faults(circuit, data)\n    dangerous = [r for r in results if r[0] >= 2]\n    print(f\"{name:<18} fault locations x Paulis: {len(results):>3}; single faults leaving data errors of weight >= 2: {len(dangerous):>2}; maximum weight {max(r[0] for r in results)}\")\n    if dangerous:\n        w, loc, p = max(dangerous)\n        x, z = propagate(circuit, [(loc[0], loc[1], p)])\n        print(f\"   example: a {p} fault after gate {loc[0]} on qubit {loc[1]} leaves X on {[q for q in data if x[q]]} and Z on {[q for q in data if z[q]]} of the data (weight {w})\")\nprint(\"in the naive circuit one fault on the ancilla spreads to up to three data qubits through the remaining CNOTs; a distance-3 code cannot correct that, so one fault defeats it. The cat-state circuit confines every single fault to at most one data qubit.\")\n\nprint(\"a cheaper remedy for small codes is a FLAG qubit that detects the dangerous ancilla faults and makes the round be discarded; its construction needs care with the order of the gates and is not built here\")\nprint()\n# --- 3. how faults accumulate: for a circuit with N fault locations and a physical fault rate p, the chance of at least two independent faults is ~ N(N-1)/2 p^2\nprint()\nprint(f\"{'fault locations N':>18} {'pairs N(N-1)/2':>15} {'p = 0.001: P(2+ faults) ~ pairs * p^2':>40}\")\nfor N in (10, 50, 200, 1000):\n    pairs = N * (N - 1) // 2\n    print(f\"{N:>18} {pairs:>15} {pairs * 1e-6:>40.2e}\")\nprint(\"a fault-tolerant gadget is correct if any single fault leaves an error the code can still correct; the logical failure rate is then ~ (number of malignant pairs) p^2, which is why gadgets are designed to keep the number of fault locations and their spread small\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-fault-tolerance",
+              "language": "text",
+              "code": "single ancilla     fault locations x Paulis:  24; single faults leaving data errors of weight >= 2:  4; maximum weight 3\n   example: a Z fault after gate 0 on qubit 4 leaves X on [] and Z on [1, 2, 3] of the data (weight 3)\ncat-state ancilla  fault locations x Paulis:  24; single faults leaving data errors of weight >= 2:  0; maximum weight 1\nin the naive circuit one fault on the ancilla spreads to up to three data qubits through the remaining CNOTs; a distance-3 code cannot correct that, so one fault defeats it. The cat-state circuit confines every single fault to at most one data qubit.\na cheaper remedy for small codes is a FLAG qubit that detects the dangerous ancilla faults and makes the round be discarded; its construction needs care with the order of the gates and is not built here\n\n\n fault locations N  pairs N(N-1)/2    p = 0.001: P(2+ faults) ~ pairs * p^2\n                10              45                                 4.50e-05\n                50            1225                                 1.22e-03\n               200           19900                                 1.99e-02\n              1000          499500                                 4.99e-01\na fault-tolerant gadget is correct if any single fault leaves an error the code can still correct; the logical failure rate is then ~ (number of malignant pairs) p^2, which is why gadgets are designed to keep the number of fault locations and their spread small",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "There are 24 single-fault possibilities (fault locations times Pauli types) in each circuit. In the single-ancilla circuit **4 of them leave a data error of weight at least 2**, with maximum weight 3: for example a Z fault on the ancilla after the first gate leaves Z on data qubits 1, 2 and 3. A distance-3 code cannot correct that, so one fault defeats it. In the cat-state circuit **no single fault produces more than one data error** (maximum weight 1). The last table gives the order of magnitude of why gadgets are designed with few fault locations: with p = 0.001 a circuit with 1,000 locations has about 5×10⁻¹ probability of at least two faults, whereas one with 10 locations has 4.5×10⁻⁵.\n\n**The fault-tolerance condition.** A gadget is fault tolerant (to first order) if every single fault leaves an error the code corrects; its logical failure rate is then proportional to the number of **malignant pairs** of faults times p². This is what makes a threshold possible (3.9): below some p the encoded circuit beats the unencoded one. **Common mistake:** analysing a code with perfect syndromes and quoting the result as a device prediction; the circuits that measure the syndrome often dominate the error budget."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How does an X error on the control of a CNOT propagate?",
+              "options": [
+                "It spreads to the target as well (X_c becomes X_c X_t)",
+                "It stays on the control",
+                "It disappears"
+              ],
+              "correct_index": 0,
+              "explanation": "Z errors on the target spread to the control."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is the one-ancilla syndrome extraction circuit not fault tolerant for a distance-3 code?",
+              "options": [
+                "A single ancilla fault can spread to up to three data qubits",
+                "The ancilla is too noisy",
+                "It uses too many gates"
+              ],
+              "correct_index": 0,
+              "explanation": "The lesson found 4 dangerous single faults with maximum weight 3."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does the cat-state ancilla achieve?",
+              "options": [
+                "Each ancilla qubit touches one data qubit, so a single fault causes at most one data error",
+                "It removes all faults",
+                "It measures faster"
+              ],
+              "correct_index": 0,
+              "explanation": "The maximum data-error weight was 1."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B159",
+              "locator": "Fowler et al. (arXiv 1208.0928): syndrome extraction circuits for the surface code and error propagation"
+            },
+            {
+              "book": "B158",
+              "locator": "Google Quantum AI (arXiv 2408.13687): experimental syndrome extraction cycles"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Shor's fault-tolerance construction and flag-qubit methods are described from general knowledge and not read; the propagation rules and the counts are computed here. The cat-state preparation and verification are not simulated."
+          },
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "3.9 Threshold Concepts",
+          "summary": "A Monte Carlo of the surface-code logical error rate for d = 3, 5, 7 showing the crossing near 10 percent, the suppression factor per step in d, and the concatenation threshold theorem with the doubly exponential suppression.",
+          "estimated_minutes": 65,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **threshold theorem** is the result that makes large quantum computation conceivable: if the physical error rate per operation is below a threshold p_th (and the noise is not too correlated), then an arbitrarily long computation can be performed with arbitrarily small logical error at a polylogarithmic overhead. There are two standard pictures. For **concatenated codes**, one level of a distance-3 code maps an error rate p to about c·p², so k levels give p_k = (c·p)^(2^k)/c, **doubly exponential** suppression if c·p < 1, and growth if c·p > 1; the threshold is p_th ≈ 1/c. For the **surface code**, increasing the distance d by 2 multiplies the logical error rate by a factor Λ ≈ p_th/p, so p_L ≈ A·(p/p_th)^((d+1)/2): below threshold bigger codes are better, above threshold they are worse, and the curves for different d cross at the threshold.\n\nThe listing estimates the surface-code threshold under the simplest noise model, **code-capacity noise** (independent X errors with probability p on each data qubit, perfect syndrome measurement), with the exact matching decoder of 3.6, for d = 3, 5, 7 and 1,000 trials per entry. Its statistical uncertainty is stated in the output. It then evaluates the concatenation recursion with the coefficient c = 16.3 measured for the Steane code in 3.7. The labs are simulations written for the lesson: exact Pauli enumeration, state vectors, a stabilizer helper class and a minimum-weight matching decoder (an exact dynamic programme), with Qiskit used as a cross-check where noted. Random instances use fixed seeds. Monte Carlo rates carry statistical error, which the lessons state; none of this is a hardware result."
+            },
+            {
+              "type": "code",
+              "id": "c-threshold",
+              "language": "python",
+              "code": "import itertools, math\nfrom collections import deque\nfrom functools import lru_cache\nimport numpy as np\n\nclass PlanarSurfaceCode:\n    # unrotated planar surface code of distance d on a (2d-1) x (2d-1) grid. Data qubits sit at positions (r, c) with r + c even;\n    # Z-type stabilizers (which detect X errors) at (r odd, c even) and X-type stabilizers at (r even, c odd), each acting on its grid neighbours.\n    def __init__(self, d):\n        self.d, self.L = d, 2 * d - 1\n        L = self.L\n        self.data = [(r, c) for r in range(L) for c in range(L) if (r + c) % 2 == 0]\n        self.index = {q: i for i, q in enumerate(self.data)}\n        near = lambda r, c: [(r + dr, c + dc) for dr, dc in ((-1, 0), (1, 0), (0, -1), (0, 1)) if 0 <= r + dr < L and 0 <= c + dc < L]\n        self.zstabs = [(r, c) for r in range(1, L, 2) for c in range(0, L, 2)]\n        self.xstabs = [(r, c) for r in range(0, L, 2) for c in range(1, L, 2)]\n        self.zsupport = {s: [self.index[q] for q in near(*s)] for s in self.zstabs}\n        self.xsupport = {s: [self.index[q] for q in near(*s)] for s in self.xstabs}\n        self.logical_z = [self.index[(0, c)] for c in range(0, L, 2)]             # a Z string along the top row\n        self.logical_x = [self.index[(r, 0)] for r in range(0, L, 2)]             # an X string down the left column\n        # matching graph for X errors: nodes are Z stabilizers plus two boundary nodes; every data qubit is an edge\n        self.nodes = {s: i for i, s in enumerate(self.zstabs)}\n        TOP, BOTTOM = len(self.zstabs), len(self.zstabs) + 1\n        self.edges = []                                                          # (node u, node v, data qubit)\n        for q, (r, c) in enumerate(self.data):\n            touching = [self.nodes[s] for s in self.zstabs if q in self.zsupport[s]]\n            if len(touching) == 2: self.edges.append((touching[0], touching[1], q))\n            else: self.edges.append((touching[0], TOP if r == 0 else BOTTOM, q))\n        self.TOP, self.BOTTOM = TOP, BOTTOM\n        n_nodes = len(self.zstabs) + 2\n        adj = [[] for _ in range(n_nodes)]\n        for u, v, q in self.edges:\n            adj[u].append((v, q)); adj[v].append((u, q))\n        self.dist, self.path = {}, {}\n        for src in range(n_nodes):                                                # breadth-first search from every node\n            dist = {src: 0}; prev = {src: None}; queue = deque([src])\n            while queue:\n                u = queue.popleft()\n                for v, q in adj[u]:\n                    if v not in dist:\n                        dist[v] = dist[u] + 1; prev[v] = (u, q); queue.append(v)\n            self.dist[src] = dist\n            self.path[src] = prev\n    def syndrome_X(self, error_qubits):\n        e = set(error_qubits)\n        return [i for i, s in enumerate(self.zstabs) if sum(1 for q in self.zsupport[s] if q in e) % 2 == 1]\n    def path_qubits(self, a, b):\n        qs, node = [], b\n        while node != a:\n            u, q = self.path[a][node]\n            qs.append(q); node = u\n        return qs\n    def decode_X(self, defects):\n        # minimum-weight perfect matching of the defects, where a defect may also be matched to a boundary; exact dynamic programme over subsets\n        k = len(defects)\n        if k == 0: return []\n        to_boundary = [min((self.dist[defects[i]].get(self.TOP, 10 ** 9), self.TOP), (self.dist[defects[i]].get(self.BOTTOM, 10 ** 9), self.BOTTOM)) for i in range(k)]\n        @lru_cache(maxsize=None)\n        def best(mask):\n            if mask == (1 << k) - 1: return 0, ()\n            i = next(j for j in range(k) if not mask >> j & 1)\n            options = [(to_boundary[i][0] + best(mask | 1 << i)[0], (i, None))]\n            for j in range(i + 1, k):\n                if not mask >> j & 1:\n                    options.append((self.dist[defects[i]][defects[j]] + best(mask | 1 << i | 1 << j)[0], (i, j)))\n            cost, choice = min(options, key=lambda t: t[0])\n            rest = best(mask | 1 << choice[0] | (1 << choice[1] if choice[1] is not None else 0))[1]\n            return cost, (choice,) + rest\n        correction = []\n        for i, j in best(0)[1]:\n            if j is None: correction += self.path_qubits(defects[i], to_boundary[i][1])\n            else: correction += self.path_qubits(defects[i], defects[j])\n        return correction\n    def logical_failure_X(self, error_qubits):\n        defects = self.syndrome_X(error_qubits)\n        correction = self.decode_X(defects)\n        residual = set(error_qubits) ^ set(correction)\n        assert not self.syndrome_X(residual), \"decoder must clear the syndrome\"\n        return sum(1 for q in residual if q in set(self.logical_z)) % 2 == 1        # odd overlap with the logical Z string: the residual is a logical X\nimport math\nimport numpy as np\n\n# --- threshold of the planar surface code under independent X errors (code-capacity noise) with minimum-weight matching decoding\nrng = np.random.default_rng(39)\ncodes = {d: PlanarSurfaceCode(d) for d in (3, 5, 7)}\ndef logical_rate(code, p, trials):\n    n = len(code.data); fails = 0\n    for _ in range(trials):\n        err = np.flatnonzero(rng.random(n) < p).tolist()\n        fails += code.logical_failure_X(err)\n    return fails / trials\ntrials = 1000\nps = (0.03, 0.06, 0.09, 0.11, 0.13)\nprint(f\"code-capacity noise, independent X errors with probability p on every data qubit; {trials} trials per entry\")\nprint(f\"{'p':>6} \" + \" \".join(f\"{'d = ' + str(d):>10}\" for d in codes) + f\" {'bare qubit':>11}\")\ntable = {}\nfor p in ps:\n    row = [logical_rate(codes[d], p, trials) for d in codes]\n    table[p] = row\n    print(f\"{p:>6} \" + \" \".join(f\"{r:>10.4f}\" for r in row) + f\" {p:>11}\")\nprint(\"below the threshold the logical error rate DECREASES as d grows; above it, it increases: the curves for different d cross near the threshold (about 10 percent for this idealised model, with an optimal decoder)\")\nbelow = table[0.03]; above = table[0.13]\nprint(\"at p = 0.03 larger codes are better:\", below[0] >= below[1] >= below[2], \"| at p = 0.13 larger codes are worse or equal within noise:\", above[0] <= above[2] + 0.02)\nprint(\"the statistical error of each entry is about +/- 0.01 to 0.015 (1,000 trials); the crossing of the curves is only resolved to within a few percent\")\n\n# --- the scaling below threshold: p_L ~ A (p / p_th)^((d+1)/2): each increase of d by 2 divides the logical rate by about p_th / p\nprint()\nr3, r5, r7 = table[0.03]\nprint(f\"at p = 0.03: logical rates {r3:.4f} (d = 3), {r5:.4f} (d = 5), {r7:.4f} (d = 7); suppression 3 -> 5: {r3 / r5 if r5 else float('inf'):.1f}; with p_th about 0.10 the formula predicts roughly p_th/p = {0.10 / 0.03:.1f} per step\")\nprint(\"deeper suppression needs more trials to resolve (a rate of 1e-4 needs ~1e5 trials); real studies use millions of samples and report fitted formulas\")\n\n# --- the threshold theorem for concatenated codes: one level maps p to c p^2; k levels give p_k = (c p)^(2^k) / c\nc = 16.3                                                                        # the leading coefficient measured for the Steane code in lesson 3.7\np_th = 1 / c\nprint()\nprint(f\"concatenation with a distance-3 code, p -> c p^2 with c = {c} (threshold 1/c = {p_th:.3f}):\")\nprint(f\"{'physical p':>11} {'level 1':>11} {'level 2':>11} {'level 3':>11} {'level 4':>11} {'levels needed for 1e-12':>25}\")\nfor p in (0.02, 0.05, 0.06, 0.07):\n    levels, q = [], p\n    for _ in range(4):\n        q = c * q * q; levels.append(q)\n    needed, q = 0, p\n    while q > 1e-12 and needed < 40 and q < 1:\n        q = c * q * q; needed += 1\n    print(f\"{p:>11} \" + \" \".join(f\"{l:>11.2e}\" for l in levels) + f\" {needed if q <= 1e-12 else 'never (above threshold)':>25}\")\nprint(\"below the threshold the error doubles its exponent with every level (doubly exponential suppression); above it the error grows towards 1 and extra levels make things worse. The physical qubits grow as 7^levels for the Steane code\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-threshold",
+              "language": "text",
+              "code": "code-capacity noise, independent X errors with probability p on every data qubit; 1000 trials per entry\n     p      d = 3      d = 5      d = 7  bare qubit\n  0.03     0.0250     0.0070     0.0010        0.03\n  0.06     0.0730     0.0450     0.0280        0.06\n  0.09     0.1320     0.1350     0.0990        0.09\n  0.11     0.1700     0.1900     0.1910        0.11\n  0.13     0.2280     0.2730     0.2770        0.13\nbelow the threshold the logical error rate DECREASES as d grows; above it, it increases: the curves for different d cross near the threshold (about 10 percent for this idealised model, with an optimal decoder)\nat p = 0.03 larger codes are better: True | at p = 0.13 larger codes are worse or equal within noise: True\nthe statistical error of each entry is about +/- 0.01 to 0.015 (1,000 trials); the crossing of the curves is only resolved to within a few percent\n\nat p = 0.03: logical rates 0.0250 (d = 3), 0.0070 (d = 5), 0.0010 (d = 7); suppression 3 -> 5: 3.6; with p_th about 0.10 the formula predicts roughly p_th/p = 3.3 per step\ndeeper suppression needs more trials to resolve (a rate of 1e-4 needs ~1e5 trials); real studies use millions of samples and report fitted formulas\n\nconcatenation with a distance-3 code, p -> c p^2 with c = 16.3 (threshold 1/c = 0.061):\n physical p     level 1     level 2     level 3     level 4   levels needed for 1e-12\n       0.02    6.52e-03    6.93e-04    7.83e-06    9.98e-10                         5\n       0.05    4.08e-02    2.71e-02    1.19e-02    2.32e-03                         7\n       0.06    5.87e-02    5.61e-02    5.13e-02    4.30e-02                        11\n       0.07    7.99e-02    1.04e-01    1.76e-01    5.06e-01   never (above threshold)\nbelow the threshold the error doubles its exponent with every level (doubly exponential suppression); above it the error grows towards 1 and extra levels make things worse. The physical qubits grow as 7^levels for the Steane code",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "At p = 0.03 the logical error rate falls with distance: 0.0250, 0.0070 and 0.0010 for d = 3, 5, 7, a suppression of about 3.6 per step (the formula with p_th ≈ 0.10 predicts about 3.3). At p = 0.13 the order reverses (0.228, 0.273, 0.277), and the curves cross between p = 0.09 and 0.11, consistent with the threshold of about 10 percent known for this idealised model with an optimal decoder; the statistical error of each entry is about ±0.01 to 0.015, so the crossing is resolved only to within a few percent and the lesson does not claim a precise value. **This is code-capacity noise**: with noisy syndrome measurements the surface-code threshold is about one percent, and for realistic circuit-level noise the experimental error rates must be below that.\n\nFor the concatenated Steane code with c = 16.3 the threshold is 1/c = 0.061. Below it the level-by-level error doubles its exponent: at p = 0.02 the levels give 6.5×10⁻³, 6.9×10⁻⁴, 7.8×10⁻⁶ and 10⁻⁹, and 5 levels reach 10⁻¹²; at p = 0.05 it takes 7 levels, at p = 0.06 (just below threshold) 11 levels, and at p = 0.07 the error grows and no number of levels helps. The physical qubit cost is 7^levels for the Steane code, which is why the surface code with its better threshold is preferred in practice. **Common mistake:** quoting a threshold without stating the noise model, the code and the decoder."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What happens to the logical error rate below threshold when the code distance increases?",
+              "options": [
+                "It decreases, roughly by a factor p_th/p per increase of d by 2",
+                "It increases",
+                "It stays the same"
+              ],
+              "correct_index": 0,
+              "explanation": "0.0250, 0.0070 and 0.0010 for d = 3, 5, 7 at p = 0.03."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is the quoted 10 percent threshold not a prediction for hardware?",
+              "options": [
+                "It is for code-capacity noise (independent errors, perfect syndrome measurement); circuit-level thresholds are about 1 percent",
+                "It is a bound for classical codes",
+                "It is an average over all devices"
+              ],
+              "correct_index": 0,
+              "explanation": "The lesson states the noise model with every result."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does concatenation do to the error rate below threshold?",
+              "options": [
+                "Squares it (times a constant) at each level, giving doubly exponential suppression",
+                "Halves it at each level",
+                "Leaves it unchanged"
+              ],
+              "correct_index": 0,
+              "explanation": "p_k = (c p)^(2^k) / c."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B158",
+              "locator": "Google Quantum AI, Quantum error correction below the surface code threshold (arXiv 2408.13687): logical error suppression with increasing distance"
+            },
+            {
+              "book": "B159",
+              "locator": "Fowler et al. (arXiv 1208.0928): thresholds of the surface code"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The code-capacity threshold of about 10 percent for matching decoding and the circuit-level value of about 1 percent are stated from the literature; the lesson's Monte Carlo is too small to measure the threshold precisely. The cited papers were not re-read."
+          },
+          "after": "sec-8"
+        },
+        {
+          "slug": "sec-10",
+          "action": "replace",
+          "title": "3.10 Error-Correction Overhead",
+          "summary": "An illustrative resource model: surface-code distance and qubit count for a target logical error, and a stated-assumption estimate for factoring a 2,048-bit number, with the dominant uncertainties named.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **overhead** of error correction is the ratio of physical resources to logical resources. For the surface code a widely used heuristic is p_L ≈ A·(p/p_th)^((d+1)/2) per logical qubit per round with A ≈ 0.1 and p_th ≈ 10⁻², and a rotated patch uses 2d² − 1 physical qubits per logical qubit (B159). The required distance grows only logarithmically with the target logical error rate, but the physical qubit count grows as d², and the **physical error rate** has an enormous influence: halving p can halve d. Beyond data patches, fault-tolerant computation needs **magic-state factories** for T and Toffoli gates, routing space, and classical decoding fast enough to keep up with the error-correction cycle.\n\nThe listing implements this model with every assumption written in the code. It tabulates the distance and qubits per logical qubit for p from 3×10⁻³ to 10⁻⁴ and logical error targets from 10⁻⁶ to 10⁻¹⁵, then estimates the resources for factoring a 2,048-bit number with the Beauregard circuit width of 4,099 logical qubits, an **assumed** 3×10⁹ Toffoli gates (each costing about d cycles), a cycle time of 1 µs, factories that double the qubit count, and a total failure budget of 1/3. It is an illustration of how the pieces combine, not a prediction. The labs are simulations written for the lesson: exact Pauli enumeration, state vectors, a stabilizer helper class and a minimum-weight matching decoder (an exact dynamic programme), with Qiskit used as a cross-check where noted. Random instances use fixed seeds. Monte Carlo rates carry statistical error, which the lessons state; none of this is a hardware result."
+            },
+            {
+              "type": "code",
+              "id": "c-overhead",
+              "language": "python",
+              "code": "import math\n\n# An ILLUSTRATIVE overhead model built from stated assumptions. It is not a prediction and not a hardware roadmap.\n# Surface code: logical error per round p_L = A (p / p_th)^((d + 1) / 2) with A = 0.1 and p_th = 1e-2 (a commonly quoted heuristic fit from the literature, not derived here);\n# a rotated surface code patch uses 2 d^2 - 1 physical qubits per logical qubit.\nA, P_TH = 0.1, 1e-2\ndef logical_error(p, d):\n    return A * (p / P_TH) ** ((d + 1) / 2)\ndef distance_for(p, target):\n    d = 3\n    while logical_error(p, d) > target:\n        d += 2\n        if d > 201: return None\n    return d\nprint(f\"{'physical error rate p':>22} {'target logical error':>21} {'required distance d':>20} {'physical qubits per logical qubit (2 d^2 - 1)':>46}\")\nfor p in (3e-3, 1e-3, 3e-4, 1e-4):\n    for target in (1e-6, 1e-12, 1e-15):\n        d = distance_for(p, target)\n        print(f\"{p:>22.0e} {target:>21.0e} {d if d else 'none':>20} {(2 * d * d - 1) if d else 'n/a':>46}\")\nprint(\"the required distance grows only logarithmically with the target, but the qubit count grows with d^2: better physical qubits shrink the overhead dramatically (p = 1e-4 needs far smaller d than p = 3e-3)\")\nprint(\"above the threshold (here p = 1e-2) no distance helps:\", distance_for(2e-2, 1e-6))\n\n# --- an illustrative resource estimate for factoring a 2,048-bit number, with every assumption stated\nn_bits = 2048\nlogical_data_qubits = 2 * n_bits + 3                                          # the Beauregard circuit width (lesson 2.1)\ntoffolis = 3e9                                                                 # ASSUMED: of the order of the published estimates (not derived here)\ncycle_time = 1e-6                                                              # ASSUMED: one error-correction cycle per microsecond\nfactory_overhead = 2.0                                                         # ASSUMED: magic-state factories add as many qubits as the data patches\nfailure_budget = 1 / 3                                                         # the whole computation may fail with probability 1/3\nprint()\nprint(f\"assumptions: {logical_data_qubits:,} logical data qubits, {toffolis:.0e} Toffoli gates (each costing about d cycles), cycle time {cycle_time * 1e6:.0f} microsecond, factories double the qubit count, total failure budget {failure_budget:.2f}\")\nprint(f\"{'physical error rate p':>22} {'distance d':>11} {'physical qubits (millions)':>28} {'run time (hours)':>17}\")\nfor p in (3e-3, 1e-3, 3e-4, 1e-4):\n    d = 3\n    while True:\n        cycles = toffolis * d\n        per_qubit_cycle = failure_budget / (logical_data_qubits * cycles)\n        if logical_error(p, d) <= per_qubit_cycle: break\n        d += 2\n        if d > 201: break\n    qubits = logical_data_qubits * (2 * d * d - 1) * factory_overhead\n    hours = toffolis * d * cycle_time / 3600\n    print(f\"{p:>22.0e} {d:>11} {qubits / 1e6:>28.1f} {hours:>17.1f}\")\nprint(\"the result is of the order of millions of physical qubits for p between 1e-3 and 1e-4, consistent in order of magnitude with the published estimate of roughly twenty million noisy qubits for RSA-2048 (an estimate I recall from the literature and have not re-checked)\")\nprint(\"today's devices have hundreds to a few thousand physical qubits with error rates around 1e-3 per two-qubit gate (module B5): the gap in qubit number is more than three orders of magnitude, and every assumption above can move the answer by a factor of several\")\nprint()\nprint(\"what moves the estimate: lower physical error rates (shrinks d), faster cycles (shortens the run), better codes (fewer qubits per logical qubit), cheaper magic states (smaller factories), and algorithmic improvements (fewer Toffoli gates)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-overhead",
+              "language": "text",
+              "code": " physical error rate p  target logical error  required distance d  physical qubits per logical qubit (2 d^2 - 1)\n                 3e-03                 1e-06                   19                                            721\n                 3e-03                 1e-12                   43                                           3697\n                 3e-03                 1e-15                   53                                           5617\n                 1e-03                 1e-06                   11                                            241\n                 1e-03                 1e-12                   23                                           1057\n                 1e-03                 1e-15                   29                                           1681\n                 3e-04                 1e-06                    7                                             97\n                 3e-04                 1e-12                   15                                            449\n                 3e-04                 1e-15                   19                                            721\n                 1e-04                 1e-06                    5                                             49\n                 1e-04                 1e-12                   11                                            241\n                 1e-04                 1e-15                   15                                            449\nthe required distance grows only logarithmically with the target, but the qubit count grows with d^2: better physical qubits shrink the overhead dramatically (p = 1e-4 needs far smaller d than p = 3e-3)\nabove the threshold (here p = 1e-2) no distance helps: None\n\nassumptions: 4,099 logical data qubits, 3e+09 Toffoli gates (each costing about d cycles), cycle time 1 microsecond, factories double the qubit count, total failure budget 0.33\n physical error rate p  distance d   physical qubits (millions)  run time (hours)\n                 3e-03          55                         49.6              45.8\n                 1e-03          27                         11.9              22.5\n                 3e-04          19                          5.9              15.8\n                 1e-04          13                          2.8              10.8\nthe result is of the order of millions of physical qubits for p between 1e-3 and 1e-4, consistent in order of magnitude with the published estimate of roughly twenty million noisy qubits for RSA-2048 (an estimate I recall from the literature and have not re-checked)\ntoday's devices have hundreds to a few thousand physical qubits with error rates around 1e-3 per two-qubit gate (module B5): the gap in qubit number is more than three orders of magnitude, and every assumption above can move the answer by a factor of several\n\nwhat moves the estimate: lower physical error rates (shrinks d), faster cycles (shortens the run), better codes (fewer qubits per logical qubit), cheaper magic states (smaller factories), and algorithmic improvements (fewer Toffoli gates)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "For p = 10⁻³ the distance needed for a logical error of 10⁻¹² is 23 (1,057 physical qubits per logical qubit), against 15 (449 qubits) at p = 3×10⁻⁴ and 11 (241) at p = 10⁻⁴, while at p = 3×10⁻³ it takes 43 (3,697 qubits); above the assumed threshold (p = 0.02) no distance reaches the target. For the factoring illustration the model gives 49.6 million physical qubits and 46 hours at p = 3×10⁻³, 11.9 million and 22.5 hours at p = 10⁻³, 5.9 million at 3×10⁻⁴ and 2.8 million and 10.8 hours at 10⁻⁴: of the order of millions of physical qubits, consistent in order of magnitude with a published estimate of roughly twenty million noisy qubits for RSA-2048 that I recall from the literature and have not re-checked. Present devices have, to my knowledge, hundreds to a few thousand physical qubits at two-qubit-gate error rates of order 10⁻³ (module B5), so the qubit gap is about three orders of magnitude or more, and this holds before decoder speed, wiring and cooling are considered.\n\n**How to use the number.** The estimate answers *what would be needed*, not *when*: lower error rates, faster cycles, better codes, cheaper magic states and better algorithms each move it, individually by factors of several. For the security planning of modules B8 and E1 the point is that the requirement is large and specific, so progress can be tracked against measurable milestones (logical error rates below threshold, logical qubit counts) and not against a calendar guess. **Common mistake:** quoting one qubit number without the error rate, the cycle time and the algorithm it assumes."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How does the required surface-code distance depend on the target logical error rate?",
+              "options": [
+                "Logarithmically, but the qubit count grows as d^2",
+                "Linearly with the target",
+                "It does not depend on it"
+              ],
+              "correct_index": 0,
+              "explanation": "d = 23 for 1e-12 and 29 for 1e-15 at p = 1e-3."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What happens above the threshold in the overhead model?",
+              "options": [
+                "No code distance reaches the target logical error rate",
+                "The overhead halves",
+                "Only more factories are needed"
+              ],
+              "correct_index": 0,
+              "explanation": "The model returns no distance for p = 0.02."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is a single qubit-count number for breaking RSA-2048 incomplete?",
+              "options": [
+                "It depends on the physical error rate, cycle time, algorithm and factory design",
+                "RSA-2048 is not breakable",
+                "Qubit counts do not matter"
+              ],
+              "correct_index": 0,
+              "explanation": "The lesson's estimate ranges from 2.8 to 49.6 million qubits across error rates."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B159",
+              "locator": "Fowler et al. (arXiv 1208.0928): the logical error formula, qubit counts of the surface code and the overhead of magic states"
+            },
+            {
+              "book": "B158",
+              "locator": "Google Quantum AI (arXiv 2408.13687): measured logical error suppression of distance 3, 5 and 7 patches"
+            },
+            {
+              "book": "B111",
+              "locator": "Qiskit documentation and the hardware modules of this course for current device sizes (not a source for the numbers above)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The heuristic p_L = 0.1 (p/p_th)^((d+1)/2), the 3e9 Toffoli count, the factory overhead and the 'about twenty million qubits' literature estimate are recalled or assumed, not derived or re-checked here; statements about the size of present devices are general knowledge as of the lesson's date and not sourced."
+          },
+          "after": "sec-9"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "c3-n01",
+          "prompt": "Why is T2 at most 2 T1?",
+          "options": [
+            "Relaxation alone shrinks coherences, and a slower decay is not completely positive",
+            "T2 is a hardware limit only",
+            "Because dephasing is faster"
+          ],
+          "correct_index": 0,
+          "explanation": "The Choi matrix has a negative eigenvalue for T2 > 2 T1.",
+          "source": {
+            "book": "B114",
+            "locator": "thermal_relaxation_error"
+          }
+        },
+        {
+          "id": "c3-n02",
+          "prompt": "What is the logical error rate of the 3-qubit bit-flip code?",
+          "options": [
+            "3p^2 - 2p^3",
+            "p^3",
+            "3p"
+          ],
+          "correct_index": 0,
+          "explanation": "It fails when two or more qubits flip.",
+          "source": {
+            "book": "B159",
+            "locator": "Repetition code"
+          }
+        },
+        {
+          "id": "c3-n03",
+          "prompt": "Why does a bit-flip code not protect against phase flips?",
+          "options": [
+            "Z errors commute with its stabilizers and are invisible to the syndrome",
+            "It has too few qubits",
+            "Phase flips are too fast"
+          ],
+          "correct_index": 0,
+          "explanation": "Its logical error under Z noise exceeded the bare rate.",
+          "source": {
+            "book": "B159",
+            "locator": "Stabilizer codes"
+          }
+        },
+        {
+          "id": "c3-n04",
+          "prompt": "What does the discretisation of errors say?",
+          "options": [
+            "Correcting I, X, Y, Z corrects any single-qubit error",
+            "Errors are always discrete in hardware",
+            "Continuous errors cannot be corrected"
+          ],
+          "correct_index": 0,
+          "explanation": "Any single-qubit operation is a combination of the four Paulis.",
+          "source": {
+            "book": "B159",
+            "locator": "Quantum error correction"
+          }
+        },
+        {
+          "id": "c3-n05",
+          "prompt": "How is Steane's code constructed?",
+          "options": [
+            "As a CSS code from the [7,4,3] Hamming code",
+            "From three repetition codes",
+            "From the surface code"
+          ],
+          "correct_index": 0,
+          "explanation": "X and Z stabilizers use the same checks.",
+          "source": {
+            "book": "B159",
+            "locator": "CSS codes"
+          }
+        },
+        {
+          "id": "c3-n06",
+          "prompt": "Which gates are transversal for the Steane code?",
+          "options": [
+            "Clifford gates such as H, S and CNOT",
+            "T",
+            "All gates"
+          ],
+          "correct_index": 0,
+          "explanation": "Eastin-Knill forbids a universal transversal set.",
+          "source": {
+            "book": "B159",
+            "locator": "Fault tolerance"
+          }
+        },
+        {
+          "id": "c3-n07",
+          "prompt": "When do two Paulis commute in the binary picture?",
+          "options": [
+            "When their symplectic product is 0 mod 2",
+            "When they have equal weight",
+            "When they are equal"
+          ],
+          "correct_index": 0,
+          "explanation": "x.z' + z.x' mod 2.",
+          "source": {
+            "book": "B111",
+            "locator": "Clifford and stabilizer classes"
+          }
+        },
+        {
+          "id": "c3-n08",
+          "prompt": "How many data qubits has a distance-d planar surface code?",
+          "options": [
+            "d^2 + (d-1)^2",
+            "d^2",
+            "2d"
+          ],
+          "correct_index": 0,
+          "explanation": "13, 41 and 85 for d = 3, 5, 7.",
+          "source": {
+            "book": "B159",
+            "locator": "Surface code"
+          }
+        },
+        {
+          "id": "c3-n09",
+          "prompt": "How is a logical T gate applied?",
+          "options": [
+            "Gate teleportation consuming a magic state",
+            "A transversal T",
+            "A stabilizer measurement"
+          ],
+          "correct_index": 0,
+          "explanation": "The Clifford correction after outcome 1 is S.",
+          "source": {
+            "book": "B159",
+            "locator": "Magic states"
+          }
+        },
+        {
+          "id": "c3-n10",
+          "prompt": "Why is a single-ancilla syndrome extraction not fault tolerant for distance 3?",
+          "options": [
+            "A single ancilla fault can spread to up to three data qubits",
+            "It is too slow",
+            "It needs too many qubits"
+          ],
+          "correct_index": 0,
+          "explanation": "Pauli propagation through CNOTs.",
+          "source": {
+            "book": "B159",
+            "locator": "Syndrome extraction"
+          }
+        },
+        {
+          "id": "c3-n11",
+          "prompt": "What happens below the threshold as the surface-code distance grows?",
+          "options": [
+            "The logical error rate falls, about a factor p_th/p per step of 2 in d",
+            "It rises",
+            "It is constant"
+          ],
+          "correct_index": 0,
+          "explanation": "The curves cross at the threshold.",
+          "source": {
+            "book": "B158",
+            "locator": "Distance scaling"
+          }
+        },
+        {
+          "id": "c3-n12",
+          "prompt": "What does the overhead of the surface code depend on most strongly?",
+          "options": [
+            "The physical error rate",
+            "The colour of the qubits",
+            "The operating system"
+          ],
+          "correct_index": 0,
+          "explanation": "Halving p can halve the required distance.",
+          "source": {
+            "book": "B159",
+            "locator": "Resource estimates"
+          }
+        }
+      ],
+      "estimated_minutes": 605,
+      "notes": "Rewrites ten outline sections as lessons with executed listings: thermal-relaxation channels checked against Aer with the T2 constraint, exact repetition-code rates, Shor and Steane codes verified exhaustively including random unitary errors, a stabilizer-code helper with the perfect five-qubit code and a tableau cross-check, a planar surface code with a matching decoder, exact break-even coefficients and magic-state teleportation, Pauli-error propagation through syndrome extraction, a threshold Monte Carlo for d = 3, 5, 7 with the concatenation recursion, and an assumption-explicit overhead model.",
+      "learning_objectives": [
+        "Build noise channels from T1 and T2, state the T2 <= 2 T1 constraint and use Pauli twirling.",
+        "Analyse repetition, Shor, Steane and five-qubit codes with stabilizers, syndromes, distance and exact logical error rates.",
+        "Use the stabilizer formalism and its classical simulation, including the Gottesman-Knill theorem.",
+        "Construct and decode a planar surface code and verify that it corrects errors up to (d-1)/2.",
+        "Explain fault tolerance through error propagation and the role of logical gates and magic states.",
+        "State the threshold theorem with its noise model and read an overhead estimate with its assumptions."
+      ]
+    }
+  ]
+}
