@@ -124,6 +124,9 @@ export const AdminCourses: React.FC = () => {
           <p className="ls-muted">Create and edit tracks, modules and sections. Changes stay as drafts until published.</p>
         </div>
         <div className="ls-row">
+          <Link to="/admin/audit" className="ls-btn ls-btn--secondary">
+            Audit log
+          </Link>
           <button type="button" className="ls-btn ls-btn--secondary" onClick={() => setDialog({ kind: 'track' })}>
             <Plus size={15} aria-hidden="true" /> New track
           </button>

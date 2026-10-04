@@ -25,11 +25,12 @@
 .ad-stat { background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; padding: 18px 20px; }
 .ad-stat-value { font-size: 26px; font-weight: 700; margin-top: 4px; }
 
-/* Layout */
-.ad-layout { display: flex; flex-wrap: wrap; gap: 24px; align-items: flex-start; }
+/* Layout: a fixed track column and a flexible module table. Plain grid and media queries, so it never depends on
+   container-query support or on flex-grow arithmetic. */
+.ad-layout { display: grid; grid-template-columns: 260px minmax(0, 1fr); gap: 24px; align-items: start; width: 100%; }
 .ad-tracks {
-  flex: 0 0 260px; background: var(--color-surface); border: 1px solid var(--color-border);
-  border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 6px;
+  background: var(--color-surface); border: 1px solid var(--color-border);
+  border-radius: 12px; padding: 16px; display: flex; flex-direction: column; gap: 6px; position: sticky; top: calc(var(--header-height) + 16px);
 }
 .ad-track {
   display: flex; justify-content: space-between; gap: 8px; padding: 12px; border-radius: 8px; border: 0;
@@ -38,7 +39,7 @@
 }
 .ad-track:hover { background: var(--color-surface-low); }
 .ad-track--on { background: var(--color-primary-fixed); color: var(--color-primary); font-weight: 600; }
-.ad-table { container-type: inline-size; flex: 999 1 560px; min-width: 0; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; overflow: hidden; }
+.ad-table { min-width: 0; width: 100%; box-sizing: border-box; background: var(--color-surface); border: 1px solid var(--color-border); border-radius: 12px; overflow: hidden; }
 .ad-table-head { display: flex; flex-wrap: wrap; gap: 12px; justify-content: space-between; align-items: center; padding: 20px 24px; border-bottom: 1px solid var(--color-border); }
 .ad-track-title { font-size: 18px; font-weight: 600; display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
 .ad-cols { display: grid; grid-template-columns: 36px minmax(0, 3fr) 110px 100px 80px 84px; gap: 12px; padding: 14px 24px; align-items: center; font-size: 14px; }
@@ -138,17 +139,18 @@
 .ad-check-fail { color: var(--color-text-primary); font-weight: 600; }
 .ad-check-fail svg { color: var(--color-error); }
 
-@container (max-width: 640px) {
+@media (max-width: 900px) {
+  .ad-layout { grid-template-columns: minmax(0, 1fr); }
+  .ad-tracks { position: static; }
+}
+@media (max-width: 720px) {
   .ad-cols { grid-template-columns: 36px minmax(0, 1fr) 90px; }
   .ad-cols > :nth-child(5), .ad-cols > :nth-child(4) { display: none; }
   .ad-cols--head > :nth-child(4), .ad-cols--head > :nth-child(5) { display: none; }
   .ad-expanded { padding-left: 24px; }
 }
-@container (max-width: 880px) {
-  .ad-tracks { flex-basis: 100%; }
-}
 /* Three columns (sections, editor, settings) only when the editor really has the room. */
-@container (min-width: 1100px) {
+@media (min-width: 1280px) {
   .ad-rail { flex: 0 0 250px; max-height: none; position: sticky; top: calc(var(--header-height) + 16px); }
   .ad-side { flex: 0 0 280px; }
   .ad-topbar { position: sticky; top: var(--header-height); }

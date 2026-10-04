@@ -1290,3 +1290,8 @@ button, input, select, textarea {
   .reader-footer-nav-btn span { display: none; }
   .empty-state-banner { padding: 20px 16px 0; }
 }
+
+/* On phones the header keeps the menu, logo and account buttons; the search box would only be a sliver. */
+@media (max-width: 560px) {
+  .header-search-wrapper { display: none; }
+}
