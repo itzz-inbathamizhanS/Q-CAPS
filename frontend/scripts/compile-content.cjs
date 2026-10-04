@@ -41,7 +41,10 @@ for (const qDir of quizDirs) {
       const quiz = JSON.parse(fs.readFileSync(path.join(dirPath, file), 'utf8'));
       quizModuleIds.push(quiz.module_id);
       for (const q of quiz.questions || []) {
-        quizItems.push({ id: q.id, competency_id: q.competency_id ?? null, depth: q.depth ?? null, lesson_id: q.lesson_id ?? null });
+        quizItems.push({
+          id: q.id, module_id: quiz.module_id, competency_id: q.competency_id ?? null, depth: q.depth ?? null,
+          lesson_id: q.lesson_id ?? null, tag_status: q.tag_status ?? null,
+        });
       }
     } catch (err) {
       console.error(`Error parsing quiz ${file}:`, err);
@@ -471,10 +474,11 @@ writeOut(
 console.log(`Saved ${badges.length} badges and ${certificates.length} certificates.`);
 
 // The browser never receives answer keys, feedback or consequences: the server grades labs and missions.
-function publicScenario(sc) {
+// Competency tags are curriculum metadata the server uses for capability estimates; the client does not need them.
+function publicScenario({ competencies: _c, tag_status: _t, ...sc }) {
   return { ...sc, choices: sc.choices.map(({ id, text }) => ({ id, text })) };
 }
-function publicMission(m) {
+function publicMission({ competencies: _c, tag_status: _t, ...m }) {
   return { ...m, stages: m.stages.map((st) => (st.choices ? { ...st, choices: st.choices.map(({ id, text }) => ({ id, text })) } : st)) };
 }
 
@@ -561,6 +565,10 @@ if (fs.existsSync(modelPath) && fs.existsSync(lessonsPath)) {
     lessonDoc: JSON.parse(fs.readFileSync(lessonsPath, 'utf8')),
     manifestModuleIds: Object.keys(manifest.modules),
     quizItems,
+    practicals: [
+      ...escapeRooms.map((s) => ({ kind: 'lab', id: s.id, competencies: s.competencies, tag_status: s.tag_status })),
+      ...missions.map((m) => ({ kind: 'mission', id: m.mission_id, competencies: m.competencies, tag_status: m.tag_status })),
+    ],
   }));
 } else if (fs.existsSync(modelPath) !== fs.existsSync(lessonsPath)) {
   problems.push('content/curriculum needs both competency_model.json and track_a_lessons.json');

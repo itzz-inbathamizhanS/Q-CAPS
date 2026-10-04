@@ -70,3 +70,48 @@ test('quiz item pointing at an unknown lesson', () => {
   const f = fixture(); f.quizItems[0].lesson_id = 'A9.L9';
   has(validateCompetencyModel(f), 'unknown lesson A9.L9');
 });
+
+// --- drafted tags (T1.2) ---
+test('item of a module without a lesson design may be tagged without a lesson', () => {
+  const f = fixture();
+  f.quizItems.push({ id: 'b9-q1', module_id: 'track_b_b9', competency_id: 'NET.2', depth: 'Explain', tag_status: 'proposed-unreviewed' });
+  assert.deepStrictEqual(validateCompetencyModel(f), []);
+});
+test('item of a module with a lesson design needs a lesson', () => {
+  const f = fixture();
+  f.quizItems.push({ id: 'a3-q9', module_id: 'track_a_a3_x', competency_id: 'NET.1', depth: 'Aware' });
+  has(validateCompetencyModel(f), 'need a lesson_id');
+});
+test('lesson without competency and depth', () => {
+  const f = fixture(); f.quizItems[1].lesson_id = 'A3.L1';
+  has(validateCompetencyModel(f), 'lesson_id without competency_id and depth');
+});
+test('unknown tag status', () => {
+  const f = fixture(); f.quizItems[0].tag_status = 'approved-by-me';
+  has(validateCompetencyModel(f), 'unknown tag_status approved-by-me');
+});
+test('a no-competency item must not carry tags', () => {
+  const f = fixture(); f.quizItems[0].tag_status = 'no-competency';
+  has(validateCompetencyModel(f), 'must not carry tags');
+  f.quizItems[1].tag_status = 'no-competency';
+  assert.ok(!validateCompetencyModel(f).some((e) => e.startsWith('a3-q2')));
+});
+test('tag status on an untagged item', () => {
+  const f = fixture(); f.quizItems[1].tag_status = 'proposed-unreviewed';
+  has(validateCompetencyModel(f), 'on an untagged item');
+});
+test('practicals: tags are checked, untagged practicals are allowed', () => {
+  const f = fixture();
+  f.practicals = [
+    { kind: 'lab', id: 'lab-1', competencies: [{ id: 'NET.1', depth: 'Apply' }], tag_status: 'proposed-unreviewed' },
+    { kind: 'mission', id: 'm-1' },
+  ];
+  assert.deepStrictEqual(validateCompetencyModel(f), []);
+  f.practicals[0].competencies[0].id = 'NET.9';
+  has(validateCompetencyModel(f), 'lab lab-1: unknown competency NET.9');
+});
+test('practicals: duplicate ids', () => {
+  const f = fixture();
+  f.practicals = [{ kind: 'lab', id: 'x' }, { kind: 'lab', id: 'x' }];
+  has(validateCompetencyModel(f), 'duplicate lab x');
+});

@@ -13,7 +13,8 @@
     "test:content": "node --test scripts/curriculum-validation.test.cjs scripts/competency-validation.test.cjs scripts/avalanche.test.cjs scripts/recommended-module.test.cjs",
     "test": "vitest run",
     "test:watch": "vitest",
-    "test:e2e": "playwright test"
+    "test:e2e": "playwright test",
+    "content:coverage": "node scripts/competency-coverage.cjs"
   },
   "dependencies": {
     "lucide-react": "^0.441.0",

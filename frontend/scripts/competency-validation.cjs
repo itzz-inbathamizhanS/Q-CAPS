@@ -1,8 +1,10 @@
-// Validation for the competency model, Track A lesson structure and tagged quiz items.
+// Validation for the competency model, Track A lesson structure, tagged quiz items and tagged practicals.
 // Pure function: no file access. Kept separate from curriculum-validation.cjs, which covers
 // the module/prerequisite graph.
 
-function validateCompetencyModel({ model, lessonDoc, manifestModuleIds, quizItems }) {
+const TAG_STATUSES = new Set(['proposed-unreviewed', 'reviewed', 'no-competency']);
+
+function validateCompetencyModel({ model, lessonDoc, manifestModuleIds, quizItems, practicals }) {
   const errors = [];
   const err = (msg) => errors.push(msg);
 
@@ -61,20 +63,48 @@ function validateCompetencyModel({ model, lessonDoc, manifestModuleIds, quizItem
   }
 
   // --- tagged quiz items ---
+  // competency_id and depth go together. lesson_id is required for items of modules that have a lesson design
+  // (Track A) and optional elsewhere. Drafted tags carry tag_status "proposed-unreviewed" until a reviewer
+  // marks them "reviewed"; "no-competency" marks an item that tests course structure rather than a skill.
   const lessonById = new Map((lessonDoc.lessons || []).map((l) => [l.lesson_id, l]));
   const itemIds = new Set();
   for (const q of quizItems || []) {
     if (itemIds.has(q.id)) err(`duplicate quiz item id ${q.id}`);
     itemIds.add(q.id);
-    const tagged = [q.competency_id, q.depth, q.lesson_id].filter((v) => v != null).length;
-    if (tagged === 0) continue; // untagged seed item: allowed, reported by the tagging report
-    if (tagged !== 3) { err(`${q.id}: competency_id, depth and lesson_id must be set together`); continue; }
+    if (q.tag_status != null && !TAG_STATUSES.has(q.tag_status)) err(`${q.id}: unknown tag_status ${q.tag_status}`);
+    if (q.tag_status === 'no-competency') {
+      if (q.competency_id != null || q.depth != null || q.lesson_id != null) err(`${q.id}: a no-competency item must not carry tags`);
+      continue;
+    }
+    const tagged = [q.competency_id, q.depth].filter((v) => v != null).length;
+    if (tagged === 0) {
+      if (q.lesson_id != null) err(`${q.id}: lesson_id without competency_id and depth`);
+      if (q.tag_status != null) err(`${q.id}: tag_status ${q.tag_status} on an untagged item`);
+      continue; // untagged item: allowed, listed by the coverage report
+    }
+    if (tagged !== 2) { err(`${q.id}: competency_id and depth must be set together`); continue; }
     checkTag(q.id, q.competency_id, q.depth);
+    if (q.lesson_id == null) {
+      if (q.module_id != null && moduleIds.has(q.module_id)) err(`${q.id}: items of ${q.module_id} need a lesson_id (the module has a lesson design)`);
+      continue;
+    }
     const lesson = lessonById.get(q.lesson_id);
     if (!lesson) { err(`${q.id}: unknown lesson ${q.lesson_id}`); continue; }
     if (!lesson.competencies.some((c) => c.id === q.competency_id)) {
       err(`${q.id}: competency ${q.competency_id} is not an objective of ${q.lesson_id}`);
     }
+  }
+
+  // --- tagged practicals (labs and missions) ---
+  // The Proficient level needs a passed practical, so practicals carry competency tags too.
+  const practicalIds = new Set();
+  for (const p of practicals || []) {
+    const where = `${p.kind} ${p.id}`;
+    if (practicalIds.has(where)) err(`duplicate ${where}`);
+    practicalIds.add(where);
+    if (!Array.isArray(p.competencies) || p.competencies.length === 0) continue; // untagged: listed by the report
+    if (p.tag_status != null && !TAG_STATUSES.has(p.tag_status)) err(`${where}: unknown tag_status ${p.tag_status}`);
+    for (const c of p.competencies) checkTag(where, c.id, c.depth);
   }
   return errors;
 }
