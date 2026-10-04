@@ -1,0 +1,1267 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B04",
+      "title": "FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B92",
+      "title": "FIPS 204: Module-Lattice-Based Digital Signature Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B93",
+      "title": "FIPS 205: Stateless Hash-Based Digital Signature Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B95",
+      "title": "NIST SP 800-227: Recommendations for Key-Encapsulation Mechanisms",
+      "authors": "Alagic, Barker, Chen, Moody, Robinson, Silberg, Waller",
+      "edition": "September 2025",
+      "year": 2025,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B90",
+      "title": "kyber-py: a pure Python implementation of ML-KEM (FIPS 203), version 1.2.0 (PyPI package metadata)",
+      "authors": "Package authors",
+      "edition": "1.2.0",
+      "year": 2025
+    },
+    {
+      "id": "B100",
+      "title": "cryptography (Python package) version 50.0.1, with ML-KEM and ML-DSA backed by OpenSSL",
+      "authors": "Python Cryptographic Authority",
+      "edition": "50.0.1",
+      "year": 2026
+    },
+    {
+      "id": "B01",
+      "title": "Understanding Cryptography: From Established Symmetric and Asymmetric Ciphers to Post-Quantum Algorithms",
+      "authors": "Christof Paar, Jan Pelzl, Tim Güneysu",
+      "edition": "2nd edition",
+      "year": 2024,
+      "publisher": "Springer",
+      "isbn": "978-3-662-69007-9"
+    },
+    {
+      "id": "B02",
+      "title": "A Graduate Course in Applied Cryptography",
+      "authors": "Dan Boneh, Victor Shoup",
+      "edition": "Version 0.6",
+      "year": 2023
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_c_c10_pqc_attack_surface",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "10.1 Side-Channel Attacks",
+          "summary": "What a side channel is, an attack through a work counter that recovers a secret byte by byte, and a constant-work comparison that closes it.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **side-channel attack** uses information that leaks from the *implementation* of a cryptosystem and not from its mathematics. Anything that depends on a secret can leak: the time an operation takes, the memory addresses it touches (and so the cache lines), the current it draws, the electromagnetic field it emits, the way it fails when disturbed. NIST SP 800-227 defines a side-channel attack as one enabled by the leakage of information from a deployed cryptosystem, and requires KEM implementations to be designed with appropriate countermeasures, including **constant-time implementations** against timing attacks and protection of memory from leakage; it adds that universal guidelines are unlikely to be helpful because exposure varies significantly with the application and countermeasures are often costly (SP 800-227, Implementation requirements, \"Side-channel protection\"). The same concern appears in FIPS 204 and FIPS 205, which both warn that implementations must be protected against side-channel and fault attacks.\n\nA post-quantum algorithm is not immune just because it resists quantum computers: the new schemes are *implementation-heavy* (many secret-dependent loops, rejection sampling, large tables, polynomial arithmetic), so their security in practice depends on the care taken in the code. The first listing shows the principle with the simplest possible leak: a token comparison that stops at the first mismatching byte. An attacker who can observe how much work it did (a stand-in for time) recovers the secret one byte at a time, 256 guesses per byte, instead of 2^48 blind guesses for six bytes. Then the same attack is run against a comparison that always does the same work. Everything here runs on your own machine against code, keys and devices that exist only inside the lesson. Physical effects (power, cache state, faults) are SIMULATED with models or software-injected faults, and every attack is shown at toy size or against the lesson's own targets. The point is to understand how leaks arise and how defences are verified, not to attack real systems."
+            },
+            {
+              "type": "code",
+              "id": "c-side-channel-basics",
+              "language": "python",
+              "code": "import random\n\n# SIMULATION of an observable: a comparison routine that reports how many loop iterations it executed (a stand-in for elapsed time).\nsecret = bytes(random.Random(5).getrandbits(8) for _ in range(6))                       # a 6-byte secret token generated for the lesson\n\ndef leaky_compare(guess):\n    steps = 0\n    for a, b in zip(secret, guess):\n        steps += 1\n        if a != b:\n            return False, steps                                                          # early exit: the work done depends on the secret\n    return len(guess) == len(secret), steps\n\ndef constant_time_compare(guess):\n    difference = len(guess) ^ len(secret)\n    for a, b in zip(secret, guess.ljust(len(secret), b\"\\0\")):\n        difference |= a ^ b\n    return difference == 0, len(secret)                                                  # always the same amount of work\n\ndef recover(compare):\n    known = b\"\"\n    queries = 0\n    for position in range(len(secret)):\n        observations = {}\n        for candidate in range(256):\n            guess = known + bytes([candidate]) + bytes(len(secret) - position - 1)\n            ok, steps = compare(guess)\n            queries += 1\n            observations[candidate] = (ok, steps)\n        best = max(observations, key=lambda c: (observations[c][0], observations[c][1]))\n        known += bytes([best])\n    return known, queries\n\nrecovered, queries = recover(leaky_compare)\nprint(\"secret recovered through the work counter:\", recovered == secret, f\"| {queries} queries (6 bytes x 256 guesses) instead of 2^48 = {2 ** 48:,} for blind guessing\")\nrecovered_ct, _ = recover(constant_time_compare)\nprint(\"same attack against the constant-work comparison recovers the secret:\", recovered_ct == secret, \"(the observable carries no information)\")\nprint()\nprint(\"the leak exists whenever the amount of work, the memory addresses touched, the power drawn or the instructions executed depend on a secret\")\nprint(f\"{'channel':<28} {'what the attacker observes':<46} {'needs'}\")\nfor channel, observes, needs in (\n    (\"timing\", \"elapsed time of an operation\", \"remote or local timing; no hardware access\"),\n    (\"cache\", \"which memory lines the victim touched\", \"code running on the same CPU or core\"),\n    (\"power / electromagnetic\", \"current drawn, emitted fields\", \"physical access with a probe\"),\n    (\"fault injection\", \"result of a deliberately disturbed computation\", \"physical or software access to the device\"),\n    (\"microarchitectural (speculation)\", \"traces left by speculative execution\", \"code on the same machine\")):\n    print(f\"{channel:<28} {observes:<46} {needs}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-side-channel-basics",
+              "language": "text",
+              "code": "secret recovered through the work counter: True | 1536 queries (6 bytes x 256 guesses) instead of 2^48 = 281,474,976,710,656 for blind guessing\nsame attack against the constant-work comparison recovers the secret: False (the observable carries no information)\n\nthe leak exists whenever the amount of work, the memory addresses touched, the power drawn or the instructions executed depend on a secret\nchannel                      what the attacker observes                     needs\ntiming                       elapsed time of an operation                   remote or local timing; no hardware access\ncache                        which memory lines the victim touched          code running on the same CPU or core\npower / electromagnetic      current drawn, emitted fields                  physical access with a probe\nfault injection              result of a deliberately disturbed computation physical or software access to the device\nmicroarchitectural (speculation) traces left by speculative execution           code on the same machine",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The leaky comparison gave up the whole six-byte secret after 1,536 queries (6 positions times 256 candidates), against 2^48 = 281 trillion for blind guessing; the constant-work version, which compares every byte and combines the differences, gave the attacker nothing. The general lesson is the one in the table: *any* observable that varies with a secret is a channel. Classification helps a designer decide which defences matter: remote timing needs no physical access and so must be ruled out in every network-facing implementation, cache attacks need code running on the same CPU (shared cloud hosts, browsers), power and electromagnetic attacks need physical access (smart cards, HSMs, IoT devices), and fault attacks need a way to disturb the computation.\n\n**Design principles that follow.** No secret-dependent branches; no secret-dependent memory addresses; no variable-time instructions on secret operands; compare secrets only with constant-time functions (`hmac.compare_digest` in Python); and test these properties on the compiled code, because a compiler can turn constant-time source into variable-time machine code."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why did the early-exit comparison leak the secret?",
+              "options": [
+                "The amount of work it did depended on how many leading bytes matched",
+                "It printed the secret",
+                "It used a short key"
+              ],
+              "correct_index": 0,
+              "explanation": "The work counter revealed the length of the matching prefix, which allows byte-by-byte recovery."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which of these needs the least attacker access?",
+              "options": [
+                "Remote timing measurement",
+                "Power analysis with a probe",
+                "Fault injection with a laser"
+              ],
+              "correct_index": 0,
+              "explanation": "Timing needs only the ability to send requests and measure responses."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Does a post-quantum algorithm resist side channels automatically?",
+              "options": [
+                "No, resistance depends on the implementation",
+                "Yes, because it is lattice based",
+                "Yes, because keys are larger"
+              ],
+              "correct_index": 0,
+              "explanation": "SP 800-227 requires side-channel countermeasures for KEM implementations."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, glossary entry 'side-channel attack' and the implementation requirement 'Side-channel protection' (constant-time implementations, protecting memory from leakage)"
+            },
+            {
+              "book": "B92",
+              "locator": "FIPS 204, Section 3 (footnote and text on side-channel and fault attacks for deterministic and hedged signing)"
+            },
+            {
+              "book": "B93",
+              "locator": "FIPS 205, the paragraph 'Side-channel and fault attacks' (implementations must be protected)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The remark that compilers can turn constant-time source into variable-time machine code is general knowledge about constant-time engineering and was not sourced; the table of channels is a summary of standard categories."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "10.2 Timing Attacks",
+          "summary": "Why a division by a public constant can still leak when its dividend is secret, a division-free replacement validated exhaustively, and what timing reveals about deterministic signing.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **timing attack** measures how long an operation takes. The classic sources of secret-dependent time are early exits and branches, variable-iteration loops, and instructions whose latency depends on their operands; on many processors an integer **division** is such an instruction. ML-KEM's ciphertext compression computes ⌈(2^d/q)·x⌋ for coefficients x derived from secret-dependent values, and a straightforward implementation divides by q = 3329; in 2023 researchers showed that division-timing leaks in several Kyber implementations allowed key recovery (the \"KyberSlash\" attacks; I recall this from the literature, I did not re-read it, and it is flagged below). The defence is to replace the division by a **multiplication with a precomputed constant followed by a shift**, which takes the same time for every operand.\n\nThe replacement must be exactly right for the whole input range, and that range is small (the coefficients are below 3329), so it can be verified **exhaustively**. The listing searches for (constant, shift) pairs that reproduce the exact compression for every input and every d used by FIPS 203, shows that a slightly wrong constant passes casual testing and fails on some inputs, and models why the division leaks. FIPS 204 adds a related point for signatures: when signing is deterministic, timing leaks information about the *message* (but not the private key), and hedged signing should be used if the message must stay hidden (FIPS 204, Section 3.2 footnote). Everything here runs on your own machine against code, keys and devices that exist only inside the lesson. Physical effects (power, cache state, faults) are SIMULATED with models or software-injected faults, and every attack is shown at toy size or against the lesson's own targets. The point is to understand how leaks arise and how defences are verified, not to attack real systems."
+            },
+            {
+              "type": "code",
+              "id": "c-timing-division",
+              "language": "python",
+              "code": "q = 3329\n\ndef compress_reference(x, d):\n    return ((x << d) + q // 2) // q % (2 ** d)                       # exact: round(2^d x / q) mod 2^d, using an integer DIVISION by q\n\n# the division instruction is the problem on some processors: its running time depends on the operands, and here the dividend is secret-derived.\n# The remedy is to replace the division by a multiplication with a precomputed constant and a shift, which takes the same time for every input.\ndef find_constants(d):\n    found = []\n    for shift in range(24, 40):\n        for constant in ((1 << shift) // q, (1 << shift) // q + 1):\n            if all((((x << d) * constant + (1 << (shift - 1))) >> shift) % (2 ** d) == compress_reference(x, d) for x in range(q)):\n                found.append((constant, shift))\n    return found\n\nprint(f\"{'d':>3} {'a division-free replacement that is exact for all 3,329 inputs (constant, shift)':<80}\")\nvalid = {}\nfor d in (1, 4, 5, 10, 11):\n    options = find_constants(d)\n    valid[d] = options\n    print(f\"{d:>3} {str(options[:3]) if options else 'none found in the searched range':<80}\")\nprint()\ncommon = [o for o in valid[10] if all(o in valid[d] for d in (1, 4, 5, 10, 11))]\nprint(\"a single (constant, shift) pair that works for every d:\", common[:3] if common else \"none\")\n\n# a plausible-looking but WRONG constant: this is the kind of change that passes casual tests\nwrong_constant, wrong_shift = (1 << 28) // q - 5, 28\nmismatches = {d: sum((((x << d) * wrong_constant + (1 << (wrong_shift - 1))) >> wrong_shift) % (2 ** d) != compress_reference(x, d) for x in range(q)) for d in (1, 4, 5, 10, 11)}\nprint(\"a constant that is off by 5 gives wrong results for these numbers of inputs:\", mismatches)\nprint(\"exhaustive testing over the whole input range (only 3,329 values) is cheap here, and is the right way to validate any replacement of a division\")\n\n# the shape of the leak, modelled: a division whose cost grows with the number of significant bits of the dividend (a simplified model, not a measurement)\ndef division_cost_model(dividend):\n    return 1 + dividend.bit_length() // 8\ncosts = {d: sorted({division_cost_model(x << d) for x in range(q)}) for d in (4, 10)}\nprint(\"modelled division cost levels over the inputs 0..3328 shifted by d (4, 10):\", costs, \"-> different inputs, different cost: the secret-dependent value shows in the timing\")\nprint(\"the multiplication-based version has one cost level for all inputs\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-timing-division",
+              "language": "text",
+              "code": "  d a division-free replacement that is exact for all 3,329 inputs (constant, shift)\n  1 [(5040, 24), (10079, 25), (10080, 25)]                                          \n  4 [(5040, 24), (10080, 25), (20159, 26)]                                          \n  5 [(5040, 24), (10080, 25), (20159, 26)]                                          \n 10 [(2580335, 33), (5160669, 34), (5160670, 34)]                                   \n 11 [(2580335, 33), (5160670, 34), (10321339, 35)]                                  \n\na single (constant, shift) pair that works for every d: [(2580335, 33), (5160670, 34), (10321339, 35)]\na constant that is off by 5 gives wrong results for these numbers of inputs: {1: 0, 4: 3, 5: 6, 10: 115, 11: 230}\nexhaustive testing over the whole input range (only 3,329 values) is cheap here, and is the right way to validate any replacement of a division\nmodelled division cost levels over the inputs 0..3328 shifted by d (4, 10): {4: [1, 2, 3], 10: [1, 2, 3]} -> different inputs, different cost: the secret-dependent value shows in the timing\nthe multiplication-based version has one cost level for all inputs",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "For every d the search finds division-free replacements that agree with the exact rounding on all 3,329 inputs: small multipliers suffice for d = 1, 4, 5 (for example constant 5,040 with shift 24) and larger ones for d = 10 and 11 (constant 2,580,335 with shift 33), and one pair, (2,580,335, 33), works for all five values of d at once. A constant that is off by only 5 looks harmless but gives wrong results for 3, 6, 115 and 230 inputs for d = 4, 5, 10 and 11 (and none for d = 1, a reminder that a test on one parameter can pass while another fails). Because the input range has only 3,329 values, nothing short of an exhaustive check is justified.\n\nThe model at the end illustrates the leak and is **not a measurement**: if the cost of a division grows with the number of significant bits of the dividend, the inputs fall into several cost levels, so the time reveals information about a secret-derived value; the multiplication has one cost level. **What to take away:** (1) reading the specification's mathematical formula is not enough: the implementation's instructions decide what leaks; (2) replace secret-operand divisions and variable shifts with fixed-time arithmetic; (3) validate replacements exhaustively where the range allows; (4) verify the compiled code with tools that check constant-time behaviour (11.10), because source-level equivalence does not guarantee constant-time machine code."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why can integer division on a secret-derived value leak?",
+              "options": [
+                "Its latency can depend on the operand values on some processors",
+                "It always fails",
+                "It uses extra memory"
+              ],
+              "correct_index": 0,
+              "explanation": "The remedy is multiplication by a precomputed constant and a shift."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "How was the division-free compression validated?",
+              "options": [
+                "Exhaustively over all 3,329 inputs for each d",
+                "With ten random inputs",
+                "By timing it once"
+              ],
+              "correct_index": 0,
+              "explanation": "A constant off by 5 passed for d = 1 but failed for d = 4, 5, 10 and 11."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does timing reveal about deterministic ML-DSA signing, according to FIPS 204?",
+              "options": [
+                "Information about the message but not the private key",
+                "The private key",
+                "Nothing"
+              ],
+              "correct_index": 0,
+              "explanation": "Hedged signing should be used if the message must stay hidden."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 4.2.1 (Compress and Decompress definitions)"
+            },
+            {
+              "book": "B92",
+              "locator": "FIPS 204, Section 3.2 (hedged and deterministic signing; footnote 3 on timing leakage of the message in deterministic signing)"
+            },
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, 'Side-channel protection' (constant-time implementations)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The 2023 'KyberSlash' division-timing attacks are cited from memory and were not read or verified here. The division-cost model in the listing is an illustration and not a measurement of any processor."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "10.3 Cache-Based Attacks",
+          "summary": "A simulated first-round cache attack on a table-lookup cipher that recovers a quarter of the key bits from a handful of observations, and the constant-time access pattern that removes the leak.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **cache attack** observes which memory lines a victim's code loaded into the CPU cache (by timing its own accesses to the same sets, or by flushing and reloading shared memory). The attacker never sees data, only *addresses*, so the leak occurs whenever a **table index depends on a secret**. The textbook case is a table-based AES: the first round reads S-box entries at the index (plaintext byte XOR key byte), and a 256-byte table spans only four 64-byte cache lines, so the line that was touched reveals the top two bits of that index and therefore the top two bits of the key byte (Osvik, Shamir and Tromer; the attack is a well-known result from the literature, described here rather than quoted). Post-quantum code has the same hazard wherever it uses secret-indexed tables, for example in sampling or in table-based multiplication.\n\nThis listing is a **SIMULATION**: the victim is a function written for the lesson, and the cache is a model that records which lines were touched. It first rebuilds the AES S-box from its algebraic definition (checked against three known values), then runs the observation attack against the table-lookup implementation and against a variant that reads the whole table. Everything here runs on your own machine against code, keys and devices that exist only inside the lesson. Physical effects (power, cache state, faults) are SIMULATED with models or software-injected faults, and every attack is shown at toy size or against the lesson's own targets. The point is to understand how leaks arise and how defences are verified, not to attack real systems."
+            },
+            {
+              "type": "code",
+              "id": "c-cache-attack",
+              "language": "python",
+              "code": "import random\n\n# SIMULATION of a first-round cache attack on a table-lookup cipher. The victim is code written for the lesson; the \"cache\" is a model.\ndef aes_sbox():\n    # the S-box is rebuilt from its definition (multiplicative inverse in GF(2^8) plus an affine map) and checked against three known values below\n    def gmul(a, b):\n        p = 0\n        while b:\n            if b & 1: p ^= a\n            a = ((a << 1) ^ 0x11B) if a & 0x80 else a << 1\n            b >>= 1\n        return p\n    box = [0] * 256\n    for x in range(256):\n        inv = next((y for y in range(256) if gmul(x, y) == 1), 0)\n        s = inv\n        for shift in (1, 2, 3, 4):\n            s ^= ((inv << shift) | (inv >> (8 - shift))) & 0xFF\n        box[x] = s ^ 0x63\n    return box\nSBOX = aes_sbox()\nprint(\"S-box rebuilt from its algebraic definition: S[0] = 0x%02x (expected 0x63), S[1] = 0x%02x (expected 0x7c), S[0x53] = 0x%02x (expected 0xed)\" % (SBOX[0], SBOX[1], SBOX[0x53]))\n\nLINE = 64                                                                 # bytes per cache line: a 256-byte table spans 4 lines\nclass Victim:\n    def __init__(self, key):\n        self.key = key\n        self.touched_lines = set()\n    def first_round(self, plaintext, constant_time=False):\n        self.touched_lines = set()\n        out = []\n        for i, (p, k) in enumerate(zip(plaintext, self.key)):\n            index = p ^ k                                                 # the secret-dependent table index of the first round\n            if constant_time:\n                self.touched_lines |= {0, 1, 2, 3}                       # a constant-time implementation reads the whole table\n            else:\n                self.touched_lines.add(i * 4 + index // LINE)             # (table copy i is distinguished by the byte position, as in a T-table layout)\n            out.append(SBOX[index])\n        return out\n\nrng = random.Random(11)\nkey = bytes(rng.getrandbits(8) for _ in range(16))\nvictim = Victim(key)\n\ndef attack(constant_time):\n    # for each key byte, find the top two bits of k: with the plaintext byte chosen, the observed cache line tells the top two bits of p XOR k\n    recovered = []\n    for i in range(16):\n        candidates = set(range(4))                                       # candidate values of the top two bits of key byte i\n        for _ in range(8):\n            plaintext = bytes(rng.getrandbits(8) for _ in range(16))\n            victim.first_round(plaintext, constant_time)\n            if constant_time:\n                continue\n            lines = {line - i * 4 for line in victim.touched_lines if i * 4 <= line < i * 4 + 4}\n            if len(lines) == 1:\n                line = next(iter(lines))\n                candidates &= {line ^ (plaintext[i] >> 6)}\n        recovered.append(candidates)\n    return recovered\n\nresult = attack(constant_time=False)\nprint(\"vulnerable table lookup: top two bits of every key byte recovered:\", all(c == {key[i] >> 6} for i, c in enumerate(result)), f\"({16 * 2} of 128 key bits from a handful of observations per byte)\")\nct = attack(constant_time=True)\nprint(\"constant-time table access (touch all lines): candidates left per byte:\", {len(c) for c in ct}, \"of 4 -> no information\")\nprint(\"remaining search for the vulnerable victim: 2^(128 - 32) = 2^96 key candidates before refining with later rounds, which real attacks do\")\nprint(\"the defence is not 'make the cache invisible' but 'never let a memory address depend on a secret': constant-time code, bitslicing, or hardware instructions\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-cache-attack",
+              "language": "text",
+              "code": "S-box rebuilt from its algebraic definition: S[0] = 0x63 (expected 0x63), S[1] = 0x7c (expected 0x7c), S[0x53] = 0xed (expected 0xed)\nvulnerable table lookup: top two bits of every key byte recovered: True (32 of 128 key bits from a handful of observations per byte)\nconstant-time table access (touch all lines): candidates left per byte: {4} of 4 -> no information\nremaining search for the vulnerable victim: 2^(128 - 32) = 2^96 key candidates before refining with later rounds, which real attacks do\nthe defence is not 'make the cache invisible' but 'never let a memory address depend on a secret': constant-time code, bitslicing, or hardware instructions",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "From a handful of observations per key byte, the simulated attacker recovered the top two bits of all 16 key bytes (32 of the 128 key bits) from the vulnerable victim, and from the constant-time variant it learned nothing (all four candidates remain for every byte). Real attacks continue into later rounds and use finer cache granularity, which is why a few observed leaks can be enough to recover the whole key in the literature; the model shows only the first step. The remaining search of 2^96 is the effect of one round's coarse leak, and each further round of observation shrinks it.\n\n**Defences, in order of robustness.** (1) Do not index memory with secrets: use algorithms with no tables (bitsliced implementations) or hardware instructions. (2) If a table is unavoidable, read every entry and select the wanted one with masks (the \"touch all lines\" variant, slow but safe). (3) Isolate: do not share cores or memory with untrusted code (cloud tenants, browsers). Mitigation by \"adding noise\" is not a defence. **Common mistake:** assuming small tables are safe; a 256-byte table already leaks two bits per lookup."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does a cache attack observe?",
+              "options": [
+                "Which memory lines the victim accessed",
+                "The data stored in the cache",
+                "The CPU temperature"
+              ],
+              "correct_index": 0,
+              "explanation": "It sees addresses (cache lines), not data."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why did the simulated attack recover the top two bits of each key byte?",
+              "options": [
+                "A 256-byte table spans four 64-byte lines, so the touched line reveals the top two bits of the index",
+                "The key is two bits long",
+                "The cache stores the key"
+              ],
+              "correct_index": 0,
+              "explanation": "The index is plaintext XOR key; the plaintext is known."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which is the most robust defence against cache attacks?",
+              "options": [
+                "Never let a memory address depend on a secret",
+                "Make the cache bigger",
+                "Add random delays"
+              ],
+              "correct_index": 0,
+              "explanation": "Constant-time code, bitslicing or hardware instructions remove the dependence."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Paar and Pelzl, Understanding Cryptography: the discussion of implementation attacks (side channels) and the AES S-box definition (Section 4)"
+            },
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, 'Side-channel protection'"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The Osvik-Shamir-Tromer cache attack is described from the literature and was not read here; the Paar section reference is to the book's general treatment of implementation attacks and may not discuss caches specifically. The attack in the listing is a simulation with a simplified first-round model."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "10.4 Power-Analysis Concepts",
+          "summary": "A simulated correlation power analysis with measured trace requirements for several noise levels, and what first-order masking changes.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A device's **power consumption** depends on the data it processes, and in a simple model it is proportional to the **Hamming weight** (number of one bits) of the values being handled, plus noise. In **simple power analysis** an analyst reads a single trace and sees the sequence of operations; in **differential or correlation power analysis (DPA/CPA)** the analyst records many traces for different known inputs, predicts the leakage of an intermediate value under each key guess, and keeps the guess whose prediction correlates best with the measurements. The attack needs physical access and a measuring setup, which is why it matters mainly for smart cards, secure elements, HSMs and embedded devices. Lattice schemes are attractive targets because their arithmetic touches long secret vectors many times.\n\nThis listing is a **SIMULATION**: the traces are generated by a leakage model (Hamming weight of an S-box output plus Gaussian noise); no real device is measured. It shows the statistics honestly: how the number of traces needed depends on the noise, and what **first-order Boolean masking** does, where the device handles the value XOR a fresh random mask instead of the value itself. Everything here runs on your own machine against code, keys and devices that exist only inside the lesson. Physical effects (power, cache state, faults) are SIMULATED with models or software-injected faults, and every attack is shown at toy size or against the lesson's own targets. The point is to understand how leaks arise and how defences are verified, not to attack real systems."
+            },
+            {
+              "type": "code",
+              "id": "c-power-analysis",
+              "language": "python",
+              "code": "import numpy as np\n\n# SIMULATION: power traces are generated by the lesson from a leakage model (Hamming weight of an intermediate value plus Gaussian noise).\n# No real device is measured. The point is the statistics: how many traces a correlation attack needs and what masking changes.\ndef gmul(a, b):\n    p = 0\n    while b:\n        if b & 1: p ^= a\n        a = ((a << 1) ^ 0x11B) if a & 0x80 else a << 1\n        b >>= 1\n    return p\nSBOX = []\nfor x in range(256):\n    inv = next((y for y in range(256) if gmul(x, y) == 1), 0)\n    s = inv\n    for shift in (1, 2, 3, 4):\n        s ^= ((inv << shift) | (inv >> (8 - shift))) & 0xFF\n    SBOX.append(s ^ 0x63)\nSBOX = np.array(SBOX, dtype=np.uint8)\nHW = np.array([bin(i).count(\"1\") for i in range(256)])\n\nrng = np.random.default_rng(2026)\nSECRET_KEY_BYTE = 0xA7\n\ndef traces(n, noise, masked=False):\n    plaintexts = rng.integers(0, 256, n)\n    value = SBOX[plaintexts ^ SECRET_KEY_BYTE]\n    if masked:\n        value = value ^ rng.integers(0, 256, n).astype(np.uint8)         # first-order Boolean masking: the device only ever handles value XOR mask\n    leakage = HW[value] + rng.normal(0, noise, n)                        # one sample per trace: power ~ Hamming weight + noise\n    return plaintexts, leakage\n\ndef cpa(plaintexts, leakage):\n    # correlate the measured leakage with the predicted Hamming weight under every key guess\n    scores = np.array([abs(np.corrcoef(HW[SBOX[plaintexts ^ guess]], leakage)[0, 1]) for guess in range(256)])\n    return int(np.argmax(scores)), scores\n\nprint(\"SIMULATION of correlation power analysis on one key byte (true value 0xa7)\")\nprint(f\"{'noise (std dev)':>16} {'traces':>8} {'recovered byte':>15} {'correct':>8}\")\nfor noise in (0.5, 2.0, 4.0):\n    for n in (10, 50, 200, 1000, 5000):\n        p, l = traces(n, noise)\n        guess, scores = cpa(p, l)\n        print(f\"{noise:>16} {n:>8} {('0x%02x' % guess):>15} {str(guess == SECRET_KEY_BYTE):>8}\")\n\nprint()\nneeded = {}\nfor noise in (0.5, 2.0, 4.0):\n    for n in (10, 20, 50, 100, 200, 500, 1000, 2000, 5000, 10000):\n        hits = sum(cpa(*traces(n, noise))[0] == SECRET_KEY_BYTE for _ in range(8))\n        if hits >= 7:\n            needed[noise] = n\n            break\nprint(\"smallest tested number of traces with at least 7 of 8 successful attacks, by noise level:\", needed, \"(the number rises roughly with the square of the noise)\")\n\nprint()\np, l = traces(20000, 1.0, masked=False)\nguess_plain, scores_plain = cpa(p, l)\np, l = traces(20000, 1.0, masked=True)\nguess_masked, scores_masked = cpa(p, l)\nprint(\"unmasked, 20,000 traces, low noise: recovered\", hex(guess_plain), \"| correlation at the true key\", round(float(scores_plain[SECRET_KEY_BYTE]), 3))\nprint(\"first-order masked, same traces and noise: recovered\", hex(guess_masked), \"| correlation at the true key\", round(float(scores_masked[SECRET_KEY_BYTE]), 3), \"(about zero: the leakage no longer depends on the key in first order)\")\nprint(\"masking is not a cure: second-order attacks combine two points of the trace, and the cost of the attack rises with the masking order, which is why masked implementations are designed to a stated order\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-power-analysis",
+              "language": "text",
+              "code": "SIMULATION of correlation power analysis on one key byte (true value 0xa7)\n noise (std dev)   traces  recovered byte  correct\n             0.5       10            0xa7     True\n             0.5       50            0xa7     True\n             0.5      200            0xa7     True\n             0.5     1000            0xa7     True\n             0.5     5000            0xa7     True\n             2.0       10            0x2d    False\n             2.0       50            0xa7     True\n             2.0      200            0xa7     True\n             2.0     1000            0xa7     True\n             2.0     5000            0xa7     True\n             4.0       10            0xde    False\n             4.0       50            0x3d    False\n             4.0      200            0xa7     True\n             4.0     1000            0xa7     True\n             4.0     5000            0xa7     True\n\nsmallest tested number of traces with at least 7 of 8 successful attacks, by noise level: {0.5: 10, 2.0: 50, 4.0: 200} (the number rises roughly with the square of the noise)\n\nunmasked, 20,000 traces, low noise: recovered 0xa7 | correlation at the true key 0.814\nfirst-order masked, same traces and noise: recovered 0x2d | correlation at the true key 0.004 (about zero: the leakage no longer depends on the key in first order)\nmasking is not a cure: second-order attacks combine two points of the trace, and the cost of the attack rises with the masking order, which is why masked implementations are designed to a stated order",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "With low noise the key byte falls after ten traces; with a noise level of 2 it needs about 50 and with 4 about 200 (on the coarse grid tested), and the attack always succeeds with enough traces: **noise raises the cost but does not stop the attack**. The masked implementation shows what masking buys: the correlation at the true key drops from 0.814 to 0.004, so even 20,000 traces do not recover the byte in a first-order attack (the guess it returns, 0x2d, is wrong). Masking is not a cure, because a **second-order** attack combines two points of the trace (the masked value and the mask) and recovers the key at a higher cost; implementations are therefore designed to resist attacks up to a stated order, and their cost and complexity grow with the order. Other countermeasures are hiding (noise, random delays, shuffling the order of operations) and protocol-level limits on how often a key can be used.\n\n**For evaluators:** report the number of traces, the noise level and the model used; a statement such as \"resistant to power analysis\" without those is not meaningful. **Common mistake:** treating simulated or low-noise results as predictions for a real device: the leakage model and the noise of a real chip must be measured."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does correlation power analysis correlate?",
+              "options": [
+                "Measured traces with the predicted leakage under each key guess",
+                "Two keys with each other",
+                "The plaintext with the ciphertext"
+              ],
+              "correct_index": 0,
+              "explanation": "The guess with the highest correlation is taken as the key."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What happened to the first-order attack on the masked implementation?",
+              "options": [
+                "The correlation at the true key fell to about zero and the key was not recovered",
+                "It succeeded faster",
+                "It crashed"
+              ],
+              "correct_index": 0,
+              "explanation": "Correlation fell from 0.814 to 0.004."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is masking not a complete defence?",
+              "options": [
+                "Higher-order attacks combine several points of the trace",
+                "Masks are public",
+                "It breaks the algorithm"
+              ],
+              "correct_index": 0,
+              "explanation": "Cost rises with the masking order, so designs state the order they resist."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, 'Side-channel protection' and the glossary entry on side-channel attacks"
+            },
+            {
+              "book": "B93",
+              "locator": "FIPS 205, the paragraph on side-channel and fault attacks (implementations must be protected)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Correlation power analysis and masking are described from general knowledge; no on-disk source treats them in detail. All traces are simulated from a Hamming-weight model with Gaussian noise, and the trace counts apply only to that model."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "10.5 Fault-Injection Concepts",
+          "summary": "A simulated Bellcore fault attack that factors an RSA key from one faulty signature, the verify-before-release countermeasure, and what skipping ML-KEM's re-encryption check would expose.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Fault injection** disturbs a computation on purpose (a voltage glitch, a clock glitch, a laser pulse, rowhammer-style memory corruption, or a software fault) and uses the faulty output to learn secrets. The oldest example is the **Bellcore attack on RSA with the Chinese remainder theorem (CRT)**: if one half-computation (modulo p or modulo q) is faulty, the resulting signature is correct modulo one prime and wrong modulo the other, so gcd(s'^e − m, n) is a prime factor of n and **one faulty signature** reveals the private key. The countermeasure is to **verify the result before releasing it**. Standards care about this class: FIPS 204 notes that hedged signing helps against side-channel attacks and that the deterministic variant makes fault attacks (in particular) more difficult to mitigate, so deterministic signing should not be used on platforms where those attacks are a concern (FIPS 204, Section 3.2).\n\nThe first part of the listing simulates the Bellcore attack on a 1,024-bit key generated for the lesson, flipping one bit in the half-computation mod q, recovers a prime factor with a gcd, and shows verify-before-release. The second part uses the ML-KEM library internals to analyse a fault that skips the **re-encryption check** of decapsulation: without it, the underlying scheme is malleable, and the lesson shows exactly what an attacker could then observe. Everything here runs on your own machine against code, keys and devices that exist only inside the lesson. Physical effects (power, cache state, faults) are SIMULATED with models or software-injected faults, and every attack is shown at toy size or against the lesson's own targets. The point is to understand how leaks arise and how defences are verified, not to attack real systems."
+            },
+            {
+              "type": "code",
+              "id": "c-fault-injection",
+              "language": "python",
+              "code": "import hashlib, math\nfrom cryptography.hazmat.primitives.asymmetric import rsa\nfrom kyber_py.ml_kem import ML_KEM_512 as K\n\n# --- (1) a fault in an RSA-CRT signature (Bellcore attack) on a key generated for the lesson; the \"fault\" is simulated by flipping one bit in software\nnumbers = rsa.generate_private_key(65537, 1024).private_numbers()\np, q, e, d = numbers.p, numbers.q, numbers.public_numbers.e, numbers.d\nn = p * q\ndp, dq, q_inv = numbers.dmp1, numbers.dmq1, numbers.iqmp\ndef sign_crt(m, fault=False):\n    s_p = pow(m, dp, p)\n    s_q = pow(m, dq, q)\n    if fault:\n        s_q ^= 1 << 17                                                    # a single bit flipped in the half-computation modulo q\n    h = q_inv * (s_p - s_q) % p\n    return s_q + h * q\nm = int.from_bytes(hashlib.sha256(b\"pay 1 coin\").digest(), \"big\")\ngood = sign_crt(m)\nprint(\"normal CRT signature equals the ordinary signature:\", good == pow(m, d, n))\nbad = sign_crt(m, fault=True)\nprint(\"faulty signature still has the right size but does not verify:\", pow(bad, e, n) != m)\nfactor = math.gcd(pow(bad, e, n) - m, n)\nprint(\"SIMULATION: one faulty signature plus the public key reveals a prime factor:\", factor in (p, q), f\"({factor.bit_length()}-bit factor), so the private key is lost\")\ndef sign_protected(m, fault=False):\n    s = sign_crt(m, fault)\n    if pow(s, e, n) != m:                                                 # countermeasure: verify the result before releasing it\n        raise RuntimeError(\"fault detected, signature withheld\")\n    return s\ntry:\n    sign_protected(m, fault=True)\nexcept RuntimeError as exc:\n    print(\"with verify-before-release the faulty signature is never output:\", exc)\n\n# --- (2) what a fault that skips the re-encryption check of ML-KEM decapsulation would expose (an analysis of the effect, using the library internals)\nek, dk = K.keygen()\nk = K.k\ndk_pke, h = dk[:384 * k], dk[768 * k + 32:768 * k + 64]\nm_msg = hashlib.sha256(b\"message chosen by the encapsulator\").digest()\nkey, ct = K._encaps_internal(ek, m_msg)\ndef decaps_without_check(c):\n    m_prime = K._k_pke_decrypt(dk_pke, c)                                 # decrypt, then derive the key directly: the FO validity check is skipped\n    return m_prime, K._G(m_prime + h)[0]\nm_prime, key_unchecked = decaps_without_check(ct)\nprint()\nprint(\"with the check skipped, an honest ciphertext still gives the right message and key:\", m_prime == m_msg, key_unchecked == key)\nc2_start = 32 * K.du * k                                                  # the v part of the ciphertext: 256 coefficients of dv = 4 bits\nbit = 37\ntampered = bytearray(ct)\ntampered[c2_start + (bit * K.dv) // 8] ^= 0x08 << (((bit * K.dv) % 8))     # adds q/2 to coefficient 37 of v: flips message bit 37\nm_flipped, key_flipped = decaps_without_check(bytes(tampered))\ndiff = int.from_bytes(m_msg, \"little\") ^ int.from_bytes(m_flipped, \"little\")\nprint(\"tampered ciphertext, check skipped: the decrypted message differs from the original in exactly bit\", diff.bit_length() - 1, \"and in no other:\", bin(diff).count(\"1\") == 1)\nprint(\"the unchecked key is the predictable G(m' || H(ek)), which the attacker can compute from the known message:\", key_flipped == K._G(m_flipped + h)[0])\nprint(\"the honest decapsulation of the same tampered ciphertext returns an unrelated pseudo-random key:\", K.decaps(dk, bytes(tampered)) not in (key, key_flipped))\nprint(\"malleability of the underlying scheme is exactly why the re-encryption check exists; a fault that skips it turns decapsulation into an oracle on the secret key\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-fault-injection",
+              "language": "text",
+              "code": "normal CRT signature equals the ordinary signature: True\nfaulty signature still has the right size but does not verify: True\nSIMULATION: one faulty signature plus the public key reveals a prime factor: True (512-bit factor), so the private key is lost\nwith verify-before-release the faulty signature is never output: fault detected, signature withheld\n\nwith the check skipped, an honest ciphertext still gives the right message and key: True True\ntampered ciphertext, check skipped: the decrypted message differs from the original in exactly bit 37 and in no other: True\nthe unchecked key is the predictable G(m' || H(ek)), which the attacker can compute from the known message: True\nthe honest decapsulation of the same tampered ciphertext returns an unrelated pseudo-random key: True\nmalleability of the underlying scheme is exactly why the re-encryption check exists; a fault that skips it turns decapsulation into an oracle on the secret key",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The faulty RSA signature still has the right shape and fails verification, and the gcd reveals a 512-bit prime factor: the private key is lost after a single fault. With verify-before-release the faulty signature is never output. For ML-KEM, an honest ciphertext still decrypts correctly when the validity check is skipped, but a **modified ciphertext decrypts to a related message that differs in exactly the bit the attacker chose** (bit 37 in the listing), and the key derived from it is predictable; with the check in place the same tampered ciphertext produces an unrelated pseudo-random key. A decryption procedure that responds predictably to attacker-chosen modifications is an **oracle on the secret key**: attacks that use many such queries to recover a lattice secret are known (plaintext-checking attacks; described here from the literature, not demonstrated), which is why the FO check must not be skippable by a single fault.\n\n**Defences:** verify before output (signatures), run security-critical checks redundantly and compare, protect control flow (so one glitch cannot skip a check), use hedged randomness, add integrity checks to stored keys (9.4), and use sensors and shielding on physical devices. **Common mistake:** assuming that a protocol-level check cannot be bypassed because the code contains it; one corrupted instruction can remove it."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does one faulty RSA-CRT signature reveal?",
+              "options": [
+                "A prime factor of the modulus, via a gcd",
+                "Only that a fault occurred",
+                "The message"
+              ],
+              "correct_index": 0,
+              "explanation": "gcd(s'^e - m, n) = p when the fault hit the half computation mod q."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the countermeasure against that attack?",
+              "options": [
+                "Verify the signature before releasing it",
+                "Use a longer modulus",
+                "Sign twice"
+              ],
+              "correct_index": 0,
+              "explanation": "A faulty signature then never leaves the device."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is skipping ML-KEM's re-encryption check dangerous?",
+              "options": [
+                "The scheme underneath is malleable, so decapsulation becomes an oracle on the secret key",
+                "It makes decapsulation slower",
+                "It changes the key size"
+              ],
+              "correct_index": 0,
+              "explanation": "A modified ciphertext decrypted to a message with exactly the chosen bit flipped."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B92",
+              "locator": "FIPS 204, Section 3.2 (hedged variant helps against side-channel attacks; deterministic variant makes fault attacks more difficult to mitigate)"
+            },
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Algorithm 18 and Algorithm 21 (decapsulation: re-encryption and comparison, implicit rejection)"
+            },
+            {
+              "book": "B01",
+              "locator": "Paar and Pelzl, the treatment of RSA with the CRT (Section 7.5) and implementation attacks (the Bellcore fault attack is described in the literature)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The Bellcore attack and plaintext-checking attacks on lattice KEMs are described from the literature and were not read here. The Paar reference for the CRT is to the fast-decryption section; its discussion of fault attacks was not checked. The fault is simulated in software."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "10.6 Randomness Weaknesses",
+          "summary": "A real recovery of an ML-KEM-512 private key from a weakly seeded device, the cost table by seed entropy, and the effect of repeating encapsulation randomness.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Every ML-KEM and ML-DSA secret originates in random bytes. FIPS 203 requires the two 32-byte random strings of key generation and the 32-byte string of encapsulation to come from an **approved random bit generator** (SP 800-90A/B/C), generated fresh for every call (section 3.3). If an attacker can guess the seed, they can **recompute the private key**, whatever the strength of the algorithm. A typical failure is a seed derived from something predictable (a clock reading, a boot counter, a device identifier) or from a generator that was not yet seeded with real entropy.\n\nThe listing models a device that derives its 64-byte ML-KEM seed from an 11-bit value. The attacker sees only the public key and the derivation recipe, regenerates the key for every possible value (2,048 key derivations of ML-KEM-512) and compares public keys; once it matches, the private key is known and the victim's ciphertext can be decapsulated. A cost table shows how the work scales with the entropy of the seed. A second case shows that repeating the encapsulation randomness repeats the ciphertext and the shared secret. Everything here runs on your own machine against code, keys and devices that exist only inside the lesson. Physical effects (power, cache state, faults) are SIMULATED with models or software-injected faults, and every attack is shown at toy size or against the lesson's own targets. The point is to understand how leaks arise and how defences are verified, not to attack real systems."
+            },
+            {
+              "type": "code",
+              "id": "c-weak-seed",
+              "language": "python",
+              "code": "import hashlib, math\nfrom kyber_py.ml_kem import ML_KEM_512\n\nkem = ML_KEM_512\n\n# A device derives its 64-byte ML-KEM seed from a weak source: a 11-bit value (for example a boot counter or coarse clock reading).\ndef weak_seed(value):\n    return hashlib.shake_256(b\"weak-device-seed\" + value.to_bytes(4, \"big\")).digest(64)\nSPACE = 2 ** 11\ntrue_value = 1337\nek_victim, dk_victim = kem.key_derive(weak_seed(true_value))              # the victim's real key pair; the attacker sees only ek and the derivation recipe\n\n# SIMULATION of the attacker: regenerate keys for every possible seed value and compare the public key\nfound = next(v for v in range(SPACE) if kem.key_derive(weak_seed(v))[0] == ek_victim)\nek_found, dk_found = kem.key_derive(weak_seed(found))\nprint(f\"public key matched after trying seed values up to {found} of {SPACE}; recovered value equals the true one: {found == true_value}\")\nkey, ct = kem.encaps(ek_victim)\nprint(\"the recovered private key decapsulates the victim's ciphertexts:\", kem.decaps(dk_found, ct) == key, \"-> the 'post-quantum' key gives no protection, whatever the algorithm\")\n\nprint()\nprint(f\"{'seed entropy (bits)':>20} {'candidates':>22} {'time at 4 ms per key derivation':>34}\")\nfor bits in (11, 24, 32, 40, 48, 64):\n    seconds = 2 ** bits * 0.004\n    readable = f\"{seconds:,.0f} seconds\" if seconds < 3600 * 24 * 365 else f\"{seconds / (3600 * 24 * 365):,.1f} years\"\n    print(f\"{bits:>20} {2 ** bits:>22,} {readable:>34}\")\nprint(\"the 4 ms is the order of magnitude measured for the pure-Python code in lesson 9.10; optimised code and parallel hardware are much faster, so the margin must be large\")\n\n# encapsulation also consumes randomness: repeating the 32-byte message m gives identical ciphertext and key\nek, dk = kem.keygen()\nm = hashlib.sha256(b\"a repeated random value\").digest()\nk1, c1 = kem._encaps_internal(ek, m)\nk2, c2 = kem._encaps_internal(ek, m)\nprint()\nprint(\"repeating the encapsulation randomness repeats the ciphertext and the shared secret:\", (k1, c1) == (k2, c2), \"| two sessions would then share a key\")\nprint(\"an eavesdropper who sees c1 == c2 learns the repetition without knowing the key\")\nprint(\"rules: seed from the operating system's random generator or a certified source, never from time, counters, process IDs or device identifiers; test the generator at start-up; never accept randomness from the caller\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-weak-seed",
+              "language": "text",
+              "code": "public key matched after trying seed values up to 1337 of 2048; recovered value equals the true one: True\nthe recovered private key decapsulates the victim's ciphertexts: True -> the 'post-quantum' key gives no protection, whatever the algorithm\n\n seed entropy (bits)             candidates    time at 4 ms per key derivation\n                  11                  2,048                          8 seconds\n                  24             16,777,216                     67,109 seconds\n                  32          4,294,967,296                 17,179,869 seconds\n                  40      1,099,511,627,776                        139.5 years\n                  48    281,474,976,710,656                     35,702.1 years\n                  64 18,446,744,073,709,551,616              2,339,769,669.4 years\nthe 4 ms is the order of magnitude measured for the pure-Python code in lesson 9.10; optimised code and parallel hardware are much faster, so the margin must be large\n\nrepeating the encapsulation randomness repeats the ciphertext and the shared secret: True | two sessions would then share a key\nan eavesdropper who sees c1 == c2 learns the repetition without knowing the key\nrules: seed from the operating system's random generator or a certified source, never from time, counters, process IDs or device identifiers; test the generator at start-up; never accept randomness from the caller",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The attacker's loop matched the victim's public key at seed value 1,337 (the true one) and the recovered private key decapsulated the victim's ciphertext: the post-quantum key gave no protection at all. The table shows that the defence is entropy, not luck: at 4 ms per derivation (the pure-Python figure from lesson 9.10) an 11-bit seed falls in 8 seconds, a 32-bit seed in about half a year of single-core time, and only seeds of 128 bits or full-entropy 256-bit seeds are out of reach; optimised code and parallel hardware are orders of magnitude faster, so a seed of only 40 to 64 bits must be considered broken. The encapsulation case is different but related: the same 32-byte message gives the same ciphertext and shared secret, so two sessions would share a key and an eavesdropper would notice the repeated ciphertext.\n\n**Rules** (SP 800-227 adds that randomness produced during encapsulation should be destroyed after use): use the operating system's random generator or a validated source, never time, counters, process identifiers or device identifiers; test the generator at start-up and continuously; never let a caller supply randomness; and treat a VM snapshot, a fork or a restored backup as an event that requires reseeding (10.7)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does an attacker need to recover an ML-KEM private key derived from a weak seed?",
+              "options": [
+                "The public key and the derivation recipe, then a search over the possible seeds",
+                "The shared secret only",
+                "A quantum computer"
+              ],
+              "correct_index": 0,
+              "explanation": "The search over 2^11 seeds finished at the true value."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What happens when ML-KEM encapsulation randomness is repeated?",
+              "options": [
+                "The ciphertext and shared secret repeat",
+                "Nothing",
+                "Decapsulation fails"
+              ],
+              "correct_index": 0,
+              "explanation": "Encapsulation is deterministic given the message m."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Where should random bytes for key generation come from?",
+              "options": [
+                "An approved random bit generator inside the module",
+                "The system clock",
+                "The caller of the API"
+              ],
+              "correct_index": 0,
+              "explanation": "FIPS 203 section 3.3 requires an approved RBG and forbids reusing the values."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 3.3 ('Randomness generation': approved RBG per SP 800-90A/B/C, fresh bytes for every invocation)"
+            },
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, general guidance on destroying intermediate values and randomness after encapsulation"
+            },
+            {
+              "book": "B90",
+              "locator": "kyber-py: key_derive (deterministic key generation from a 64-byte seed)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The timing column uses the 4 ms figure from the lesson 9.10 sample on one machine and a single core; real attackers can be far faster. The prediction for 40 to 64-bit seeds is a risk judgement, not a measurement."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "10.7 Key-Generation Failures",
+          "summary": "Duplicate public keys across a fleet from low-entropy seeding compared with the birthday estimate, detection from public data alone, and VM-snapshot repeats.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Beyond a single weak seed, **fleets** fail in a characteristic way: many devices of one product generate their keys at first boot, from the same code and with little entropy available, so different devices end up with **the same keys** (or the same random sequence). If two devices share a key pair, anyone who owns or compromises one of them can impersonate or decrypt for the other. The expected number of collisions follows the **birthday bound**: with N devices and a seed space of 2^b values, a given device collides with at least one other with probability about 1 − e^(−(N−1)/2^b).\n\nThe listing simulates fleets with different seed entropies, counts devices that share a key with another device, and compares with that estimate. It then shows the **detection** side: an inventory of public-key fingerprints finds duplicates with no secret at all. Finally it models a **virtual-machine snapshot restored twice**: both copies continue from the same random state and produce the same \"random\" values. Everything here runs on your own machine against code, keys and devices that exist only inside the lesson. Physical effects (power, cache state, faults) are SIMULATED with models or software-injected faults, and every attack is shown at toy size or against the lesson's own targets. The point is to understand how leaks arise and how defences are verified, not to attack real systems."
+            },
+            {
+              "type": "code",
+              "id": "c-fleet-keys",
+              "language": "python",
+              "code": "import hashlib, math, random\nfrom collections import Counter\n\n# SIMULATION of a device fleet: each device derives its key from an RNG that was seeded with only a small amount of entropy at first boot.\ndef device_public_key(seed_value):\n    return hashlib.shake_256(b\"device key from seed\" + seed_value.to_bytes(8, \"big\")).digest(32)         # stands in for a real public key (a 32-byte fingerprint)\n\nrng = random.Random(8)\nprint(f\"{'devices':>9} {'seed entropy':>13} {'devices sharing a key with another device':>43} {'expected (birthday estimate)':>30}\")\nfor fleet, bits in ((1000, 16), (10000, 16), (10000, 24), (100000, 32), (100000, 20)):\n    keys = [device_public_key(rng.getrandbits(bits)) for _ in range(fleet)]\n    counts = Counter(keys)\n    shared_devices = sum(c for c in counts.values() if c > 1)\n    space = 2 ** bits\n    expected = fleet * (1 - math.exp(-(fleet - 1) / space))                                           # chance that a given device collides with at least one other\n    print(f\"{fleet:>9,} {bits:>11} b {shared_devices:>43,} {expected:>30,.0f}\")\nprint(\"a public key seen on two devices proves that the same private key exists on both; anyone holding one device can read the other's traffic\")\n\n# detection: an inventory that records public-key fingerprints finds such duplicates without any secret\ninventory = [device_public_key(rng.getrandbits(12)) for _ in range(500)]\nduplicates = [fp for fp, count in Counter(inventory).items() if count > 1]\nprint(f\"a scan of 500 fingerprints from a 12-bit-seeded fleet finds {len(duplicates)} duplicated keys, using only public information\")\n\n# a second failure mode: a virtual-machine snapshot restored twice repeats the RNG state, so two machines produce the same 'random' sequence\nclass SnapshotRng:\n    def __init__(self, state):\n        self.state, self.counter = state, 0\n    def next_bytes(self):\n        self.counter += 1\n        return hashlib.sha256(self.state + self.counter.to_bytes(4, \"big\")).digest()\nsnapshot_state = hashlib.sha256(b\"state at snapshot time\").digest()\nvm_a, vm_b = SnapshotRng(snapshot_state), SnapshotRng(snapshot_state)                 # two restores of the same snapshot\nprint(\"two restored VMs generate the same 'random' value after the restore:\", vm_a.next_bytes() == vm_b.next_bytes(), \"-> identical ephemeral keys and nonces on two machines\")\nprint(\"rules: generate long-term keys after the system has gathered entropy, re-seed after a snapshot restore or fork, record key fingerprints, and treat any duplicate public key as an incident\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-fleet-keys",
+              "language": "text",
+              "code": "  devices  seed entropy   devices sharing a key with another device   expected (birthday estimate)\n    1,000          16 b                                          18                             15\n   10,000          16 b                                       1,323                          1,415\n   10,000          24 b                                           2                              6\n  100,000          32 b                                           2                              2\n  100,000          20 b                                       9,110                          9,096\na public key seen on two devices proves that the same private key exists on both; anyone holding one device can read the other's traffic\na scan of 500 fingerprints from a 12-bit-seeded fleet finds 25 duplicated keys, using only public information\ntwo restored VMs generate the same 'random' value after the restore: True -> identical ephemeral keys and nonces on two machines\nrules: generate long-term keys after the system has gathered entropy, re-seed after a snapshot restore or fork, record key fingerprints, and treat any duplicate public key as an incident",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The simulated counts follow the birthday estimate closely (for example 9,110 observed against 9,096 expected devices with a shared key for 100,000 devices and 20 bits of seed, and 1,323 against 1,415 for 10,000 devices with 16 bits); with 24 or 32 bits of entropy almost every device is unique, which is the point: **entropy must be large enough that a fleet of the planned size has no collisions**, and for secrets the requirement is far stricter than for identifiers because collisions are not the only risk (a guessable seed is enough). A scan of 500 fingerprints from a 12-bit fleet found 25 duplicated keys using only public information, so a registry of public-key fingerprints is a cheap and effective control. The snapshot demonstration shows the second route to duplicates: two VMs restored from the same image generated the same next random value, giving identical ephemeral keys and nonces on two machines.\n\n**Practice.** Generate long-term keys after the entropy source is ready (check the system's seeding state, use a hardware source on embedded devices), re-seed after fork or snapshot restore, record fingerprints at enrolment and alert on any duplicate, and generate keys in a place with high-quality entropy (an HSM or provisioning station) when devices cannot."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the birthday estimate predict for a fleet?",
+              "options": [
+                "How many devices will share a key when seeds come from a small space",
+                "The size of the keys",
+                "The speed of key generation"
+              ],
+              "correct_index": 0,
+              "explanation": "About N * (1 - exp(-(N-1)/2^b)) devices collide."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "How can duplicated keys be detected without any secret?",
+              "options": [
+                "Compare public-key fingerprints across the inventory",
+                "Decrypt traffic",
+                "Ask the devices for their private keys"
+              ],
+              "correct_index": 0,
+              "explanation": "A duplicate public key proves duplicate private keys."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why are restored VM snapshots a randomness hazard?",
+              "options": [
+                "Both copies continue from the same random state",
+                "They use smaller keys",
+                "They disable hashing"
+              ],
+              "correct_index": 0,
+              "explanation": "Reseed after a restore or a fork."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 3.3 (randomness requirements)"
+            },
+            {
+              "book": "B02",
+              "locator": "Boneh and Shoup, A Graduate Course in Applied Cryptography: the birthday paradox and collision bounds (Section 3.1.4 and Appendix on probability)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The fleet and snapshot scenarios are simulations; real-world surveys of duplicated keys exist in the literature but were not consulted here. The Boneh-Shoup reference is to their treatment of the birthday bound, cited by topic."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "10.8 Implementation Bugs",
+          "summary": "A truncating-rounding bug that breaks every ciphertext, a missing modulus reduction, an off-by-one length check, and how differential testing finds them.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Many real failures are ordinary **bugs** in code that implements a sound algorithm. Three classes are illustrated here because they recur in post-quantum code. (1) **Arithmetic and rounding errors**: replacing the specified rounding by truncation or a floating-point shortcut. (2) **Missing validation**: decoding a key without reducing coefficients modulo q, so out-of-range values are never noticed (the modulus check of FIPS 203, section 7.2). (3) **Length and bounds errors**: a check written with `>=` instead of `==` (accepting oversized input), or reading past the end of a buffer when decoding hints or ciphertexts. In C or C++ the third class also means memory-safety bugs; SP 800-227 stresses that even benign faults, such as accepting an input that is too long or too short, can have serious security consequences.\n\nThe listing demonstrates each class on real code. For the first it patches kyber-py's compression to **truncate instead of round** and encapsulates 150 times with the buggy code; honest decapsulators then reject every ciphertext. The second and third are tested directly, and the last block shows the **differential test** against the independent OpenSSL implementation that would catch all of them. Everything here runs on your own machine against code, keys and devices that exist only inside the lesson. Physical effects (power, cache state, faults) are SIMULATED with models or software-injected faults, and every attack is shown at toy size or against the lesson's own targets. The point is to understand how leaks arise and how defences are verified, not to attack real systems."
+            },
+            {
+              "type": "code",
+              "id": "c-impl-bugs",
+              "language": "python",
+              "code": "import hashlib, random\nfrom kyber_py.ml_kem import ML_KEM_768\nfrom cryptography.hazmat.primitives.asymmetric import mlkem\n\nq = 3329\ndef compress_correct(x, d):\n    return ((x << d) + q // 2) // q % (2 ** d)\n\n# bug class 1: compression that truncates instead of rounding (a one-line mistake in the arithmetic)\nfrom kyber_py.polynomials.polynomials import Polynomial\ncorrect_compress = Polynomial._compress_ele\ndef truncating_compress(self, x, d):\n    return ((1 << d) * x // q) % (1 << d)                               # floor instead of round\nkem512 = __import__(\"kyber_py.ml_kem\", fromlist=[\"ML_KEM_512\"]).ML_KEM_512\nmismatch = {d: sum(((1 << d) * x // q) % (1 << d) != compress_correct(x, d) for x in range(q)) for d in (1, 4, 5, 10, 11)}\nprint(\"inputs (of 3,329) where truncation differs from rounding:\", mismatch)\nek512, dk512 = kem512.keygen()\nrng0 = random.Random(1)\nwrong = same_bytes = 0\ntrials = 150\nfor _ in range(trials):\n    m = bytes(rng0.getrandbits(8) for _ in range(32))\n    key_good, ct_good = kem512._encaps_internal(ek512, m)\n    Polynomial._compress_ele = truncating_compress\n    try:\n        key_bug, ct_bug = kem512._encaps_internal(ek512, m)\n    finally:\n        Polynomial._compress_ele = correct_compress\n    same_bytes += ct_bug == ct_good\n    wrong += kem512.decaps(dk512, ct_bug) != key_bug                    # an honest decapsulator, a buggy encapsulator\nprint(f\"{trials} encapsulations with the truncating compression: ciphertext identical to the standard's in {same_bytes}, decapsulation key mismatch in {wrong}\")\nprint(\"every buggy ciphertext is rejected by an honest decapsulator: the FO check re-encrypts and compares BYTES, so any deviation from the standard's exact rounding breaks interoperability completely\")\nprint(\"a buggy implementation talking only to itself would work, which is why self-consistency tests pass and only known-answer or cross-implementation tests expose the bug\")\n\n# bug class 2: a decoder that forgets the reduction modulo q (and so never notices out-of-range coefficients)\ndef decode12_buggy(data):\n    bits = int.from_bytes(data, \"little\")\n    return [(bits >> (12 * i)) & 0xFFF for i in range(len(data) * 8 // 12)]\ndef encode12(values):\n    bits = 0\n    for i, v in enumerate(values):\n        bits |= (v & 0xFFF) << (12 * i)\n    return bits.to_bytes(len(values) * 12 // 8, \"little\")\nkem = ML_KEM_768\nek, dk = kem.keygen()\nbody = bytearray(ek[:384 * kem.k]); body[0:2] = (4000 | (body[1] << 8 & 0xF000)).to_bytes(2, \"little\")\nprint(\"buggy decode/encode round trip accepts a key with a coefficient above q:\", encode12(decode12_buggy(bytes(body))) == bytes(body), \"| the correct modulus check rejects it (9.5)\")\n\n# bug class 3: an off-by-one in a length check\ndef parse_ciphertext_buggy(c, expected=1088):\n    return len(c) >= expected                                          # should be ==\nprint(\"length check written with >= accepts 1089 bytes:\", parse_ciphertext_buggy(bytes(1089)), \"| exact check accepts it:\", len(bytes(1089)) == 1088)\n\n# differential testing finds all three classes: compare against an independent implementation on random inputs\nrng = random.Random(4)\nagree = 0\nfor _ in range(30):\n    seed = bytes(rng.getrandbits(8) for _ in range(64))\n    py_ek, py_dk = kem.key_derive(seed)\n    ssl_priv = mlkem.MLKEM768PrivateKey.from_seed_bytes(seed)\n    key, ct = kem.encaps(py_ek)\n    agree += ssl_priv.decapsulate(ct) == key and ssl_priv.public_key().public_bytes_raw() == py_ek\nprint(\"30 random cross-checks against the independent implementation, all agree:\", agree == 30)\n\nprint(\"bug classes in this lesson: rounding/precision, missing range check, off-by-one length check; test for them with known-answer vectors, differential tests and fuzzing of every parser\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-impl-bugs",
+              "language": "text",
+              "code": "inputs (of 3,329) where truncation differs from rounding: {1: 1664, 4: 1664, 5: 1664, 10: 1664, 11: 1664}\n150 encapsulations with the truncating compression: ciphertext identical to the standard's in 0, decapsulation key mismatch in 150\nevery buggy ciphertext is rejected by an honest decapsulator: the FO check re-encrypts and compares BYTES, so any deviation from the standard's exact rounding breaks interoperability completely\na buggy implementation talking only to itself would work, which is why self-consistency tests pass and only known-answer or cross-implementation tests expose the bug\nbuggy decode/encode round trip accepts a key with a coefficient above q: True | the correct modulus check rejects it (9.5)\nlength check written with >= accepts 1089 bytes: True | exact check accepts it: False\n30 random cross-checks against the independent implementation, all agree: True\nbug classes in this lesson: rounding/precision, missing range check, off-by-one length check; test for them with known-answer vectors, differential tests and fuzzing of every parser",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The truncation differs from rounding for 1,664 of the 3,329 inputs (about half) for every d, and **all 150 buggy ciphertexts were rejected by an honest decapsulator**: the Fujisaki-Okamoto check re-encrypts and compares bytes, so any deviation from the standard's exact rounding is total interoperability failure and not a small noise increase. The important consequence for testing is the last observation: two copies of the *same buggy* code would still talk to each other (both round the same wrong way), so self-consistency tests pass and only known-answer vectors or an independent implementation expose the bug. The decoder without the reduction modulo q accepted a key with a coefficient of 4,000, and a length check with `>=` accepted a 1,089-byte ciphertext where exactly 1,088 are required. The 30 random cross-checks against the independent implementation all agree for the correct code, which is the baseline a differential test would hold.\n\n**Process.** Test every transformation against the specification's formulas, exhaustively where the range is small (compression: 3,329 inputs); test invalid inputs as carefully as valid ones; fuzz every parser; compile with sanitizers and run in memory-safe languages where possible; and keep an independent implementation in the continuous-integration tests."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why did a truncating compression bug make every ciphertext unusable?",
+              "options": [
+                "The decapsulator re-encrypts and compares bytes, so any deviation from the standard rounding is rejected",
+                "Truncation corrupts the key",
+                "The ciphertext became too long"
+              ],
+              "correct_index": 0,
+              "explanation": "Implicit rejection returned unrelated keys in all 150 cases."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does a buggy implementation pass tests against itself?",
+              "options": [
+                "Both sides make the same mistake and agree with each other",
+                "Bugs cannot be tested",
+                "Tests are random"
+              ],
+              "correct_index": 0,
+              "explanation": "Only known-answer vectors or independent implementations expose it."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What should a length check for a fixed-size ciphertext use?",
+              "options": [
+                "Exact equality with the expected size",
+                "Greater than or equal",
+                "Less than"
+              ],
+              "correct_index": 0,
+              "explanation": "Accepting oversized input is itself a vulnerability."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 7.2 (modulus check) and Section 4.2.1 (Compress and Decompress)"
+            },
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, 'Input checking' (even benign faults such as accepting inputs that are too long or too short can have serious consequences)"
+            },
+            {
+              "book": "B100",
+              "locator": "cryptography: the independent OpenSSL implementation used in the differential test"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The three bug classes are illustrations built for the lesson, not records of specific real vulnerabilities. The claim about memory-safety bugs in C code is general knowledge."
+          },
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "10.9 Protocol Downgrade",
+          "summary": "A simulated handshake in which an attacker strips the post-quantum group: the transcript MAC stops it only while the classical group is unbroken, and a client policy is what stops it against a quantum adversary.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "During migration, clients and servers must interoperate with peers that do not yet support post-quantum key exchange, so protocols let the client **offer several groups** and the server choose. A **downgrade attack** manipulates that negotiation so that both parties end up with the weaker option. Protocols defend against this by authenticating the entire handshake transcript (in TLS 1.3 the Finished messages cover everything exchanged so far), so a changed offer makes the transcript authenticator fail.\n\nThat defence has a limit that matters exactly in the post-quantum setting: the authenticator is keyed with a secret derived from the **chosen** key exchange. If the attacker can break that exchange, which is the whole premise of the quantum threat to X25519, they can compute the right Finished value for the modified transcript and the downgrade goes undetected. This listing is a **SIMULATION** with a simplified handshake (real X25519 and HKDF, a MAC over the transcript) and a model attacker who can strip a group from the offer and, in the quantum scenario, is *given* the classical shared secret. It runs six cases, including the defence that works: a **client policy** that refuses classical-only key exchange. Everything here runs on your own machine against code, keys and devices that exist only inside the lesson. Physical effects (power, cache state, faults) are SIMULATED with models or software-injected faults, and every attack is shown at toy size or against the lesson's own targets. The point is to understand how leaks arise and how defences are verified, not to attack real systems."
+            },
+            {
+              "type": "code",
+              "id": "c-downgrade",
+              "language": "python",
+              "code": "import hashlib, hmac\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey\nfrom cryptography.hazmat.primitives.kdf.hkdf import HKDF\nfrom cryptography.hazmat.primitives import serialization\n\n# SIMULATION of a simplified handshake: the client offers key-exchange groups, the server picks one, both derive keys from the shared secret\n# and authenticate the whole transcript with a MAC (the idea of TLS 1.3's Finished message). The \"attacker\" is a model: it can modify\n# messages, and in the quantum scenario it is GIVEN the ability to compute the X25519 secret (as a quantum computer would).\nraw = lambda pub: pub.public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)\n\ndef derive(secret, transcript):\n    return HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b\"handshake\" + hashlib.sha256(transcript).digest()).derive(secret)\n\ndef run(client_offer, server_supports, strip_pq=False, attacker_breaks_x25519=False, client_requires_pq=False):\n    sent_offer = list(client_offer)\n    if strip_pq:\n        sent_offer = [g for g in sent_offer if g != \"PQ-hybrid\"]                         # the attacker removes the post-quantum group in transit\n    chosen = next((g for g in sent_offer if g in server_supports), None)\n    if chosen is None:\n        return \"handshake failure\"\n    x_client, x_server = X25519PrivateKey.generate(), X25519PrivateKey.generate()\n    shared = x_client.exchange(x_server.public_key())\n    transcript_server_view = (\",\".join(sent_offer) + \"|\" + chosen).encode()\n    transcript_client_view = (\",\".join(client_offer) + \"|\" + chosen).encode()\n    server_finished = hmac.new(derive(shared, transcript_server_view), b\"server finished\", \"sha256\").digest()\n    # the client verifies the server's Finished over ITS view of the transcript (what it actually sent)\n    expected = hmac.new(derive(shared, transcript_client_view), b\"server finished\", \"sha256\").digest()\n    if client_requires_pq and chosen != \"PQ-hybrid\":\n        return f\"client aborts: policy requires post-quantum key exchange, server chose {chosen}\"\n    if hmac.compare_digest(server_finished, expected):\n        return f\"connected with {chosen}\"\n    if attacker_breaks_x25519 and chosen == \"X25519\":\n        # the attacker knows the shared secret, so it can compute a Finished that matches the client's view of the transcript\n        return f\"connected with {chosen}  <- DOWNGRADE SUCCEEDED: attacker forged Finished using the broken classical secret\"\n    return \"client aborts: Finished does not match (transcript was modified)\"\n\noffer = [\"PQ-hybrid\", \"X25519\"]\nservers = {\"PQ-hybrid\", \"X25519\"}\nprint(\"1. honest handshake:\", run(offer, servers))\nprint(\"2. attacker strips the PQ group, classical X25519 is not broken:\", run(offer, servers, strip_pq=True))\nprint(\"3. same, but the attacker can break X25519 (quantum adversary):\", run(offer, servers, strip_pq=True, attacker_breaks_x25519=True))\nprint(\"4. same attack, client policy requires post-quantum key exchange:\", run(offer, servers, strip_pq=True, attacker_breaks_x25519=True, client_requires_pq=True))\nprint(\"5. server that supports only X25519, honest client without policy:\", run(offer, {\"X25519\"}))\nprint(\"6. server that supports only X25519, client requires PQ:\", run(offer, {\"X25519\"}, client_requires_pq=True))\nprint()\nprint(\"lesson: the transcript MAC catches tampering only while the attacker cannot compute the key of the chosen group;\")\nprint(\"against an adversary who can break the classical group, authenticating the transcript with that group's secret protects nothing.\")\nprint(\"the defence is a client policy that refuses classical-only key exchange for data that must stay confidential, plus monitoring of the negotiated groups\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-downgrade",
+              "language": "text",
+              "code": "1. honest handshake: connected with PQ-hybrid\n2. attacker strips the PQ group, classical X25519 is not broken: client aborts: Finished does not match (transcript was modified)\n3. same, but the attacker can break X25519 (quantum adversary): connected with X25519  <- DOWNGRADE SUCCEEDED: attacker forged Finished using the broken classical secret\n4. same attack, client policy requires post-quantum key exchange: client aborts: policy requires post-quantum key exchange, server chose X25519\n5. server that supports only X25519, honest client without policy: connected with X25519\n6. server that supports only X25519, client requires PQ: client aborts: policy requires post-quantum key exchange, server chose X25519\n\nlesson: the transcript MAC catches tampering only while the attacker cannot compute the key of the chosen group;\nagainst an adversary who can break the classical group, authenticating the transcript with that group's secret protects nothing.\nthe defence is a client policy that refuses classical-only key exchange for data that must stay confidential, plus monitoring of the negotiated groups",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Case 1 connects with the hybrid group. In case 2 the attacker strips the post-quantum group and the Finished check fails because the client's transcript differs from the server's, so the classical protection works against an attacker who cannot break X25519. In case 3 the attacker can break X25519 (the quantum scenario) and the downgrade **succeeds**: it computes a valid Finished for the modified transcript. In case 4 the same attack fails because the client's policy requires post-quantum key exchange and aborts when the server chose X25519. Cases 5 and 6 show the cost of the defence: a server that supports only the classical group causes a policy-bound client to refuse the connection, which is why migration needs an inventory of what peers support (E2, E5).\n\n**Conclusions.** (1) The transcript MAC is a **conditional** defence: it protects the negotiation only as strongly as the weakest group the parties will accept. (2) The robust control is **policy**: define which data must have post-quantum protection and refuse classical-only exchange for it, even at the price of failed connections. (3) Monitor the negotiated groups on both sides; an unexpected fall to a classical group is a signal. (4) Plan to remove classical-only options after migration; as long as they exist, the downgrade exists. Real TLS specifics (cipher-suite and group registries, the downgrade sentinel values) are outside this simulation."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does the transcript MAC fail to stop a downgrade by a quantum attacker?",
+              "options": [
+                "It is keyed from the chosen classical exchange, which the attacker can break and so forge the MAC",
+                "MACs are weak",
+                "It is not keyed"
+              ],
+              "correct_index": 0,
+              "explanation": "In case 3 the attacker forged a valid Finished."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What stopped the downgrade in case 4?",
+              "options": [
+                "A client policy refusing classical-only key exchange",
+                "A longer key",
+                "A firewall"
+              ],
+              "correct_index": 0,
+              "explanation": "The client aborted although the transcript looked valid."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the cost of such a policy?",
+              "options": [
+                "Connections to servers that lack post-quantum support fail",
+                "Larger keys",
+                "Slower hashing"
+              ],
+              "correct_index": 0,
+              "explanation": "Migration planning has to know what peers support."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, Section 4.6 (multi-algorithm key-establishment schemes and hybrids, and the surrounding discussion of combining classical and post-quantum KEMs)"
+            },
+            {
+              "book": "B100",
+              "locator": "cryptography: X25519, HKDF and HMAC used in the simulated handshake"
+            }
+          ],
+          "needs_verification": {
+            "reason": "TLS 1.3 (RFC 8446) and its downgrade-protection details are described from general knowledge; the RFC was not read here. The handshake is a simplified model, and the 'broken X25519' attacker is an assumption of the simulation, not a demonstrated attack."
+          },
+          "after": "sec-8"
+        },
+        {
+          "slug": "sec-10",
+          "action": "replace",
+          "title": "10.10 Hybrid-Mode Weaknesses",
+          "summary": "Key combiners built three ways, the ciphertext-binding combiner of SP 800-227, a real non-uniqueness of X25519 share encodings, and a check that the key depends on both components.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **hybrid** key exchange combines a classical and a post-quantum shared secret so that the result stays secure as long as **either** component holds. The combination step, the **key combiner**, is where designs go wrong. SP 800-227 gives the generic composite construction: both KEMs run, and the final key is KeyCombine(K1, K2, c1, c2, ek1, ek2, p), which takes not only the two secrets but also **the ciphertexts, the encapsulation keys and the parameter set**; approved combiners come from the key-derivation methods of SP 800-56C or the key-combination methods of SP 800-133 (SP 800-227, Section 4.6). Including the exchanged values makes the key depend on the full transcript of the exchange, which matters because not every component is a KEM with strong binding properties.\n\nThe listing builds a real hybrid exchange (X25519 plus ML-KEM-768 through OpenSSL) and three combiners: an **XOR** of the two secrets, a KDF over the two secrets only, and a KDF over the secrets **and** the public values. It shows a concrete reason for binding: an X25519 public value with u < 19 can be written as u or as u + p (receivers must accept both, per RFC 7748), and both encodings produce the *same* shared secret, so a combiner that ignores the encodings maps two different \"ciphertexts\" to one key. It also checks that low-order points are refused and that the key depends on both components. Everything here runs on your own machine against code, keys and devices that exist only inside the lesson. Physical effects (power, cache state, faults) are SIMULATED with models or software-injected faults, and every attack is shown at toy size or against the lesson's own targets. The point is to understand how leaks arise and how defences are verified, not to attack real systems."
+            },
+            {
+              "type": "code",
+              "id": "c-hybrid-combiner",
+              "language": "python",
+              "code": "import hashlib, os\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import mlkem\nfrom cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey, X25519PublicKey\nfrom cryptography.hazmat.primitives.kdf.hkdf import HKDF\n\nP = 2 ** 255 - 19\ndef kdf(*parts):\n    return HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=b\"hybrid-demo\").derive(b\"\".join(len(x).to_bytes(2, \"big\") + x for x in parts))\n\n# --- the pieces of a hybrid key exchange: X25519 plus ML-KEM-768\nserver_x = X25519PrivateKey.generate()\nserver_kem = mlkem.MLKEM768PrivateKey.generate()\nserver_x_pub = server_x.public_key().public_bytes_raw()\nserver_kem_pub = server_kem.public_key()\n\nclient_x = X25519PrivateKey.generate()\nclient_x_pub = client_x.public_key().public_bytes_raw()\nss_pq, ct_pq = server_kem_pub.encapsulate()\nss_classical = client_x.exchange(X25519PublicKey.from_public_bytes(server_x_pub))\n\n# --- three combiners\ncombine_xor = lambda a, b: bytes(x ^ y for x, y in zip(a, b))                                           # XOR of the two secrets\ncombine_concat = lambda a, b, **_: kdf(a, b)                                                           # KDF over the secrets only\ncombine_bound = lambda a, b, cx, cp, sx, sk: kdf(a, b, cx, cp, sx, sk)                                 # KDF over the secrets AND the exchanged public values\n\nss_pq_server = server_kem.decapsulate(ct_pq)\nss_classical_server = server_x.exchange(X25519PublicKey.from_public_bytes(client_x_pub))\nargs_client = (ss_classical, ss_pq, client_x_pub, ct_pq, server_x_pub, server_kem_pub.public_bytes_raw())\nargs_server = (ss_classical_server, ss_pq_server, client_x_pub, ct_pq, server_x_pub, server_kem_pub.public_bytes_raw())\nprint(\"1. client and server derive the same key with each combiner:\", combine_xor(ss_classical, ss_pq) == combine_xor(ss_classical_server, ss_pq_server), combine_concat(*args_client[:2]) == combine_concat(*args_server[:2]), combine_bound(*args_client) == combine_bound(*args_server))\n\n# --- X25519 shares can have more than one encoding: a share with u < 19 can also be written as u + p (RFC 7748 requires receivers to accept both)\n# a malicious client may choose such a share on purpose; here u = 9, the standard base point\nshare = (9).to_bytes(32, \"little\")\nshare_twin = (9 + P).to_bytes(32, \"little\")\nss_share = server_x.exchange(X25519PublicKey.from_public_bytes(share))\nss_twin = server_x.exchange(X25519PublicKey.from_public_bytes(share_twin))\nprint(\"2. the share u = 9 and its twin u = 9 + p are different byte strings:\", share != share_twin, \"| the server computes the SAME shared secret for both:\", ss_share == ss_twin)\nk_a, k_b = combine_concat(ss_share, ss_pq), combine_concat(ss_twin, ss_pq)\nprint(\"   a combiner that ignores the exchanged values yields the same key for two different 'ciphertexts':\", k_a == k_b)\nkb_a = combine_bound(ss_share, ss_pq, share, ct_pq, server_x_pub, server_kem_pub.public_bytes_raw())\nkb_b = combine_bound(ss_twin, ss_pq, share_twin, ct_pq, server_x_pub, server_kem_pub.public_bytes_raw())\nprint(\"   a combiner that binds the exchanged public values yields different keys, so the two transcripts cannot be confused:\", kb_a != kb_b)\nprint(\"   (for an honestly generated share the twin does not exist, because the top bit of u + p is masked away; the effect needs an attacker-chosen share)\")\n\n# --- low-order points: a malicious peer forces a known shared secret; the library refuses\nlow_order = bytes(32)                                                                                   # the u = 0 point has order 1 or 2\ntry:\n    server_x.exchange(X25519PublicKey.from_public_bytes(low_order))\n    print(\"3. low-order point accepted\")\nexcept ValueError as exc:\n    print(\"3. low-order point rejected by the library (all-zero shared secret):\", type(exc).__name__)\n\n# --- a sanity test that the combined key depends on BOTH components\nbase = combine_bound(ss_classical, ss_pq, client_x_pub, ct_pq, server_x_pub, server_kem_pub.public_bytes_raw())\nprint(\"4. changing only the post-quantum secret changes the key:\", combine_bound(ss_classical, os.urandom(32), client_x_pub, ct_pq, server_x_pub, server_kem_pub.public_bytes_raw()) != base)\nprint(\"   changing only the classical secret changes the key:\", combine_bound(os.urandom(32), ss_pq, client_x_pub, ct_pq, server_x_pub, server_kem_pub.public_bytes_raw()) != base)\n\n# --- the failure the hybrid is meant to survive: break one component, the other still protects the key\nattacker_knows_classical = ss_classical                                                                 # SIMULATION: a quantum adversary has recovered the X25519 secret\nguess_pq = os.urandom(32)\nprint(\"5. SIMULATION: attacker knows the classical secret but not the ML-KEM secret; guessing the PQ part gives the right key:\", combine_bound(attacker_knows_classical, guess_pq, client_x_pub, ct_pq, server_x_pub, server_kem_pub.public_bytes_raw()) == base)\nprint(\"   with an XOR combiner and a PQ secret that is secret, the result is also protected, but XOR gives no transcript binding and no domain separation\")\nprint(\"a safe combiner: a KDF (HKDF/HMAC-based) over both secrets and over the ciphertexts/public values, with a fixed order and a protocol label (SP 800-227 describes the requirements for combining)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-hybrid-combiner",
+              "language": "text",
+              "code": "1. client and server derive the same key with each combiner: True True True\n2. the share u = 9 and its twin u = 9 + p are different byte strings: True | the server computes the SAME shared secret for both: True\n   a combiner that ignores the exchanged values yields the same key for two different 'ciphertexts': True\n   a combiner that binds the exchanged public values yields different keys, so the two transcripts cannot be confused: True\n   (for an honestly generated share the twin does not exist, because the top bit of u + p is masked away; the effect needs an attacker-chosen share)\n3. low-order point rejected by the library (all-zero shared secret): ValueError\n4. changing only the post-quantum secret changes the key: True\n   changing only the classical secret changes the key: True\n5. SIMULATION: attacker knows the classical secret but not the ML-KEM secret; guessing the PQ part gives the right key: False\n   with an XOR combiner and a PQ secret that is secret, the result is also protected, but XOR gives no transcript binding and no domain separation\na safe combiner: a KDF (HKDF/HMAC-based) over both secrets and over the ciphertexts/public values, with a fixed order and a protocol label (SP 800-227 describes the requirements for combining)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "All three combiners agree between client and server; the differences appear under analysis. The attacker-chosen X25519 share u = 9 and its twin 9 + p are different byte strings that give the server the identical shared secret, the combiner over the secrets alone gives the same key for both, and the combiner that binds the exchanged values gives different keys, so two distinct transcripts cannot be confused. (For an honestly generated share the second encoding does not exist, so the effect needs an attacker-chosen share, as the listing notes.) The low-order point (all zeros) is rejected by the library, which prevents an attacker from forcing a known classical secret. Changing only the post-quantum secret changes the key, and so does changing only the classical secret, and an attacker who knows the classical secret and guesses the post-quantum part cannot derive the key.\n\n**Design rules.** Use a standard KDF as the combiner, feed it both secrets, both ciphertexts or public values, the parameter set and a protocol label, in a fixed order with unambiguous length encoding (the listing prefixes each part with its length); do not use XOR as the only combination; reject low-order and invalid points; and verify with tests that each component actually influences the output. SP 800-227 states that a combined KEM does not automatically inherit IND-CCA2 security, so the combiner is part of the security argument and not an implementation detail."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What inputs does SP 800-227's KeyCombine take besides the two shared secrets?",
+              "options": [
+                "The ciphertexts, the encapsulation keys and the parameter set",
+                "Only a salt",
+                "The plaintext"
+              ],
+              "correct_index": 0,
+              "explanation": "Binding the exchanged values makes the key depend on the whole exchange."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What did the X25519 share u = 9 and its twin 9 + p demonstrate?",
+              "options": [
+                "Different encodings of a share can give the same shared secret, so a combiner ignoring encodings confuses them",
+                "X25519 is broken",
+                "Shares must be secret"
+              ],
+              "correct_index": 0,
+              "explanation": "Only the binding combiner produced different keys."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is XOR alone not a sufficient combiner?",
+              "options": [
+                "It gives no transcript binding or domain separation",
+                "It is too slow",
+                "It changes the key length"
+              ],
+              "correct_index": 0,
+              "explanation": "Use a KDF over the secrets and the exchanged values with a protocol label."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, Section 4.6.1 (composite KEM construction, KeyCombine(K1, K2, c1, c2, ek1, ek2, p), equations 9 and 10) and Section 4.6.2 (approved key combiners from SP 800-56C and SP 800-133)"
+            },
+            {
+              "book": "B100",
+              "locator": "cryptography: X25519, ML-KEM-768 and HKDF used to build the hybrid"
+            }
+          ],
+          "needs_verification": {
+            "reason": "RFC 7748's rule that receivers accept the non-canonical encoding of u is stated from memory; the listing demonstrates the behaviour on the installed library. The statement that combined KEMs do not automatically inherit IND-CCA2 security is from SP 800-227's discussion of combiners as I read it."
+          },
+          "after": "sec-9"
+        },
+        {
+          "slug": "sec-11",
+          "action": "replace",
+          "title": "10.11 Certificate Migration Failures",
+          "summary": "Real certificate chains built and verified with RSA, ECDSA and ML-DSA keys, handshake sizes against the initial TCP window, and why a mixed chain is only as strong as its classical link.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Certificates are the hardest part of the migration, because they carry both a **public key** and a **signature**, and post-quantum versions of both are large. ML-DSA-44 has a 1,312-byte public key and a 2,420-byte signature; ML-DSA-65 has 1,952 and 3,309 bytes (FIPS 204, Table 2), against 32 to 64 bytes for an ECDSA key and about 72 for its signature. A TLS server sends its certificate chain and a CertificateVerify signature in its first flight, and on a fresh TCP connection that flight has to fit in the sender's **initial congestion window** (commonly 10 segments of about 1,460 bytes, 14,600 bytes) if the handshake is not to cost an extra round trip; some middleboxes also mishandle large or fragmented flights.\n\nThe listing builds **real chains** (a self-signed root, an intermediate and a leaf) for ECDSA P-256, RSA-2048, ML-DSA-44 and ML-DSA-65 with the `cryptography` package, verifies every signature in each chain, measures the DER sizes, and computes the first-flight size and the number of TCP segments. It then builds a **mixed chain** (a post-quantum leaf under a classical root) and verifies it, to show what such a chain does and does not give. Everything here runs on your own machine against code, keys and devices that exist only inside the lesson. Physical effects (power, cache state, faults) are SIMULATED with models or software-injected faults, and every attack is shown at toy size or against the lesson's own targets. The point is to understand how leaks arise and how defences are verified, not to attack real systems."
+            },
+            {
+              "type": "code",
+              "id": "c-cert-sizes",
+              "language": "python",
+              "code": "import datetime, math\nfrom cryptography import x509\nfrom cryptography.x509.oid import NameOID\nfrom cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import ec, mldsa, rsa\n\nNOW = datetime.datetime(2026, 1, 1)\ndef name(cn):\n    return x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])\ndef make_cert(subject_cn, subject_key, issuer_cn, issuer_key, ca, serial):\n    builder = (x509.CertificateBuilder().subject_name(name(subject_cn)).issuer_name(name(issuer_cn)).public_key(subject_key.public_key())\n               .serial_number(serial).not_valid_before(NOW).not_valid_after(NOW + datetime.timedelta(days=365))\n               .add_extension(x509.BasicConstraints(ca=ca, path_length=None), critical=True)\n               .add_extension(x509.SubjectKeyIdentifier.from_public_key(subject_key.public_key()), critical=False))\n    if not ca:\n        builder = builder.add_extension(x509.SubjectAlternativeName([x509.DNSName(\"service.example.test\")]), critical=False)\n    is_pq = isinstance(issuer_key, (mldsa.MLDSA44PrivateKey, mldsa.MLDSA65PrivateKey, mldsa.MLDSA87PrivateKey))\n    return builder.sign(issuer_key, None if is_pq else hashes.SHA256())\ndef check_signature(cert, issuer_cert):\n    pub = issuer_cert.public_key()\n    if isinstance(pub, rsa.RSAPublicKey):\n        from cryptography.hazmat.primitives.asymmetric import padding\n        pub.verify(cert.signature, cert.tbs_certificate_bytes, padding.PKCS1v15(), cert.signature_hash_algorithm)\n    elif isinstance(pub, ec.EllipticCurvePublicKey):\n        pub.verify(cert.signature, cert.tbs_certificate_bytes, ec.ECDSA(cert.signature_hash_algorithm))\n    else:\n        pub.verify(cert.signature, cert.tbs_certificate_bytes)\n    return True\nder = lambda c: len(c.public_bytes(serialization.Encoding.DER))\n\ndef chain_for(kind):\n    gen = {\"RSA-2048\": lambda: rsa.generate_private_key(65537, 2048), \"ECDSA P-256\": lambda: ec.generate_private_key(ec.SECP256R1()),\n           \"ML-DSA-44\": mldsa.MLDSA44PrivateKey.generate, \"ML-DSA-65\": mldsa.MLDSA65PrivateKey.generate}[kind]\n    root_key, int_key, leaf_key = gen(), gen(), gen()\n    root = make_cert(\"Lesson Root\", root_key, \"Lesson Root\", root_key, True, 1)\n    inter = make_cert(\"Lesson Intermediate\", int_key, \"Lesson Root\", root_key, True, 2)\n    leaf = make_cert(\"service.example.test\", leaf_key, \"Lesson Intermediate\", int_key, False, 3)\n    assert check_signature(inter, root) and check_signature(leaf, inter) and check_signature(root, root)\n    cv = {\"RSA-2048\": 256, \"ECDSA P-256\": 72, \"ML-DSA-44\": 2420, \"ML-DSA-65\": 3309}[kind]               # CertificateVerify signature size (ECDSA is about 72 bytes DER)\n    return leaf, inter, root, cv\n\nMSS, INITCWND = 1460, 10\nprint(\"real certificate chains built and verified in this lesson (self-signed root, intermediate, leaf; DER sizes rounded to 50 bytes because ECDSA signatures vary by a byte or two)\")\nprint(f\"{'algorithm':<12} {'leaf':>6} {'intermediate':>13} {'chain sent (leaf + intermediate)':>34} {'+ CertificateVerify':>20} {'TCP segments':>13} {'fits initial window':>20}\")\nfor kind in (\"ECDSA P-256\", \"RSA-2048\", \"ML-DSA-44\", \"ML-DSA-65\"):\n    leaf, inter, root, cv = chain_for(kind)\n    sent = der(leaf) + der(inter)\n    flight = sent + cv + 60                                          # plus about 60 bytes of handshake framing\n    round10 = lambda v: int(round(v / 50.0) * 50)\n    segments = math.ceil(flight / MSS)\n    print(f\"{kind:<12} {round10(der(leaf)):>6} {round10(der(inter)):>13} {round10(sent):>34} {round10(flight):>20} {segments:>13} {str(segments <= INITCWND):>20}\")\nprint()\nprint(f\"the server's certificate flight must fit in about {MSS * INITCWND:,} bytes (10 segments of {MSS}) to avoid an extra round trip on a fresh TCP connection; the lesson's chain sizes are for a minimal certificate with one name\")\nleaf, inter, root, cv = chain_for(\"ML-DSA-65\")\nprint(\"an ML-DSA-65 certificate contains a 1,952-byte public key and a 3,309-byte signature, so a certificate is about\", round(der(leaf), -2), \"bytes against about 300 to 800 for classical ones\")\n\n# a mixed chain: a post-quantum leaf under a classical intermediate is valid structurally, but the chain is only as strong as its weakest link\nclassical_key, pq_key = ec.generate_private_key(ec.SECP256R1()), mldsa.MLDSA65PrivateKey.generate()\nroot_c = make_cert(\"Classical Root\", classical_key, \"Classical Root\", classical_key, True, 11)\nleaf_pq = make_cert(\"service.example.test\", pq_key, \"Classical Root\", classical_key, False, 12)\nprint(\"a post-quantum leaf signed by a classical root verifies:\", check_signature(leaf_pq, root_c), \"-> a quantum attacker who can forge the classical root signature can mint 'valid' certificates for any key\")\nprint(\"migration failure modes in this lesson: handshake size (extra round trips, middleboxes that drop large flights), mixed chains with a classical weak link, and clients that reject unknown signature algorithms\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-cert-sizes",
+              "language": "text",
+              "code": "real certificate chains built and verified in this lesson (self-signed root, intermediate, leaf; DER sizes rounded to 50 bytes because ECDSA signatures vary by a byte or two)\nalgorithm      leaf  intermediate   chain sent (leaf + intermediate)  + CertificateVerify  TCP segments  fits initial window\nECDSA P-256     400           350                                750                  850             1                 True\nRSA-2048        800           750                               1500                 1850             2                 True\nML-DSA-44      4000          3950                               7900                10400             8                 True\nML-DSA-65      5500          5450                              11000                14350            10                 True\n\nthe server's certificate flight must fit in about 14,600 bytes (10 segments of 1460) to avoid an extra round trip on a fresh TCP connection; the lesson's chain sizes are for a minimal certificate with one name\nan ML-DSA-65 certificate contains a 1,952-byte public key and a 3,309-byte signature, so a certificate is about 5500 bytes against about 300 to 800 for classical ones\na post-quantum leaf signed by a classical root verifies: True -> a quantum attacker who can forge the classical root signature can mint 'valid' certificates for any key\nmigration failure modes in this lesson: handshake size (extra round trips, middleboxes that drop large flights), mixed chains with a classical weak link, and clients that reject unknown signature algorithms",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "A minimal ECDSA chain sent by a server is about 750 bytes (one segment) and RSA-2048 about 1,500, while ML-DSA-44 needs about 7,900 bytes of certificates and ML-DSA-65 about 11,000; with the CertificateVerify signature and framing the flights are about 10,400 bytes (8 segments) and 14,350 bytes (10 segments). The ML-DSA-65 flight just fits a 10-segment window **in this minimal case** (one name, no extensions, no embedded timestamps); a real certificate with several names, extensions and timestamps would push it over and cost an extra round trip, and the lesson's sizes are rounded to 50 bytes. The real post-quantum certificates built here also verify correctly, which shows that the toolchain support exists, but it also shows the **cost**: a certificate is about 5,500 bytes against 400 to 800 for classical ones.\n\nThe mixed chain verifies, and that is the problem: the structure is valid, but anyone who can forge the classical root's signature (a quantum attacker) can issue \"valid\" certificates for any key, so a post-quantum leaf under a classical root has **no post-quantum authentication value** against that attacker. **Failure modes to plan for:** extra round trips and dropped large flights, clients that reject unknown signature algorithms, mixed chains with a classical weak link, long-lived classical roots embedded in devices that cannot be updated, and missing monitoring of which algorithms the deployed certificates use (E2.4). Mitigations include certificate compression, shorter chains, omitting the root, and a migration plan that covers the whole chain together with the root stores."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why can post-quantum certificates cost an extra network round trip?",
+              "options": [
+                "The chain and signature are much larger and may exceed the initial TCP window",
+                "They use a different port",
+                "They need a second handshake"
+              ],
+              "correct_index": 0,
+              "explanation": "An ML-DSA-65 flight was about 14,350 bytes against a 14,600-byte window."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does a post-quantum leaf under a classical root add little security against a quantum attacker?",
+              "options": [
+                "The attacker can forge the root's classical signature and issue valid certificates for any key",
+                "Leaves are not authenticated",
+                "The leaf key is too short"
+              ],
+              "correct_index": 0,
+              "explanation": "The chain is only as strong as its weakest link."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What are the public-key and signature sizes of ML-DSA-65?",
+              "options": [
+                "1,952 and 3,309 bytes",
+                "32 and 64 bytes",
+                "800 and 768 bytes"
+              ],
+              "correct_index": 0,
+              "explanation": "FIPS 204 Table 2."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B92",
+              "locator": "FIPS 204, Table 2 (sizes of keys and signatures for ML-DSA-44, -65 and -87)"
+            },
+            {
+              "book": "B100",
+              "locator": "cryptography: x509.CertificateBuilder with ML-DSA keys, used to build and check real chains"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The initial congestion window of 10 segments and the 1,460-byte segment are commonly used values and were not sourced here; middlebox behaviour is described from general experience. The chain sizes are for minimal certificates built for the lesson, not for any real CA's profile."
+          },
+          "after": "sec-10"
+        },
+        {
+          "slug": "sec-12",
+          "action": "replace",
+          "title": "10.12 Supply-Chain Risks",
+          "summary": "A hash manifest that detects a one-line change to a cryptographic dependency, an inventory of installed components, and a look-alike-name check; with the limits of each control.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A cryptographic system is built from **dependencies**: libraries, build tools, compilers, firmware, hardware modules, and the people and systems that publish them. A **supply-chain attack** compromises one of these so that malicious code arrives with legitimate software: a modified release, a look-alike package name (typosquatting), a hijacked maintainer account, a poisoned build pipeline. For post-quantum migration the exposure is large, because organisations are adopting **new, fast-changing libraries** for primitives whose implementations are still maturing (the first standardised implementations are young, and the relevant code is often pulled from public registries).\n\nThree practical controls are shown with working code. A **hash manifest** records the digest of every file of a reviewed dependency so that any later change is detected; the listing modifies one line of a copy of kyber-py (removing the decapsulation key's hash check) and shows that the manifest comparison names the changed file. An **inventory** of installed components with versions and licences is the raw material of a software bill of materials (SBOM); a **cryptographic BOM (CBOM)** adds the algorithms each component implements, which lets an organisation query for deprecated or vulnerable primitives (E2.1). A **look-alike name check** compares requested package names with an approved list by edit distance. Everything here runs on your own machine against code, keys and devices that exist only inside the lesson. Physical effects (power, cache state, faults) are SIMULATED with models or software-injected faults, and every attack is shown at toy size or against the lesson's own targets. The point is to understand how leaks arise and how defences are verified, not to attack real systems."
+            },
+            {
+              "type": "code",
+              "id": "c-supply-chain",
+              "language": "python",
+              "code": "import hashlib, importlib.metadata, json, pathlib, shutil, tempfile\nimport kyber_py, dilithium_py\n\n# --- 1. a manifest of file hashes for a dependency, recorded when the package was reviewed\ndef manifest_for(package_dir):\n    entries = {}\n    for path in sorted(pathlib.Path(package_dir).rglob(\"*.py\")):\n        entries[str(path.relative_to(package_dir)).replace(\"\\\\\", \"/\")] = hashlib.sha256(path.read_bytes()).hexdigest()\n    return entries\n\npackage_dir = pathlib.Path(kyber_py.__file__).parent\nreviewed = manifest_for(package_dir)\nprint(f\"manifest of kyber-py: {len(reviewed)} source files hashed, for example {sorted(reviewed)[0]} -> {reviewed[sorted(reviewed)[0]][:12]}... (the digests depend on the installed version)\")\n\n# --- 2. detection of a modified file: copy the package to a temporary directory, change one line, compare with the reviewed manifest\nwith tempfile.TemporaryDirectory() as tmp:\n    copy = pathlib.Path(tmp) / \"kyber_py\"\n    shutil.copytree(package_dir, copy, ignore=shutil.ignore_patterns(\"__pycache__\"))\n    print(\"untouched copy matches the manifest:\", manifest_for(copy) == reviewed)\n    target = copy / \"ml_kem\" / \"ml_kem.py\"\n    text = target.read_text(encoding=\"utf-8\")\n    target.write_text(text.replace(\"if self._H(ek_pke) != h:\", \"if False:\"), encoding=\"utf-8\")                 # a malicious or accidental removal of the dk hash check\n    after = manifest_for(copy)\n    changed = [f for f in after if after[f] != reviewed.get(f)]\n    print(\"after removing the hash check from decapsulation, the manifest comparison reports:\", changed)\nprint(\"a hash manifest detects ANY change, but only if the manifest comes from a trusted source and is checked at install time, not only recorded once\")\n\n# --- 3. the inventory of what is actually installed (the raw material of a software bill of materials)\nwanted = (\"kyber-py\", \"dilithium-py\", \"cryptography\", \"numpy\")\nprint()\nprint(f\"{'component':<16} {'installed version':<18} {'license metadata':<24}\")\nfor dist in sorted(importlib.metadata.distributions(), key=lambda d: d.metadata[\"Name\"].lower()):\n    n = dist.metadata[\"Name\"]\n    if n.lower() in wanted:\n        lic = dist.metadata.get(\"License-Expression\") or dist.metadata.get(\"License\") or \"not stated\"\n        print(f\"{n:<16} {dist.version:<18} {str(lic)[:24]:<24}\")\nprint(\"an SBOM lists every component and version; a cryptographic BOM (CBOM) adds the algorithms each component implements, so that a vulnerable or deprecated primitive can be found by query\")\n\n# --- 4. look-alike package names: a typosquatting check against the list of names the project actually depends on\ndef edit_distance(a, b):\n    previous = list(range(len(b) + 1))\n    for i, ca in enumerate(a, 1):\n        current = [i]\n        for j, cb in enumerate(b, 1):\n            current.append(min(previous[j] + 1, current[-1] + 1, previous[j - 1] + (ca != cb)))\n        previous = current\n    return previous[-1]\napproved = [\"kyber-py\", \"dilithium-py\", \"cryptography\", \"numpy\"]\ncandidates = [\"kyber-py\", \"kyber_py\", \"kyberpy\", \"kyber-pi\", \"dilithium-pv\", \"cryptograpy\", \"cryptography\", \"numpyy\", \"requests\"]\nprint()\nprint(f\"{'requested name':<16} {'closest approved name':<22} {'edit distance':>14} {'verdict'}\")\nfor name in candidates:\n    closest = min(approved, key=lambda a: edit_distance(name.replace(\"_\", \"-\"), a))\n    dist = edit_distance(name.replace(\"_\", \"-\"), closest)\n    verdict = \"approved\" if name in approved else (\"normalises to approved name\" if dist == 0 else \"REVIEW: looks like \" + closest if dist <= 2 else \"not on the approved list\")\n    print(f\"{name:<16} {closest:<22} {dist:>14} {verdict}\")\nprint(\"controls: pin exact versions and hashes (pip install --require-hashes), mirror reviewed packages internally, verify signatures or attestations where the registry offers them, build reproducibly, and review updates of cryptographic dependencies before deployment\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-supply-chain",
+              "language": "text",
+              "code": "manifest of kyber-py: 18 source files hashed, for example __init__.py -> e3b0c44298fc... (the digests depend on the installed version)\nuntouched copy matches the manifest: True\nafter removing the hash check from decapsulation, the manifest comparison reports: ['ml_kem/ml_kem.py']\na hash manifest detects ANY change, but only if the manifest comes from a trusted source and is checked at install time, not only recorded once\n\ncomponent        installed version  license metadata        \ncryptography     50.0.1             Apache-2.0 OR BSD-3-Clau\ndilithium-py     1.4.0              MIT                     \nkyber-py         1.2.0              MIT OR Apache-2.0       \nnumpy            2.5.3              BSD-3-Clause AND 0BSD AN\nan SBOM lists every component and version; a cryptographic BOM (CBOM) adds the algorithms each component implements, so that a vulnerable or deprecated primitive can be found by query\n\nrequested name   closest approved name   edit distance verdict\nkyber-py         kyber-py                            0 approved\nkyber_py         kyber-py                            0 normalises to approved name\nkyberpy          kyber-py                            1 REVIEW: looks like kyber-py\nkyber-pi         kyber-py                            1 REVIEW: looks like kyber-py\ndilithium-pv     dilithium-py                        1 REVIEW: looks like dilithium-py\ncryptograpy      cryptography                        1 REVIEW: looks like cryptography\ncryptography     cryptography                        0 approved\nnumpyy           numpy                               1 REVIEW: looks like numpy\nrequests         numpy                               7 not on the approved list\ncontrols: pin exact versions and hashes (pip install --require-hashes), mirror reviewed packages internally, verify signatures or attestations where the registry offers them, build reproducibly, and review updates of cryptographic dependencies before deployment",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The manifest of kyber-py has 18 source files; the untouched copy matches, and after the one-line removal of the hash check the comparison reports exactly the changed file, `ml_kem/ml_kem.py`. The control has limits that the lesson states plainly: a manifest detects *any* change but only if it comes from a trusted source and is verified at install time, not merely recorded once; and it says nothing about whether the reviewed version was itself correct. The inventory lists installed versions and licence metadata (your versions will differ). The name check flags `kyberpy`, `kyber-pi`, `dilithium-pv`, `cryptograpy` and `numpyy` for review because each is one edit from an approved name, normalises `kyber_py` to the approved `kyber-py`, and marks `requests` as simply not approved.\n\n**Controls, in layers.** Pin exact versions and hashes (`pip install --require-hashes`); mirror reviewed packages internally and install only from the mirror; verify signatures or build attestations where the registry offers them; build reproducibly so that others can check the result; run dependency-update reviews for cryptographic packages in particular; keep an SBOM/CBOM per release; and limit build-system privileges. **Common mistake:** trusting a package because its name is familiar, or recording hashes at one moment and never checking them again."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does a file-hash manifest of a dependency detect?",
+              "options": [
+                "Any change to the recorded files, if the manifest is trusted and checked at install time",
+                "Whether the code is secure",
+                "Only malware signatures"
+              ],
+              "correct_index": 0,
+              "explanation": "It names changed files but does not prove the reviewed version was correct."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does a CBOM add to an SBOM?",
+              "options": [
+                "The cryptographic algorithms each component implements",
+                "The licence text",
+                "The build time"
+              ],
+              "correct_index": 0,
+              "explanation": "It lets an organisation query for deprecated or vulnerable primitives."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why check requested package names against an approved list?",
+              "options": [
+                "Look-alike names (typosquatting) can deliver malicious code",
+                "To shorten installation",
+                "To select the newest version"
+              ],
+              "correct_index": 0,
+              "explanation": "Names one edit away from an approved name are flagged for review."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, general guidance on trustworthy implementation and on key and algorithm management for KEMs (supply of validated implementations)"
+            },
+            {
+              "book": "B90",
+              "locator": "kyber-py: the package whose files are hashed in the lesson"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Supply-chain attack categories and the controls listed are general security practice; no on-disk source treats them in detail, and SP 800-227 is cited only for its general implementation guidance. The CBOM concept was introduced in lesson 7 (CycloneDX 1.6)."
+          },
+          "after": "sec-11"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "c10-n01",
+          "prompt": "What makes an implementation leak through a side channel?",
+          "options": [
+            "Work, memory access, power or timing that depends on a secret",
+            "A long key",
+            "A public algorithm"
+          ],
+          "correct_index": 0,
+          "explanation": "Any observable that varies with a secret is a channel.",
+          "source": {
+            "book": "B95",
+            "locator": "Side-channel protection"
+          }
+        },
+        {
+          "id": "c10-n02",
+          "prompt": "How is a secret-operand division in ML-KEM compression best removed?",
+          "options": [
+            "By a precomputed multiplication and shift, validated exhaustively",
+            "By using floating point",
+            "By ignoring it"
+          ],
+          "correct_index": 0,
+          "explanation": "Fixed-time arithmetic and exhaustive validation over the small input range.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 4.2.1"
+          }
+        },
+        {
+          "id": "c10-n03",
+          "prompt": "According to FIPS 204, what does timing leak in deterministic signing?",
+          "options": [
+            "Information about the message but not the private key",
+            "The private key",
+            "Nothing"
+          ],
+          "correct_index": 0,
+          "explanation": "Hedged signing should be used when the message must remain hidden.",
+          "source": {
+            "book": "B92",
+            "locator": "Section 3.2"
+          }
+        },
+        {
+          "id": "c10-n04",
+          "prompt": "Why does a table lookup indexed by a secret leak through the cache?",
+          "options": [
+            "The accessed cache line depends on the index",
+            "Tables are large",
+            "Caches store keys"
+          ],
+          "correct_index": 0,
+          "explanation": "The attacker sees addresses, not data.",
+          "source": {
+            "book": "B95",
+            "locator": "Side-channel protection"
+          }
+        },
+        {
+          "id": "c10-n05",
+          "prompt": "What does first-order masking prevent?",
+          "options": [
+            "Correlation of the leakage with the unmasked intermediate value",
+            "All side channels",
+            "Fault injection"
+          ],
+          "correct_index": 0,
+          "explanation": "Higher-order attacks remain possible at higher cost.",
+          "source": {
+            "book": "B95",
+            "locator": "Side-channel protection"
+          }
+        },
+        {
+          "id": "c10-n06",
+          "prompt": "What does one faulty RSA-CRT signature reveal?",
+          "options": [
+            "A prime factor of the modulus",
+            "The message",
+            "The public key"
+          ],
+          "correct_index": 0,
+          "explanation": "gcd(s'^e - m, n) gives p or q.",
+          "source": {
+            "book": "B01",
+            "locator": "RSA with the CRT"
+          }
+        },
+        {
+          "id": "c10-n07",
+          "prompt": "Why is skipping ML-KEM's re-encryption check dangerous?",
+          "options": [
+            "The base scheme is malleable and decapsulation becomes an oracle",
+            "It makes keys longer",
+            "It speeds up decapsulation harmlessly"
+          ],
+          "correct_index": 0,
+          "explanation": "A modified ciphertext decrypted to the original message with one chosen bit flipped.",
+          "source": {
+            "book": "B04",
+            "locator": "Algorithm 21"
+          }
+        },
+        {
+          "id": "c10-n08",
+          "prompt": "What is the main defence against weak seeds?",
+          "options": [
+            "Seeding from an approved random bit generator with full entropy",
+            "Longer keys",
+            "Hashing the seed twice"
+          ],
+          "correct_index": 0,
+          "explanation": "A guessable seed allows the private key to be recomputed.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 3.3"
+          }
+        },
+        {
+          "id": "c10-n09",
+          "prompt": "Why does a hybrid combiner include the ciphertexts and public values?",
+          "options": [
+            "To bind the key to the whole exchange, since not every component binds its ciphertext",
+            "To lengthen the key",
+            "To hide the algorithm"
+          ],
+          "correct_index": 0,
+          "explanation": "SP 800-227's KeyCombine takes c1, c2, ek1, ek2 and p.",
+          "source": {
+            "book": "B95",
+            "locator": "Section 4.6"
+          }
+        },
+        {
+          "id": "c10-n10",
+          "prompt": "Why can a transcript MAC not stop a downgrade by a quantum attacker?",
+          "options": [
+            "It is keyed from the chosen classical exchange, which the attacker can break",
+            "MACs cannot authenticate",
+            "Transcripts are public"
+          ],
+          "correct_index": 0,
+          "explanation": "A client policy refusing classical-only exchange does stop it.",
+          "source": {
+            "book": "B95",
+            "locator": "Section 4.6"
+          }
+        },
+        {
+          "id": "c10-n11",
+          "prompt": "Why can a post-quantum certificate chain cost an extra round trip?",
+          "options": [
+            "The chain and signatures are large and may exceed the initial TCP window",
+            "Certificates are encrypted twice",
+            "They need a new port"
+          ],
+          "correct_index": 0,
+          "explanation": "ML-DSA-65 public keys and signatures are 1,952 and 3,309 bytes.",
+          "source": {
+            "book": "B92",
+            "locator": "Table 2"
+          }
+        },
+        {
+          "id": "c10-n12",
+          "prompt": "What does a file-hash manifest of a dependency provide?",
+          "options": [
+            "Detection of any change to the recorded files",
+            "Proof that the code is correct",
+            "A guarantee against all supply-chain attacks"
+          ],
+          "correct_index": 0,
+          "explanation": "It is useful only when trusted and checked at install time.",
+          "source": {
+            "book": "B95",
+            "locator": "Implementation guidance"
+          }
+        }
+      ],
+      "estimated_minutes": 630,
+      "notes": "Rewrites twelve outline sections as lessons with executed listings, all against the lesson's own targets and clearly labelled where simulated: a work-counter attack, exhaustively validated division-free compression, a simulated cache attack, a simulated power analysis, an RSA-CRT fault and an ML-KEM check-skip analysis, recovery of a weakly seeded ML-KEM key, fleet duplicate keys, a truncation bug found by differential testing, a downgrade simulation, hybrid combiners per SP 800-227, real ML-DSA certificate chains, and a dependency manifest check.",
+      "learning_objectives": [
+        "Classify side channels and explain how timing, cache and power leaks arise from secret-dependent behaviour.",
+        "Validate a division-free replacement exhaustively and explain why source-level equivalence is not enough.",
+        "Explain fault attacks and the countermeasures, including verify-before-release and the role of the ML-KEM re-encryption check.",
+        "Show how weak seeding and fleet-wide duplicates break post-quantum keys, and how to detect them.",
+        "Analyse downgrade, hybrid-combiner and certificate-chain failures in migration, and the policies that address them.",
+        "Apply supply-chain controls: manifests, SBOM/CBOM and name checks, with their limits."
+      ]
+    }
+  ]
+}
