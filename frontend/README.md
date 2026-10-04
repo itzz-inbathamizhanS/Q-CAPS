@@ -68,3 +68,37 @@ npm run build
 # Run linter
 npm run lint
 ```
+
+## 5. Tests
+
+| Command | What it runs |
+|---|---|
+| `npm test` | Component and flow tests (Vitest, React Testing Library, jsdom). The network is mocked with MSW, so the tests go through the real services in `src/services`. Any request a test did not declare fails the test. |
+| `npm run test:watch` | The same, in watch mode. |
+| `npm run test:e2e` | Playwright end-to-end tests in `e2e/` against a real, isolated local stack. |
+| `npm run test:content` | Curriculum and competency content validation. |
+
+**Component tests** sit next to the page they test (`src/pages/*.test.tsx`). Helpers are in `src/test/`:
+`renderRoutes` (memory router plus a location probe), `signIn`, and `apiUrl` for MSW handlers.
+
+**End-to-end tests** need Python with the backend requirements installed, and the browser downloaded once with
+`npx playwright install chromium`. `npm run test:e2e` then starts, on ports that do not clash with a normal dev
+setup:
+
+- the API on `8011`, using a **fresh throwaway database** in `e2e/.tmp/`. It is seeded by
+  `backend/main_api/deploy_bootstrap.py` with the curriculum, the question banks, an admin and the DEMO learner
+  `demo-learner`. The real `backend/main_api/qcaps.db` is never touched.
+- Vite on `5181`, pointed at that API.
+
+Passwords and the JWT secret are random for every run. You can override the ports with `E2E_API_PORT` and
+`E2E_WEB_PORT`, and the Python executable with `E2E_PYTHON`.
+
+The suites are:
+
+- `smoke.spec.ts`: sign in, open the dashboard, take a module quiz and check that the page shows exactly the
+  result the server graded.
+- `a11y.spec.ts`: axe (WCAG 2.1 A/AA) on the main pages. It fails on any serious or critical violation beyond
+  `e2e/axe-baseline.json`, which records the violations that existed when the check was added. Only ever lower
+  the counts in that file.
+
+Reports and traces go to `e2e/.results/`, which git ignores.
