@@ -203,7 +203,7 @@ sources are official docs or RFCs with access dates; no book citations invented.
 | D4 | Wave 2 modules (no book coverage): author from official docs now, or leave as-is and mark "not yet sourced"? | Wave 1 first; Wave 2 after the audit |
 | D5 | Scope per session: all of Wave 1 (22 modules), or a vertical slice first (A5 complete with lab, simulation, quiz) reviewed in the browser before the rest | Vertical slice (I1–I3 + A5) first, then the rest of Wave 1 |
 
-## 8. Implementation status (updated 2026-10-03)
+## 8. Implementation status (updated 2026-10-04)
 
 | Item | State |
 |---|---|
@@ -212,14 +212,17 @@ sources are official docs or RFCs with access dates; no book citations invented.
 | I3 quiz retirement (`active: false`, `retire_quiz_items`) | Done |
 | I4 validator: built visuals only, new-quiz-item rules | Done |
 | `hash-avalanche` visual (real SHA-256 in the browser) | Done, 5 tests |
-| Pack A5 Cryptography (15 lessons, lab, +10 quiz items) | Done; imported into a throwaway DB and checked in the browser (desktop and 375 px) |
-| Pack A2 Mathematics (4 new number-theory lessons, XOR rewrite, +7 quiz items) | Done; imported into a throwaway DB |
-| Pack A8 PQC awareness (7 lessons rewritten + Mosca-style lesson, +8 quiz items) | Done; imported into a throwaway DB |
-| Packs for A4, B1, B6 to B11, C7 to C11, E1 to E6 | Not started |
+| Content packs in `content/packs/` | 36 packs covering all 36 modules (A1 to A8, B1 to B11, C1 to C11, E1 to E6); every pack validates with 0 errors |
+| Quiz | 599 active items; every module has at least 12 |
+| Code listings | Python listings were executed when each pack was built and the real output is embedded; `check_code` re-runs them and compares (listings captioned "Not run in the build check", such as timing benchmarks, are excluded) |
+| Packs imported into the dev database (`qcaps.db`) | Done with `--actor admin`; a backup `qcaps.backup-before-<pack>.db` was taken before each import |
+| Sections left as outline text on purpose | A8 module wrap-up, C11 capstones and certificates, E6 capstone (assessment and project briefs, not lessons) |
+| Track E data | All inputs in the E1 to E6 listings are labelled DEMO DATA or SIMULATION; E2 and E5 discovery runs against a local lab on 127.0.0.1 |
+| Source verification | Claims not checked against a source on disk are listed in each section's `needs_verification` note (for example regulator positions on QKD, agency timelines, literature thresholds) |
 | Wave 2 modules (no book coverage) | Not started |
 | Simulations: modular clock, Mosca calculator, toy LWE, Lamport, risk heat map | Not started |
-| Packs imported into the real dev database | Not done; run `python -m course_content.import_pack content/packs/<pack>.json --actor <admin>` from `backend/main_api` |
-| Module-level `estimated_minutes` for A2 (old outline sections still counted) | Not updated |
+| Per-module scenario labs and missions | Only `content/Labs/escape_room_scenarios.json` and two mission files exist; not generated per module |
+| Not pushed to origin | `main` is many commits ahead of the remote |
 
 Packs live in `content/packs/`. Their code listings were run before inclusion and their expected output is copied from the real run.
 
