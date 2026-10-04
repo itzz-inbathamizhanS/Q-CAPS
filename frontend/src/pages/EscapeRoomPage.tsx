@@ -153,7 +153,7 @@ export const EscapeRoomPage: React.FC = () => {
               lineHeight: 1.6
             }}
           >
-            Outstanding work! You have successfully identified, mitigated, and resolved all 7 post-quantum cryptographic crisis scenarios across hybrid migration, stateful signatures, and CA crypto-agility.
+            Outstanding work! You have successfully identified, mitigated, and resolved all {escapeRoomScenarios.length} cryptographic crisis scenarios across the curriculum, from computing and networking basics to quantum hardware, post-quantum implementation and enterprise governance.
           </p>
 
           {/* Stats Bar */}
@@ -211,7 +211,7 @@ export const EscapeRoomPage: React.FC = () => {
               }}
             >
               <Award size={20} color="var(--color-primary)" />
-              <span>Earned Defense Badges across all 7 Scenarios</span>
+              <span>Earned Defense Badges across all {escapeRoomScenarios.length} Scenarios</span>
             </h3>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))', gap: '14px' }}>
@@ -601,7 +601,7 @@ export const EscapeRoomPage: React.FC = () => {
         </Button>
 
         {/* Carousel indicators */}
-        <div style={{ display: 'flex', gap: '6px' }}>
+        <div style={{ display: 'flex', gap: '6px', flexWrap: 'wrap', justifyContent: 'center', maxWidth: '420px' }}>
           {escapeRoomScenarios.map((sc, i) => {
             const done = completedEscapes.includes(sc.id);
             const isCur = i === currentIdx;

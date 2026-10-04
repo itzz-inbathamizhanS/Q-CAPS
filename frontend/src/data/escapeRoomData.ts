@@ -228,5 +228,935 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     ],
     "badge_awarded": "Executive Communicator",
     "mission_xp_awarded": 70
+  },
+  {
+    "id": "escape-8-a1-slow-report",
+    "title": "The 40-Minute Report",
+    "module_id": "track_a_a1_computing_foundations",
+    "difficulty": "novice",
+    "setup": "A nightly report job takes 40 minutes. Profiling shows the CPU is mostly idle: for every one of 2 million records the program re-reads the same 200 MB lookup file from the SSD.",
+    "prompt": "What is the most effective first fix?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Buy a CPU with twice the clock speed.",
+        "correct": false,
+        "feedback": "Incorrect. The CPU is idle, waiting for storage. A faster CPU would wait just as long. Storage is thousands of times slower than memory, so the bottleneck is where the data lives, not the processor."
+      },
+      {
+        "id": "b",
+        "text": "Load the lookup file into memory once at the start and read it from there.",
+        "correct": true,
+        "feedback": "Correct. 200 MB fits easily in RAM, and memory access is thousands of times faster than storage access. The repeated reads disappear."
+      },
+      {
+        "id": "c",
+        "text": "Compress the lookup file so it is smaller on disk.",
+        "correct": false,
+        "feedback": "Not the main fix. A smaller file may read slightly faster, but the program still goes to storage 2 million times and now also pays to decompress it each time."
+      }
+    ],
+    "badge_awarded": "Performance Detective",
+    "mission_xp_awarded": 30
+  },
+  {
+    "id": "escape-9-a2-bucket-skew",
+    "title": "The Lopsided Buckets",
+    "module_id": "track_a_a2_mathematics_foundations",
+    "difficulty": "novice",
+    "setup": "A developer spreads customer records over 10 database shards with `shard = customer_id % 10`. Every customer id is issued as a multiple of 10 (1000, 1010, 1020, ...). One shard is overloaded and nine are empty.",
+    "prompt": "Why does this happen and what is the right fix?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The ids are random, so the overload is bad luck; add more shards.",
+        "correct": false,
+        "feedback": "Incorrect. The ids are not random: every multiple of 10 leaves remainder 0 when divided by 10, so every record lands in shard 0. More shards with a modulus that still shares a factor with the ids would not help."
+      },
+      {
+        "id": "b",
+        "text": "Every id shares the factor 10 with the modulus, so the remainder is always 0; use a modulus that shares no factor with the ids, such as a prime like 11 or 97, or hash the id first.",
+        "correct": true,
+        "feedback": "Correct. In modular arithmetic a modulus that shares a factor with the inputs collapses the residues. A prime modulus (or hashing first) spreads the ids evenly."
+      },
+      {
+        "id": "c",
+        "text": "Switch to `customer_id // 10`.",
+        "correct": false,
+        "feedback": "Not a fix. Integer division by 10 turns 1000, 1010, 1020 into 100, 101, 102, but this just changes the number and the same modulus problem returns for any later id pattern."
+      }
+    ],
+    "badge_awarded": "Modulus Mechanic",
+    "mission_xp_awarded": 40
+  },
+  {
+    "id": "escape-10-a3-one-way-door",
+    "title": "The One-Way Door",
+    "module_id": "track_a_a3_networking_foundations",
+    "difficulty": "novice",
+    "setup": "Your web server is in a cloud subnet. The firewall rule (security group) allows inbound TCP 443. The subnet's network ACL, which is stateless, allows inbound 443 and allows outbound only to port 443. Browsers connect but pages never load.",
+    "prompt": "What is wrong?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The network ACL is stateless: the replies go from port 443 to the client's ephemeral port (1024 to 65535), and the outbound rule blocks them. Allow outbound ephemeral ports.",
+        "correct": true,
+        "feedback": "Correct. A stateless filter judges each packet on its own. The server's reply goes to the client's random high port, so outbound must allow that range (a stateful security group does this automatically for replies)."
+      },
+      {
+        "id": "b",
+        "text": "Open every inbound port so nothing can be blocked.",
+        "correct": false,
+        "feedback": "Dangerous and not the cause. The inbound rule already lets requests in; the replies are what is blocked. Opening all inbound ports widens the attack surface without fixing it."
+      },
+      {
+        "id": "c",
+        "text": "Disable the security group, because only the ACL matters.",
+        "correct": false,
+        "feedback": "Incorrect. The security group is not blocking anything here, and removing a stateful control makes the network less safe."
+      }
+    ],
+    "badge_awarded": "Packet Pathfinder",
+    "mission_xp_awarded": 40
+  },
+  {
+    "id": "escape-11-a4-leaked-hashes",
+    "title": "The Leaked Password Table",
+    "module_id": "track_a_a4_cybersecurity_foundations",
+    "difficulty": "novice",
+    "setup": "Your user database is leaked. Passwords were stored as unsalted SHA-256 hashes. Attackers will try common passwords against the hashes.",
+    "prompt": "Beyond forcing a password reset, how should passwords be stored from now on?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Use a slow, salted password hash such as Argon2id, scrypt, bcrypt or PBKDF2 with a per-user salt.",
+        "correct": true,
+        "feedback": "Correct. A salt defeats precomputed tables and identical-password matching, and a deliberately slow, memory- or CPU-hard function makes each guess expensive."
+      },
+      {
+        "id": "b",
+        "text": "Switch to SHA-512, which is longer and therefore stronger.",
+        "correct": false,
+        "feedback": "Incorrect. SHA-2 hashes are designed to be fast, which is exactly what a password cracker wants. A longer output does not slow guessing."
+      },
+      {
+        "id": "c",
+        "text": "Encrypt the passwords with AES and keep the key in the same database.",
+        "correct": false,
+        "feedback": "Incorrect. Whoever steals the table steals the key too, and encryption is reversible, so every password becomes readable."
+      }
+    ],
+    "badge_awarded": "Credential Guardian",
+    "mission_xp_awarded": 50
+  },
+  {
+    "id": "escape-12-a5-reused-nonce",
+    "title": "The Constant Nonce",
+    "module_id": "track_a_a5_cryptography_foundations",
+    "difficulty": "novice",
+    "setup": "A developer encrypts every message with AES-GCM under one key and a hard-coded nonce of twelve zero bytes 'so that messages are reproducible for testing'. The service is in production.",
+    "prompt": "What is the correct judgement?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "It is fine: the key is secret, so the nonce does not matter.",
+        "correct": false,
+        "feedback": "Incorrect. With GCM, reusing a nonce under the same key leaks the XOR of the plaintexts and allows forgery of authentication tags. The key being secret does not protect against this."
+      },
+      {
+        "id": "b",
+        "text": "Hash the zero nonce first so it looks random.",
+        "correct": false,
+        "feedback": "Incorrect. A hash of a constant is still a constant. The requirement is that no (key, nonce) pair is ever used twice."
+      },
+      {
+        "id": "c",
+        "text": "It is a critical flaw: use a fresh unique nonce for every message (a counter or 96 random bits with a bounded message count) and rotate the key.",
+        "correct": true,
+        "feedback": "Correct. Nonce uniqueness per key is a hard requirement of GCM. Production code must generate it per message, and tests should inject nonces only in a test mode."
+      }
+    ],
+    "badge_awarded": "Nonce Keeper",
+    "mission_xp_awarded": 50
+  },
+  {
+    "id": "escape-13-a7-missing-measure",
+    "title": "The Empty Histogram",
+    "module_id": "track_a_a7_first_quantum_programming",
+    "difficulty": "novice",
+    "setup": "A learner builds a Bell-state circuit in Qiskit (Hadamard on qubit 0, CNOT from 0 to 1), runs it on a simulator with 1,000 shots and gets no useful counts, only an empty or error result. They expected about 500 results of 00 and 500 of 11.",
+    "prompt": "What is the fix?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Raise the shots to 100,000.",
+        "correct": false,
+        "feedback": "Incorrect. More shots do not help if nothing is measured: counts only exist for measured classical bits."
+      },
+      {
+        "id": "b",
+        "text": "Add more Hadamard gates until the output appears.",
+        "correct": false,
+        "feedback": "Incorrect. Extra gates change the state, and a second Hadamard on qubit 0 would undo the first. The circuit is missing a different step."
+      },
+      {
+        "id": "c",
+        "text": "Add measurement of both qubits into classical bits, then run it again; expect roughly 50% 00 and 50% 11.",
+        "correct": true,
+        "feedback": "Correct. Counts are produced by measurement into classical bits. With measurements the Bell state gives only 00 or 11, each about half the time."
+      }
+    ],
+    "badge_awarded": "Circuit Debugger",
+    "mission_xp_awarded": 40
+  },
+  {
+    "id": "escape-14-b1-non-unitary",
+    "title": "The Almost-Gate",
+    "module_id": "track_b_b1_advanced_math_for_quantum",
+    "difficulty": "intermediate",
+    "setup": "A colleague proposes a one-qubit 'gate' with the matrix [[1, 1], [0, 1]] and says it is valid because all entries are real numbers.",
+    "prompt": "Is it a valid quantum gate?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Yes: any real matrix is a valid gate.",
+        "correct": false,
+        "feedback": "Incorrect. Reality of the entries is neither required nor sufficient. A quantum gate must preserve the length of the state vector."
+      },
+      {
+        "id": "b",
+        "text": "No: a gate must be unitary (U-dagger times U equals the identity), and this matrix stretches the vector (1, 1), so it is not.",
+        "correct": true,
+        "feedback": "Correct. Unitary matrices preserve norm and therefore probabilities. This shear maps (0, 1) to (1, 1), which has a larger norm."
+      },
+      {
+        "id": "c",
+        "text": "Yes, as long as its determinant is 1.",
+        "correct": false,
+        "feedback": "Incorrect. Determinant 1 does not imply unitarity. This matrix has determinant 1 and is still not unitary."
+      }
+    ],
+    "badge_awarded": "Unitary Inspector",
+    "mission_xp_awarded": 55
+  },
+  {
+    "id": "escape-15-b2-cloning-pitch",
+    "title": "The Backup Qubit",
+    "module_id": "track_b_b2_quantum_information",
+    "difficulty": "intermediate",
+    "setup": "A vendor sells a 'quantum backup appliance' that copies an unknown qubit state onto spare qubits so the original can be restored if it decoheres.",
+    "prompt": "What is the correct assessment?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Reject the claim: the no-cloning theorem forbids copying an unknown quantum state; error correction instead spreads one logical qubit across many physical qubits without copying it.",
+        "correct": true,
+        "feedback": "Correct. No unitary can copy an arbitrary unknown state. Quantum error correction encodes the state into an entangled code, which is a different thing from making copies."
+      },
+      {
+        "id": "b",
+        "text": "Accept it: the copies are possible but only for entangled qubits.",
+        "correct": false,
+        "feedback": "Incorrect. Entanglement does not make cloning possible; the theorem applies to arbitrary unknown states."
+      },
+      {
+        "id": "c",
+        "text": "Accept it if the appliance uses many copies to average out the noise.",
+        "correct": false,
+        "feedback": "Incorrect. Averaging needs several identical copies of the unknown state, which is exactly what cannot be produced from one."
+      }
+    ],
+    "badge_awarded": "No-Cloning Skeptic",
+    "mission_xp_awarded": 60
+  },
+  {
+    "id": "escape-16-b3-grover-claim",
+    "title": "The One-Millisecond Search",
+    "module_id": "track_b_b3_quantum_algorithms",
+    "difficulty": "intermediate",
+    "setup": "A vendor says a quantum computer will search an unsorted database of one billion records 'instantly' using Grover's algorithm.",
+    "prompt": "What does Grover's algorithm actually promise?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "An exponential speedup: the search takes a number of steps proportional to log of the size.",
+        "correct": false,
+        "feedback": "Incorrect. Grover's algorithm is not exponential."
+      },
+      {
+        "id": "b",
+        "text": "A quadratic speedup: about the square root of N queries, roughly 31,600 for a billion records, plus overhead for error correction, which is a large gain but not an instant one.",
+        "correct": true,
+        "feedback": "Correct. Unstructured search needs on the order of sqrt(N) queries, and that is optimal. The gain is real but needs a large fault-tolerant machine."
+      },
+      {
+        "id": "c",
+        "text": "No speedup, because a database is classical data.",
+        "correct": false,
+        "feedback": "Incorrect. Grover gives a provable quadratic reduction in oracle queries for unstructured search, though loading classical data into a quantum memory is a practical obstacle."
+      }
+    ],
+    "badge_awarded": "Speedup Auditor",
+    "mission_xp_awarded": 60
+  },
+  {
+    "id": "escape-17-b4-noisy-bell",
+    "title": "The Stray Counts",
+    "module_id": "track_b_b4_quantum_programming",
+    "difficulty": "intermediate",
+    "setup": "On a noisy simulator a Bell circuit with 4,000 shots gives about 47% 00, 47% 11, 3% 01 and 3% 10. A colleague says the circuit has a bug because 01 and 10 should never appear.",
+    "prompt": "What is the right response?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Reduce the number of shots until 01 and 10 disappear.",
+        "correct": false,
+        "feedback": "Incorrect. Fewer shots only makes the statistics noisier."
+      },
+      {
+        "id": "b",
+        "text": "Treat it as a bug and rebuild the circuit.",
+        "correct": false,
+        "feedback": "Not supported. The ideal circuit gives only 00 and 11. Rebuilding changes nothing if the noise model is the cause."
+      },
+      {
+        "id": "c",
+        "text": "Run the same circuit on a noise-free simulator, which should show only 00 and 11; the small 01 and 10 counts are the expected effect of the noise model, and mitigation or a better backend is the response.",
+        "correct": true,
+        "feedback": "Correct. Compare against the ideal result to separate logic errors from noise. Stray outcomes of a few percent are typical of readout and gate errors."
+      }
+    ],
+    "badge_awarded": "Noise Reader",
+    "mission_xp_awarded": 60
+  },
+  {
+    "id": "escape-18-b5-platform-pick",
+    "title": "The Platform Pick",
+    "module_id": "track_b_b5_quantum_hardware",
+    "difficulty": "intermediate",
+    "setup": "A research group needs a small processor for an experiment that depends on long coherence times and on any qubit being able to interact with any other qubit in the register.",
+    "prompt": "Which platform fits best of the three below?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Superconducting qubits, because their gates are the slowest and therefore most precise.",
+        "correct": false,
+        "feedback": "Incorrect. Superconducting gates are fast, coherence is comparatively short, and connectivity is usually limited to nearest neighbours."
+      },
+      {
+        "id": "b",
+        "text": "Trapped ions: long coherence times and effective all-to-all connectivity in a single chain, at the price of slower gates.",
+        "correct": true,
+        "feedback": "Correct. Ions in a chain couple through shared motional modes, so any pair can interact, and coherence is long. Gate speed is slower than superconducting qubits."
+      },
+      {
+        "id": "c",
+        "text": "Photonic qubits, because they interact strongly with each other.",
+        "correct": false,
+        "feedback": "Incorrect. Photons interact weakly, which is why two-qubit gates on photons are hard and need measurement-based or probabilistic schemes."
+      }
+    ],
+    "badge_awarded": "Platform Strategist",
+    "mission_xp_awarded": 65
+  },
+  {
+    "id": "escape-19-b6-flat-network",
+    "title": "The Flat Network",
+    "module_id": "track_b_b6_network_security_engineering",
+    "difficulty": "intermediate",
+    "setup": "An attacker compromises one employee laptop and within an hour reaches the finance database, because the internal network is flat and trusts every internal address.",
+    "prompt": "What architectural change addresses the root cause?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Buy a bigger perimeter firewall.",
+        "correct": false,
+        "feedback": "Insufficient. The attacker was already inside the perimeter; a stronger edge does nothing for lateral movement."
+      },
+      {
+        "id": "b",
+        "text": "Segment the network and apply zero trust: least-privilege access per workload, authentication and authorisation on every request, no trust based on network location.",
+        "correct": true,
+        "feedback": "Correct. Segmentation limits what a compromised host can reach, and zero trust removes implicit trust in internal addresses."
+      },
+      {
+        "id": "c",
+        "text": "Hide the finance database by changing its port number.",
+        "correct": false,
+        "feedback": "Incorrect. Obscurity does not stop an attacker who can scan the network."
+      }
+    ],
+    "badge_awarded": "Segmentation Lead",
+    "mission_xp_awarded": 65
+  },
+  {
+    "id": "escape-20-b7-ecdsa-nonce",
+    "title": "The Repeated k",
+    "module_id": "track_b_b7_advanced_cryptography",
+    "difficulty": "intermediate",
+    "setup": "An audit of a signing service finds two ECDSA signatures on different documents that share the same r value, which means the same per-signature nonce k was used twice.",
+    "prompt": "What does this mean?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Nothing: only those two documents are affected.",
+        "correct": false,
+        "feedback": "Incorrect. Two signatures with the same k let anyone solve for k and then for the private key."
+      },
+      {
+        "id": "b",
+        "text": "The private key can be computed from the two signatures; treat it as compromised, revoke and rotate it, and generate nonces deterministically (RFC 6979 style) or from a verified random source.",
+        "correct": true,
+        "feedback": "Correct. With the same k, subtracting the two signature equations gives k, and then the private key follows. Rotation is mandatory and the nonce generator must be fixed."
+      },
+      {
+        "id": "c",
+        "text": "Switch to a longer hash and keep the same key.",
+        "correct": false,
+        "feedback": "Incorrect. The weakness is in the nonce, not the hash length, and the key is already exposed."
+      }
+    ],
+    "badge_awarded": "Signature Auditor",
+    "mission_xp_awarded": 75
+  },
+  {
+    "id": "escape-21-b9-wrong-family",
+    "title": "The Wrong Family",
+    "module_id": "track_b_b9_pqc_fundamentals",
+    "difficulty": "intermediate",
+    "setup": "A design document says 'we will replace our RSA code-signing with ML-KEM, since PQC replaces RSA'.",
+    "prompt": "What is the correction?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "ML-KEM is a key-encapsulation mechanism, not a signature scheme; code signing needs a post-quantum signature such as ML-DSA (or SLH-DSA).",
+        "correct": true,
+        "feedback": "Correct. KEMs agree on shared secrets; signatures prove origin and integrity. The standards are FIPS 203 (ML-KEM), FIPS 204 (ML-DSA) and FIPS 205 (SLH-DSA)."
+      },
+      {
+        "id": "b",
+        "text": "Fine as written: ML-KEM can sign by encrypting a hash of the file.",
+        "correct": false,
+        "feedback": "Incorrect. Encrypting a hash with a public key does not give a signature; anyone can do it."
+      },
+      {
+        "id": "c",
+        "text": "Use ML-KEM for signing and ML-DSA for key exchange.",
+        "correct": false,
+        "feedback": "Reversed. ML-DSA is the signature algorithm and ML-KEM the key-establishment one."
+      }
+    ],
+    "badge_awarded": "Algorithm Matchmaker",
+    "mission_xp_awarded": 70
+  },
+  {
+    "id": "escape-22-b10-standards-memo",
+    "title": "The Pre-Standard Claim",
+    "module_id": "track_b_b10_pqc_standards",
+    "difficulty": "intermediate",
+    "setup": "A vendor's data sheet says the product 'implements CRYSTALS-Kyber, round 3 of the NIST competition' and calls it NIST-compliant.",
+    "prompt": "What should your procurement requirement say?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Accept it: Kyber and ML-KEM are the same thing.",
+        "correct": false,
+        "feedback": "Incorrect. ML-KEM in FIPS 203 differs from the round 3 Kyber specification, and implementations of the two are not interoperable."
+      },
+      {
+        "id": "b",
+        "text": "Require ML-KEM as specified in FIPS 203, ask for algorithm and module validation evidence from NIST's lists, and a statement of how pre-standard versions are handled.",
+        "correct": true,
+        "feedback": "Correct. The final standard is the target; pre-standard variants do not interoperate and are not covered by validation of the final algorithm."
+      },
+      {
+        "id": "c",
+        "text": "Ask only for the key size.",
+        "correct": false,
+        "feedback": "Incorrect. Key size does not distinguish a conforming implementation from a non-conforming one."
+      }
+    ],
+    "badge_awarded": "Standards Scholar II",
+    "mission_xp_awarded": 70
+  },
+  {
+    "id": "escape-23-b11-silent-decaps",
+    "title": "The Silent Decapsulation",
+    "module_id": "track_b_b11_intermediate_pqc_labs",
+    "difficulty": "intermediate",
+    "setup": "In a lab, an engineer flips one bit of an ML-KEM ciphertext and calls decapsulate. No error is raised, and the engineer concludes the library is broken.",
+    "prompt": "What is actually happening?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The library is broken and should have raised an exception.",
+        "correct": false,
+        "feedback": "Incorrect. Raising an error would create a decryption oracle for attackers."
+      },
+      {
+        "id": "b",
+        "text": "ML-KEM uses implicit rejection: a bad ciphertext yields a different, pseudorandom secret instead of an error, so the failure shows up later, for example as an authentication failure of the data channel.",
+        "correct": true,
+        "feedback": "Correct. This is designed behaviour. Applications must authenticate what they encrypt with the shared secret."
+      },
+      {
+        "id": "c",
+        "text": "The flipped bit was in an unused part of the ciphertext, so nothing changed.",
+        "correct": false,
+        "feedback": "Incorrect. Every part of an ML-KEM ciphertext matters. The secret derived from the modified ciphertext differs from the original."
+      }
+    ],
+    "badge_awarded": "Lab Debugger",
+    "mission_xp_awarded": 100
+  },
+  {
+    "id": "escape-24-c1-same-density",
+    "title": "The Indistinguishable Ensembles",
+    "module_id": "track_c_c1_advanced_quantum_information",
+    "difficulty": "expert",
+    "setup": "Alice claims she can tell whether a qubit source is a 50/50 mixture of |0> and |1> or a 50/50 mixture of |+> and |-> by examining its density matrix.",
+    "prompt": "Is she right?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Yes: the Z-basis mixture has a diagonal density matrix and the X-basis one has off-diagonal terms.",
+        "correct": false,
+        "feedback": "Incorrect. Both mixtures average to the same operator."
+      },
+      {
+        "id": "b",
+        "text": "No: both ensembles have the density matrix I/2 (the maximally mixed state), so no measurement can distinguish them.",
+        "correct": true,
+        "feedback": "Correct. The density matrix contains everything measurable, and different ensembles can give the same density matrix. This is why a mixed state does not remember its preparation."
+      },
+      {
+        "id": "c",
+        "text": "Yes, because their purities differ.",
+        "correct": false,
+        "feedback": "Incorrect. Both have purity 1/2."
+      }
+    ],
+    "badge_awarded": "Density Theorist",
+    "mission_xp_awarded": 80
+  },
+  {
+    "id": "escape-25-c2-shor-claim",
+    "title": "The Hundred-Qubit Claim",
+    "module_id": "track_c_c2_advanced_quantum_algorithms",
+    "difficulty": "expert",
+    "setup": "A board slide states: 'With 100 qubits, a quantum computer can break RSA-2048 next year, so we must act this week.'",
+    "prompt": "How should a technical adviser respond?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Agree: 100 qubits is enough for Shor's algorithm.",
+        "correct": false,
+        "feedback": "Incorrect. Resource estimates are of a different order of magnitude."
+      },
+      {
+        "id": "b",
+        "text": "Correct the claim without dismissing the risk: published estimates (Gidney, 2025) put RSA-2048 at under about a million noisy physical qubits with error correction, far beyond 100 qubits, but the trend and harvest-now-decrypt-later risk justify planning now.",
+        "correct": true,
+        "feedback": "Correct. The qubit number is wrong by orders of magnitude, but the conclusion that preparation must start early stands for data with a long secrecy lifetime."
+      },
+      {
+        "id": "c",
+        "text": "Say it is impossible for any quantum computer ever, so no action is needed.",
+        "correct": false,
+        "feedback": "Incorrect. Shor's algorithm is proven; the obstacle is engineering scale, not principle."
+      }
+    ],
+    "badge_awarded": "Resource Estimator",
+    "mission_xp_awarded": 85
+  },
+  {
+    "id": "escape-26-c3-threshold",
+    "title": "The Distance Gamble",
+    "module_id": "track_c_c3_quantum_error_correction",
+    "difficulty": "expert",
+    "setup": "A team plans to reach reliable logical qubits by raising the surface-code distance from 5 to 15. Their physical error rate is above the code's threshold for their noise model.",
+    "prompt": "What will happen?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "The logical error rate will fall quickly with distance.",
+        "correct": false,
+        "feedback": "Incorrect. Below the threshold, larger distance suppresses errors; above it, the opposite holds."
+      },
+      {
+        "id": "b",
+        "text": "Larger distance will make the logical error rate worse, not better: first reduce the physical error rate below the threshold, then scale the distance.",
+        "correct": true,
+        "feedback": "Correct. Error correction only helps when physical errors are rarer than the threshold. Above it, more qubits add more places for errors to occur."
+      },
+      {
+        "id": "c",
+        "text": "Nothing will change, because distance does not affect logical errors.",
+        "correct": false,
+        "feedback": "Incorrect. Distance determines how many physical errors the code can tolerate."
+      }
+    ],
+    "badge_awarded": "Threshold Keeper",
+    "mission_xp_awarded": 85
+  },
+  {
+    "id": "escape-27-c4-swap-chain",
+    "title": "The Twelve-Link Chain",
+    "module_id": "track_c_c4_quantum_networking",
+    "difficulty": "expert",
+    "setup": "A network joins two sites with twelve entanglement links in a row; each link produces a Werner state with parameter w = 0.9. Intermediate nodes perform entanglement swapping.",
+    "prompt": "Is the end-to-end pair usable as entanglement?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Yes: each link is high quality, so the chain is high quality.",
+        "correct": false,
+        "feedback": "Incorrect. Swapping multiplies the Werner parameters, so quality decays geometrically with the number of links."
+      },
+      {
+        "id": "b",
+        "text": "No: the end-to-end parameter is 0.9 to the power 12, about 0.28, below 1/3, so the state is separable; the chain needs purification between swaps or fewer, better links.",
+        "correct": true,
+        "feedback": "Correct. For Werner states entanglement requires w above 1/3, and swapping gives the product of the parameters. About 0.28 is below that."
+      },
+      {
+        "id": "c",
+        "text": "Yes, as long as the classical channel is authenticated.",
+        "correct": false,
+        "feedback": "Incorrect. Authentication of the classical channel does not change the quantum state's quality."
+      }
+    ],
+    "badge_awarded": "Repeater Planner",
+    "mission_xp_awarded": 85
+  },
+  {
+    "id": "escape-28-c5-hashing-bound",
+    "title": "The Distillation Choice",
+    "module_id": "track_c_c5_quantum_communications",
+    "difficulty": "expert",
+    "setup": "A link delivers Werner pairs with fidelity 0.78. The team plans to use one-way hashing distillation, which only works when the fidelity is above about 0.81.",
+    "prompt": "What should they do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Run the one-way hashing protocol anyway; any fidelity above 0.5 works.",
+        "correct": false,
+        "feedback": "Incorrect. The hashing protocol has a higher threshold for Werner states; below it, it yields no entanglement."
+      },
+      {
+        "id": "b",
+        "text": "Use a two-way recurrence protocol such as BBPSSW, which works for fidelity above 0.5, or improve the source, and accept the cost in pairs.",
+        "correct": true,
+        "feedback": "Correct. Two-way protocols can distil from lower-fidelity pairs, at the price of classical communication and many pairs consumed."
+      },
+      {
+        "id": "c",
+        "text": "Discard the link, because fidelity below 0.81 cannot be improved.",
+        "correct": false,
+        "feedback": "Incorrect. Two-way purification can raise fidelity above the one-way threshold when the source is better than 0.5."
+      }
+    ],
+    "badge_awarded": "Capacity Analyst",
+    "mission_xp_awarded": 85
+  },
+  {
+    "id": "escape-29-c6-qkd-pitch",
+    "title": "The QKD Sales Pitch",
+    "module_id": "track_c_c6_quantum_key_distribution",
+    "difficulty": "expert",
+    "setup": "A vendor says: 'Buy our QKD boxes and you no longer need post-quantum cryptography, including for signing your software updates to 20,000 devices in the field.'",
+    "prompt": "What is the technically correct answer?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "QKD provides no digital signatures, needs an authenticated classical channel and dedicated links, and does not scale to field devices; software signing still needs a post-quantum signature such as ML-DSA or SLH-DSA.",
+        "correct": true,
+        "feedback": "Correct. QKD only gives key material between two ends over a dedicated link and needs authentication, so it cannot replace signatures or serve internet-scale endpoints."
+      },
+      {
+        "id": "b",
+        "text": "Correct: QKD replaces every cryptographic function.",
+        "correct": false,
+        "feedback": "Incorrect. It produces shared keys only."
+      },
+      {
+        "id": "c",
+        "text": "QKD can sign if combined with a one-time pad.",
+        "correct": false,
+        "feedback": "Incorrect. A one-time pad needs a pre-shared key per message pair and provides no public verifiability, which is what signatures offer."
+      }
+    ],
+    "badge_awarded": "QKD Realist",
+    "mission_xp_awarded": 90
+  },
+  {
+    "id": "escape-30-c7-length-extension",
+    "title": "The Naive MAC",
+    "module_id": "track_c_c7_advanced_cryptography",
+    "difficulty": "expert",
+    "setup": "An API authenticates requests with tag = SHA-256(secret || message). An attacker who sees one valid message and tag appends extra data and computes a valid tag without knowing the secret.",
+    "prompt": "Why does this work and what is the fix?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Because SHA-256 is broken; switch to MD5.",
+        "correct": false,
+        "feedback": "Incorrect. SHA-256 is not broken, and MD5 is weaker."
+      },
+      {
+        "id": "b",
+        "text": "The Merkle-Damgard construction lets an attacker continue from the published digest (length extension); use HMAC (or a keyed construction designed for MACs) instead of hashing secret || message.",
+        "correct": true,
+        "feedback": "Correct. The digest is the internal state, so it can be extended. HMAC's nested keyed construction prevents this."
+      },
+      {
+        "id": "c",
+        "text": "Make the secret longer so the attacker cannot guess it.",
+        "correct": false,
+        "feedback": "Incorrect. The attacker does not need to guess the secret; the attack extends the hash state."
+      }
+    ],
+    "badge_awarded": "Hash Internals Expert",
+    "mission_xp_awarded": 90
+  },
+  {
+    "id": "escape-31-c8-parameter-shortcut",
+    "title": "The Smaller Lattice",
+    "module_id": "track_c_c8_pqc_mathematics",
+    "difficulty": "expert",
+    "setup": "To save bandwidth an engineer proposes reducing the module dimension and noise in a lattice KEM below the standardised ML-KEM-768 values 'because the maths still works'.",
+    "prompt": "What is the correct reply?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Approve: correctness of decryption is all that matters.",
+        "correct": false,
+        "feedback": "Incorrect. Correct decryption does not imply security; the security level depends on how hard the underlying lattice problem is for the best known attacks."
+      },
+      {
+        "id": "b",
+        "text": "Reject it: parameters are chosen from analyses of the best known attacks, so use a standardised parameter set (ML-KEM-512, 768 or 1024) and not a home-made one.",
+        "correct": true,
+        "feedback": "Correct. Changing the dimension, modulus or noise changes the estimated security in ways that need expert cryptanalysis. Use the standard sets."
+      },
+      {
+        "id": "c",
+        "text": "Approve if the noise is made larger to compensate.",
+        "correct": false,
+        "feedback": "Incorrect. More noise can break decryption correctness and does not restore a vetted security margin."
+      }
+    ],
+    "badge_awarded": "Parameter Skeptic",
+    "mission_xp_awarded": 90
+  },
+  {
+    "id": "escape-32-c9-byte-order",
+    "title": "The Mismatched Encoding",
+    "module_id": "track_c_c9_pqc_implementation_engineering",
+    "difficulty": "expert",
+    "setup": "Two teams implement ML-KEM independently. Each passes its own tests, but their public keys are rejected by the other's code.",
+    "prompt": "What is the right way to find and prevent the problem?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Convert one team's keys to hexadecimal.",
+        "correct": false,
+        "feedback": "Incorrect. Hex is only a text rendering of the same bytes; the encodings still differ."
+      },
+      {
+        "id": "b",
+        "text": "Test both against the standard's known-answer test vectors and the byte encodings defined in FIPS 203, and add cross-implementation tests to continuous integration.",
+        "correct": true,
+        "feedback": "Correct. The standard fixes the encoding, so known-answer and cross-implementation tests expose deviations early."
+      },
+      {
+        "id": "c",
+        "text": "Let the receiving side guess the encoding from the length.",
+        "correct": false,
+        "feedback": "Incorrect. Guessing creates parsing ambiguity and security risk."
+      }
+    ],
+    "badge_awarded": "Interop Engineer",
+    "mission_xp_awarded": 90
+  },
+  {
+    "id": "escape-33-c11-timing-leak",
+    "title": "The Early Exit",
+    "module_id": "track_c_c11_pqc_defense_engineering",
+    "difficulty": "quantum_expert",
+    "setup": "A reviewer finds that a custom ML-KEM decapsulation compares the re-encrypted ciphertext with the received one using an ordinary equality check that exits at the first differing byte.",
+    "prompt": "What is the vulnerability and the fix?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "No issue: ciphertexts are public values.",
+        "correct": false,
+        "feedback": "Incorrect. The comparison decides whether decapsulation accepts or rejects, and its duration can leak information about the secret key."
+      },
+      {
+        "id": "b",
+        "text": "Add a random delay to hide the timing.",
+        "correct": false,
+        "feedback": "Insufficient. Random delay can be averaged out over many measurements."
+      },
+      {
+        "id": "c",
+        "text": "A timing side channel: use a constant-time comparison and constant-time selection of the output secret, preferably by using a maintained library.",
+        "correct": true,
+        "feedback": "Correct. The comparison and the choice between the real and the pseudorandom secret must not depend on secret data in time or memory access."
+      }
+    ],
+    "badge_awarded": "Timing Defender",
+    "mission_xp_awarded": 95
+  },
+  {
+    "id": "escape-34-e2-shadow-service",
+    "title": "The Unlisted Endpoint",
+    "module_id": "track_d_e2_cryptographic_discovery",
+    "difficulty": "professional",
+    "setup": "Your authorised discovery sweep finds a TLS service with an expired RSA-1024 certificate that appears in no asset register.",
+    "prompt": "What is the correct next step?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Ignore it: it is not in the register, so it is not your responsibility.",
+        "correct": false,
+        "feedback": "Incorrect. A service that exists is in scope whether or not it is registered; unregistered systems are where the worst findings tend to live."
+      },
+      {
+        "id": "b",
+        "text": "Record it in the inventory as unowned, trace its owner, assess it (weak key, expired certificate), and decide whether to fix or retire it.",
+        "correct": true,
+        "feedback": "Correct. Keep the evidence, flag the asset as having no owner, and find the owner. The RSA-1024 key and expired certificate are findings even without quantum computers."
+      },
+      {
+        "id": "c",
+        "text": "Block the port immediately without telling anyone.",
+        "correct": false,
+        "feedback": "Risky. Blocking an unknown service without an owner can cause an outage and removes the chance to learn what it carries."
+      }
+    ],
+    "badge_awarded": "Shadow Hunter",
+    "mission_xp_awarded": 70
+  },
+  {
+    "id": "escape-35-e3-blank-score",
+    "title": "The Blank Score",
+    "module_id": "track_d_e3_quantum_readiness_assessment",
+    "difficulty": "professional",
+    "setup": "Your scoring sheet has an asset whose algorithm, impact and lifetime are all unknown. A manager asks you to just enter 50 for each so the table is complete.",
+    "prompt": "What do you do?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Enter 50 for each so the total looks complete.",
+        "correct": false,
+        "feedback": "Incorrect. A default makes an unassessed asset look average and removes the pressure to assess it."
+      },
+      {
+        "id": "b",
+        "text": "Report the asset with a score range and the label insufficient evidence, and put it on an assess-first list with an owner and a date.",
+        "correct": true,
+        "feedback": "Correct. Unknown is different from average. An interval shows the asset could be anything from trivial to critical until evidence arrives."
+      },
+      {
+        "id": "c",
+        "text": "Leave the asset out of the report.",
+        "correct": false,
+        "feedback": "Incorrect. Dropping it makes the programme look healthier than it is and hides the biggest unknown."
+      }
+    ],
+    "badge_awarded": "Evidence Assessor",
+    "mission_xp_awarded": 75
+  },
+  {
+    "id": "escape-36-e4-hard-coded",
+    "title": "The Compiled-In Algorithm",
+    "module_id": "track_d_e4_crypto_agility",
+    "difficulty": "professional",
+    "setup": "An advisory means an algorithm must be replaced in 20 services. The team estimates four months because every service calls the cryptography library directly with the algorithm name written in code.",
+    "prompt": "What is the lasting fix after the emergency change?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Hire more developers for the next advisory.",
+        "correct": false,
+        "feedback": "Does not remove the cause. Every future change would again touch every service."
+      },
+      {
+        "id": "b",
+        "text": "Introduce a crypto boundary and policy-driven algorithm selection so that the next change is a configuration change that is tested and deployed once.",
+        "correct": true,
+        "feedback": "Correct. Abstraction plus configuration turns an algorithm change into a policy update, with validation and an audit trail."
+      },
+      {
+        "id": "c",
+        "text": "Stockpile older library versions for quick rollback.",
+        "correct": false,
+        "feedback": "Incorrect. Rollback is useful, but it does not make a forward algorithm change cheap."
+      }
+    ],
+    "badge_awarded": "Agility Engineer",
+    "mission_xp_awarded": 80
+  },
+  {
+    "id": "escape-37-e5-big-bang",
+    "title": "The Big-Bang Weekend",
+    "module_id": "track_d_e5_enterprise_pqc_migration",
+    "difficulty": "professional",
+    "setup": "A project plan proposes switching all 40 internet-facing services to a hybrid key exchange on one Saturday night, with rollback 'if anything goes wrong'.",
+    "prompt": "What is the strongest improvement to the plan?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Add more staff on the night.",
+        "correct": false,
+        "feedback": "Does not address the structural risk of changing everything at once."
+      },
+      {
+        "id": "b",
+        "text": "Stage the rollout through a canary and increasing shares of traffic with pre-agreed stop gates and a rehearsed one-step rollback, starting with the highest-risk services.",
+        "correct": true,
+        "feedback": "Correct. A canary exposes a regression to a small share of traffic, and the stop rule and rollback are decided before the change."
+      },
+      {
+        "id": "c",
+        "text": "Switch off monitoring during the change to avoid false alarms.",
+        "correct": false,
+        "feedback": "Incorrect. Monitoring is how a regression is detected during the change."
+      }
+    ],
+    "badge_awarded": "Rollout Gatekeeper",
+    "mission_xp_awarded": 85
+  },
+  {
+    "id": "escape-38-e6-ownerless-risk",
+    "title": "The Ownerless Risk",
+    "module_id": "track_d_e6_governance",
+    "difficulty": "professional",
+    "setup": "Your risk register shows an open quantum-readiness risk on an archive. Its owner left the company last month and the due date has passed.",
+    "prompt": "How should governance treat it?",
+    "choices": [
+      {
+        "id": "a",
+        "text": "Close the risk as inactive.",
+        "correct": false,
+        "feedback": "Incorrect. The risk still exists. Closing it because the owner left hides it."
+      },
+      {
+        "id": "b",
+        "text": "Escalate immediately, assign one named active person as accountable with a new due date, and link the register to the staff directory so leavers trigger a review.",
+        "correct": true,
+        "feedback": "Correct. A risk without an active accountable owner stalls. One named accountable person, an escalation and an automatic check prevent a repeat."
+      },
+      {
+        "id": "c",
+        "text": "Assign it to the whole team alias.",
+        "correct": false,
+        "feedback": "Incorrect. Shared accountability means nobody is accountable."
+      }
+    ],
+    "badge_awarded": "Accountability Lead",
+    "mission_xp_awarded": 85
   }
 ];
