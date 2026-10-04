@@ -1,0 +1,1291 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B05",
+      "title": "Becoming Quantum Safe: Protect Your Business and Mitigate Risks with Post-Quantum Cryptography and Crypto-Agility",
+      "authors": "Jai Singh Arun, Ray Harishankar, Walid Rjaibi",
+      "edition": "1st edition",
+      "year": 2025,
+      "publisher": "Wiley"
+    },
+    {
+      "id": "B04",
+      "title": "FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B92",
+      "title": "FIPS 204: Module-Lattice-Based Digital Signature Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B93",
+      "title": "FIPS 205: Stateless Hash-Based Digital Signature Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B94",
+      "title": "NIST IR 8545: Status Report on the Fourth Round of the NIST Post-Quantum Cryptography Standardization Process",
+      "authors": "NIST",
+      "edition": "March 2025",
+      "year": 2025,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B95",
+      "title": "NIST SP 800-227: Recommendations for Key-Encapsulation Mechanisms",
+      "authors": "Alagic, Barker, Chen, Moody, Robinson, Silberg, Waller",
+      "edition": "September 2025",
+      "year": 2025,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B85",
+      "title": "IR 8547 (initial public draft), Transition to Post-Quantum Cryptography Standards",
+      "authors": "Dustin Moody, Ray Perlner, Andrew Regenscheid, Angela Robinson, David Cooper",
+      "edition": "November 2024, accessed 2026-10-04",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B99",
+      "title": "CycloneDX Bill of Materials specification, version 1.6 (JSON schema with the Cryptography Bill of Materials extension)",
+      "authors": "OWASP CycloneDX",
+      "edition": "1.6",
+      "year": 2024,
+      "publisher": "OWASP Foundation"
+    },
+    {
+      "id": "B100",
+      "title": "cryptography (Python package) version 50.0.1, with ML-KEM and ML-DSA backed by OpenSSL",
+      "authors": "Python Cryptographic Authority",
+      "edition": "50.0.1",
+      "year": 2026
+    },
+    {
+      "id": "B161",
+      "title": "RFC 9846: The Transport Layer Security (TLS) Protocol Version 1.3 (obsoletes RFC 8446 and RFC 5246)",
+      "authors": "IETF",
+      "edition": "July 2026",
+      "year": 2026,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B98",
+      "title": "RFC 10024: Post-Quantum Traditional (PQ/T) Hybrid Key Agreement Mechanisms for TLS 1.3",
+      "authors": "K. Kwiatkowski, P. Kampanakis, B. E. Westerbaan, D. Stebila",
+      "edition": "August 2026 (Proposed Standard)",
+      "year": 2026,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B24",
+      "title": "FIPS 199, Standards for Security Categorization of Federal Information and Information Systems",
+      "authors": "NIST",
+      "edition": "final, accessed 2026-10-03",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B26",
+      "title": "SP 800-30 Rev. 1, Guide for Conducting Risk Assessments",
+      "authors": "Joint Task Force Transformation Initiative",
+      "edition": "September 2012, accessed 2026-10-03",
+      "publisher": "NIST"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_d_e5_enterprise_pqc_migration",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "5.1 Discover",
+          "summary": "Raw cryptographic touchpoints from a sweep of the lab, and a second source that shows what one method misses.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The first phase produces **raw evidence**: every cryptographic touchpoint that discovery can find, with the observations as made (protocol version, cipher suite, certificate subject, key type, signature algorithm), and nothing yet cleaned, merged or interpreted. Keeping the raw output matters because later phases will reorganise it and a reviewer must be able to go back to what was actually observed.\n\nThe listing sweeps ports 47100 to 47129 on 127.0.0.1 (this machine only), identifies each listener by a TLS handshake or a banner, and prints the raw rows. It then compares the result with a second, independent source of names (DEMO DATA, standing for DNS or certificate-transparency records) to show what a single method misses. Discovery, inventory, classification, ranking, prototype, monitoring and hybrid listings run against the same **local lab** as module E2 (TLS and plain services on 127.0.0.1, this machine only, ports 47100 upwards) or against real cryptographic code. Business inputs (owners, impact, lifetimes), waves, freeze windows, pilot failure rates and traffic logs are **DEMO DATA / SIMULATION**, labelled where used. Nothing here is a finding about a real organisation. The course divides the migration into twelve phases; the book's own prescriptive approach has five steps (discover, assess and prioritise, design a crypto-agile architecture, migrate, monitor), which the twelve phases expand."
+            },
+            {
+              "type": "code",
+              "id": "c-discover",
+              "language": "python",
+              "code": "import datetime, os, socket, ssl, tempfile, threading\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa\nfrom cryptography.x509.oid import NameOID\n\n# ---- lab: small TLS servers on 127.0.0.1 that this script starts and then discovers. Certificates are self-signed and generated now. ----\ndef make_cert(kind, cn, valid_from_days, valid_to_days):\n    if kind == \"rsa1024\": key = rsa.generate_private_key(65537, 1024)\n    elif kind == \"rsa2048\": key = rsa.generate_private_key(65537, 2048)\n    elif kind == \"ec256\": key = ec.generate_private_key(ec.SECP256R1())\n    elif kind == \"ed25519\": key = ed25519.Ed25519PrivateKey.generate()\n    sign_hash = None if kind == \"ed25519\" else hashes.SHA256()\n    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])\n    now = datetime.datetime.now(datetime.timezone.utc)\n    cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key()).serial_number(x509.random_serial_number())\n            .not_valid_before(now + datetime.timedelta(days=valid_from_days)).not_valid_after(now + datetime.timedelta(days=valid_to_days))\n            .add_extension(x509.SubjectAlternativeName([x509.DNSName(cn)]), critical=False).sign(key, sign_hash))\n    return key, cert\n\nLAB = [  # label, key kind, common name, validity (from, to) in days relative to now, highest TLS version the server accepts\n    (\"web-front\",      \"rsa2048\", \"web.lab.test\",     (-30, 335), ssl.TLSVersion.TLSv1_3),\n    (\"legacy-billing\", \"rsa1024\", \"billing.lab.test\", (-900, 200), ssl.TLSVersion.TLSv1_2),\n    (\"api-gateway\",    \"ec256\",   \"api.lab.test\",     (-10, 80),  ssl.TLSVersion.TLSv1_3),\n    (\"old-intranet\",   \"rsa2048\", \"intra.lab.test\",   (-400, -35), ssl.TLSVersion.TLSv1_2),\n    (\"edge-device\",    \"ed25519\", \"edge.lab.test\",    (-5, 3000), ssl.TLSVersion.TLSv1_3),\n]\n_tmp = tempfile.mkdtemp()\n_next_port = [47100]\ndef bind_free():\n    \"\"\"bind the next free port from 47100 upwards on 127.0.0.1 (a fixed small range makes the discovery sweep below short and repeatable)\"\"\"\n    while True:\n        s = socket.socket()\n        try:\n            s.bind((\"127.0.0.1\", _next_port[0])); s.listen(16); _next_port[0] += 1\n            return s\n        except OSError:\n            s.close(); _next_port[0] += 1\ndef start_lab():\n    servers = {}\n    for label, kind, cn, (a, b), maxv in LAB:\n        key, cert = make_cert(kind, cn, a, b)\n        cf, kf = os.path.join(_tmp, label + \".crt\"), os.path.join(_tmp, label + \".key\")\n        open(cf, \"wb\").write(cert.public_bytes(serialization.Encoding.PEM))\n        open(kf, \"wb\").write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))\n        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)\n        ctx.minimum_version = ssl.TLSVersion.TLSv1_2\n        ctx.maximum_version = maxv\n        ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n        ctx.load_cert_chain(cf, kf)\n        sock = bind_free()\n        def serve(s=sock, c=ctx):\n            while True:\n                try:\n                    conn, _ = s.accept()\n                except OSError:\n                    return\n                try:\n                    with c.wrap_socket(conn, server_side=True) as t:\n                        t.settimeout(1)\n                except Exception:\n                    pass\n        threading.Thread(target=serve, daemon=True).start()\n        servers[label] = sock.getsockname()[1]\n    return servers\n\ndef probe(port, minv=None, maxv=None):\n    \"\"\"TLS client handshake to 127.0.0.1:port; returns (version, cipher, DER certificate) or None if the server refuses\"\"\"\n    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)\n    ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE\n    ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n    ctx.minimum_version = minv or ssl.TLSVersion.MINIMUM_SUPPORTED\n    if maxv: ctx.maximum_version = maxv\n    try:\n        with socket.create_connection((\"127.0.0.1\", port), timeout=3) as raw:\n            with ctx.wrap_socket(raw) as t:\n                return t.version(), t.cipher()[0], t.getpeercert(binary_form=True)\n    except (ssl.SSLError, OSError):\n        return None\n\ndef describe_key(cert):\n    pk = cert.public_key()\n    if isinstance(pk, rsa.RSAPublicKey): return \"RSA\", pk.key_size\n    if isinstance(pk, ec.EllipticCurvePublicKey): return \"EC \" + pk.curve.name, pk.key_size\n    if isinstance(pk, ed25519.Ed25519PublicKey): return \"Ed25519\", 256\n    return type(pk).__name__, 0\n\ndef start_plain(payload):\n    \"\"\"a non-TLS service that sends 'payload' bytes to every client and closes (used for banner and SSH-style discovery)\"\"\"\n    sock = bind_free()\n    def serve():\n        while True:\n            try:\n                conn, _ = sock.accept()\n            except OSError:\n                return\n            try:\n                conn.sendall(payload)\n            except OSError:\n                pass\n            conn.close()\n    threading.Thread(target=serve, daemon=True).start()\n    return sock.getsockname()[1]\n# Phase 1, Discover: produce a RAW list of cryptographic touchpoints. Nothing is cleaned or organised yet. Target: the lab on 127.0.0.1 (this machine only).\nservers = start_lab()\nbanner_port = start_plain(b\"SSH-2.0-OpenSSH_7.4 DEMO-banner\\r\\n\")\nraw = []\nfor port in range(47100, 47130):\n    s = socket.socket(); s.settimeout(0.2)\n    listening = s.connect_ex((\"127.0.0.1\", port)) == 0\n    s.close()\n    if not listening: continue\n    r = probe(port)\n    if r:\n        c = x509.load_der_x509_certificate(r[2])\n        alg, size = describe_key(c)\n        raw.append({\"port\": port, \"kind\": \"tls\", \"version\": r[0], \"cipher\": r[1], \"subject\": c.subject.rfc4514_string(), \"key\": f\"{alg} {size}\", \"sig\": c.signature_algorithm_oid._name})\n    else:\n        s = socket.create_connection((\"127.0.0.1\", port), timeout=2); s.settimeout(1)\n        try: data = s.recv(64)\n        except OSError: data = b\"\"\n        s.close()\n        raw.append({\"port\": port, \"kind\": \"banner\", \"banner\": data.decode(errors=\"replace\").strip()})\nprint(f\"raw discovery output: {len(raw)} touchpoints from a sweep of 30 ports\")\nfor row in raw:\n    fields = {k: v for k, v in row.items() if k != \"port\"}\n    print(f\"  port {row['port']}: \" + \", \".join(f\"{k}={v}\" for k, v in fields.items()))\nprint()\n# a second, independent source (DEMO DATA): names the organisation publishes in DNS / certificate transparency. Comparing sources shows what a single method misses.\npublished = {\"web.lab.test\", \"billing.lab.test\", \"api.lab.test\", \"portal.lab.test\", \"vpn.lab.test\", \"mail.lab.test\"}\nseen = {row[\"subject\"].split(\"=\")[1] for row in raw if row[\"kind\"] == \"tls\"}\nprint(\"second source (DEMO DATA) names:\", sorted(published))\nprint(\"published but not reached by the sweep:\", sorted(published - seen), \"(other hosts, other ports, or not reachable from here)\")\nprint(\"reached by the sweep but not published:\", sorted(seen - published))\nprint(\"output of this phase is evidence, not an inventory: it has duplicates, gaps and no owners; phase 2 turns it into a structured record\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-discover",
+              "language": "text",
+              "code": "raw discovery output: 6 touchpoints from a sweep of 30 ports\n  port 47100: kind=tls, version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, subject=CN=web.lab.test, key=RSA 2048, sig=sha256WithRSAEncryption\n  port 47101: kind=tls, version=TLSv1.2, cipher=ECDHE-RSA-AES256-GCM-SHA384, subject=CN=billing.lab.test, key=RSA 1024, sig=sha256WithRSAEncryption\n  port 47102: kind=tls, version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, subject=CN=api.lab.test, key=EC secp256r1 256, sig=ecdsa-with-SHA256\n  port 47103: kind=tls, version=TLSv1.2, cipher=ECDHE-RSA-AES256-GCM-SHA384, subject=CN=intra.lab.test, key=RSA 2048, sig=sha256WithRSAEncryption\n  port 47104: kind=tls, version=TLSv1.3, cipher=TLS_AES_256_GCM_SHA384, subject=CN=edge.lab.test, key=Ed25519 256, sig=ed25519\n  port 47105: kind=banner, banner=SSH-2.0-OpenSSH_7.4 DEMO-banner\n\nsecond source (DEMO DATA) names: ['api.lab.test', 'billing.lab.test', 'mail.lab.test', 'portal.lab.test', 'vpn.lab.test', 'web.lab.test']\npublished but not reached by the sweep: ['mail.lab.test', 'portal.lab.test', 'vpn.lab.test'] (other hosts, other ports, or not reachable from here)\nreached by the sweep but not published: ['edge.lab.test', 'intra.lab.test']\noutput of this phase is evidence, not an inventory: it has duplicates, gaps and no owners; phase 2 turns it into a structured record",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The sweep finds **six touchpoints**: five TLS services (web.lab.test with RSA-2048, billing.lab.test with RSA-1024, api.lab.test with ECDSA P-256, intra.lab.test with RSA-2048, edge.lab.test with Ed25519) and one plain service with an SSH-style banner. Against the second source, three published names (mail, portal and vpn) were **not reached** by the sweep (other hosts, other ports, or not reachable from here), and two services that the sweep found (edge and intra) are **not published**.\n\n**Rules for the phase.** Use more than one source, record the method and time of every observation, keep the raw output as evidence, and do not interpret yet. The result is **not an inventory**: it has gaps (names without a reachable endpoint), surprises (endpoints without a name) and no owners. **Common mistake:** treating the first scan as the asset list and starting the migration from it."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why keep the raw discovery output?",
+              "options": [
+                "Later phases reorganise it and reviewers must be able to see the original observations",
+                "It is required by TLS",
+                "It makes scans faster"
+              ],
+              "correct_index": 0,
+              "explanation": "Evidence first, interpretation later."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does comparing two discovery sources reveal?",
+              "options": [
+                "Gaps and surprises that one method misses",
+                "Nothing",
+                "That scans are slow"
+              ],
+              "correct_index": 0,
+              "explanation": "Three names were not reached; two services were not published."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Is the output of phase 1 an inventory?",
+              "options": [
+                "No: it has gaps, duplicates and no owners",
+                "Yes",
+                "Only for TLS"
+              ],
+              "correct_index": 0,
+              "explanation": "Phase 2 structures it."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 5 (the prescriptive approach: Step 1 Discover the Cryptographic Inventory, Step 2 Assess the Risk and Prioritize Remediation, Step 3 Design a Crypto-Agile Architecture, Step 4 Migrate to Quantum-Safe Cryptography, Step 5 Ongoing Monitoring, Compliance, and Adaptation)"
+            },
+            {
+              "book": "B99",
+              "locator": "CycloneDX 1.6: the cryptographic-asset model that later phases map the raw rows to"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The sweep is real but covers only 30 local ports; the second source is DEMO DATA. The twelve-phase split is the course's; the book describes five steps."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "5.2 Inventory",
+          "summary": "Normalising raw rows into validated records with owners from an asset register, keeping flawed records flagged instead of dropping them.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **inventory** turns raw rows into a structured, validated record per asset: a stable identifier, the endpoint, protocol, key-exchange class, authentication key type and size, signature algorithm, expiry bucket and an **owner**. Module E2.1 describes the CBOM format for it; this phase is the practice of building and maintaining it. Three rules govern it: records are **validated** against a schema (required fields, enumerations, value checks), records with problems are **kept and flagged** (never silently dropped, or the inventory would look healthier than the estate), and the inventory is **versioned** with the date of last observation.\n\nThe listing normalises the five lab TLS services into records, derives a key-exchange class from the cipher suite (for TLS 1.3 it states honestly that the key-exchange group was not read), joins the owner from an asset register (DEMO DATA, with one name missing from the register) and validates each record. Discovery, inventory, classification, ranking, prototype, monitoring and hybrid listings run against the same **local lab** as module E2 (TLS and plain services on 127.0.0.1, this machine only, ports 47100 upwards) or against real cryptographic code. Business inputs (owners, impact, lifetimes), waves, freeze windows, pilot failure rates and traffic logs are **DEMO DATA / SIMULATION**, labelled where used. Nothing here is a finding about a real organisation."
+            },
+            {
+              "type": "code",
+              "id": "c-inventory",
+              "language": "python",
+              "code": "import datetime, os, socket, ssl, tempfile, threading\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa\nfrom cryptography.x509.oid import NameOID\n\n# ---- lab: small TLS servers on 127.0.0.1 that this script starts and then discovers. Certificates are self-signed and generated now. ----\ndef make_cert(kind, cn, valid_from_days, valid_to_days):\n    if kind == \"rsa1024\": key = rsa.generate_private_key(65537, 1024)\n    elif kind == \"rsa2048\": key = rsa.generate_private_key(65537, 2048)\n    elif kind == \"ec256\": key = ec.generate_private_key(ec.SECP256R1())\n    elif kind == \"ed25519\": key = ed25519.Ed25519PrivateKey.generate()\n    sign_hash = None if kind == \"ed25519\" else hashes.SHA256()\n    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])\n    now = datetime.datetime.now(datetime.timezone.utc)\n    cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key()).serial_number(x509.random_serial_number())\n            .not_valid_before(now + datetime.timedelta(days=valid_from_days)).not_valid_after(now + datetime.timedelta(days=valid_to_days))\n            .add_extension(x509.SubjectAlternativeName([x509.DNSName(cn)]), critical=False).sign(key, sign_hash))\n    return key, cert\n\nLAB = [  # label, key kind, common name, validity (from, to) in days relative to now, highest TLS version the server accepts\n    (\"web-front\",      \"rsa2048\", \"web.lab.test\",     (-30, 335), ssl.TLSVersion.TLSv1_3),\n    (\"legacy-billing\", \"rsa1024\", \"billing.lab.test\", (-900, 200), ssl.TLSVersion.TLSv1_2),\n    (\"api-gateway\",    \"ec256\",   \"api.lab.test\",     (-10, 80),  ssl.TLSVersion.TLSv1_3),\n    (\"old-intranet\",   \"rsa2048\", \"intra.lab.test\",   (-400, -35), ssl.TLSVersion.TLSv1_2),\n    (\"edge-device\",    \"ed25519\", \"edge.lab.test\",    (-5, 3000), ssl.TLSVersion.TLSv1_3),\n]\n_tmp = tempfile.mkdtemp()\n_next_port = [47100]\ndef bind_free():\n    \"\"\"bind the next free port from 47100 upwards on 127.0.0.1 (a fixed small range makes the discovery sweep below short and repeatable)\"\"\"\n    while True:\n        s = socket.socket()\n        try:\n            s.bind((\"127.0.0.1\", _next_port[0])); s.listen(16); _next_port[0] += 1\n            return s\n        except OSError:\n            s.close(); _next_port[0] += 1\ndef start_lab():\n    servers = {}\n    for label, kind, cn, (a, b), maxv in LAB:\n        key, cert = make_cert(kind, cn, a, b)\n        cf, kf = os.path.join(_tmp, label + \".crt\"), os.path.join(_tmp, label + \".key\")\n        open(cf, \"wb\").write(cert.public_bytes(serialization.Encoding.PEM))\n        open(kf, \"wb\").write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))\n        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)\n        ctx.minimum_version = ssl.TLSVersion.TLSv1_2\n        ctx.maximum_version = maxv\n        ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n        ctx.load_cert_chain(cf, kf)\n        sock = bind_free()\n        def serve(s=sock, c=ctx):\n            while True:\n                try:\n                    conn, _ = s.accept()\n                except OSError:\n                    return\n                try:\n                    with c.wrap_socket(conn, server_side=True) as t:\n                        t.settimeout(1)\n                except Exception:\n                    pass\n        threading.Thread(target=serve, daemon=True).start()\n        servers[label] = sock.getsockname()[1]\n    return servers\n\ndef probe(port, minv=None, maxv=None):\n    \"\"\"TLS client handshake to 127.0.0.1:port; returns (version, cipher, DER certificate) or None if the server refuses\"\"\"\n    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)\n    ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE\n    ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n    ctx.minimum_version = minv or ssl.TLSVersion.MINIMUM_SUPPORTED\n    if maxv: ctx.maximum_version = maxv\n    try:\n        with socket.create_connection((\"127.0.0.1\", port), timeout=3) as raw:\n            with ctx.wrap_socket(raw) as t:\n                return t.version(), t.cipher()[0], t.getpeercert(binary_form=True)\n    except (ssl.SSLError, OSError):\n        return None\n\ndef describe_key(cert):\n    pk = cert.public_key()\n    if isinstance(pk, rsa.RSAPublicKey): return \"RSA\", pk.key_size\n    if isinstance(pk, ec.EllipticCurvePublicKey): return \"EC \" + pk.curve.name, pk.key_size\n    if isinstance(pk, ed25519.Ed25519PublicKey): return \"Ed25519\", 256\n    return type(pk).__name__, 0\n\ndef start_plain(payload):\n    \"\"\"a non-TLS service that sends 'payload' bytes to every client and closes (used for banner and SSH-style discovery)\"\"\"\n    sock = bind_free()\n    def serve():\n        while True:\n            try:\n                conn, _ = sock.accept()\n            except OSError:\n                return\n            try:\n                conn.sendall(payload)\n            except OSError:\n                pass\n            conn.close()\n    threading.Thread(target=serve, daemon=True).start()\n    return sock.getsockname()[1]\nimport json\n# Phase 2, Inventory: normalise raw discovery into a validated record per asset, attach an owner from the asset register (DEMO DATA) and report invalid or unowned records.\nservers = start_lab()\nOWNERS = {\"web.lab.test\": \"web team\", \"billing.lab.test\": \"finance IT\", \"api.lab.test\": \"platform\", \"intra.lab.test\": None}      # edge.lab.test is not registered\ndef kex_class(version, cipher):\n    if version == \"TLSv1.3\": return \"TLS 1.3: key-exchange group not read\"\n    return \"ECDHE\" if cipher.startswith(\"ECDHE\") else \"DHE\" if cipher.startswith(\"DHE\") else \"RSA key transport\"\ntoday = datetime.datetime.now(datetime.timezone.utc)\nrecords = []\nfor label, port in servers.items():\n    version, cipher, der = probe(port)\n    c = x509.load_der_x509_certificate(der)\n    alg, size = describe_key(c)\n    left = (c.not_valid_after_utc - today).days\n    cn = c.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value\n    records.append({\"asset\": label, \"name\": cn, \"protocol\": version, \"kex\": kex_class(version, cipher), \"cipher\": cipher, \"auth_key\": alg, \"key_bits\": size,\n                    \"signature\": c.signature_algorithm_oid._name, \"expiry\": \"EXPIRED\" if left < 0 else \"within 90 days\" if left <= 90 else \"later\", \"owner\": OWNERS.get(cn)})\nREQUIRED = (\"asset\", \"name\", \"protocol\", \"kex\", \"auth_key\", \"key_bits\", \"signature\", \"expiry\")\ndef validate(r):\n    problems = [f\"missing {f}\" for f in REQUIRED if r.get(f) in (None, \"\")]\n    if r[\"auth_key\"] == \"RSA\" and r[\"key_bits\"] < 2048: problems.append(\"RSA key below 2048 bits\")\n    if r[\"owner\"] is None: problems.append(\"no owner in the asset register\")\n    return problems\nprint(f\"{'asset':<16} {'protocol':<9} {'key exchange':<38} {'auth key':<14} {'expiry':<15} {'owner':<11} problems\")\nfor r in records:\n    p = validate(r)\n    print(f\"{r['asset']:<16} {r['protocol']:<9} {r['kex']:<38} {r['auth_key'] + ' ' + str(r['key_bits']):<14} {r['expiry']:<15} {str(r['owner']):<11} {'; '.join(p) or '-'}\")\nprint()\nok = [r for r in records if not validate(r)]\nprint(f\"{len(records)} records, {len(ok)} valid and owned, {len(records) - len(ok)} need action before they can enter the inventory of record\")\nprint(\"record as stored (JSON):\")\nprint(json.dumps(records[0], indent=1))\nprint(\"rule: a record with problems is KEPT and flagged, never dropped; the inventory of record is versioned, and each record keeps the date of its last observation\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-inventory",
+              "language": "text",
+              "code": "asset            protocol  key exchange                           auth key       expiry          owner       problems\nweb-front        TLSv1.3   TLS 1.3: key-exchange group not read   RSA 2048       later           web team    -\nlegacy-billing   TLSv1.2   ECDHE                                  RSA 1024       later           finance IT  RSA key below 2048 bits\napi-gateway      TLSv1.3   TLS 1.3: key-exchange group not read   EC secp256r1 256 within 90 days  platform    -\nold-intranet     TLSv1.2   ECDHE                                  RSA 2048       EXPIRED         None        no owner in the asset register\nedge-device      TLSv1.3   TLS 1.3: key-exchange group not read   Ed25519 256    later           None        no owner in the asset register\n\n5 records, 2 valid and owned, 3 need action before they can enter the inventory of record\nrecord as stored (JSON):\n{\n \"asset\": \"web-front\",\n \"name\": \"web.lab.test\",\n \"protocol\": \"TLSv1.3\",\n \"kex\": \"TLS 1.3: key-exchange group not read\",\n \"cipher\": \"TLS_AES_256_GCM_SHA384\",\n \"auth_key\": \"RSA\",\n \"key_bits\": 2048,\n \"signature\": \"sha256WithRSAEncryption\",\n \"expiry\": \"later\",\n \"owner\": \"web team\"\n}\nrule: a record with problems is KEPT and flagged, never dropped; the inventory of record is versioned, and each record keeps the date of its last observation",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Of the five records, **two are valid and owned**; three need action: the legacy-billing record has an **RSA key below 2048 bits**, and old-intranet and edge-device have **no owner in the asset register** (old-intranet's certificate has also **expired**, which the table shows in its expiry column). The key-exchange column shows `ECDHE` for the two TLS 1.2 services and *key-exchange group not read* for the three TLS 1.3 services, which is the honest statement: the group would tell classical X25519 from a hybrid and this probe cannot read it. The stored form is a JSON record.\n\n**Why \"kept and flagged\".** If invalid records were dropped, the inventory would show only the healthy part of the estate and the migration would start from a biased list. Flagged records become tasks: assign an owner, replace the weak key, find out what the service carries. **Common mistake:** requiring complete records before admitting an asset, which hides exactly the assets that need attention."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What happens to an inventory record that fails validation?",
+              "options": [
+                "It is kept and flagged for action",
+                "It is dropped",
+                "It is hidden from reports"
+              ],
+              "correct_index": 0,
+              "explanation": "Dropping would bias the inventory toward the healthy part."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does the key-exchange column say the group was not read for TLS 1.3?",
+              "options": [
+                "The probe cannot see the group, and the record must not claim more than was observed",
+                "TLS 1.3 has no key exchange",
+                "It is an error"
+              ],
+              "correct_index": 0,
+              "explanation": "Reading the group needs a raw handshake probe."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is an owner a required field?",
+              "options": [
+                "Someone must be accountable for each asset's migration",
+                "Owners choose algorithms",
+                "It is a TLS field"
+              ],
+              "correct_index": 0,
+              "explanation": "Two lab assets had no owner."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 5 (the prescriptive approach: Step 1 Discover the Cryptographic Inventory, Step 2 Assess the Risk and Prioritize Remediation, Step 3 Design a Crypto-Agile Architecture, Step 4 Migrate to Quantum-Safe Cryptography, Step 5 Ongoing Monitoring, Compliance, and Adaptation)"
+            },
+            {
+              "book": "B99",
+              "locator": "CycloneDX 1.6: cryptoProperties (protocolProperties, certificateProperties, relatedCryptoMaterialProperties)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The record schema and validation rules are the lesson's own (a subset of what a full CBOM holds); the asset register is DEMO DATA."
+          }
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "5.3 Classify",
+          "summary": "Explicit tiering rules over business function, impact and secrecy lifetime, with unclassified assets sent back to owners instead of receiving a default.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Classification** attaches business meaning to the inventory: which **function** an asset serves, the **impact** of a confidentiality loss and the **secrecy lifetime** of the data (E1.3), and from them a **tier** that sets the migration priority. The rules must be written down so that the classification is reproducible. The two inputs are independent axes: high impact with a short lifetime and low impact with a long lifetime can both land in the top tier, for different reasons.\n\nThe listing classifies the five lab assets from an invented business mapping (DEMO DATA) with the rules *tier 1 = high impact or secrecy lifetime of 20 years or more; tier 2 = moderate impact or 5 years or more; otherwise tier 3; no mapping = unclassified*. Discovery, inventory, classification, ranking, prototype, monitoring and hybrid listings run against the same **local lab** as module E2 (TLS and plain services on 127.0.0.1, this machine only, ports 47100 upwards) or against real cryptographic code. Business inputs (owners, impact, lifetimes), waves, freeze windows, pilot failure rates and traffic logs are **DEMO DATA / SIMULATION**, labelled where used. Nothing here is a finding about a real organisation."
+            },
+            {
+              "type": "code",
+              "id": "c-classify",
+              "language": "python",
+              "code": "import datetime, os, socket, ssl, tempfile, threading\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa\nfrom cryptography.x509.oid import NameOID\n\n# ---- lab: small TLS servers on 127.0.0.1 that this script starts and then discovers. Certificates are self-signed and generated now. ----\ndef make_cert(kind, cn, valid_from_days, valid_to_days):\n    if kind == \"rsa1024\": key = rsa.generate_private_key(65537, 1024)\n    elif kind == \"rsa2048\": key = rsa.generate_private_key(65537, 2048)\n    elif kind == \"ec256\": key = ec.generate_private_key(ec.SECP256R1())\n    elif kind == \"ed25519\": key = ed25519.Ed25519PrivateKey.generate()\n    sign_hash = None if kind == \"ed25519\" else hashes.SHA256()\n    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])\n    now = datetime.datetime.now(datetime.timezone.utc)\n    cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key()).serial_number(x509.random_serial_number())\n            .not_valid_before(now + datetime.timedelta(days=valid_from_days)).not_valid_after(now + datetime.timedelta(days=valid_to_days))\n            .add_extension(x509.SubjectAlternativeName([x509.DNSName(cn)]), critical=False).sign(key, sign_hash))\n    return key, cert\n\nLAB = [  # label, key kind, common name, validity (from, to) in days relative to now, highest TLS version the server accepts\n    (\"web-front\",      \"rsa2048\", \"web.lab.test\",     (-30, 335), ssl.TLSVersion.TLSv1_3),\n    (\"legacy-billing\", \"rsa1024\", \"billing.lab.test\", (-900, 200), ssl.TLSVersion.TLSv1_2),\n    (\"api-gateway\",    \"ec256\",   \"api.lab.test\",     (-10, 80),  ssl.TLSVersion.TLSv1_3),\n    (\"old-intranet\",   \"rsa2048\", \"intra.lab.test\",   (-400, -35), ssl.TLSVersion.TLSv1_2),\n    (\"edge-device\",    \"ed25519\", \"edge.lab.test\",    (-5, 3000), ssl.TLSVersion.TLSv1_3),\n]\n_tmp = tempfile.mkdtemp()\n_next_port = [47100]\ndef bind_free():\n    \"\"\"bind the next free port from 47100 upwards on 127.0.0.1 (a fixed small range makes the discovery sweep below short and repeatable)\"\"\"\n    while True:\n        s = socket.socket()\n        try:\n            s.bind((\"127.0.0.1\", _next_port[0])); s.listen(16); _next_port[0] += 1\n            return s\n        except OSError:\n            s.close(); _next_port[0] += 1\ndef start_lab():\n    servers = {}\n    for label, kind, cn, (a, b), maxv in LAB:\n        key, cert = make_cert(kind, cn, a, b)\n        cf, kf = os.path.join(_tmp, label + \".crt\"), os.path.join(_tmp, label + \".key\")\n        open(cf, \"wb\").write(cert.public_bytes(serialization.Encoding.PEM))\n        open(kf, \"wb\").write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))\n        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)\n        ctx.minimum_version = ssl.TLSVersion.TLSv1_2\n        ctx.maximum_version = maxv\n        ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n        ctx.load_cert_chain(cf, kf)\n        sock = bind_free()\n        def serve(s=sock, c=ctx):\n            while True:\n                try:\n                    conn, _ = s.accept()\n                except OSError:\n                    return\n                try:\n                    with c.wrap_socket(conn, server_side=True) as t:\n                        t.settimeout(1)\n                except Exception:\n                    pass\n        threading.Thread(target=serve, daemon=True).start()\n        servers[label] = sock.getsockname()[1]\n    return servers\n\ndef probe(port, minv=None, maxv=None):\n    \"\"\"TLS client handshake to 127.0.0.1:port; returns (version, cipher, DER certificate) or None if the server refuses\"\"\"\n    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)\n    ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE\n    ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n    ctx.minimum_version = minv or ssl.TLSVersion.MINIMUM_SUPPORTED\n    if maxv: ctx.maximum_version = maxv\n    try:\n        with socket.create_connection((\"127.0.0.1\", port), timeout=3) as raw:\n            with ctx.wrap_socket(raw) as t:\n                return t.version(), t.cipher()[0], t.getpeercert(binary_form=True)\n    except (ssl.SSLError, OSError):\n        return None\n\ndef describe_key(cert):\n    pk = cert.public_key()\n    if isinstance(pk, rsa.RSAPublicKey): return \"RSA\", pk.key_size\n    if isinstance(pk, ec.EllipticCurvePublicKey): return \"EC \" + pk.curve.name, pk.key_size\n    if isinstance(pk, ed25519.Ed25519PublicKey): return \"Ed25519\", 256\n    return type(pk).__name__, 0\n\ndef start_plain(payload):\n    \"\"\"a non-TLS service that sends 'payload' bytes to every client and closes (used for banner and SSH-style discovery)\"\"\"\n    sock = bind_free()\n    def serve():\n        while True:\n            try:\n                conn, _ = sock.accept()\n            except OSError:\n                return\n            try:\n                conn.sendall(payload)\n            except OSError:\n                pass\n            conn.close()\n    threading.Thread(target=serve, daemon=True).start()\n    return sock.getsockname()[1]\n# Phase 3, Classify: assign each inventoried asset a function, data impact, confidentiality lifetime and a tier by explicit rules. DEMO DATA: the business mapping is invented.\nservers = start_lab()\nBUSINESS = {   # certificate name -> (business function, FIPS 199 style impact, secrecy lifetime in years)\n    \"web.lab.test\": (\"customer channel\", \"moderate\", 7),\n    \"billing.lab.test\": (\"finance\", \"high\", 10),\n    \"api.lab.test\": (\"partner integration\", \"moderate\", 3),\n    \"intra.lab.test\": (\"internal collaboration\", \"low\", 2),\n}                                                           # edge.lab.test has no business mapping: nobody has said what it carries\ndef tier(impact, years):\n    if impact is None or years is None: return \"unclassified\"\n    if impact == \"high\" or years >= 20: return \"tier 1 (migrate first)\"\n    if impact == \"moderate\" or years >= 5: return \"tier 2\"\n    return \"tier 3\"\nprint(\"classification rules: tier 1 = high impact OR secrecy lifetime of 20 years or more; tier 2 = moderate impact OR 5+ years; otherwise tier 3; no mapping = unclassified\")\nprint(f\"{'asset':<16} {'name':<18} {'function':<24} {'impact':<9} {'years':>5}  tier\")\ncounts = {}\nfor label, port in servers.items():\n    cn = x509.load_der_x509_certificate(probe(port)[2]).subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value\n    fn, impact, years = BUSINESS.get(cn, (\"UNKNOWN\", None, None))\n    t = tier(impact, years); counts[t] = counts.get(t, 0) + 1\n    print(f\"{label:<16} {cn:<18} {fn:<24} {str(impact):<9} {str(years):>5}  {t}\")\nprint()\nprint(\"tier counts:\", counts)\nprint(\"a classification is an assertion by a named owner: the unclassified edge device is not given a default tier, it is sent back to its owner (E6.3) with the question 'what data passes through this device and for how long must it stay secret?'\")\nprint(\"check on the rules: an asset with impact high and a lifetime of 1 year is\", tier(\"high\", 1), \"; one with impact low and 25 years is\", tier(\"low\", 25), \": the two axes act independently, as in E1.3\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-classify",
+              "language": "text",
+              "code": "classification rules: tier 1 = high impact OR secrecy lifetime of 20 years or more; tier 2 = moderate impact OR 5+ years; otherwise tier 3; no mapping = unclassified\nasset            name               function                 impact    years  tier\nweb-front        web.lab.test       customer channel         moderate      7  tier 2\nlegacy-billing   billing.lab.test   finance                  high         10  tier 1 (migrate first)\napi-gateway      api.lab.test       partner integration      moderate      3  tier 2\nold-intranet     intra.lab.test     internal collaboration   low           2  tier 3\nedge-device      edge.lab.test      UNKNOWN                  None       None  unclassified\n\ntier counts: {'tier 2': 2, 'tier 1 (migrate first)': 1, 'tier 3': 1, 'unclassified': 1}\na classification is an assertion by a named owner: the unclassified edge device is not given a default tier, it is sent back to its owner (E6.3) with the question 'what data passes through this device and for how long must it stay secret?'\ncheck on the rules: an asset with impact high and a lifetime of 1 year is tier 1 (migrate first) ; one with impact low and 25 years is tier 1 (migrate first) : the two axes act independently, as in E1.3",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The result: **legacy-billing is tier 1** (high impact, 10 years), web-front and api-gateway are tier 2, old-intranet tier 3 and edge-device **unclassified**, because nobody has said what data it carries. Tier counts: one tier 1, two tier 2, one tier 3, one unclassified. The check at the end shows the two axes at work: a high-impact asset with a one-year lifetime and a low-impact asset with a 25-year lifetime are both tier 1.\n\n**Rule for unknowns.** An unclassified asset is not given a default tier; it is returned to its owner (E6.3) with a concrete question (what data passes through the device, and for how long must it stay secret?). A classification is an **assertion by a named owner**, recorded with a date, not a guess by the tool. **Common mistake:** classifying all internal systems as low because they are not internet-facing, which ignores long-lived data and the lateral movement of an attacker."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How does the lesson classify an asset with no business mapping?",
+              "options": [
+                "As unclassified, returned to its owner with a question",
+                "As tier 3",
+                "As tier 1"
+              ],
+              "correct_index": 0,
+              "explanation": "Defaults would hide the unknown."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which asset is tier 1 in the lab?",
+              "options": [
+                "legacy-billing (high impact)",
+                "intra.lab.test",
+                "api-gateway"
+              ],
+              "correct_index": 0,
+              "explanation": "High impact puts it in tier 1."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why must tiering rules be written down?",
+              "options": [
+                "So that two reviewers reach the same tier and the result can be challenged",
+                "To lengthen the policy",
+                "Tiers are optional"
+              ],
+              "correct_index": 0,
+              "explanation": "Reproducibility."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 5 (the prescriptive approach: Step 1 Discover the Cryptographic Inventory, Step 2 Assess the Risk and Prioritize Remediation, Step 3 Design a Crypto-Agile Architecture, Step 4 Migrate to Quantum-Safe Cryptography, Step 5 Ongoing Monitoring, Compliance, and Adaptation)"
+            },
+            {
+              "book": "B24",
+              "locator": "FIPS 199: Section 3 (impact levels low, moderate and high for confidentiality)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The mapping and the tier thresholds (20 and 5 years) are DEMO conventions of the lesson."
+          }
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "5.4 Risk-Rank",
+          "summary": "Interval scores for the lab assets from observed algorithms and business inputs: a firm score where the facts are known, a range where the key-exchange group or the business mapping is unknown.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Risk-ranking** applies the scoring method of E3.3 to the classified inventory and produces the ordered list that drives every later phase. The inputs now come partly from **observation** (protocol version, cipher suite, key type and size) and partly from **business assertions** (impact, lifetime, criticality). Where an input is unknown the score is an **interval**, not a made-up point: the lower bound counts the unknown factor as 0 and the upper bound as 1.\n\nFor TLS 1.3 services the **key-exchange group** is the unknown: Python's `ssl` module does not report it, and the group (classical X25519 or hybrid X25519MLKEM768) decides whether harvest-now-decrypt-later applies. The listing therefore gives the algorithm factor of those services as an interval; unmapped assets also get intervals for their business factors. Discovery, inventory, classification, ranking, prototype, monitoring and hybrid listings run against the same **local lab** as module E2 (TLS and plain services on 127.0.0.1, this machine only, ports 47100 upwards) or against real cryptographic code. Business inputs (owners, impact, lifetimes), waves, freeze windows, pilot failure rates and traffic logs are **DEMO DATA / SIMULATION**, labelled where used. Nothing here is a finding about a real organisation."
+            },
+            {
+              "type": "code",
+              "id": "c-risk-rank",
+              "language": "python",
+              "code": "import datetime, os, socket, ssl, tempfile, threading\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa\nfrom cryptography.x509.oid import NameOID\n\n# ---- lab: small TLS servers on 127.0.0.1 that this script starts and then discovers. Certificates are self-signed and generated now. ----\ndef make_cert(kind, cn, valid_from_days, valid_to_days):\n    if kind == \"rsa1024\": key = rsa.generate_private_key(65537, 1024)\n    elif kind == \"rsa2048\": key = rsa.generate_private_key(65537, 2048)\n    elif kind == \"ec256\": key = ec.generate_private_key(ec.SECP256R1())\n    elif kind == \"ed25519\": key = ed25519.Ed25519PrivateKey.generate()\n    sign_hash = None if kind == \"ed25519\" else hashes.SHA256()\n    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])\n    now = datetime.datetime.now(datetime.timezone.utc)\n    cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key()).serial_number(x509.random_serial_number())\n            .not_valid_before(now + datetime.timedelta(days=valid_from_days)).not_valid_after(now + datetime.timedelta(days=valid_to_days))\n            .add_extension(x509.SubjectAlternativeName([x509.DNSName(cn)]), critical=False).sign(key, sign_hash))\n    return key, cert\n\nLAB = [  # label, key kind, common name, validity (from, to) in days relative to now, highest TLS version the server accepts\n    (\"web-front\",      \"rsa2048\", \"web.lab.test\",     (-30, 335), ssl.TLSVersion.TLSv1_3),\n    (\"legacy-billing\", \"rsa1024\", \"billing.lab.test\", (-900, 200), ssl.TLSVersion.TLSv1_2),\n    (\"api-gateway\",    \"ec256\",   \"api.lab.test\",     (-10, 80),  ssl.TLSVersion.TLSv1_3),\n    (\"old-intranet\",   \"rsa2048\", \"intra.lab.test\",   (-400, -35), ssl.TLSVersion.TLSv1_2),\n    (\"edge-device\",    \"ed25519\", \"edge.lab.test\",    (-5, 3000), ssl.TLSVersion.TLSv1_3),\n]\n_tmp = tempfile.mkdtemp()\n_next_port = [47100]\ndef bind_free():\n    \"\"\"bind the next free port from 47100 upwards on 127.0.0.1 (a fixed small range makes the discovery sweep below short and repeatable)\"\"\"\n    while True:\n        s = socket.socket()\n        try:\n            s.bind((\"127.0.0.1\", _next_port[0])); s.listen(16); _next_port[0] += 1\n            return s\n        except OSError:\n            s.close(); _next_port[0] += 1\ndef start_lab():\n    servers = {}\n    for label, kind, cn, (a, b), maxv in LAB:\n        key, cert = make_cert(kind, cn, a, b)\n        cf, kf = os.path.join(_tmp, label + \".crt\"), os.path.join(_tmp, label + \".key\")\n        open(cf, \"wb\").write(cert.public_bytes(serialization.Encoding.PEM))\n        open(kf, \"wb\").write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))\n        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)\n        ctx.minimum_version = ssl.TLSVersion.TLSv1_2\n        ctx.maximum_version = maxv\n        ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n        ctx.load_cert_chain(cf, kf)\n        sock = bind_free()\n        def serve(s=sock, c=ctx):\n            while True:\n                try:\n                    conn, _ = s.accept()\n                except OSError:\n                    return\n                try:\n                    with c.wrap_socket(conn, server_side=True) as t:\n                        t.settimeout(1)\n                except Exception:\n                    pass\n        threading.Thread(target=serve, daemon=True).start()\n        servers[label] = sock.getsockname()[1]\n    return servers\n\ndef probe(port, minv=None, maxv=None):\n    \"\"\"TLS client handshake to 127.0.0.1:port; returns (version, cipher, DER certificate) or None if the server refuses\"\"\"\n    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)\n    ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE\n    ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n    ctx.minimum_version = minv or ssl.TLSVersion.MINIMUM_SUPPORTED\n    if maxv: ctx.maximum_version = maxv\n    try:\n        with socket.create_connection((\"127.0.0.1\", port), timeout=3) as raw:\n            with ctx.wrap_socket(raw) as t:\n                return t.version(), t.cipher()[0], t.getpeercert(binary_form=True)\n    except (ssl.SSLError, OSError):\n        return None\n\ndef describe_key(cert):\n    pk = cert.public_key()\n    if isinstance(pk, rsa.RSAPublicKey): return \"RSA\", pk.key_size\n    if isinstance(pk, ec.EllipticCurvePublicKey): return \"EC \" + pk.curve.name, pk.key_size\n    if isinstance(pk, ed25519.Ed25519PublicKey): return \"Ed25519\", 256\n    return type(pk).__name__, 0\n\ndef start_plain(payload):\n    \"\"\"a non-TLS service that sends 'payload' bytes to every client and closes (used for banner and SSH-style discovery)\"\"\"\n    sock = bind_free()\n    def serve():\n        while True:\n            try:\n                conn, _ = sock.accept()\n            except OSError:\n                return\n            try:\n                conn.sendall(payload)\n            except OSError:\n                pass\n            conn.close()\n    threading.Thread(target=serve, daemon=True).start()\n    return sock.getsockname()[1]\n# Phase 4, Risk-rank: score the lab assets from OBSERVED algorithms plus the DEMO business mapping, using the interval method of E3.3 (an unknown input widens the range).\nservers = start_lab()\nBUSINESS = {\"web.lab.test\": (\"moderate\", 7, 4), \"billing.lab.test\": (\"high\", 10, 5), \"api.lab.test\": (\"moderate\", 3, 4), \"intra.lab.test\": (\"low\", 2, 2)}   # impact, years, criticality (DEMO DATA); edge.lab.test unmapped\nW = {\"algorithm\": 0.25, \"sensitivity\": 0.20, \"lifetime\": 0.25, \"exposure\": 0.15, \"criticality\": 0.15}\nIMPACT = {\"low\": 1 / 3, \"moderate\": 2 / 3, \"high\": 1.0}\ndef algorithm_factor(version, cipher, alg, size):\n    \"\"\"observed facts only. TLS 1.3 key-exchange group is not read, so the key-exchange part is UNKNOWN and the factor is an interval\"\"\"\n    auth = 1.0 if (alg == \"RSA\" and size < 2048) else 0.6\n    if version == \"TLSv1.3\": return (0.8 * auth, max(1.0, 0.8 * auth))\n    kex = 1.0 if not cipher.startswith((\"ECDHE\", \"DHE\")) else 0.7\n    v = max(kex, 0.8 * auth); return (v, v)\nrows = []\nfor label, port in servers.items():\n    version, cipher, der = probe(port)\n    c = x509.load_der_x509_certificate(der); alg, size = describe_key(c)\n    cn = c.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value\n    a_lo, a_hi = algorithm_factor(version, cipher, alg, size)\n    imp = BUSINESS.get(cn)\n    s_lo = s_hi = IMPACT[imp[0]] if imp else None\n    l_lo = l_hi = min(1.0, imp[1] / 30) if imp else None\n    k_lo = k_hi = imp[2] / 5 if imp else None\n    def span(lo, hi):\n        return (lo if lo is not None else 0.0, hi if hi is not None else 1.0)\n    f = {\"algorithm\": (a_lo, a_hi), \"sensitivity\": span(s_lo, s_hi), \"lifetime\": span(l_lo, l_hi), \"exposure\": (1.0, 1.0), \"criticality\": span(k_lo, k_hi)}\n    lo = 100 * sum(W[k] * f[k][0] for k in W); hi = 100 * sum(W[k] * f[k][1] for k in W)\n    rows.append((label, version, f\"{alg} {size}\", lo, hi, imp is None))\nprint(\"DEMO business inputs, OBSERVED algorithms. exposure is set to 1.0 (all lab services are reachable)\")\nprint(f\"{'asset':<16} {'protocol':<9} {'auth key':<14} {'score range':>13}  note\")\nfor label, version, key, lo, hi, nomap in sorted(rows, key=lambda r: -r[4]):\n    note = []\n    if version == \"TLSv1.3\": note.append(\"TLS 1.3 key-exchange group not read: range widened\")\n    if nomap: note.append(\"no business mapping: sensitivity, lifetime and criticality unknown\")\n    print(f\"{label:<16} {version:<9} {key:<14} {lo:>6.1f}-{hi:<6.1f}  {'; '.join(note)}\")\nprint()\nprint(\"reading: legacy-billing has the highest firm score (RSA-1024 authentication, high impact, long lifetime, TLS 1.2 without a post-quantum option). The TLS 1.3 services have ranges, not points, because the group (classical X25519 or hybrid X25519MLKEM768) was not observed: reading it is the next discovery step (a raw handshake probe), after which the ranges collapse\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-risk-rank",
+              "language": "text",
+              "code": "DEMO business inputs, OBSERVED algorithms. exposure is set to 1.0 (all lab services are reachable)\nasset            protocol  auth key         score range  note\nedge-device      TLSv1.3   Ed25519 256      27.0-100.0   TLS 1.3 key-exchange group not read: range widened; no business mapping: sensitivity, lifetime and criticality unknown\nlegacy-billing   TLSv1.2   RSA 1024         78.3-78.3    \nweb-front        TLSv1.3   RSA 2048         58.2-71.2    TLS 1.3 key-exchange group not read: range widened\napi-gateway      TLSv1.3   EC secp256r1 256   54.8-67.8    TLS 1.3 key-exchange group not read: range widened\nold-intranet     TLSv1.2   RSA 2048         46.8-46.8    \n\nreading: legacy-billing has the highest firm score (RSA-1024 authentication, high impact, long lifetime, TLS 1.2 without a post-quantum option). The TLS 1.3 services have ranges, not points, because the group (classical X25519 or hybrid X25519MLKEM768) was not observed: reading it is the next discovery step (a raw handshake probe), after which the ranges collapse",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**legacy-billing** has the highest firm score, 78.3 (RSA-1024 authentication, high impact, TLS 1.2 without a post-quantum option). **web-front** scores 58.2 to 71.2 and **api-gateway** 54.8 to 67.8: ranges, because the group of their TLS 1.3 key exchange was not observed. **old-intranet** scores 46.8 (firm), and **edge-device** 27.0 to 100.0, a range that spans almost everything because it is both unmapped and TLS 1.3: the interval says that nothing can be said yet. The ranking therefore has a firm head (billing), a middle with overlapping ranges and a tail of unknowns.\n\n**What to do with the ranges.** The next discovery step (a raw handshake probe that reads the group, as the Q-CAPS scanner does) collapses the TLS 1.3 intervals to points, and the owner of edge-device must supply its business mapping. **The ranking is a work list for evidence as well as for migration.** **Common mistake:** giving unobserved factors a default value so that the table looks complete."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why do TLS 1.3 services get a score range in the lab?",
+              "options": [
+                "The key-exchange group was not observed, and it decides HNDL exposure",
+                "TLS 1.3 is unscorable",
+                "Ranges are standard"
+              ],
+              "correct_index": 0,
+              "explanation": "web-front 58.2 to 71.2."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the next discovery step that collapses those ranges?",
+              "options": [
+                "Reading the negotiated group with a raw handshake probe",
+                "Buying a new server",
+                "Raising the weights"
+              ],
+              "correct_index": 0,
+              "explanation": "The group distinguishes classical from hybrid."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why does edge-device have a range of 27.0 to 100.0?",
+              "options": [
+                "It is unmapped and TLS 1.3, so several factors are unknown",
+                "It is broken",
+                "It has the lowest risk"
+              ],
+              "correct_index": 0,
+              "explanation": "The interval says nothing can be concluded yet."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 5 (the prescriptive approach: Step 1 Discover the Cryptographic Inventory, Step 2 Assess the Risk and Prioritize Remediation, Step 3 Design a Crypto-Agile Architecture, Step 4 Migrate to Quantum-Safe Cryptography, Step 5 Ongoing Monitoring, Compliance, and Adaptation)"
+            },
+            {
+              "book": "B26",
+              "locator": "NIST SP 800-30 Rev. 1: Section 3.2 (determining risk and treating uncertainty)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Weights, factor mappings and the business inputs are DEMO assumptions; the algorithm facts come from live handshakes with the lab."
+          }
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "5.5 Select PQC",
+          "summary": "A written decision procedure from requirements to ML-KEM, ML-DSA or SLH-DSA with the reason printed, the size trade-offs, and the status of HQC.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Selecting algorithms is a **decision with stated reasons**. For **key establishment** the standardised choice is ML-KEM (FIPS 203) in the parameter set that matches the security category (ML-KEM-768 is the common default, ML-KEM-1024 for 256-bit policies), combined with a classical component during the transition (5.9). For **signatures** the general-purpose standard is ML-DSA (FIPS 204: ML-DSA-44, -65 and -87), and for signatures that must stay valid for decades or that should not rest on a lattice assumption, **SLH-DSA** (FIPS 205) rests only on hash-function security at the price of much larger signatures (7,856 bytes for the small SHA2-128s set).\n\nThe listing encodes the procedure as code with the reason printed for each choice and applies it to five requirements, including a signature budget of 128 bytes for a meter and a 15-year firmware root. The sizes printed are those of the standards. Discovery, inventory, classification, ranking, prototype, monitoring and hybrid listings run against the same **local lab** as module E2 (TLS and plain services on 127.0.0.1, this machine only, ports 47100 upwards) or against real cryptographic code. Business inputs (owners, impact, lifetimes), waves, freeze windows, pilot failure rates and traffic logs are **DEMO DATA / SIMULATION**, labelled where used. Nothing here is a finding about a real organisation."
+            },
+            {
+              "type": "code",
+              "id": "c-select-pqc",
+              "language": "python",
+              "code": "from dataclasses import dataclass\n# Phase 5, Select PQC: a written decision procedure from requirements to algorithm, with the reason printed for each choice. Sizes are bytes from the NIST standards (FIPS 203, 204, 205).\nSIZES = {\"ML-KEM-768\": \"public key 1184, ciphertext 1088\", \"ML-KEM-1024\": \"public key 1568, ciphertext 1568\", \"ML-DSA-44\": \"public key 1312, signature 2420\",\n         \"ML-DSA-65\": \"public key 1952, signature 3309\", \"ML-DSA-87\": \"public key 2592, signature 4627\", \"SLH-DSA-SHA2-128s\": \"public key 32, signature 7856\", \"SLH-DSA-SHA2-128f\": \"public key 32, signature 17088\"}\n@dataclass\nclass Need:\n    name: str\n    purpose: str                 # \"key establishment\" or \"signature\"\n    strength: int = 128          # classical-equivalent security strength wanted: 128, 192 or 256\n    sig_budget: int = 10 ** 9    # largest tolerable signature in bytes\n    verify_only_device: bool = False\n    long_lived_root: bool = False  # signatures that must stay valid for decades (firmware roots, CA roots)\n    must_be_hybrid: bool = True\ndef select(n):\n    why = []\n    if n.purpose == \"key establishment\":\n        alg = \"ML-KEM-1024\" if n.strength >= 256 else \"ML-KEM-768\"\n        why.append(\"FIPS 203 is the standardised KEM; \" + (\"category 5 for 256-bit strength\" if alg.endswith(\"1024\") else \"category 3 is the common default\"))\n        if n.must_be_hybrid:\n            alg = \"X25519+\" + alg; why.append(\"combined with X25519 during the transition: secure if either component holds (E5.9)\")\n        return alg, why\n    if n.long_lived_root:\n        why.append(\"a long-lived root should not depend on one mathematical assumption: SLH-DSA (hash-based, FIPS 205) rests only on hash security\")\n        alg = \"SLH-DSA-SHA2-128s\" if n.sig_budget >= 7856 else None\n        if alg is None: why.append(f\"BUT the signature budget of {n.sig_budget} bytes is below 7856: no SLH-DSA parameter set fits; use ML-DSA with a short-lived key chain or revise the format\")\n        return alg or \"ML-DSA-65 (budget forces the trade-off)\", why\n    order = [(\"ML-DSA-44\", 2420), (\"ML-DSA-65\", 3309), (\"ML-DSA-87\", 4627)]\n    want = {128: \"ML-DSA-44\", 192: \"ML-DSA-65\", 256: \"ML-DSA-87\"}[n.strength]\n    sig = dict(order)[want]\n    why.append(\"FIPS 204 (ML-DSA) is the general-purpose standardised signature\")\n    if sig > n.sig_budget: why.append(f\"BUT its signature of {sig} bytes exceeds the budget of {n.sig_budget}: the format must change first (E4.8)\")\n    return want, why\nneeds = [\n    Need(\"TLS key exchange for the web front end\", \"key establishment\"),\n    Need(\"backup key wrapping, 256-bit policy\", \"key establishment\", strength=256),\n    Need(\"internal service signatures\", \"signature\", strength=192),\n    Need(\"firmware signing root, 15-year device life\", \"signature\", long_lived_root=True, sig_budget=16384),\n    Need(\"meter firmware, 128-byte header field\", \"signature\", long_lived_root=True, sig_budget=128),\n]\nfor n in needs:\n    alg, why = select(n)\n    print(f\"== {n.name}\\n   choice: {alg}\")\n    for w in why: print(\"   -\", w)\nprint()\nprint(\"sizes:\")\nfor k, v in SIZES.items(): print(f\"  {k:<20} {v}\")\nprint()\nprint(\"status of the standards (as of NIST IR 8545 on this module's sources): HQC was selected in March 2025 as a backup key-establishment algorithm and a standard is to be developed; until published, deployments use ML-KEM\")\nprint(\"the procedure is a starting point: it records requirements and reasons so that a reviewer can challenge them; final choices also depend on library support, certification (FIPS 140-3 validation) and interoperability with partners\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-select-pqc",
+              "language": "text",
+              "code": "== TLS key exchange for the web front end\n   choice: X25519+ML-KEM-768\n   - FIPS 203 is the standardised KEM; category 3 is the common default\n   - combined with X25519 during the transition: secure if either component holds (E5.9)\n== backup key wrapping, 256-bit policy\n   choice: X25519+ML-KEM-1024\n   - FIPS 203 is the standardised KEM; category 5 for 256-bit strength\n   - combined with X25519 during the transition: secure if either component holds (E5.9)\n== internal service signatures\n   choice: ML-DSA-65\n   - FIPS 204 (ML-DSA) is the general-purpose standardised signature\n== firmware signing root, 15-year device life\n   choice: SLH-DSA-SHA2-128s\n   - a long-lived root should not depend on one mathematical assumption: SLH-DSA (hash-based, FIPS 205) rests only on hash security\n== meter firmware, 128-byte header field\n   choice: ML-DSA-65 (budget forces the trade-off)\n   - a long-lived root should not depend on one mathematical assumption: SLH-DSA (hash-based, FIPS 205) rests only on hash security\n   - BUT the signature budget of 128 bytes is below 7856: no SLH-DSA parameter set fits; use ML-DSA with a short-lived key chain or revise the format\n\nsizes:\n  ML-KEM-768           public key 1184, ciphertext 1088\n  ML-KEM-1024          public key 1568, ciphertext 1568\n  ML-DSA-44            public key 1312, signature 2420\n  ML-DSA-65            public key 1952, signature 3309\n  ML-DSA-87            public key 2592, signature 4627\n  SLH-DSA-SHA2-128s    public key 32, signature 7856\n  SLH-DSA-SHA2-128f    public key 32, signature 17088\n\nstatus of the standards (as of NIST IR 8545 on this module's sources): HQC was selected in March 2025 as a backup key-establishment algorithm and a standard is to be developed; until published, deployments use ML-KEM\nthe procedure is a starting point: it records requirements and reasons so that a reviewer can challenge them; final choices also depend on library support, certification (FIPS 140-3 validation) and interoperability with partners",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The web front end gets **X25519+ML-KEM-768** (the common default, hybrid for the transition), the 256-bit backup policy **X25519+ML-KEM-1024**, the internal service signatures **ML-DSA-65**, and the 15-year firmware root **SLH-DSA-SHA2-128s**, with the reason that a long-lived root should not rest on a single mathematical assumption. The meter with a 128-byte header field exposes the tension: no SLH-DSA set fits (7,856 bytes at least) and even ML-DSA exceeds the budget, so the procedure reports that the **format must change** or a short-lived key chain must be used: the algorithm decision cannot be separated from the hardware limits of E4.8.\n\n**Status of the standards.** NIST IR 8545 reports that HQC was selected in March 2025 for standardisation as a backup key-establishment algorithm and that a standard will be developed; until it exists, deployments use ML-KEM. **Beyond the algorithm:** library support, FIPS 140-3 validation, partner interoperability and the performance measured in 5.7 all enter the final decision, and the written requirements make the choice challengeable. **Common mistake:** choosing the largest parameter set \"to be safe\" without checking sizes and budgets."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is SLH-DSA suggested for a long-lived signing root?",
+              "options": [
+                "It rests only on hash-function security, not on a lattice assumption",
+                "It has small signatures",
+                "It is the fastest"
+              ],
+              "correct_index": 0,
+              "explanation": "At the price of 7,856-byte signatures for the small set."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What happens when the signature budget is 128 bytes?",
+              "options": [
+                "No post-quantum signature fits: the format must change or a key chain be used",
+                "ML-DSA-44 fits",
+                "Use RSA"
+              ],
+              "correct_index": 0,
+              "explanation": "All standardised post-quantum signatures exceed 2 KB."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does NIST IR 8545 say about HQC?",
+              "options": [
+                "It was selected in March 2025 for standardisation as a backup key-establishment algorithm",
+                "It is the primary standard",
+                "It was withdrawn"
+              ],
+              "correct_index": 0,
+              "explanation": "Until the standard exists, use ML-KEM."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203 (ML-KEM): parameter sets and sizes"
+            },
+            {
+              "book": "B92",
+              "locator": "FIPS 204 (ML-DSA): parameter sets and sizes"
+            },
+            {
+              "book": "B93",
+              "locator": "FIPS 205 (SLH-DSA): parameter table with signature sizes"
+            },
+            {
+              "book": "B94",
+              "locator": "NIST IR 8545: the selection of HQC (March 2025)"
+            },
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 5 (the prescriptive approach: Step 1 Discover the Cryptographic Inventory, Step 2 Assess the Risk and Prioritize Remediation, Step 3 Design a Crypto-Agile Architecture, Step 4 Migrate to Quantum-Safe Cryptography, Step 5 Ongoing Monitoring, Compliance, and Adaptation)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The decision rules are the lesson's own procedure and not a standard. Sizes for ML-DSA-44, -65, -87 and ML-KEM were checked against the cryptography library; SLH-DSA sizes against the FIPS 205 table."
+          }
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "5.6 Prototype",
+          "summary": "A loopback client and server that exchange KEM public keys and ciphertexts and then protected data, used to find size, framing and failure-behaviour surprises early.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **prototype** is a small, controlled implementation that answers integration questions before any production commitment: do the larger messages fit the protocol fields and buffers, how does failure show up, what must both ends agree on beforehand. It applies the implementation practices of module C9 (constant-time primitives from a maintained library, no custom crypto) to a toy protocol.\n\nThe listing builds a **client and server over loopback TCP** using the KEM layer of E4.1: the server sends its public key, the client answers with a ciphertext, both derive an AES-256-GCM key and the client sends one protected message. It runs this for X25519, ECDH-P256, ML-KEM-768 and the hybrid, prints the sizes of each flight and the number of TCP segments they need at an MSS of 1460 bytes, and demonstrates how a corrupted ML-KEM ciphertext behaves. Discovery, inventory, classification, ranking, prototype, monitoring and hybrid listings run against the same **local lab** as module E2 (TLS and plain services on 127.0.0.1, this machine only, ports 47100 upwards) or against real cryptographic code. Business inputs (owners, impact, lifetimes), waves, freeze windows, pilot failure rates and traffic logs are **DEMO DATA / SIMULATION**, labelled where used. Nothing here is a finding about a real organisation."
+            },
+            {
+              "type": "code",
+              "id": "c-prototype",
+              "language": "python",
+              "code": "import hashlib, os\nfrom cryptography.hazmat.primitives.asymmetric import ec, mlkem, x25519\nfrom cryptography.hazmat.primitives import serialization\n\n# ---- one interface, several algorithms: callers only see generate / encaps / decaps and a name ----\nclass KEM:\n    name = \"abstract\"\n    def generate(self): raise NotImplementedError          # -> (public key bytes, secret key object)\n    def encaps(self, pk): raise NotImplementedError        # -> (ciphertext, shared secret)\n    def decaps(self, sk, ct): raise NotImplementedError    # -> shared secret\n\ndef _kdf(*parts):\n    h = hashlib.sha3_256()\n    for p in parts: h.update(len(p).to_bytes(4, \"big\") + p)\n    return h.digest()\n\nclass X25519KEM(KEM):\n    name = \"X25519\"\n    def generate(self):\n        sk = x25519.X25519PrivateKey.generate()\n        return sk.public_key().public_bytes_raw(), sk\n    def encaps(self, pk):\n        eph = x25519.X25519PrivateKey.generate()\n        ss = eph.exchange(x25519.X25519PublicKey.from_public_bytes(pk)); ct = eph.public_key().public_bytes_raw()\n        return ct, _kdf(b\"x25519\", ss, ct, pk)\n    def decaps(self, sk, ct):\n        ss = sk.exchange(x25519.X25519PublicKey.from_public_bytes(ct))\n        return _kdf(b\"x25519\", ss, ct, sk.public_key().public_bytes_raw())\n\nclass P256KEM(KEM):\n    name = \"ECDH-P256\"\n    def generate(self):\n        sk = ec.generate_private_key(ec.SECP256R1())\n        return sk.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint), sk\n    def encaps(self, pk):\n        eph = ec.generate_private_key(ec.SECP256R1())\n        peer = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), pk)\n        ct = eph.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)\n        return ct, _kdf(b\"p256\", eph.exchange(ec.ECDH(), peer), ct, pk)\n    def decaps(self, sk, ct):\n        peer = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), ct)\n        pk = sk.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)\n        return _kdf(b\"p256\", sk.exchange(ec.ECDH(), peer), ct, pk)\n\nclass MLKEM768KEM(KEM):\n    name = \"ML-KEM-768\"\n    def generate(self):\n        sk = mlkem.MLKEM768PrivateKey.generate()\n        return sk.public_key().public_bytes_raw(), sk\n    def encaps(self, pk):\n        ss, ct = mlkem.MLKEM768PublicKey.from_public_bytes(pk).encapsulate()\n        return ct, ss\n    def decaps(self, sk, ct):\n        return sk.decapsulate(ct)\n\nclass HybridKEM(KEM):\n    \"\"\"classical + post-quantum: the secret is safe if EITHER component holds (illustrative combiner; deployed hybrids follow the IETF specifications)\"\"\"\n    def __init__(self, a, b):\n        self.a, self.b = a, b\n        self.name = f\"{a.name}+{b.name}\"\n    def generate(self):\n        pa, sa = self.a.generate(); pb, sb = self.b.generate()\n        return len(pa).to_bytes(4, \"big\") + pa + pb, (sa, sb, len(pa))\n    def encaps(self, pk):\n        n = int.from_bytes(pk[:4], \"big\"); pa, pb = pk[4:4 + n], pk[4 + n:]\n        ca, ssa = self.a.encaps(pa); cb, ssb = self.b.encaps(pb)\n        return len(ca).to_bytes(4, \"big\") + ca + cb, _kdf(b\"hybrid\", ssa, ssb, ca, cb)\n    def decaps(self, sk, ct):\n        sa, sb, _ = sk\n        n = int.from_bytes(ct[:4], \"big\"); ca, cb = ct[4:4 + n], ct[4 + n:]\n        return _kdf(b\"hybrid\", self.a.decaps(sa, ca), self.b.decaps(sb, cb), ca, cb)\n\nREGISTRY = {k.name: k for k in (X25519KEM(), P256KEM(), MLKEM768KEM(), HybridKEM(X25519KEM(), MLKEM768KEM()))}\nimport socket, threading\nfrom cryptography.hazmat.primitives.ciphers.aead import AESGCM\n# Phase 6, Prototype: a tiny client/server exchange over loopback TCP using the KEM layer, to find integration problems early (message sizes, framing, failure behaviour).\ndef send_msg(sock, data): sock.sendall(len(data).to_bytes(4, \"big\") + data)\ndef recv_exact(sock, n):\n    buf = b\"\"\n    while len(buf) < n:\n        chunk = sock.recv(n - len(buf))\n        if not chunk: raise ConnectionError(\"peer closed\")\n        buf += chunk\n    return buf\ndef recv_msg(sock): return recv_exact(sock, int.from_bytes(recv_exact(sock, 4), \"big\"))\ndef run(alg_name):\n    kem = REGISTRY[alg_name]\n    srv = socket.socket(); srv.bind((\"127.0.0.1\", 0)); srv.listen(1); port = srv.getsockname()[1]\n    result = {}\n    def server():\n        c, _ = srv.accept()\n        pk, sk = kem.generate()\n        send_msg(c, pk)                                   # server flight: public key\n        ct = recv_msg(c)                                  # client flight: ciphertext\n        key = kem.decaps(sk, ct)\n        nonce = recv_exact(c, 12); body = recv_msg(c)\n        result[\"server_got\"] = AESGCM(key).decrypt(nonce, body, b\"proto-v1\")\n        c.close()\n    t = threading.Thread(target=server); t.start()\n    cl = socket.create_connection((\"127.0.0.1\", port), timeout=5)\n    pk = recv_msg(cl)\n    ct, key = kem.encaps(pk)\n    send_msg(cl, ct)\n    nonce = os.urandom(12)\n    cl.sendall(nonce); send_msg(cl, AESGCM(key).encrypt(nonce, b\"hello from the prototype\", b\"proto-v1\"))\n    cl.close(); t.join(); srv.close()\n    return len(pk), len(ct), result.get(\"server_got\")\nMSS = 1460          # typical TCP payload per segment on Ethernet (assumption stated in the output)\nprint(f\"{'algorithm':<22} {'server flight (B)':>17} {'client flight (B)':>17} {'segments (MSS 1460)':>20}  application data arrived\")\nfor name in (\"X25519\", \"ECDH-P256\", \"ML-KEM-768\", \"X25519+ML-KEM-768\"):\n    a, b, got = run(name)\n    segs = lambda n: -(-(n + 4) // MSS)\n    print(f\"{name:<22} {a:>17} {b:>17} {segs(a) + segs(b):>20}  {got!r}\")\nprint()\nprint(\"findings from the prototype that would be invisible on paper:\")\nprint(\"  1. each post-quantum flight is about 1.2 KB: one segment here, but with little margin. A server flight that also carries a certificate chain would span several segments:\", -(-(1220 + 4 + 5500) // MSS), \"segments with an ML-DSA-65 certificate of about 5.5 KB (E4.5); devices or middleboxes with small buffers or fragment-intolerant paths must be tested\")\nprint(\"  2. any protocol field sized for 32 or 65 bytes breaks silently or truncates: the framing here uses a 4-byte length for that reason\")\nprint(\"  3. both ends must agree on the algorithm BEFORE the exchange: the prototype takes it from configuration on both sides; a real protocol negotiates it (E4.6)\")\ntry:\n    a, b, got = run(\"ML-KEM-768\")\n    k = REGISTRY[\"ML-KEM-768\"]; pk, sk = k.generate(); ct, _ = k.encaps(pk); bad = bytearray(ct); bad[0] ^= 1\n    print(\"  4. a corrupted ciphertext does NOT raise an error in ML-KEM: it yields a different secret (implicit rejection), so the failure appears later as an authentication error:\", k.decaps(sk, bytes(bad)) != k.decaps(sk, ct))\nexcept Exception as e:\n    print(\"unexpected:\", e)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-prototype",
+              "language": "text",
+              "code": "algorithm              server flight (B) client flight (B)  segments (MSS 1460)  application data arrived\nX25519                                32                32                    2  b'hello from the prototype'\nECDH-P256                             65                65                    2  b'hello from the prototype'\nML-KEM-768                          1184              1088                    2  b'hello from the prototype'\nX25519+ML-KEM-768                   1220              1124                    2  b'hello from the prototype'\n\nfindings from the prototype that would be invisible on paper:\n  1. each post-quantum flight is about 1.2 KB: one segment here, but with little margin. A server flight that also carries a certificate chain would span several segments: 5 segments with an ML-DSA-65 certificate of about 5.5 KB (E4.5); devices or middleboxes with small buffers or fragment-intolerant paths must be tested\n  2. any protocol field sized for 32 or 65 bytes breaks silently or truncates: the framing here uses a 4-byte length for that reason\n  3. both ends must agree on the algorithm BEFORE the exchange: the prototype takes it from configuration on both sides; a real protocol negotiates it (E4.6)\n  4. a corrupted ciphertext does NOT raise an error in ML-KEM: it yields a different secret (implicit rejection), so the failure appears later as an authentication error: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The flights are 32 and 32 bytes (X25519), 65 and 65 (ECDH-P256), 1184 and 1088 (ML-KEM-768) and **1220 and 1124 bytes for the hybrid**; every variant needs two segments in total at MSS 1460, and the protected application data arrives intact in all four. The findings that paper analysis would miss: (1) the post-quantum flights are about 1.2 KB each, still one segment but with little margin, and a server flight that also carries an ML-DSA-65 certificate (about 5.5 KB, E4.5) would need **five segments**, so devices or middleboxes with small buffers or fragmentation problems must be tested; (2) any protocol field sized for 32 or 65 bytes truncates or breaks, which is why the framing uses a 4-byte length; (3) both ends must agree on the algorithm **before** the exchange; (4) a corrupted ML-KEM ciphertext does **not** raise an error: ML-KEM's implicit rejection yields a different secret, so the failure appears later as an authentication failure of the data channel.\n\n**Use of a prototype.** It is evidence for decisions (message sizes, buffers, error handling), not a production design: no negotiation, no authentication of the exchange, no certificates. **Common mistake:** moving a prototype into production because \"it worked in the demo\"."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does a corrupted ML-KEM ciphertext do on decapsulation?",
+              "options": [
+                "It yields a different secret (implicit rejection) instead of raising an error",
+                "It raises an exception",
+                "It returns zeros"
+              ],
+              "correct_index": 0,
+              "explanation": "The failure shows up later as an authentication error."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why must prototype message framing use a length field?",
+              "options": [
+                "Post-quantum messages are much larger than 32 or 65 bytes",
+                "TCP requires it",
+                "KEM ciphertexts are variable"
+              ],
+              "correct_index": 0,
+              "explanation": "Fixed small fields truncate."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What would a server flight with an ML-DSA-65 certificate need at MSS 1460?",
+              "options": [
+                "About five segments",
+                "One segment",
+                "Two segments"
+              ],
+              "correct_index": 0,
+              "explanation": "1220 plus about 5500 bytes."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 5 (the prescriptive approach: Step 1 Discover the Cryptographic Inventory, Step 2 Assess the Risk and Prioritize Remediation, Step 3 Design a Crypto-Agile Architecture, Step 4 Migrate to Quantum-Safe Cryptography, Step 5 Ongoing Monitoring, Compliance, and Adaptation)"
+            },
+            {
+              "book": "B04",
+              "locator": "FIPS 203 (ML-KEM): implicit rejection in the decapsulation algorithm"
+            },
+            {
+              "book": "B100",
+              "locator": "cryptography documentation: ML-KEM and AEAD interfaces"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The prototype is not a protocol design (no negotiation or authentication). The MSS value is an assumption for Ethernet. The segment count for an ML-DSA certificate uses the approximate certificate size measured in E4.5."
+          }
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "5.7 Benchmark",
+          "summary": "A benchmarking method (warm-up, repeats, median and interquartile range, stated hardware) applied to key establishment and signatures; the timings are one run, not a result to quote.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Benchmarks decide whether a migration is operationally acceptable (CPU headroom, latency), so the **method** matters more than any single number: warm up, repeat many times, report the **median and the interquartile range** (not the best run), state the hardware and library versions, and never compare single measurements. The question at this phase is the organisation's own: what does the change cost on **our systems under our load**.\n\nThe listing measures, on this machine, key generation, encapsulation and decapsulation for X25519, ML-KEM-768 and the hybrid, and signing and verification for ECDSA-P256 and ML-DSA-65, with 30 warm-up runs and 300 timed repeats per operation. The listing is marked as not re-run in the build check because the timings differ from run to run; the output shown is from one run on the authoring machine. Discovery, inventory, classification, ranking, prototype, monitoring and hybrid listings run against the same **local lab** as module E2 (TLS and plain services on 127.0.0.1, this machine only, ports 47100 upwards) or against real cryptographic code. Business inputs (owners, impact, lifetimes), waves, freeze windows, pilot failure rates and traffic logs are **DEMO DATA / SIMULATION**, labelled where used. Nothing here is a finding about a real organisation."
+            },
+            {
+              "type": "code",
+              "id": "c-benchmark",
+              "language": "python",
+              "code": "import hashlib, os\nfrom cryptography.hazmat.primitives.asymmetric import ec, mlkem, x25519\nfrom cryptography.hazmat.primitives import serialization\n\n# ---- one interface, several algorithms: callers only see generate / encaps / decaps and a name ----\nclass KEM:\n    name = \"abstract\"\n    def generate(self): raise NotImplementedError          # -> (public key bytes, secret key object)\n    def encaps(self, pk): raise NotImplementedError        # -> (ciphertext, shared secret)\n    def decaps(self, sk, ct): raise NotImplementedError    # -> shared secret\n\ndef _kdf(*parts):\n    h = hashlib.sha3_256()\n    for p in parts: h.update(len(p).to_bytes(4, \"big\") + p)\n    return h.digest()\n\nclass X25519KEM(KEM):\n    name = \"X25519\"\n    def generate(self):\n        sk = x25519.X25519PrivateKey.generate()\n        return sk.public_key().public_bytes_raw(), sk\n    def encaps(self, pk):\n        eph = x25519.X25519PrivateKey.generate()\n        ss = eph.exchange(x25519.X25519PublicKey.from_public_bytes(pk)); ct = eph.public_key().public_bytes_raw()\n        return ct, _kdf(b\"x25519\", ss, ct, pk)\n    def decaps(self, sk, ct):\n        ss = sk.exchange(x25519.X25519PublicKey.from_public_bytes(ct))\n        return _kdf(b\"x25519\", ss, ct, sk.public_key().public_bytes_raw())\n\nclass P256KEM(KEM):\n    name = \"ECDH-P256\"\n    def generate(self):\n        sk = ec.generate_private_key(ec.SECP256R1())\n        return sk.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint), sk\n    def encaps(self, pk):\n        eph = ec.generate_private_key(ec.SECP256R1())\n        peer = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), pk)\n        ct = eph.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)\n        return ct, _kdf(b\"p256\", eph.exchange(ec.ECDH(), peer), ct, pk)\n    def decaps(self, sk, ct):\n        peer = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), ct)\n        pk = sk.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)\n        return _kdf(b\"p256\", sk.exchange(ec.ECDH(), peer), ct, pk)\n\nclass MLKEM768KEM(KEM):\n    name = \"ML-KEM-768\"\n    def generate(self):\n        sk = mlkem.MLKEM768PrivateKey.generate()\n        return sk.public_key().public_bytes_raw(), sk\n    def encaps(self, pk):\n        ss, ct = mlkem.MLKEM768PublicKey.from_public_bytes(pk).encapsulate()\n        return ct, ss\n    def decaps(self, sk, ct):\n        return sk.decapsulate(ct)\n\nclass HybridKEM(KEM):\n    \"\"\"classical + post-quantum: the secret is safe if EITHER component holds (illustrative combiner; deployed hybrids follow the IETF specifications)\"\"\"\n    def __init__(self, a, b):\n        self.a, self.b = a, b\n        self.name = f\"{a.name}+{b.name}\"\n    def generate(self):\n        pa, sa = self.a.generate(); pb, sb = self.b.generate()\n        return len(pa).to_bytes(4, \"big\") + pa + pb, (sa, sb, len(pa))\n    def encaps(self, pk):\n        n = int.from_bytes(pk[:4], \"big\"); pa, pb = pk[4:4 + n], pk[4 + n:]\n        ca, ssa = self.a.encaps(pa); cb, ssb = self.b.encaps(pb)\n        return len(ca).to_bytes(4, \"big\") + ca + cb, _kdf(b\"hybrid\", ssa, ssb, ca, cb)\n    def decaps(self, sk, ct):\n        sa, sb, _ = sk\n        n = int.from_bytes(ct[:4], \"big\"); ca, cb = ct[4:4 + n], ct[4 + n:]\n        return _kdf(b\"hybrid\", self.a.decaps(sa, ca), self.b.decaps(sb, cb), ca, cb)\n\nREGISTRY = {k.name: k for k in (X25519KEM(), P256KEM(), MLKEM768KEM(), HybridKEM(X25519KEM(), MLKEM768KEM()))}\nimport platform, statistics, time\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import ec, mldsa\n# Phase 7, Benchmark: method first. Warm up, repeat many times, report the MEDIAN and the interquartile range, state the machine, and never compare a single run.\ndef bench(fn, repeats=300, warmup=30):\n    for _ in range(warmup): fn()\n    samples = []\n    for _ in range(repeats):\n        t = time.perf_counter_ns(); fn(); samples.append(time.perf_counter_ns() - t)\n    q = statistics.quantiles(samples, n=4)\n    return statistics.median(samples) / 1000, (q[2] - q[0]) / 1000      # microseconds\nprint(f\"machine: {platform.processor() or platform.machine()}, Python {platform.python_version()}, cryptography library (OpenSSL backend); 300 timed repeats after 30 warm-up runs\")\nprint(f\"{'operation':<44} {'median (us)':>12} {'IQR (us)':>10}\")\nrows = []\nfor name in (\"X25519\", \"ML-KEM-768\", \"X25519+ML-KEM-768\"):\n    kem = REGISTRY[name]; pk, sk = kem.generate(); ct, _ = kem.encaps(pk)\n    rows += [(f\"{name} key generation\", bench(kem.generate)), (f\"{name} encapsulation\", bench(lambda: kem.encaps(pk))), (f\"{name} decapsulation\", bench(lambda: kem.decaps(sk, ct)))]\nek = ec.generate_private_key(ec.SECP256R1()); msg = b\"x\" * 1024\nesig = ek.sign(msg, ec.ECDSA(hashes.SHA256()))\ndk = mldsa.MLDSA65PrivateKey.generate(); dsig = dk.sign(msg)\nrows += [(\"ECDSA-P256 sign\", bench(lambda: ek.sign(msg, ec.ECDSA(hashes.SHA256())))), (\"ECDSA-P256 verify\", bench(lambda: ek.public_key().verify(esig, msg, ec.ECDSA(hashes.SHA256())))),\n         (\"ML-DSA-65 sign\", bench(lambda: dk.sign(msg))), (\"ML-DSA-65 verify\", bench(lambda: dk.public_key().verify(dsig, msg)))]\nfor n, (m, iqr) in rows: print(f\"{n:<44} {m:>12.1f} {iqr:>10.1f}\")\nprint()\nprint(\"what this does and does not show: relative cost on THIS machine for single operations; it does not show handshake latency (network round trips dominate), throughput under load, memory use, or behaviour on the organisation's real hardware: the benchmark phase repeats these measurements on the prototyped systems of 5.6 under realistic load\")\nprint(\"report format for a decision: median and IQR, hardware, software versions, repeat count, and the date; timings vary between runs and machines\")",
+              "caption": "Not run in the build check: timings vary between runs and machines. The output shown is from one run on the authoring machine."
+            },
+            {
+              "type": "code",
+              "id": "o-c-benchmark",
+              "language": "text",
+              "code": "machine: Intel64 Family 6 Model 186 Stepping 2, GenuineIntel, Python 3.14.6, cryptography library (OpenSSL backend); 300 timed repeats after 30 warm-up runs\noperation                                     median (us)   IQR (us)\nX25519 key generation                                39.5        1.3\nX25519 encapsulation                                 78.4       10.1\nX25519 decapsulation                                 53.6        8.8\nML-KEM-768 key generation                           190.0        9.7\nML-KEM-768 encapsulation                             62.0        2.5\nML-KEM-768 decapsulation                             63.2        4.5\nX25519+ML-KEM-768 key generation                    232.1       36.5\nX25519+ML-KEM-768 encapsulation                     149.2       16.3\nX25519+ML-KEM-768 decapsulation                     117.0       20.4\nECDSA-P256 sign                                      32.1        7.7\nECDSA-P256 verify                                    86.6       17.0\nML-DSA-65 sign                                      749.2      830.9\nML-DSA-65 verify                                    180.2        7.9\n\nwhat this does and does not show: relative cost on THIS machine for single operations; it does not show handshake latency (network round trips dominate), throughput under load, memory use, or behaviour on the organisation's real hardware: the benchmark phase repeats these measurements on the prototyped systems of 5.6 under realistic load\nreport format for a decision: median and IQR, hardware, software versions, repeat count, and the date; timings vary between runs and machines",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Read the output as shapes rather than values. ECDSA-P256 signing is the cheapest operation and ML-DSA-65 signing the most expensive and the **most variable** (its interquartile range is of the same order as its median, because the rejection-sampling signing algorithm takes a random number of attempts); verification of both is in the same order of magnitude. The ML-KEM-768 operations cost about as much as the X25519 operations, so the **computation** of a post-quantum key exchange is not the main cost: the extra cost is in **bytes** (5.6). The hybrid costs roughly the sum of its two parts.\n\n**Limits.** Single-operation timings on one machine do not show handshake latency (round trips dominate), throughput under concurrency, memory use or behaviour on constrained hardware. The benchmark phase repeats the measurements on the prototyped systems of 5.6 under realistic load, and reports median, interquartile range, hardware, software versions, repeat count and date. **Common mistake:** quoting a timing from a blog post or from one run as the cost of the migration."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What should a benchmark report besides the median?",
+              "options": [
+                "The spread (for example the interquartile range), hardware, versions and repeat count",
+                "Only the best run",
+                "Only the mean"
+              ],
+              "correct_index": 0,
+              "explanation": "Single runs mislead."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is ML-DSA signing more variable than ECDSA signing?",
+              "options": [
+                "Its signing algorithm uses rejection sampling with a random number of attempts",
+                "It uses random keys",
+                "It is slower hardware"
+              ],
+              "correct_index": 0,
+              "explanation": "The IQR is comparable to the median."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the main extra cost of a post-quantum key exchange, according to the lesson?",
+              "options": [
+                "Bytes on the wire, more than computation",
+                "Computation time only",
+                "Nothing"
+              ],
+              "correct_index": 0,
+              "explanation": "Measured sizes in 5.6; computation similar to X25519."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 5 (the prescriptive approach: Step 1 Discover the Cryptographic Inventory, Step 2 Assess the Risk and Prioritize Remediation, Step 3 Design a Crypto-Agile Architecture, Step 4 Migrate to Quantum-Safe Cryptography, Step 5 Ongoing Monitoring, Compliance, and Adaptation)"
+            },
+            {
+              "book": "B92",
+              "locator": "FIPS 204 (ML-DSA): the signing algorithm with rejection sampling (variable number of iterations)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Timings are from a single run on the authoring machine and are not reproducible values; the statement about the ML-KEM versus X25519 cost is qualitative from that run. The listing is deliberately excluded from the automated output comparison."
+          }
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "5.8 Pilot",
+          "summary": "A simulated staged rollout with a statistical stop gate: a clear regression is stopped at the 1 percent canary, a small regression is not, and why the gate's tolerance defines what it can see.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **pilot** deploys the benchmarked change to a limited, monitored part of production. Its value comes from three things decided **before** it starts: the stages (for example 1%, 5%, 25%, 100% of traffic), the **signals** (handshake failures, latency, support tickets), and the **stop rule** with an agreed tolerance, plus a rehearsed one-step **rollback**.\n\nThe listing is a **SIMULATION** (assumed failure rates, not data from any pilot). The baseline failure rate is 0.002 and the gate stops the pilot only when the lower end of the 95% Wilson interval of the observed failure rate exceeds baseline plus a tolerance of 0.002, i.e. when the data show with confidence that the rate is above 0.004. Three scenarios are run: no regression, a clear regression (true rate 0.010) and a small regression (0.0035). Discovery, inventory, classification, ranking, prototype, monitoring and hybrid listings run against the same **local lab** as module E2 (TLS and plain services on 127.0.0.1, this machine only, ports 47100 upwards) or against real cryptographic code. Business inputs (owners, impact, lifetimes), waves, freeze windows, pilot failure rates and traffic logs are **DEMO DATA / SIMULATION**, labelled where used. Nothing here is a finding about a real organisation."
+            },
+            {
+              "type": "code",
+              "id": "c-pilot",
+              "language": "python",
+              "code": "import math, random\n# Phase 8, Pilot: a staged rollout with a statistical gate at every stage. SIMULATION: the true failure rates are ASSUMED values chosen to show the logic; this is not data from any real pilot.\ndef wilson(failures, n, z=1.96):\n    p = failures / n\n    centre = p + z * z / (2 * n)\n    margin = z * math.sqrt(p * (1 - p) / n + z * z / (4 * n * n))\n    return (centre - margin) / (1 + z * z / n), (centre + margin) / (1 + z * z / n)\nBASELINE = 0.002            # assumed handshake failure rate before the change\nTOLERANCE = 0.002           # the gate stops the pilot only when the data show, with 95% confidence, a failure rate above baseline + tolerance\nLIMIT = BASELINE + TOLERANCE\nSTAGES = [(\"canary 1%\", 0.01), (\"5%\", 0.05), (\"25%\", 0.25), (\"100%\", 1.0)]\nDAILY = 200_000\ndef run(true_rate, seed, label):\n    rng = random.Random(seed)\n    print(f\"-- scenario: {label} (assumed true failure rate {true_rate:.4f})\")\n    for stage, share in STAGES:\n        n = int(DAILY * share)\n        failures = sum(1 for _ in range(n) if rng.random() < true_rate)\n        lo, hi = wilson(failures, n)\n        stop = lo > LIMIT\n        print(f\"   {stage:<10} connections {n:>8,}  failures {failures:>5}  observed {failures / n:.4f}  95% interval {lo:.4f}-{hi:.4f}  {'STOP and roll back' if stop else 'pass'}\")\n        if stop:\n            print(\"   -> rollback executed, incident review before the next attempt\")\n            return\n    print(\"   -> pilot completed, proceed to the production wave plan\")\nprint(f\"SIMULATION. gate: stop when the lower end of the 95% interval of the failure rate exceeds {LIMIT:.3f} (baseline {BASELINE} plus tolerance {TOLERANCE})\")\nrun(0.002, 1, \"no regression\")\nrun(0.010, 2, \"regression: larger handshake breaks a middlebox path\")\nrun(0.0035, 3, \"small regression, below the gate's tolerance\")\nprint()\nprint(\"what the gate can and cannot do: the clear regression is stopped at the 1% canary, before it reaches 99% of the traffic. The small regression (0.0035 against a baseline of 0.002, a 75% relative increase) passes every stage: a gate has a minimum detectable effect set by its tolerance, and a smaller harm needs a tighter tolerance, more traffic, or a different signal (latency, support tickets)\")\nprint(\"passing early stages only unlocks the next stage; it does not prove the change safe. A rollback must be a rehearsed one-step action (the configuration switch of E4.3), decided in advance rather than during the incident\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-pilot",
+              "language": "text",
+              "code": "SIMULATION. gate: stop when the lower end of the 95% interval of the failure rate exceeds 0.004 (baseline 0.002 plus tolerance 0.002)\n-- scenario: no regression (assumed true failure rate 0.0020)\n   canary 1%  connections    2,000  failures     3  observed 0.0015  95% interval 0.0005-0.0044  pass\n   5%         connections   10,000  failures    27  observed 0.0027  95% interval 0.0019-0.0039  pass\n   25%        connections   50,000  failures   124  observed 0.0025  95% interval 0.0021-0.0030  pass\n   100%       connections  200,000  failures   376  observed 0.0019  95% interval 0.0017-0.0021  pass\n   -> pilot completed, proceed to the production wave plan\n-- scenario: regression: larger handshake breaks a middlebox path (assumed true failure rate 0.0100)\n   canary 1%  connections    2,000  failures    19  observed 0.0095  95% interval 0.0061-0.0148  STOP and roll back\n   -> rollback executed, incident review before the next attempt\n-- scenario: small regression, below the gate's tolerance (assumed true failure rate 0.0035)\n   canary 1%  connections    2,000  failures     8  observed 0.0040  95% interval 0.0020-0.0079  pass\n   5%         connections   10,000  failures    45  observed 0.0045  95% interval 0.0034-0.0060  pass\n   25%        connections   50,000  failures   191  observed 0.0038  95% interval 0.0033-0.0044  pass\n   100%       connections  200,000  failures   718  observed 0.0036  95% interval 0.0033-0.0039  pass\n   -> pilot completed, proceed to the production wave plan\n\nwhat the gate can and cannot do: the clear regression is stopped at the 1% canary, before it reaches 99% of the traffic. The small regression (0.0035 against a baseline of 0.002, a 75% relative increase) passes every stage: a gate has a minimum detectable effect set by its tolerance, and a smaller harm needs a tighter tolerance, more traffic, or a different signal (latency, support tickets)\npassing early stages only unlocks the next stage; it does not prove the change safe. A rollback must be a rehearsed one-step action (the configuration switch of E4.3), decided in advance rather than during the incident",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "With **no regression** the pilot passes all four stages. The **clear regression** (a larger handshake that breaks a middlebox path) is stopped at the 1% canary: 19 failures in 2,000 connections give an interval of 0.0061 to 0.0148, above the limit, so only 1% of the traffic was affected before rollback. The **small regression** (0.0035, a 75% relative increase over baseline) **passes every stage** and ends at an observed rate of 0.0036: the gate's tolerance defines its minimum detectable effect, and a smaller harm needs a tighter tolerance, more traffic or a different signal.\n\n**Rules.** Passing a stage only unlocks the next; it does not prove safety. The stop rule and its tolerance are agreed in advance and recorded; the rollback is a configuration switch (E4.3) that has been rehearsed; and the pilot's evidence (rates, intervals, decisions) is kept for the audit. **Common mistake:** deciding what counts as a failure after seeing the numbers."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Where does the clear regression stop in the simulation?",
+              "options": [
+                "At the 1% canary",
+                "At 100%",
+                "It is never detected"
+              ],
+              "correct_index": 0,
+              "explanation": "19 failures in 2,000 connections."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does the small regression pass every stage?",
+              "options": [
+                "It is below the gate's tolerance, which sets the minimum detectable effect",
+                "The gate is broken",
+                "Traffic is too high"
+              ],
+              "correct_index": 0,
+              "explanation": "A tighter tolerance or another signal is needed."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "When must the stop rule be decided?",
+              "options": [
+                "Before the pilot starts",
+                "After seeing results",
+                "Never"
+              ],
+              "correct_index": 0,
+              "explanation": "Otherwise the threshold follows the data."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 5 (the prescriptive approach: Step 1 Discover the Cryptographic Inventory, Step 2 Assess the Risk and Prioritize Remediation, Step 3 Design a Crypto-Agile Architecture, Step 4 Migrate to Quantum-Safe Cryptography, Step 5 Ongoing Monitoring, Compliance, and Adaptation)"
+            },
+            {
+              "book": "B26",
+              "locator": "NIST SP 800-30 Rev. 1: Section 3.4 (maintaining the risk assessment) as background for monitoring-driven decisions"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The simulation is a model with assumed rates, not a measurement of any real pilot; the Wilson interval is the standard formula, and the tolerance and stages are the lesson's choices."
+          }
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "5.9 Hybrid Migration",
+          "summary": "The hybrid property shown directly: an attacker who breaks one component and guesses the other cannot derive the key, ciphertexts are bound into the key, and the four migration states with their costs.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "For most organisations the production path runs through **hybrid cryptography**: a classical and a post-quantum algorithm used together, with a combiner that makes the final key depend on both. The security argument is simple: the session key is safe if **either** component holds, so a flaw found in the new post-quantum algorithm does not undo today's protection, and the quantum break of the classical one does not expose the session.\n\nThe listing takes the hybrid KEM of E4.1 apart and checks the argument directly: the receiver derives the key from both component secrets and both ciphertexts; an attacker is then given one component secret (as if that component were broken) and has to guess the other; and a ciphertext is swapped to show that the ciphertexts are bound into the key. It ends with the four migration states of a service (classical only, hybrid with classical accepted, hybrid required, post-quantum only). The combiner is **illustrative**; deployments use the construction in the standard they adopt (for example the hybrid TLS 1.3 key-exchange specification). Discovery, inventory, classification, ranking, prototype, monitoring and hybrid listings run against the same **local lab** as module E2 (TLS and plain services on 127.0.0.1, this machine only, ports 47100 upwards) or against real cryptographic code. Business inputs (owners, impact, lifetimes), waves, freeze windows, pilot failure rates and traffic logs are **DEMO DATA / SIMULATION**, labelled where used. Nothing here is a finding about a real organisation."
+            },
+            {
+              "type": "code",
+              "id": "c-hybrid",
+              "language": "python",
+              "code": "import hashlib, os\nfrom cryptography.hazmat.primitives.asymmetric import ec, mlkem, x25519\nfrom cryptography.hazmat.primitives import serialization\n\n# ---- one interface, several algorithms: callers only see generate / encaps / decaps and a name ----\nclass KEM:\n    name = \"abstract\"\n    def generate(self): raise NotImplementedError          # -> (public key bytes, secret key object)\n    def encaps(self, pk): raise NotImplementedError        # -> (ciphertext, shared secret)\n    def decaps(self, sk, ct): raise NotImplementedError    # -> shared secret\n\ndef _kdf(*parts):\n    h = hashlib.sha3_256()\n    for p in parts: h.update(len(p).to_bytes(4, \"big\") + p)\n    return h.digest()\n\nclass X25519KEM(KEM):\n    name = \"X25519\"\n    def generate(self):\n        sk = x25519.X25519PrivateKey.generate()\n        return sk.public_key().public_bytes_raw(), sk\n    def encaps(self, pk):\n        eph = x25519.X25519PrivateKey.generate()\n        ss = eph.exchange(x25519.X25519PublicKey.from_public_bytes(pk)); ct = eph.public_key().public_bytes_raw()\n        return ct, _kdf(b\"x25519\", ss, ct, pk)\n    def decaps(self, sk, ct):\n        ss = sk.exchange(x25519.X25519PublicKey.from_public_bytes(ct))\n        return _kdf(b\"x25519\", ss, ct, sk.public_key().public_bytes_raw())\n\nclass P256KEM(KEM):\n    name = \"ECDH-P256\"\n    def generate(self):\n        sk = ec.generate_private_key(ec.SECP256R1())\n        return sk.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint), sk\n    def encaps(self, pk):\n        eph = ec.generate_private_key(ec.SECP256R1())\n        peer = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), pk)\n        ct = eph.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)\n        return ct, _kdf(b\"p256\", eph.exchange(ec.ECDH(), peer), ct, pk)\n    def decaps(self, sk, ct):\n        peer = ec.EllipticCurvePublicKey.from_encoded_point(ec.SECP256R1(), ct)\n        pk = sk.public_key().public_bytes(serialization.Encoding.X962, serialization.PublicFormat.UncompressedPoint)\n        return _kdf(b\"p256\", sk.exchange(ec.ECDH(), peer), ct, pk)\n\nclass MLKEM768KEM(KEM):\n    name = \"ML-KEM-768\"\n    def generate(self):\n        sk = mlkem.MLKEM768PrivateKey.generate()\n        return sk.public_key().public_bytes_raw(), sk\n    def encaps(self, pk):\n        ss, ct = mlkem.MLKEM768PublicKey.from_public_bytes(pk).encapsulate()\n        return ct, ss\n    def decaps(self, sk, ct):\n        return sk.decapsulate(ct)\n\nclass HybridKEM(KEM):\n    \"\"\"classical + post-quantum: the secret is safe if EITHER component holds (illustrative combiner; deployed hybrids follow the IETF specifications)\"\"\"\n    def __init__(self, a, b):\n        self.a, self.b = a, b\n        self.name = f\"{a.name}+{b.name}\"\n    def generate(self):\n        pa, sa = self.a.generate(); pb, sb = self.b.generate()\n        return len(pa).to_bytes(4, \"big\") + pa + pb, (sa, sb, len(pa))\n    def encaps(self, pk):\n        n = int.from_bytes(pk[:4], \"big\"); pa, pb = pk[4:4 + n], pk[4 + n:]\n        ca, ssa = self.a.encaps(pa); cb, ssb = self.b.encaps(pb)\n        return len(ca).to_bytes(4, \"big\") + ca + cb, _kdf(b\"hybrid\", ssa, ssb, ca, cb)\n    def decaps(self, sk, ct):\n        sa, sb, _ = sk\n        n = int.from_bytes(ct[:4], \"big\"); ca, cb = ct[4:4 + n], ct[4 + n:]\n        return _kdf(b\"hybrid\", self.a.decaps(sa, ca), self.b.decaps(sb, cb), ca, cb)\n\nREGISTRY = {k.name: k for k in (X25519KEM(), P256KEM(), MLKEM768KEM(), HybridKEM(X25519KEM(), MLKEM768KEM()))}\n# Phase 9, Hybrid migration: show the property that justifies it. The session key depends on BOTH component secrets and on both ciphertexts; knowing one component does not reveal it.\nkem = REGISTRY[\"X25519+ML-KEM-768\"]\npk, sk = kem.generate()\nct, secret = kem.encaps(pk)\na, b = REGISTRY[\"X25519\"], REGISTRY[\"ML-KEM-768\"]\n# take the hybrid apart: the same public/secret material the hybrid used\nsa, sb, n = sk\npk_a, pk_b = pk[4:4 + int.from_bytes(pk[:4], \"big\")], pk[4 + int.from_bytes(pk[:4], \"big\"):]\nct_a, ct_b = ct[4:4 + int.from_bytes(ct[:4], \"big\")], ct[4 + int.from_bytes(ct[:4], \"big\"):]\nss_a, ss_b = a.decaps(sa, ct_a), b.decaps(sb, ct_b)\nimport hashlib\ndef combine(x, y, ca, cb): return _kdf(b\"hybrid\", x, y, ca, cb)\nprint(\"the receiver derives the same key from both components:\", combine(ss_a, ss_b, ct_a, ct_b) == secret)\n# an attacker who has BROKEN the classical component knows ss_a but must still guess ss_b (32 random bytes)\nguess = os.urandom(32)\nprint(\"attacker knows the classical secret (classical component broken), guesses the post-quantum one -> derives the session key:\", combine(ss_a, guess, ct_a, ct_b) == secret)\n# an attacker who broke the post-quantum component knows ss_b but not ss_a\nprint(\"attacker knows the post-quantum secret (ML-KEM broken), guesses the classical one       -> derives the session key:\", combine(os.urandom(32), ss_b, ct_a, ct_b) == secret)\nprint(\"with BOTH secrets the key is derived:\", combine(ss_a, ss_b, ct_a, ct_b) == secret, \"(only an attacker who breaks both components succeeds)\")\n# the ciphertexts are bound into the key: swapping one ciphertext changes the key\nother_ct_a, _ = a.encaps(pk_a)\nprint(\"changing a ciphertext in transit changes the derived key (binding):\", combine(ss_a, ss_b, other_ct_a, ct_b) != secret)\nprint()\nprint(\"migration states of a service and what each means for protection (illustrative, not a measurement)\")\nstates = [(\"classical only\", \"exposed to harvest-now-decrypt-later\", \"1x\", \"baseline\"),\n          (\"hybrid, classical accepted\", \"protected for capable clients; classical clients still exposed\", f\"{len(pk) / len(pk_a):.0f}x public key\", \"transition: the long phase\"),\n          (\"hybrid required\", \"protected for every connection; classical clients refused\", f\"{len(pk) / len(pk_a):.0f}x public key\", \"when discovery shows few classical clients\"),\n          (\"post-quantum only\", \"protected; no dependence on classical assumptions\", f\"{len(pk_b) / len(pk_a):.0f}x public key\", \"only after confidence in the post-quantum implementation is established\")]\nfor s, protection, size, note in states: print(f\"  {s:<28} {protection:<66} {size:<16} {note}\")\nprint()\nprint(\"cost of the hybrid: bytes and computation of both algorithms, plus a combiner whose correctness matters (this listing uses an illustrative one; use the construction in the standard you deploy). Benefit: no single assumption failing, classical or post-quantum, exposes the session\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-hybrid",
+              "language": "text",
+              "code": "the receiver derives the same key from both components: True\nattacker knows the classical secret (classical component broken), guesses the post-quantum one -> derives the session key: False\nattacker knows the post-quantum secret (ML-KEM broken), guesses the classical one       -> derives the session key: False\nwith BOTH secrets the key is derived: True (only an attacker who breaks both components succeeds)\nchanging a ciphertext in transit changes the derived key (binding): True\n\nmigration states of a service and what each means for protection (illustrative, not a measurement)\n  classical only               exposed to harvest-now-decrypt-later                               1x               baseline\n  hybrid, classical accepted   protected for capable clients; classical clients still exposed     38x public key   transition: the long phase\n  hybrid required              protected for every connection; classical clients refused          38x public key   when discovery shows few classical clients\n  post-quantum only            protected; no dependence on classical assumptions                  37x public key   only after confidence in the post-quantum implementation is established\n\ncost of the hybrid: bytes and computation of both algorithms, plus a combiner whose correctness matters (this listing uses an illustrative one; use the construction in the standard you deploy). Benefit: no single assumption failing, classical or post-quantum, exposes the session",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The receiver derives the same key from both components. The attacker who knows the **classical** secret but guesses the post-quantum one does **not** obtain the key (False), and the same holds for knowing only the **post-quantum** secret (False); only with both is the key derived (True). Swapping one ciphertext changes the derived key (True), which is the **binding** of the exchange into the key. In the migration table the hybrid states cost about **38 times** the public-key size of the classical state (1220 against 32 bytes), and the post-quantum-only state about 37 times.\n\n**Operating guidance.** Run *hybrid with classical accepted* for the long transition (all capable clients protected, none broken), move to *hybrid required* service by service when discovery shows few classical clients (5.12), and consider *post-quantum only* only after confidence in the post-quantum implementation has been established over time. The cost is bytes, computation and a combiner whose correctness matters. **Common mistake:** concatenating the two secrets without binding the ciphertexts and context, or inventing a combiner instead of using the standardised one."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does a hybrid key exchange guarantee?",
+              "options": [
+                "The key stays secret unless both components are broken",
+                "The key is secret unless either is broken",
+                "Smaller messages"
+              ],
+              "correct_index": 0,
+              "explanation": "Checked by the attacker experiments."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why bind the ciphertexts into the derived key?",
+              "options": [
+                "So that changing a ciphertext in transit changes the key",
+                "To shorten the key",
+                "To hide the ciphertexts"
+              ],
+              "correct_index": 0,
+              "explanation": "The binding test returned True."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which migration state is the long phase in most organisations?",
+              "options": [
+                "Hybrid with classical clients still accepted",
+                "Post-quantum only",
+                "Classical only"
+              ],
+              "correct_index": 0,
+              "explanation": "Protects capable clients and breaks none."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 5 (the prescriptive approach: Step 1 Discover the Cryptographic Inventory, Step 2 Assess the Risk and Prioritize Remediation, Step 3 Design a Crypto-Agile Architecture, Step 4 Migrate to Quantum-Safe Cryptography, Step 5 Ongoing Monitoring, Compliance, and Adaptation)"
+            },
+            {
+              "book": "B98",
+              "locator": "RFC 10024: Post-Quantum Traditional (PQ/T) hybrid key agreement mechanisms for TLS 1.3 (the combiner requirements)"
+            },
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227: Section 4.6 (combining key-establishment mechanisms)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The combiner in the listing is illustrative and not a standardised construction. The statement 'secure if either component holds' depends on the combiner being a secure key-derivation over both secrets and the transcript, as the standards require."
+          }
+        },
+        {
+          "slug": "sec-10",
+          "action": "replace",
+          "title": "5.10 Production Rollout",
+          "summary": "A rollout calendar with freeze windows and a cumulative risk-reduction view, on DEMO waves.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **production rollout** scales what the pilot proved to the whole prioritised list. Its planning problem is practical: waves ordered by risk and dependencies (E3.4), effort per asset, **calendar constraints** (change freezes, quarter-end closes, holidays) and an **exit gate** per wave. The plan should also show the **benefit over time**: how much of the risk is removed as waves complete.\n\nThe listing schedules nine invented assets (DEMO DATA) in four waves from 1 March 2027, counting only working days and skipping two freeze windows (a quarter-end close from 28 June to 9 July 2027 and a year-end freeze from 15 November 2027 to 6 January 2028), and prints a cumulative percentage of the **score weight** migrated. Discovery, inventory, classification, ranking, prototype, monitoring and hybrid listings run against the same **local lab** as module E2 (TLS and plain services on 127.0.0.1, this machine only, ports 47100 upwards) or against real cryptographic code. Business inputs (owners, impact, lifetimes), waves, freeze windows, pilot failure rates and traffic logs are **DEMO DATA / SIMULATION**, labelled where used. Nothing here is a finding about a real organisation."
+            },
+            {
+              "type": "code",
+              "id": "c-rollout",
+              "language": "python",
+              "code": "import datetime\n# Phase 10, Production rollout: turn the ranked list into a calendar with freeze windows and a cumulative risk-reduction view. DEMO DATA: invented waves, scores and freeze windows.\nwaves = [  # wave, assets (name, risk score, effort in working days), earliest start\n    (\"W1 foundations\", [(\"HSM\", 59, 20), (\"internal PKI\", 44, 15)]),\n    (\"W2 long-lived data\", [(\"backup vault\", 82, 10), (\"HR archive\", 80, 5), (\"claims upload\", 94, 12)]),\n    (\"W3 shared services\", [(\"identity provider\", 53, 12), (\"legacy ERP\", 55, 15)]),\n    (\"W4 customer-facing\", [(\"payments service\", 70, 15), (\"customer portal\", 64, 10)]),\n]\nFREEZES = [(datetime.date(2027, 11, 15), datetime.date(2028, 1, 6), \"year-end change freeze\"), (datetime.date(2027, 6, 28), datetime.date(2027, 7, 9), \"quarter-end close\")]\ndef in_freeze(d):\n    return next((name for a, b, name in FREEZES if a <= d <= b), None)\ndef next_working_day(d):\n    d += datetime.timedelta(days=1)\n    while d.weekday() >= 5 or in_freeze(d): d += datetime.timedelta(days=1)\n    return d\nday = datetime.date(2027, 3, 1)\ntotal_risk = sum(r for _, items in waves for _, r, _ in items)\ndone_risk = 0\nprint(f\"{'wave / asset':<34} {'start':<11} {'end':<11} {'days':>4}  cumulative risk reduced\")\nfor wname, items in waves:\n    for asset, risk, effort in items:\n        start = day\n        left = effort\n        cur = day\n        while left > 0:\n            if cur.weekday() < 5 and not in_freeze(cur): left -= 1\n            if left > 0: cur += datetime.timedelta(days=1)\n        end = cur\n        done_risk += risk\n        print(f\"{wname + ': ' + asset:<34} {start.isoformat():<11} {end.isoformat():<11} {effort:>4}  {100 * done_risk / total_risk:>5.0f}%\")\n        day = next_working_day(end)\nprint()\nprint(\"freeze windows respected:\", FREEZES[0][2], f\"({FREEZES[0][0]} to {FREEZES[0][1]})\", \"and\", FREEZES[1][2], f\"({FREEZES[1][0]} to {FREEZES[1][1]})\")\nprint(\"every wave ends with an exit gate before the next starts: verification by discovery (E2), monitoring dashboard green for an agreed period, rollback tested, owner sign-off\")\nprint(f\"the cumulative risk-reduction column uses the risk scores as weights: after the long-lived data wave {100 * (59 + 44 + 82 + 80 + 94) / total_risk:.0f}% of the score weight is migrated although only half of the assets are\")\nprint(\"rollout rules: highest risk first among assets whose dependencies are done; one wave at a time per shared dependency; no wave starts inside a freeze; and every asset has a rollback\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-rollout",
+              "language": "text",
+              "code": "wave / asset                       start       end         days  cumulative risk reduced\nW1 foundations: HSM                2027-03-01  2027-03-26    20     10%\nW1 foundations: internal PKI       2027-03-29  2027-04-16    15     17%\nW2 long-lived data: backup vault   2027-04-19  2027-04-30    10     31%\nW2 long-lived data: HR archive     2027-05-03  2027-05-07     5     44%\nW2 long-lived data: claims upload  2027-05-10  2027-05-25    12     60%\nW3 shared services: identity provider 2027-05-26  2027-06-10    12     69%\nW3 shared services: legacy ERP     2027-06-11  2027-07-15    15     78%\nW4 customer-facing: payments service 2027-07-16  2027-08-05    15     89%\nW4 customer-facing: customer portal 2027-08-06  2027-08-19    10    100%\n\nfreeze windows respected: year-end change freeze (2027-11-15 to 2028-01-06) and quarter-end close (2027-06-28 to 2027-07-09)\nevery wave ends with an exit gate before the next starts: verification by discovery (E2), monitoring dashboard green for an agreed period, rollback tested, owner sign-off\nthe cumulative risk-reduction column uses the risk scores as weights: after the long-lived data wave 60% of the score weight is migrated although only half of the assets are\nrollout rules: highest risk first among assets whose dependencies are done; one wave at a time per shared dependency; no wave starts inside a freeze; and every asset has a rollback",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The plan runs from 1 March to **19 August 2027**; the legacy ERP (15 working days) starts on 11 June and finishes on **15 July**, because the quarter-end freeze from 28 June to 9 July is skipped; nothing falls in the year-end freeze. After the long-lived-data wave **60% of the score weight** is migrated although only five of the nine assets are, which is the argument for ordering by risk; the foundations (HSM and PKI) deliver only 17% on their own but unblock the rest.\n\n**Rollout rules.** Highest risk first among assets whose dependencies are done; one wave at a time per shared dependency; no start inside a freeze window; every wave closes with an exit gate (verification by discovery, a monitoring dashboard green for an agreed period, tested rollback, owner sign-off); and the calendar is conditional on effort estimates and capacity (E3.6). **Common mistake:** showing the calendar without the dependencies and gates that make it feasible."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does the legacy ERP finish on 15 July in the plan?",
+              "options": [
+                "Working days in the quarter-end freeze are skipped",
+                "It is slow",
+                "Because of a holiday"
+              ],
+              "correct_index": 0,
+              "explanation": "The freeze runs 28 June to 9 July 2027."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does the cumulative risk column show?",
+              "options": [
+                "The share of score weight migrated as waves complete",
+                "The number of assets",
+                "The budget"
+              ],
+              "correct_index": 0,
+              "explanation": "60% after the long-lived-data wave."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What closes each wave?",
+              "options": [
+                "An exit gate: verification, green monitoring, tested rollback and sign-off",
+                "Nothing",
+                "A press release"
+              ],
+              "correct_index": 0,
+              "explanation": "Gates make the next wave safe to start."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 5 (the prescriptive approach: Step 1 Discover the Cryptographic Inventory, Step 2 Assess the Risk and Prioritize Remediation, Step 3 Design a Crypto-Agile Architecture, Step 4 Migrate to Quantum-Safe Cryptography, Step 5 Ongoing Monitoring, Compliance, and Adaptation)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Waves, efforts, freeze windows and dates are DEMO DATA; the scheduler counts working days Monday to Friday only and ignores public holidays."
+          }
+        },
+        {
+          "slug": "sec-11",
+          "action": "replace",
+          "title": "5.11 Monitor",
+          "summary": "Two real snapshots of the lab compared for drift: a TLS 1.3 regression, a new unregistered service and a replaced certificate, with KPIs.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "After migration, **monitoring** must verify that the migration **stays** done and that **risk actually fell**. Drift is common: a redeployment with a default configuration, a new service outside the register, a replaced certificate with a different key. The mechanism is the discovery of E2 run on a schedule, a **baseline** snapshot, and a **diff** of each new snapshot against it, together with a few KPIs (assets, TLS 1.3 share, RSA keys, weak keys) that executives can follow.\n\nThe listing takes two **real** snapshots of the lab. Between them the lab is changed: web-front is redeployed with TLS 1.2 as its maximum version, the certificate of old-intranet is replaced by an ECDSA certificate on a TLS 1.3 server, and a new service appears. The listing prints the drift and the KPIs. Discovery, inventory, classification, ranking, prototype, monitoring and hybrid listings run against the same **local lab** as module E2 (TLS and plain services on 127.0.0.1, this machine only, ports 47100 upwards) or against real cryptographic code. Business inputs (owners, impact, lifetimes), waves, freeze windows, pilot failure rates and traffic logs are **DEMO DATA / SIMULATION**, labelled where used. Nothing here is a finding about a real organisation."
+            },
+            {
+              "type": "code",
+              "id": "c-monitor",
+              "language": "python",
+              "code": "import datetime, os, socket, ssl, tempfile, threading\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa\nfrom cryptography.x509.oid import NameOID\n\n# ---- lab: small TLS servers on 127.0.0.1 that this script starts and then discovers. Certificates are self-signed and generated now. ----\ndef make_cert(kind, cn, valid_from_days, valid_to_days):\n    if kind == \"rsa1024\": key = rsa.generate_private_key(65537, 1024)\n    elif kind == \"rsa2048\": key = rsa.generate_private_key(65537, 2048)\n    elif kind == \"ec256\": key = ec.generate_private_key(ec.SECP256R1())\n    elif kind == \"ed25519\": key = ed25519.Ed25519PrivateKey.generate()\n    sign_hash = None if kind == \"ed25519\" else hashes.SHA256()\n    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])\n    now = datetime.datetime.now(datetime.timezone.utc)\n    cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key()).serial_number(x509.random_serial_number())\n            .not_valid_before(now + datetime.timedelta(days=valid_from_days)).not_valid_after(now + datetime.timedelta(days=valid_to_days))\n            .add_extension(x509.SubjectAlternativeName([x509.DNSName(cn)]), critical=False).sign(key, sign_hash))\n    return key, cert\n\nLAB = [  # label, key kind, common name, validity (from, to) in days relative to now, highest TLS version the server accepts\n    (\"web-front\",      \"rsa2048\", \"web.lab.test\",     (-30, 335), ssl.TLSVersion.TLSv1_3),\n    (\"legacy-billing\", \"rsa1024\", \"billing.lab.test\", (-900, 200), ssl.TLSVersion.TLSv1_2),\n    (\"api-gateway\",    \"ec256\",   \"api.lab.test\",     (-10, 80),  ssl.TLSVersion.TLSv1_3),\n    (\"old-intranet\",   \"rsa2048\", \"intra.lab.test\",   (-400, -35), ssl.TLSVersion.TLSv1_2),\n    (\"edge-device\",    \"ed25519\", \"edge.lab.test\",    (-5, 3000), ssl.TLSVersion.TLSv1_3),\n]\n_tmp = tempfile.mkdtemp()\n_next_port = [47100]\ndef bind_free():\n    \"\"\"bind the next free port from 47100 upwards on 127.0.0.1 (a fixed small range makes the discovery sweep below short and repeatable)\"\"\"\n    while True:\n        s = socket.socket()\n        try:\n            s.bind((\"127.0.0.1\", _next_port[0])); s.listen(16); _next_port[0] += 1\n            return s\n        except OSError:\n            s.close(); _next_port[0] += 1\ndef start_lab():\n    servers = {}\n    for label, kind, cn, (a, b), maxv in LAB:\n        key, cert = make_cert(kind, cn, a, b)\n        cf, kf = os.path.join(_tmp, label + \".crt\"), os.path.join(_tmp, label + \".key\")\n        open(cf, \"wb\").write(cert.public_bytes(serialization.Encoding.PEM))\n        open(kf, \"wb\").write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))\n        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)\n        ctx.minimum_version = ssl.TLSVersion.TLSv1_2\n        ctx.maximum_version = maxv\n        ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n        ctx.load_cert_chain(cf, kf)\n        sock = bind_free()\n        def serve(s=sock, c=ctx):\n            while True:\n                try:\n                    conn, _ = s.accept()\n                except OSError:\n                    return\n                try:\n                    with c.wrap_socket(conn, server_side=True) as t:\n                        t.settimeout(1)\n                except Exception:\n                    pass\n        threading.Thread(target=serve, daemon=True).start()\n        servers[label] = sock.getsockname()[1]\n    return servers\n\ndef probe(port, minv=None, maxv=None):\n    \"\"\"TLS client handshake to 127.0.0.1:port; returns (version, cipher, DER certificate) or None if the server refuses\"\"\"\n    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)\n    ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE\n    ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n    ctx.minimum_version = minv or ssl.TLSVersion.MINIMUM_SUPPORTED\n    if maxv: ctx.maximum_version = maxv\n    try:\n        with socket.create_connection((\"127.0.0.1\", port), timeout=3) as raw:\n            with ctx.wrap_socket(raw) as t:\n                return t.version(), t.cipher()[0], t.getpeercert(binary_form=True)\n    except (ssl.SSLError, OSError):\n        return None\n\ndef describe_key(cert):\n    pk = cert.public_key()\n    if isinstance(pk, rsa.RSAPublicKey): return \"RSA\", pk.key_size\n    if isinstance(pk, ec.EllipticCurvePublicKey): return \"EC \" + pk.curve.name, pk.key_size\n    if isinstance(pk, ed25519.Ed25519PublicKey): return \"Ed25519\", 256\n    return type(pk).__name__, 0\n\ndef start_plain(payload):\n    \"\"\"a non-TLS service that sends 'payload' bytes to every client and closes (used for banner and SSH-style discovery)\"\"\"\n    sock = bind_free()\n    def serve():\n        while True:\n            try:\n                conn, _ = sock.accept()\n            except OSError:\n                return\n            try:\n                conn.sendall(payload)\n            except OSError:\n                pass\n            conn.close()\n    threading.Thread(target=serve, daemon=True).start()\n    return sock.getsockname()[1]\n# Phase 11, Monitor: re-run discovery on a schedule, compare with the baseline and report DRIFT and KPIs. Two real snapshots of the lab; between them the lab is changed (a server loses TLS 1.3, a new service appears, a certificate is replaced).\ndef snapshot():\n    servers = start_lab()\n    snap = {}\n    for label, port in servers.items():\n        version, cipher, der = probe(port)\n        c = x509.load_der_x509_certificate(der); alg, size = describe_key(c)\n        cn = c.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value\n        snap[cn] = {\"protocol\": version, \"auth_key\": f\"{alg} {size}\"}\n    return snap\nbaseline = snapshot()\n# changes between the snapshots: web-front accidentally redeployed with TLS 1.2 as maximum, old-intranet got a replacement certificate, and a new unregistered service appears\nLAB[:] = [(l, k, cn, v, (ssl.TLSVersion.TLSv1_2 if l == \"web-front\" else m)) for l, k, cn, v, m in LAB]\nLAB[3] = (\"old-intranet\", \"ec256\", \"intra.lab.test\", (-1, 365), ssl.TLSVersion.TLSv1_3)\nLAB.append((\"shadow-test\", \"rsa2048\", \"test.lab.test\", (-1, 30), ssl.TLSVersion.TLSv1_2))\ncurrent = snapshot()\nprint(\"drift between the baseline and the current scan:\")\nfor cn in sorted(set(baseline) | set(current)):\n    b, c = baseline.get(cn), current.get(cn)\n    if b is None: print(f\"  NEW        {cn:<18} {c['protocol']}, {c['auth_key']}  (not in the baseline: shadow asset?)\")\n    elif c is None: print(f\"  GONE       {cn:<18} was {b['protocol']}, {b['auth_key']}\")\n    else:\n        changes = []\n        if b[\"protocol\"] != c[\"protocol\"]:\n            order = {\"TLSv1.2\": 2, \"TLSv1.3\": 3}\n            changes.append(f\"protocol {b['protocol']} -> {c['protocol']}\" + (\"  REGRESSION\" if order[c[\"protocol\"]] < order[b[\"protocol\"]] else \"  improvement\"))\n        if b[\"auth_key\"] != c[\"auth_key\"]: changes.append(f\"auth key {b['auth_key']} -> {c['auth_key']}\")\n        print(f\"  {'CHANGED' if changes else 'unchanged':<10} {cn:<18} \" + \"; \".join(changes))\ndef kpis(s):\n    n = len(s)\n    return {\"assets\": n, \"TLS 1.3\": sum(1 for v in s.values() if v[\"protocol\"] == \"TLSv1.3\"), \"RSA keys\": sum(1 for v in s.values() if v[\"auth_key\"].startswith(\"RSA\")), \"RSA below 2048\": sum(1 for v in s.values() if v[\"auth_key\"].startswith(\"RSA\") and int(v[\"auth_key\"].split()[1]) < 2048)}\nprint()\nprint(\"KPIs baseline:\", kpis(baseline))\nprint(\"KPIs current: \", kpis(current))\nprint(\"what monitoring must verify (not only watch): that each migrated asset STAYS migrated (the TLS 1.3 regression above), that nothing new appears outside the register, and that risk actually fell. A hybrid post-quantum key exchange is verified by reading the negotiated group from a handshake probe, which this lab (Python ssl) cannot do: use the scanner's raw probe\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-monitor",
+              "language": "text",
+              "code": "drift between the baseline and the current scan:\n  unchanged  api.lab.test       \n  unchanged  billing.lab.test   \n  unchanged  edge.lab.test      \n  CHANGED    intra.lab.test     protocol TLSv1.2 -> TLSv1.3  improvement; auth key RSA 2048 -> EC secp256r1 256\n  NEW        test.lab.test      TLSv1.2, RSA 2048  (not in the baseline: shadow asset?)\n  CHANGED    web.lab.test       protocol TLSv1.3 -> TLSv1.2  REGRESSION\n\nKPIs baseline: {'assets': 5, 'TLS 1.3': 3, 'RSA keys': 3, 'RSA below 2048': 1}\nKPIs current:  {'assets': 6, 'TLS 1.3': 3, 'RSA keys': 3, 'RSA below 2048': 1}\nwhat monitoring must verify (not only watch): that each migrated asset STAYS migrated (the TLS 1.3 regression above), that nothing new appears outside the register, and that risk actually fell. A hybrid post-quantum key exchange is verified by reading the negotiated group from a handshake probe, which this lab (Python ssl) cannot do: use the scanner's raw probe",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The diff reports: api, billing and edge **unchanged**; intra.lab.test **changed** (TLS 1.2 to 1.3, an improvement, and the key RSA-2048 to EC P-256); **test.lab.test is NEW** (not in the baseline: a shadow asset until someone claims it); and web.lab.test shows a **REGRESSION** (TLS 1.3 to TLS 1.2), the case that only monitoring catches. The KPIs: the asset count rises from 5 to 6, the TLS 1.3 count stays at 3 (one gain at intra, one loss at web, and the new service is TLS 1.2), and RSA keys stay at 3 with 1 below 2048 bits.\n\n**What monitoring must also do.** Verify hybrid key exchange by **reading the negotiated group** from a handshake probe (this lab's Python `ssl` cannot), alert on certificate expiry and deprecated algorithms (the course text suggests feeding these to SIEM and SOAR platforms), and compare against the **register**, not only against the last scan. **Common mistake:** a dashboard that counts migrated assets once and never rechecks them."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What did the monitoring diff catch in the lab that a one-time scan would miss?",
+              "options": [
+                "web.lab.test regressing from TLS 1.3 to TLS 1.2",
+                "A new CA",
+                "A faster cipher"
+              ],
+              "correct_index": 0,
+              "explanation": "Migrated assets must be rechecked."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is a new endpoint in the diff called until someone claims it?",
+              "options": [
+                "A shadow asset",
+                "A backup",
+                "A baseline"
+              ],
+              "correct_index": 0,
+              "explanation": "test.lab.test was not in the baseline."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How is a hybrid key exchange verified in production?",
+              "options": [
+                "By reading the negotiated group from a handshake, not by trusting configuration",
+                "By the TLS version only",
+                "By the certificate"
+              ],
+              "correct_index": 0,
+              "explanation": "The lab's ssl module cannot read it."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 5 (the prescriptive approach: Step 1 Discover the Cryptographic Inventory, Step 2 Assess the Risk and Prioritize Remediation, Step 3 Design a Crypto-Agile Architecture, Step 4 Migrate to Quantum-Safe Cryptography, Step 5 Ongoing Monitoring, Compliance, and Adaptation)"
+            },
+            {
+              "book": "B161",
+              "locator": "RFC 9846 (TLS 1.3): the supported_groups and key_share extensions that carry the negotiated group"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The snapshots are real but of a lab changed on purpose. The suggestion to feed cryptographic events to SIEM and SOAR platforms is from the course text."
+          }
+        },
+        {
+          "slug": "sec-12",
+          "action": "replace",
+          "title": "5.12 Retire Vulnerable Cryptography",
+          "summary": "Replaying generated traffic logs against a proposed policy that refuses classical-only key exchange: what would break, who owns it, and why the decision is 'not yet'.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The last phase is the one most often delayed: **retiring** the classical-only fallback. Until it is switched off, an attacker who can force a downgrade (or a client that never upgrades) keeps the old exposure alive. But retirement breaks clients, so it must be a **dated, evidence-based decision**: replay real traffic logs against the proposed policy, list what would stop working, decide who owns each case, and keep a rollback.\n\nThe listing is a **SIMULATION** on generated DEMO logs (seeded): 60,000 connections from 43 clients, most of them partners that mostly support a hybrid key exchange, plus three legacy devices that cannot be upgraded. It replays them against the policy *refuse classical-only key exchange* and prints the affected clients, the legacy cases and a decision checklist. Your own gateway logs replace the generated ones. Discovery, inventory, classification, ranking, prototype, monitoring and hybrid listings run against the same **local lab** as module E2 (TLS and plain services on 127.0.0.1, this machine only, ports 47100 upwards) or against real cryptographic code. Business inputs (owners, impact, lifetimes), waves, freeze windows, pilot failure rates and traffic logs are **DEMO DATA / SIMULATION**, labelled where used. Nothing here is a finding about a real organisation."
+            },
+            {
+              "type": "code",
+              "id": "c-retire",
+              "language": "python",
+              "code": "import random\nfrom collections import Counter\n# Phase 12, Retire: decide whether the classical-only fallback can be switched off by replaying traffic logs against the proposed policy. SIMULATION on generated DEMO logs (seeded); real logs from your own gateways replace it.\nrandom.seed(21)\nCLIENTS = [(f\"partner-{i:02d}\", random.choice([\"hybrid\"] * 7 + [\"classical-only\"])) for i in range(40)] + [(\"legacy-scada-1\", \"classical-only\"), (\"legacy-scada-2\", \"classical-only\"), (\"old-kiosk-fleet\", \"classical-only\")]\nevents = []\nfor _ in range(60000):\n    c, cap = random.choice(CLIENTS) if random.random() < 0.6 else random.choice(CLIENTS[:40])\n    events.append((c, cap))\nby_client = Counter(c for c, _ in events)\ncap_of = dict(CLIENTS)\nclassical = Counter({c: n for c, n in by_client.items() if cap_of[c] == \"classical-only\"})\ntotal = sum(by_client.values())\nprint(f\"SIMULATION: {total:,} replayed connections from {len(by_client)} clients (generated DEMO logs)\")\nprint(f\"hybrid-capable connections: {100 * (total - sum(classical.values())) / total:.1f}%   classical-only connections: {100 * sum(classical.values()) / total:.1f}% from {len(classical)} clients\")\nprint()\nprint(\"proposed policy: refuse classical-only key exchange. Clients that would stop working, by volume:\")\nfor c, n in classical.most_common(6): print(f\"  {c:<18} {n:>6,} connections  {100 * n / total:5.2f}%\")\nprint()\nlegacy = [c for c in classical if c.startswith(\"legacy\") or c.startswith(\"old\")]\nprint(\"of which cannot be upgraded by us (embedded or end-of-life devices):\", legacy)\nprint(\"decision checklist, answers from this replay:\")\nprint(f\"  1. share of traffic that would break:        {100 * sum(classical.values()) / total:.1f}%  (threshold agreed in advance: below 1%?)  -> {'MET' if sum(classical.values()) / total < 0.01 else 'NOT MET'}\")\nprint(f\"  2. every affected client has an owner and a dated plan:                 -> NOT MET for {len(legacy)} legacy devices (no plan recorded)\")\nprint(\"  3. a rollback exists (re-enable classical by configuration, E4.3):       -> required and rehearsed before the switch\")\nprint(\"  4. a compensating control for clients that cannot migrate:              -> for example a gateway that terminates their connection inside an isolated segment and speaks hybrid on the outside\")\nprint(\"conclusion of the replay: do NOT retire yet. Retirement is a dated, evidence-based decision: disable per service when the replay shows the agreed share of traffic affected, record exceptions with an owner and an expiry date, and keep monitoring after the switch\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-retire",
+              "language": "text",
+              "code": "SIMULATION: 60,000 replayed connections from 43 clients (generated DEMO logs)\nhybrid-capable connections: 79.0%   classical-only connections: 21.0% from 10 clients\n\nproposed policy: refuse classical-only key exchange. Clients that would stop working, by volume:\n  partner-06          1,457 connections   2.43%\n  partner-04          1,455 connections   2.42%\n  partner-39          1,455 connections   2.42%\n  partner-23          1,454 connections   2.42%\n  partner-35          1,414 connections   2.36%\n  partner-20          1,379 connections   2.30%\n\nof which cannot be upgraded by us (embedded or end-of-life devices): ['old-kiosk-fleet', 'legacy-scada-2', 'legacy-scada-1']\ndecision checklist, answers from this replay:\n  1. share of traffic that would break:        21.0%  (threshold agreed in advance: below 1%?)  -> NOT MET\n  2. every affected client has an owner and a dated plan:                 -> NOT MET for 3 legacy devices (no plan recorded)\n  3. a rollback exists (re-enable classical by configuration, E4.3):       -> required and rehearsed before the switch\n  4. a compensating control for clients that cannot migrate:              -> for example a gateway that terminates their connection inside an isolated segment and speaks hybrid on the outside\nconclusion of the replay: do NOT retire yet. Retirement is a dated, evidence-based decision: disable per service when the replay shows the agreed share of traffic affected, record exceptions with an owner and an expiry date, and keep monitoring after the switch",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "In the replay **79.0%** of the connections come from hybrid-capable clients and **21.0%** from **10 classical-only clients** (seven partners and three legacy devices). The affected clients are listed by volume (the busiest partners at 2.3% to 2.4% of traffic each), and three cannot be upgraded by the organisation: legacy-scada-1, legacy-scada-2 and old-kiosk-fleet. The checklist gives: share of traffic that would break **21.0%**, against an agreed threshold of 1% (**not met**); every affected client has an owner and a dated plan (**not met** for the three legacy devices); rollback exists (required and rehearsed); compensating control for devices that cannot migrate (for example a gateway that terminates their connections in an isolated segment and speaks hybrid outside). The conclusion: **do not retire yet**.\n\n**How retirement proceeds.** Disable per service when the replay shows the agreed share of traffic is affected, give each exception an owner and an **expiry date**, keep monitoring after the switch (5.11), and update the inventory and the policy (E6.2) to record the retired algorithm. **Common mistake:** declaring the migration complete when hybrid is deployed but classical remains accepted indefinitely."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the replay say about retiring classical-only key exchange?",
+              "options": [
+                "Not yet: 21% of the traffic would break, above the agreed 1% threshold",
+                "Retire immediately",
+                "No clients are affected"
+              ],
+              "correct_index": 0,
+              "explanation": "Ten classical-only clients, three of them legacy devices."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What should every exception to retirement have?",
+              "options": [
+                "An owner and an expiry date",
+                "Nothing",
+                "A larger buffer"
+              ],
+              "correct_index": 0,
+              "explanation": "Exceptions are temporary and recorded."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is accepting classical indefinitely a problem even when hybrid is deployed?",
+              "options": [
+                "A downgrade or an old client keeps the old exposure alive",
+                "Hybrid stops working",
+                "Certificates expire"
+              ],
+              "correct_index": 0,
+              "explanation": "Retirement completes the migration."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 5 (the prescriptive approach: Step 1 Discover the Cryptographic Inventory, Step 2 Assess the Risk and Prioritize Remediation, Step 3 Design a Crypto-Agile Architecture, Step 4 Migrate to Quantum-Safe Cryptography, Step 5 Ongoing Monitoring, Compliance, and Adaptation)"
+            },
+            {
+              "book": "B85",
+              "locator": "NIST IR 8547 initial public draft: the deprecation and disallowance timeline for quantum-vulnerable algorithms"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The logs are generated DEMO data; the 1% threshold is an example. IR 8547 is an initial public draft and its dates may have changed."
+          }
+        }
+      ],
+      "quiz": [
+        {
+          "id": "e5-n01",
+          "prompt": "What does phase 1 (Discover) produce?",
+          "options": [
+            "Raw evidence of touchpoints, not yet an inventory",
+            "A finished inventory",
+            "A migration plan"
+          ],
+          "correct_index": 0,
+          "explanation": "Keep the raw output.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 5, Step 1"
+          }
+        },
+        {
+          "id": "e5-n02",
+          "prompt": "What happens to inventory records that fail validation?",
+          "options": [
+            "They are kept and flagged",
+            "They are dropped",
+            "They are deleted"
+          ],
+          "correct_index": 0,
+          "explanation": "Dropping biases the inventory.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 5, Step 1"
+          }
+        },
+        {
+          "id": "e5-n03",
+          "prompt": "How should an asset without a business mapping be classified?",
+          "options": [
+            "As unclassified and returned to its owner",
+            "As tier 3",
+            "As tier 1"
+          ],
+          "correct_index": 0,
+          "explanation": "No default tier.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 5, Step 2"
+          }
+        },
+        {
+          "id": "e5-n04",
+          "prompt": "Why are some risk scores ranges?",
+          "options": [
+            "An input such as the TLS 1.3 key-exchange group is unknown",
+            "Ranges are the standard output",
+            "Scores are random"
+          ],
+          "correct_index": 0,
+          "explanation": "Reading the group collapses them.",
+          "source": {
+            "book": "B26",
+            "locator": "Section 3.2"
+          }
+        },
+        {
+          "id": "e5-n05",
+          "prompt": "Which standard defines ML-KEM?",
+          "options": [
+            "FIPS 203",
+            "FIPS 204",
+            "FIPS 205"
+          ],
+          "correct_index": 0,
+          "explanation": "ML-DSA is FIPS 204 and SLH-DSA FIPS 205.",
+          "source": {
+            "book": "B04",
+            "locator": "Title"
+          }
+        },
+        {
+          "id": "e5-n06",
+          "prompt": "Why is SLH-DSA suggested for a long-lived signing root?",
+          "options": [
+            "It relies only on hash-function security",
+            "It has the smallest signatures",
+            "It is the fastest"
+          ],
+          "correct_index": 0,
+          "explanation": "Signature sizes are much larger.",
+          "source": {
+            "book": "B93",
+            "locator": "Parameter table"
+          }
+        },
+        {
+          "id": "e5-n07",
+          "prompt": "What does a corrupted ML-KEM ciphertext do on decapsulation?",
+          "options": [
+            "Yields a different secret without an error",
+            "Raises an exception",
+            "Returns the correct secret"
+          ],
+          "correct_index": 0,
+          "explanation": "Implicit rejection.",
+          "source": {
+            "book": "B04",
+            "locator": "Decapsulation"
+          }
+        },
+        {
+          "id": "e5-n08",
+          "prompt": "What should a benchmark report?",
+          "options": [
+            "Median and spread, hardware, versions and repeats",
+            "The best run",
+            "One run"
+          ],
+          "correct_index": 0,
+          "explanation": "Variability matters.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 5, Step 4"
+          }
+        },
+        {
+          "id": "e5-n09",
+          "prompt": "Why can a staged pilot's small regression go undetected?",
+          "options": [
+            "The gate's tolerance sets its minimum detectable effect",
+            "Pilots cannot detect anything",
+            "The stages are too long"
+          ],
+          "correct_index": 0,
+          "explanation": "Tighten the tolerance or add signals.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 5, Step 4"
+          }
+        },
+        {
+          "id": "e5-n10",
+          "prompt": "What does a hybrid key exchange guarantee?",
+          "options": [
+            "The key stays secret unless both components are broken",
+            "It is smaller than classical",
+            "It needs no combiner"
+          ],
+          "correct_index": 0,
+          "explanation": "Defence in depth during the transition.",
+          "source": {
+            "book": "B98",
+            "locator": "Security considerations"
+          }
+        },
+        {
+          "id": "e5-n11",
+          "prompt": "What must monitoring verify after migration?",
+          "options": [
+            "That migrated assets stay migrated and that risk actually fell",
+            "Only that the project closed",
+            "Only certificate expiry"
+          ],
+          "correct_index": 0,
+          "explanation": "Drift is common.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 5, Step 5"
+          }
+        },
+        {
+          "id": "e5-n12",
+          "prompt": "What drives a safe retirement decision?",
+          "options": [
+            "A replay of traffic logs, owners with dated plans and a rollback",
+            "A calendar date alone",
+            "A vendor email"
+          ],
+          "correct_index": 0,
+          "explanation": "Retirement breaks clients, so it needs evidence.",
+          "source": {
+            "book": "B85",
+            "locator": "Transition timeline"
+          }
+        }
+      ],
+      "estimated_minutes": 560,
+      "notes": "Rewrites the twelve outline sections as lessons with executed listings: discovery, inventory and classification against a local lab, interval risk ranking, a decision procedure for algorithm selection with standard sizes, a loopback prototype, a benchmark method (marked as not compared in the build check), a simulated pilot with a stop gate, the hybrid property tested directly, a rollout calendar with freeze windows, two-snapshot drift monitoring and a traffic-replay retirement decision. The course's twelve phases are noted as an expansion of the book's five steps.",
+      "learning_objectives": [
+        "Run the discover, inventory and classify phases so that raw evidence, validated records and owner-asserted classifications stay distinct.",
+        "Rank assets with interval scores, select algorithms with stated reasons and record the size and budget trade-offs.",
+        "Prototype and benchmark post-quantum primitives with a sound method, and read the results as shapes rather than quotes.",
+        "Pilot with a statistical stop gate and a rehearsed rollback, and state the gate's minimum detectable effect.",
+        "Deploy hybrid cryptography with the property tested, roll out by calendar with gates, and monitor for drift.",
+        "Decide retirement of classical fallbacks from traffic replay, ownership and exceptions with expiry dates."
+      ]
+    }
+  ]
+}
