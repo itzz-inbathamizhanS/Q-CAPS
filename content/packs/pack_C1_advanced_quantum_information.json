@@ -1,0 +1,868 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B113",
+      "title": "From Classical to Quantum Shannon Theory (Quantum Information Theory, 2nd edition draft, arXiv:1106.1445v8)",
+      "authors": "Mark M. Wilde",
+      "edition": "arXiv v8, 14 July 2019",
+      "year": 2019,
+      "publisher": "Cambridge University Press (draft on arXiv, CC BY-NC-SA 3.0)"
+    },
+    {
+      "id": "B111",
+      "title": "Qiskit SDK documentation and guides (quantum.cloud.ibm.com/docs), accessed 2026-10-04",
+      "authors": "IBM Quantum",
+      "edition": "accessed 2026-10-04",
+      "year": 2026,
+      "publisher": "IBM"
+    },
+    {
+      "id": "B110",
+      "title": "Qiskit Textbook (GitHub repository Qiskit/textbook, notebooks), accessed 2026-10-04",
+      "authors": "Qiskit community",
+      "edition": "accessed 2026-10-04",
+      "year": 2023,
+      "publisher": "IBM and the Qiskit community"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_c_c1_advanced_quantum_information",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "1.1 Hilbert Spaces",
+          "summary": "The inner-product structure of quantum states, Gram-Schmidt, the spectral theorem for Hermitian and normal operators, tensor products and the Schmidt decomposition, all checked numerically.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The state space of a quantum system is a **Hilbert space**: a complex vector space with an **inner product** ⟨x|y⟩ that is conjugate symmetric, linear in its second argument and positive definite, complete under the norm it induces (in finite dimension completeness is automatic). Everything else follows from this structure. The **Cauchy-Schwarz inequality** |⟨x|y⟩|² ≤ ⟨x|x⟩⟨y|y⟩ makes probabilities well behaved; **Gram-Schmidt** turns any independent set into an orthonormal basis; the **spectral theorem** says a Hermitian (more generally, normal) operator can be written as Σ λᵢ|vᵢ⟩⟨vᵢ| with an orthonormal eigenbasis and, for Hermitian operators, real eigenvalues, which is why observables are Hermitian and why unitary evolution (which preserves inner products) is the reversible dynamics (Wilde, sections 3.2 to 3.4).\n\nComposite systems use the **tensor product**, whose dimension is the product of the dimensions, and operators obey the mixed-product rule (A⊗B)(C⊗D) = AC⊗BD. For a pure state of two systems the key structural result is the **Schmidt decomposition** (Wilde, section 3.8): every bipartite pure state can be written Σ √pᵢ |aᵢ⟩|bᵢ⟩ with orthonormal local bases, where the coefficients are the singular values of the matrix of amplitudes. The number of non-zero coefficients (the Schmidt rank) is 1 exactly for product states, and the entropy of the probabilities pᵢ measures the entanglement. The listing checks each statement on random instances; it is numerical evidence, not a proof. The labs use NumPy (and Qiskit's quantum_info module as an independent cross-check where noted) on states and channels generated in the lesson. Random instances use fixed seeds so that the outputs are reproducible; every identity is checked numerically, which is evidence and not a proof, and the lesson says where a proof is in the cited chapters."
+            },
+            {
+              "type": "code",
+              "id": "c-hilbert",
+              "language": "python",
+              "code": "import numpy as np\n\nrng = np.random.default_rng(11)\ndef random_state(d):\n    v = rng.normal(size=d) + 1j * rng.normal(size=d)\n    return v / np.linalg.norm(v)\n\n# --- inner-product space: the axioms hold for random vectors (conjugate symmetry, linearity in the second argument, positivity)\na, b, c = (rng.normal(size=5) + 1j * rng.normal(size=5) for _ in range(3))\nip = lambda x, y: np.vdot(x, y)                                           # <x|y> = sum conj(x_i) y_i\nalpha, beta = 0.3 - 0.7j, 1.1 + 0.2j\nprint(\"conjugate symmetry <a|b> = conj(<b|a>):\", np.isclose(ip(a, b), np.conj(ip(b, a))))\nprint(\"linearity in the second argument:\", np.isclose(ip(a, alpha * b + beta * c), alpha * ip(a, b) + beta * ip(a, c)))\nprint(\"positivity <a|a> >= 0 and = 0 only for the zero vector:\", ip(a, a).real > 0 and np.isclose(ip(a, a).imag, 0), np.isclose(ip(np.zeros(5), np.zeros(5)), 0))\nprint(\"Cauchy-Schwarz |<a|b>|^2 <= <a|a><b|b> on 1,000 random pairs:\", all(abs(ip(x, y)) ** 2 <= ip(x, x).real * ip(y, y).real + 1e-12 for x, y in ((rng.normal(size=6) + 1j * rng.normal(size=6), rng.normal(size=6) + 1j * rng.normal(size=6)) for _ in range(1000))))\n\n# --- Gram-Schmidt builds an orthonormal basis from any independent set\ndef gram_schmidt(vectors):\n    basis = []\n    for v in vectors:\n        w = v.copy()\n        for e in basis:\n            w = w - ip(e, w) * e\n        basis.append(w / np.linalg.norm(w))\n    return np.array(basis)\nE = gram_schmidt([rng.normal(size=4) + 1j * rng.normal(size=4) for _ in range(4)])\nprint(\"Gram-Schmidt output is orthonormal (E E^dagger = I):\", np.allclose(E @ E.conj().T, np.eye(4)))\n\n# --- spectral theorem: a Hermitian operator has real eigenvalues and an orthonormal eigenbasis; a normal operator is unitarily diagonalisable\nM = rng.normal(size=(4, 4)) + 1j * rng.normal(size=(4, 4))\nH = (M + M.conj().T) / 2\nvalues, vectors = np.linalg.eigh(H)\nprint(\"Hermitian: eigenvalues real, H = sum lambda_i |v_i><v_i|:\", np.allclose(vectors @ np.diag(values) @ vectors.conj().T, H), \"| eigenvectors orthonormal:\", np.allclose(vectors.conj().T @ vectors, np.eye(4)))\nU = vectors                                                               # a unitary matrix\nN = U @ np.diag(rng.normal(size=4) + 1j * rng.normal(size=4)) @ U.conj().T            # a normal (not Hermitian) operator\nprint(\"normal operator commutes with its adjoint, N N^dagger = N^dagger N:\", np.allclose(N @ N.conj().T, N.conj().T @ N), \"| and is not Hermitian:\", not np.allclose(N, N.conj().T))\nprint(\"unitary evolution preserves inner products and norms:\", np.isclose(ip(U @ a[:4], U @ b[:4]), ip(a[:4], b[:4])))\n\n# --- tensor products: dimensions multiply, and the mixed-product rule (A x B)(C x D) = AC x BD holds\nA_, B_, C_, D_ = (rng.normal(size=(2, 2)) for _ in range(4))\nprint(\"dimension of a tensor product of 3 qubits:\", np.kron(np.kron(random_state(2), random_state(2)), random_state(2)).shape[0], \"= 2^3\")\nprint(\"mixed-product rule (A x B)(C x D) = AC x BD:\", np.allclose(np.kron(A_, B_) @ np.kron(C_, D_), np.kron(A_ @ C_, B_ @ D_)))\n\n# --- Schmidt decomposition by SVD (Wilde, section 3.8): any bipartite pure state is sum sqrt(p_i) |a_i>|b_i> with orthonormal local bases\ndA, dB = 4, 3\npsi = random_state(dA * dB)\nU_, s, Vh = np.linalg.svd(psi.reshape(dA, dB), full_matrices=False)          # the coefficient matrix psi_ij has singular values = Schmidt coefficients\nprint()\nprint(\"Schmidt coefficients of a random 4 x 3 pure state:\", np.round(s, 4), \"| sum of squares =\", round(float((s ** 2).sum()), 6))\nrebuilt = sum(s[i] * np.kron(U_[:, i], Vh[i, :]) for i in range(len(s)))\nprint(\"the Schmidt sum reproduces the state exactly:\", np.allclose(rebuilt, psi), \"| Schmidt rank:\", int((s > 1e-12).sum()), \"(at most min(dA, dB) = 3)\")\nentropy = -sum(p * np.log2(p) for p in s ** 2 if p > 1e-15)\nprint(\"entanglement entropy from the Schmidt coefficients:\", round(float(entropy), 4), \"bits (maximum log2(3) =\", round(float(np.log2(3)), 4), \")\")\nproduct = np.kron(random_state(dA), random_state(dB))\nprint(\"a product state has one Schmidt coefficient:\", int((np.linalg.svd(product.reshape(dA, dB), compute_uv=False) > 1e-12).sum()) == 1)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-hilbert",
+              "language": "text",
+              "code": "conjugate symmetry <a|b> = conj(<b|a>): True\nlinearity in the second argument: True\npositivity <a|a> >= 0 and = 0 only for the zero vector: True True\nCauchy-Schwarz |<a|b>|^2 <= <a|a><b|b> on 1,000 random pairs: True\nGram-Schmidt output is orthonormal (E E^dagger = I): True\nHermitian: eigenvalues real, H = sum lambda_i |v_i><v_i|: True | eigenvectors orthonormal: True\nnormal operator commutes with its adjoint, N N^dagger = N^dagger N: True | and is not Hermitian: True\nunitary evolution preserves inner products and norms: True\ndimension of a tensor product of 3 qubits: 8 = 2^3\nmixed-product rule (A x B)(C x D) = AC x BD: True\n\nSchmidt coefficients of a random 4 x 3 pure state: [0.8184 0.5082 0.2682] | sum of squares = 1.0\nthe Schmidt sum reproduces the state exactly: True | Schmidt rank: 3 (at most min(dA, dB) = 3)\nentanglement entropy from the Schmidt coefficients: 1.1649 bits (maximum log2(3) = 1.585 )\na product state has one Schmidt coefficient: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The axioms hold for the random vectors tested, Cauchy-Schwarz held for 1,000 random pairs, Gram-Schmidt produced an orthonormal set, and the eigendecomposition of a random Hermitian matrix reproduced it with orthonormal real-eigenvalue structure. A normal operator was built that is not Hermitian yet commutes with its adjoint, which is the class the spectral theorem covers beyond observables (it includes unitaries). The Schmidt decomposition of a random 4 × 3 pure state has three coefficients (0.8184, 0.5082, 0.2682) whose squares sum to 1, the Schmidt sum reproduces the state exactly, and the entanglement entropy of 1.1649 bits is below the maximum log₂3 = 1.585; a product state has a single coefficient.\n\n**Why it matters later.** The Schmidt coefficients are the spectrum of the reduced state, so they are the bridge to density operators (1.2) and entropy (1.6); the singular-value view is also how entanglement is computed in practice for large states (matrix-product-state methods truncate small Schmidt coefficients). **Common mistakes:** forgetting the conjugate in the inner product (np.vdot conjugates its first argument, which matters for complex vectors), and treating the Schmidt rank of a mixed state as defined (it is not; it is a property of pure states)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the spectral theorem say for a Hermitian operator?",
+              "options": [
+                "It has real eigenvalues and an orthonormal eigenbasis",
+                "Its eigenvalues are all positive",
+                "It is always unitary"
+              ],
+              "correct_index": 0,
+              "explanation": "H = sum lambda_i |v_i⟩⟨v_i| with real lambda_i."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the Schmidt rank of a product state?",
+              "options": [
+                "1",
+                "The smaller local dimension",
+                "0"
+              ],
+              "correct_index": 0,
+              "explanation": "A product state has exactly one non-zero Schmidt coefficient."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How are the Schmidt coefficients of a bipartite pure state computed?",
+              "options": [
+                "As the singular values of its amplitude matrix",
+                "As the eigenvalues of the full state",
+                "As the norms of the two subsystems"
+              ],
+              "correct_index": 0,
+              "explanation": "psi_ij = sum_k s_k u_ik v_jk."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde, From Classical to Quantum Shannon Theory: Chapter 3 (Noiseless Quantum Theory), Sections 3.2 to 3.5 and Section 3.8 (Schmidt decomposition, Theorem 3.8.1)"
+            },
+            {
+              "book": "B111",
+              "locator": "Qiskit SDK documentation: qiskit.quantum_info (Statevector, Operator) for the conventions used in later lessons"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The numerical checks illustrate standard results; the proofs are in the cited chapters. Cauchy-Schwarz and the spectral theorem are textbook facts not re-derived here."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "1.2 Density Operators",
+          "summary": "Positivity and trace conditions, the Bloch ball, ensemble ambiguity, the partial trace checked against Qiskit, and purification.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **density operator** ρ describes a system whose state is not fully known, or one that is part of a larger entangled system. It is Hermitian, positive semidefinite and has trace 1 (Wilde, section 4.1). The set of density operators is convex: a mixture p·ρ₁ + (1−p)·ρ₂ is again a density operator, and the **extreme points are the pure states** (ρ = |ψ⟩⟨ψ|, with Tr ρ² = 1). The **purity** Tr ρ² ranges from 1/d for the maximally mixed state to 1. For a qubit, ρ = (I + r·σ)/2 is a state exactly when the Bloch vector satisfies |r| ≤ 1, a ball with the pure states on its surface.\n\nTwo ideas make density operators the right description. First, **ensemble ambiguity**: very different ensembles of pure states give the same operator, and no measurement can distinguish them, so ρ and not the ensemble is the physical state (the equal mixtures of {|0⟩,|1⟩} and of {|+⟩,|−⟩} are both I/2). Second, the **partial trace**: the state of a subsystem of a larger system is the partial trace of the joint state, and every density operator is the marginal of a pure state on a larger system, a **purification** (Wilde, section 5.1). The listing verifies all of these, and checks the partial trace against Qiskit's implementation. The labs use NumPy (and Qiskit's quantum_info module as an independent cross-check where noted) on states and channels generated in the lesson. Random instances use fixed seeds so that the outputs are reproducible; every identity is checked numerically, which is evidence and not a proof, and the lesson says where a proof is in the cited chapters."
+            },
+            {
+              "type": "code",
+              "id": "c-density-operators",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit.quantum_info import DensityMatrix, Statevector, partial_trace, entropy\n\nrng = np.random.default_rng(12)\ndef random_density(d, rank=None):\n    rank = rank or d\n    G = rng.normal(size=(d, rank)) + 1j * rng.normal(size=(d, rank))\n    rho = G @ G.conj().T\n    return rho / np.trace(rho).real\ndef is_density(rho):\n    return np.allclose(rho, rho.conj().T) and np.all(np.linalg.eigvalsh(rho) > -1e-12) and np.isclose(np.trace(rho).real, 1)\n\nrho = random_density(4)\nprint(\"random density operator: Hermitian, positive semidefinite, trace 1:\", is_density(rho), \"| purity Tr(rho^2) =\", round(float(np.trace(rho @ rho).real), 4), \"(1/d = 0.25 for the maximally mixed state, 1 for a pure state)\")\npure = np.outer(np.array([1, 1j, 0, 0]) / np.sqrt(2), np.conj(np.array([1, 1j, 0, 0]) / np.sqrt(2)))\nprint(\"a pure state has purity\", round(float(np.trace(pure @ pure).real), 6), \"and rho^2 = rho:\", np.allclose(pure @ pure, pure))\nprint(\"a mixture of density operators is a density operator:\", is_density(0.3 * random_density(3) + 0.7 * random_density(3)))\n\n# --- the qubit Bloch ball: rho = (I + r.sigma)/2 is a state exactly when |r| <= 1\nX = np.array([[0, 1], [1, 0]]); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]])\nbloch = lambda r: (np.eye(2) + r[0] * X + r[1] * Y + r[2] * Z) / 2\nprint(\"Bloch vector of length 0.9 is a state:\", is_density(bloch([0.9, 0, 0])), \"| length 1.0 (pure):\", is_density(bloch([0, 0, 1])), \"| length 1.1 is not:\", is_density(bloch([1.1, 0, 0])))\n\n# --- the same density operator arises from different ensembles (unitary freedom); only rho is physical\npsi0, psi1 = np.array([1, 0]), np.array([0, 1])\nens1 = 0.5 * np.outer(psi0, psi0) + 0.5 * np.outer(psi1, psi1)            # half |0>, half |1>\nplus, minus = np.array([1, 1]) / np.sqrt(2), np.array([1, -1]) / np.sqrt(2)\nens2 = 0.5 * np.outer(plus, plus) + 0.5 * np.outer(minus, minus)          # half |+>, half |->\nprint(\"ensembles {|0>, |1>} and {|+>, |->} with equal weights give the same density operator I/2:\", np.allclose(ens1, ens2), \"-> no measurement can tell them apart\")\n\n# --- partial trace: the reduced state of half a Bell pair is maximally mixed; checked against Qiskit\nbell = np.array([1, 0, 0, 1]) / np.sqrt(2)\nrho_bell = np.outer(bell, bell.conj())\ndef ptrace_B(r, dA, dB):\n    return np.einsum(\"ijkj->ik\", r.reshape(dA, dB, dA, dB))\nprint(\"reduced state of a Bell pair equals I/2:\", np.allclose(ptrace_B(rho_bell, 2, 2), np.eye(2) / 2), \"| agrees with qiskit partial_trace:\", np.allclose(partial_trace(DensityMatrix(rho_bell), [1]).data, np.eye(2) / 2))\nrho_ab = random_density(6)\nprint(\"own partial trace equals Qiskit's on a random 3 x 2 state (Qiskit orders subsystems with the last tensor factor first):\", np.allclose(ptrace_B(rho_ab, 3, 2), partial_trace(DensityMatrix(rho_ab, dims=(2, 3)), [0]).data))\n\n# --- purification: every density operator is the marginal of a pure state on a larger system (Wilde, section 5.1)\nrho = random_density(3)\nvalues, vectors = np.linalg.eigh(rho)\npurification = sum(np.sqrt(max(values[i], 0)) * np.kron(vectors[:, i], np.eye(3)[i]) for i in range(3))     # |psi> = sum sqrt(p_i) |e_i>|i>\nprint()\nprint(\"purification is a normalised pure state:\", np.isclose(np.linalg.norm(purification), 1), \"| tracing out the reference gives back rho:\", np.allclose(ptrace_B(np.outer(purification, purification.conj()), 3, 3), rho))\nref_state = np.einsum(\"ijil->jl\", np.outer(purification, purification.conj()).reshape(3, 3, 3, 3))          # trace out the system, keep the reference\nprint(\"entropy of the system = entropy of the purifying reference:\", np.isclose(entropy(DensityMatrix(rho), base=2), entropy(DensityMatrix(ref_state), base=2)), \"| value\", round(float(entropy(DensityMatrix(rho), base=2)), 4), \"bits\")\nprint(\"eigenvalues of rho (the Schmidt probabilities of the purification):\", np.round(values, 4))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-density-operators",
+              "language": "text",
+              "code": "random density operator: Hermitian, positive semidefinite, trace 1: True | purity Tr(rho^2) = 0.528 (1/d = 0.25 for the maximally mixed state, 1 for a pure state)\na pure state has purity 1.0 and rho^2 = rho: True\na mixture of density operators is a density operator: True\nBloch vector of length 0.9 is a state: True | length 1.0 (pure): True | length 1.1 is not: False\nensembles {|0>, |1>} and {|+>, |->} with equal weights give the same density operator I/2: True -> no measurement can tell them apart\nreduced state of a Bell pair equals I/2: True | agrees with qiskit partial_trace: True\nown partial trace equals Qiskit's on a random 3 x 2 state (Qiskit orders subsystems with the last tensor factor first): True\n\npurification is a normalised pure state: True | tracing out the reference gives back rho: True\nentropy of the system = entropy of the purifying reference: True | value 1.0535 bits\neigenvalues of rho (the Schmidt probabilities of the purification): [0.0357 0.2746 0.6897]",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Random density operators satisfy the three conditions; a pure state has purity exactly 1 and ρ² = ρ; mixtures stay valid; the Bloch vector of length 0.9 and 1.0 gives valid states while 1.1 does not. The two ensembles give the identical operator I/2. The partial trace of a Bell pair is I/2 and the own implementation agrees with Qiskit's `partial_trace` also on a random 3 × 2 state (Qiskit orders subsystems with the last tensor factor first, which the check respects). The purification built from the eigendecomposition, Σ√pᵢ|eᵢ⟩|i⟩, is normalised, its marginal reproduces ρ, and the **entropy of the system equals the entropy of the purifying reference** (1.0535 bits for the random state used), a fact that underlies most entropy inequalities (1.6).\n\n**Common mistakes:** thinking a mixed state is \"one of several pure states, we just don't know which\" (ensemble ambiguity says this is not a meaningful statement in general); mixing up tensor-factor order between libraries; and applying the Born rule to the ensemble instead of the operator. For a subsystem of an entangled state, the mixedness is not ignorance at all, it is entanglement with the rest."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which conditions define a density operator?",
+              "options": [
+                "Hermitian, positive semidefinite, trace one",
+                "Unitary with trace one",
+                "Diagonal with positive entries"
+              ],
+              "correct_index": 0,
+              "explanation": "These are checked by is_density in the listing."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does ensemble ambiguity mean?",
+              "options": [
+                "Different ensembles of pure states can give the same density operator and cannot be told apart",
+                "Density operators are ambiguous",
+                "Pure states are unobservable"
+              ],
+              "correct_index": 0,
+              "explanation": "{|0⟩,|1⟩} and {|+⟩,|-⟩} with equal weights both give I/2."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is a purification?",
+              "options": [
+                "A pure state of a larger system whose marginal is the given density operator",
+                "A way to remove noise from a state",
+                "A projective measurement"
+              ],
+              "correct_index": 0,
+              "explanation": "The system and its purifying reference have equal entropy."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Section 4.1 (Noisy quantum states), Section 4.3 (Composite noisy systems and the partial trace) and Section 5.1 (Purification)"
+            },
+            {
+              "book": "B111",
+              "locator": "Qiskit SDK documentation: qiskit.quantum_info.partial_trace and DensityMatrix"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Numerical checks of standard facts; the Bloch-ball statement for qubits and the purification construction are textbook results cited to Wilde by section."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "1.3 POVMs",
+          "summary": "A three-outcome measurement on one qubit, its Naimark dilation to a projective measurement, the Helstrom bound for minimum-error discrimination and unambiguous discrimination.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **positive operator-valued measure (POVM)** is a set of positive semidefinite operators E_k that sum to the identity; the probability of outcome k on a state ρ is Tr(E_k ρ) (Wilde, section 4.2). Projective measurements are the special case where the E_k are orthogonal projectors, but a POVM can have **more outcomes than the dimension** of the system: the symmetric three-outcome \"trine\" measurement on a qubit has elements (2/3)|ψ_k⟩⟨ψ_k| for three states 120° apart on the Bloch sphere, none of which is a projector. **Naimark's dilation theorem** says that every POVM is a projective measurement on a larger system: the isometry V|ψ⟩ = Σ_k √E_k|ψ⟩|k⟩ followed by measuring the ancilla reproduces the statistics.\n\nPOVMs matter because the best way to tell states apart is often not projective. For two states ρ₀ and ρ₁ with equal prior, the **Helstrom bound** gives the maximum probability of a correct guess, 1/2 + (1/4)‖ρ₀ − ρ₁‖₁, achieved by projecting on the positive part of ρ₀ − ρ₁. For two *pure* non-orthogonal states one can alternatively **never err** at the price of sometimes answering \"inconclusive\": the best unambiguous success probability is 1 − |⟨a|b⟩|. The listing builds the trine POVM, its Naimark dilation, and checks the Helstrom bound against the measurement derived from it and against 20,000 random measurements. The labs use NumPy (and Qiskit's quantum_info module as an independent cross-check where noted) on states and channels generated in the lesson. Random instances use fixed seeds so that the outputs are reproducible; every identity is checked numerically, which is evidence and not a proof, and the lesson says where a proof is in the cited chapters."
+            },
+            {
+              "type": "code",
+              "id": "c-povm",
+              "language": "python",
+              "code": "import numpy as np\n\nrng = np.random.default_rng(13)\nX = np.array([[0, 1], [1, 0]]); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]]); I2 = np.eye(2)\nket = lambda v: np.array(v, dtype=complex).reshape(-1, 1)\nproj = lambda v: ket(v) @ ket(v).conj().T\ntrace_norm = lambda M: np.linalg.svd(M, compute_uv=False).sum()\n\n# --- a POVM is a set of positive operators that sum to the identity; the \"trine\" has THREE outcomes on ONE qubit, which no projective measurement can have\nangles = [0, 2 * np.pi / 3, 4 * np.pi / 3]\ntrine_states = [ket([np.cos(t / 2), np.sin(t / 2)]) for t in angles]       # three qubit states 120 degrees apart on a great circle of the Bloch sphere\nPOVM = [(2 / 3) * (s @ s.conj().T) for s in trine_states]\nprint(\"trine POVM: three elements, each positive semidefinite:\", all(np.all(np.linalg.eigvalsh(E) > -1e-12) for E in POVM), \"| they sum to the identity:\", np.allclose(sum(POVM), I2))\nprint(\"each element has rank 1 and trace 2/3, so none is a projector:\", [int(np.linalg.matrix_rank(E)) for E in POVM], [round(float(np.trace(E).real), 4) for E in POVM])\nrho = proj([np.cos(0.3), np.sin(0.3)])\nprobabilities = [float(np.trace(E @ rho).real) for E in POVM]\nprint(\"outcome probabilities for a test state:\", np.round(probabilities, 4), \"sum =\", round(sum(probabilities), 6))\n\n# --- Naimark dilation: any POVM is a projective measurement on a larger space; here the qubit is joined with an ancilla of dimension 3\n# the Naimark isometry V |psi> = sum_k sqrt(E_k) |psi> |k>, with the projectors |k><k| measured on the ancilla\ndef sqrtm_psd(E):\n    w, v = np.linalg.eigh(E)\n    return v @ np.diag(np.sqrt(np.clip(w, 0, None))) @ v.conj().T\nV = np.vstack([sqrtm_psd(E) for E in POVM])                                # a 6 x 2 matrix, stacking sqrt(E_k)\nprint()\nprint(\"the dilation V is an isometry (V^dagger V = I):\", np.allclose(V.conj().T @ V, I2))\nbig_state = V @ ket([np.cos(0.3), np.sin(0.3)])                            # the state in the dilated space (system x ancilla)\nnaimark = [float(np.linalg.norm(big_state[2 * k:2 * k + 2]) ** 2) for k in range(3)]           # measuring the ancilla in the computational basis\nprint(\"projective measurement of the ancilla gives the POVM statistics:\", np.allclose(naimark, probabilities), np.round(naimark, 4))\n\n# --- minimum-error discrimination of two states: the Helstrom bound P = 1/2 + 1/4 |rho0 - rho1|_1, attained by projecting on the positive part of rho0 - rho1\nrho0 = proj([1, 0])\nrho1 = 0.8 * proj([np.cos(0.5), np.sin(0.5)]) + 0.2 * I2 / 2\nhelstrom = 0.5 + 0.25 * trace_norm(rho0 - rho1)\nw, v = np.linalg.eigh(rho0 - rho1)\npositive_part = sum(v[:, [i]] @ v[:, [i]].conj().T for i in range(2) if w[i] > 0)\nsuccess = 0.5 * np.trace(positive_part @ rho0).real + 0.5 * np.trace((I2 - positive_part) @ rho1).real\nprint()\nprint(f\"Helstrom bound for two given states: {helstrom:.6f}; the measurement built from the positive part of rho0 - rho1 achieves {success:.6f}\")\nbest = 0\nfor _ in range(20000):                                                     # no random two-outcome POVM may beat the bound\n    M = rng.normal(size=(2, 2)) + 1j * rng.normal(size=(2, 2))\n    P = M @ M.conj().T\n    P = P / np.linalg.eigvalsh(P).max()                                    # scale so that 0 <= P <= I\n    s = 0.5 * np.trace(P @ rho0).real + 0.5 * np.trace((I2 - P) @ rho1).real\n    best = max(best, s)\nprint(f\"best of 20,000 random two-outcome POVMs: {best:.6f} (never above the bound: {best <= helstrom + 1e-9})\")\n\n# --- unambiguous discrimination of two pure states needs a POVM with an inconclusive outcome: success 1 - |<a|b>|, never an error\na, b = ket([1, 0]), ket([np.cos(0.5), np.sin(0.5)])\noverlap = abs((a.conj().T @ b)[0, 0])\nprint()\nprint(f\"two pure states with overlap {overlap:.4f}: minimum-error success {0.5 * (1 + np.sqrt(1 - overlap ** 2)):.4f}; unambiguous (error-free) success {1 - overlap:.4f} with the rest inconclusive\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-povm",
+              "language": "text",
+              "code": "trine POVM: three elements, each positive semidefinite: True | they sum to the identity: True\neach element has rank 1 and trace 2/3, so none is a projector: [1, 1, 1] [0.6667, 0.6667, 0.6667]\noutcome probabilities for a test state: [0.6084 0.3588 0.0328] sum = 1.0\n\nthe dilation V is an isometry (V^dagger V = I): True\nprojective measurement of the ancilla gives the POVM statistics: True [0.6084 0.3588 0.0328]\n\nHelstrom bound for two given states: 0.720159; the measurement built from the positive part of rho0 - rho1 achieves 0.720159\nbest of 20,000 random two-outcome POVMs: 0.718715 (never above the bound: True)\n\ntwo pure states with overlap 0.8776: minimum-error success 0.7397; unambiguous (error-free) success 0.1224 with the rest inconclusive",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The trine elements are positive, sum to the identity, have rank 1 and trace 2/3 (so none is a projector), and give outcome probabilities (0.6084, 0.3588, 0.0328) on a test state. The 6 × 2 stack of the square roots is an isometry and measuring the ancilla in the dilated space reproduces exactly the same three probabilities. For the two given states the Helstrom bound is 0.720159 and the measurement built from the positive part of ρ₀ − ρ₁ achieves it to six places, while no one of 20,000 random two-outcome POVMs exceeded it (the best reached 0.718715). For two pure states with overlap 0.8776 the minimum-error success is 0.7397 whereas the error-free strategy succeeds only 12.24% of the time: the two criteria are different goals and give different measurements.\n\n**Where this reappears.** State discrimination is the core of quantum cryptanalysis models (an eavesdropper trying to tell BB84 states apart, C6), of the Holevo bound (1.7) and of quantum hypothesis testing. **Common mistake:** assuming a measurement on a d-dimensional system has at most d outcomes; the dimension limits the number of *orthogonal* outcomes, not the outcomes of a POVM."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What conditions define a POVM?",
+              "options": [
+                "Positive semidefinite elements that sum to the identity",
+                "Orthogonal projectors only",
+                "Unitary elements"
+              ],
+              "correct_index": 0,
+              "explanation": "Probabilities are Tr(E_k rho)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does Naimark's theorem say?",
+              "options": [
+                "Every POVM is a projective measurement on a larger system",
+                "Every projective measurement is a POVM on a smaller system only",
+                "POVMs cannot be implemented"
+              ],
+              "correct_index": 0,
+              "explanation": "The isometry V = stack of sqrt(E_k) and an ancilla measurement realise it."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does the Helstrom bound give?",
+              "options": [
+                "The maximum success probability of distinguishing two states, 1/2 + 1/4 |rho0 - rho1|_1",
+                "The minimum entropy of a state",
+                "The number of POVM outcomes"
+              ],
+              "correct_index": 0,
+              "explanation": "It is attained by projecting on the positive part of rho0 - rho1."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Section 4.2 (Measurement in the noisy quantum theory: POVMs) and the discussion of Naimark dilation and distinguishability in Chapter 9 (trace distance, Section 9.1)"
+            },
+            {
+              "book": "B111",
+              "locator": "Qiskit SDK documentation: qiskit.quantum_info.Operator (POVM construction)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The Helstrom bound and the unambiguous-discrimination success probability 1 - |<a|b>| are standard results stated from general knowledge and checked numerically; the unambiguous-discrimination theorem is not in the cited sections."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "1.4 Quantum Channels",
+          "summary": "Kraus representations of amplitude damping, dephasing and depolarizing channels, their effect on the Bloch vector, composition, the Choi matrix checked against Qiskit, and the Stinespring dilation.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **quantum channel** is the most general physical evolution of a system that may be noisy or open: a linear map N on density operators that is **completely positive and trace preserving (CPTP)**. Every channel has a **Kraus representation** N(ρ) = Σ_k K_k ρ K_k† with Σ K_k†K_k = I (Wilde, section 4.4), and the representation is the practical way to define noise models: **amplitude damping** has K₀ = diag(1, √(1−γ)) and K₁ = √γ |0⟩⟨1|; **dephasing** mixes the identity and Z; **depolarizing** mixes the identity with the three Pauli operators. A channel always comes from a **unitary on the system plus an environment** followed by tracing out the environment, the **Stinespring dilation**: stacking the Kraus operators gives an isometry V, and the number of Kraus operators is the dimension of the environment needed (Wilde, chapter 5). The **Choi matrix** J = Σ|i⟩⟨j| ⊗ N(|i⟩⟨j|) encodes the channel as a state-like operator.\n\nThe listing implements the three channels, checks that they preserve the trace and map states to states, tracks the Bloch vector (the intuitive picture of noise), composes two channels through products of Kraus operators, computes the Choi matrix and compares its spectrum with Qiskit's, and builds the Stinespring isometry and verifies the dilation. The labs use NumPy (and Qiskit's quantum_info module as an independent cross-check where noted) on states and channels generated in the lesson. Random instances use fixed seeds so that the outputs are reproducible; every identity is checked numerically, which is evidence and not a proof, and the lesson says where a proof is in the cited chapters."
+            },
+            {
+              "type": "code",
+              "id": "c-channels-advanced",
+              "language": "python",
+              "code": "import numpy as np\nfrom qiskit.quantum_info import Kraus, Choi\n\nrng = np.random.default_rng(14)\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]]); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]])\ndef apply(kraus, rho):\n    return sum(K @ rho @ K.conj().T for K in kraus)\ndef is_trace_preserving(kraus):\n    return np.allclose(sum(K.conj().T @ K for K in kraus), np.eye(kraus[0].shape[1]))\ndef random_qubit_state():\n    v = rng.normal(size=2) + 1j * rng.normal(size=2); v /= np.linalg.norm(v)\n    return np.outer(v, v.conj())\n\n# --- Kraus representations of the standard single-qubit channels\ndef amplitude_damping(gamma):\n    return [np.array([[1, 0], [0, np.sqrt(1 - gamma)]]), np.array([[0, np.sqrt(gamma)], [0, 0]])]\ndef dephasing(p):\n    return [np.sqrt(1 - p) * I2, np.sqrt(p) * Z]\ndef depolarizing(p):\n    return [np.sqrt(1 - 3 * p / 4) * I2] + [np.sqrt(p / 4) * P for P in (X, Y, Z)]\nchannels = {\"amplitude damping (gamma 0.3)\": amplitude_damping(0.3), \"dephasing (p 0.2)\": dephasing(0.2), \"depolarizing (p 0.4)\": depolarizing(0.4)}\nprint(f\"{'channel':<30} {'trace preserving':>17} {'maps states to states':>22}\")\nfor name, K in channels.items():\n    ok = all(np.isclose(np.trace(apply(K, r)).real, 1) and np.all(np.linalg.eigvalsh(apply(K, r)) > -1e-12) for r in (random_qubit_state() for _ in range(200)))\n    print(f\"{name:<30} {str(is_trace_preserving(K)):>17} {str(ok):>22}\")\n\n# --- the effect on the Bloch vector\ndef bloch_vector(rho):\n    return np.array([np.trace(rho @ P).real for P in (X, Y, Z)])\nr0 = (I2 + 0.6 * X + 0.0 * Y + 0.8 * Z) / 2\nprint()\nprint(\"input Bloch vector (0.6, 0, 0.8); after each channel:\")\nfor name, K in channels.items():\n    print(f\"  {name:<30} {np.round(bloch_vector(apply(K, r0)), 4)}\")\nprint(\"amplitude damping pulls the state towards |0> (z grows) and shrinks x; dephasing only shrinks x and y; depolarizing shrinks everything uniformly by 1 - p\")\n\n# --- composition of channels is a channel; the Kraus operators are products\nK_total = [A @ B for A in amplitude_damping(0.3) for B in dephasing(0.2)]\nprint()\nprint(\"composition (dephasing then amplitude damping) has Kraus operators A_i B_j:\", len(K_total), \"operators, trace preserving:\", is_trace_preserving(K_total), \"| equals applying them one after the other:\", np.allclose(apply(K_total, r0), apply(amplitude_damping(0.3), apply(dephasing(0.2), r0))))\n\n# --- Choi matrix: J = sum_ij |i><j| (x) N(|i><j|); the channel is completely positive iff J is positive semidefinite\ndef choi_matrix(kraus):\n    d = kraus[0].shape[1]\n    J = np.zeros((d * d, d * d), dtype=complex)\n    for i in range(d):\n        for j in range(d):\n            Eij = np.zeros((d, d)); Eij[i, j] = 1\n            J += np.kron(Eij, apply(kraus, Eij))\n    return J\nJ = choi_matrix(amplitude_damping(0.3))\nprint(\"Choi matrix of amplitude damping is positive semidefinite:\", np.all(np.linalg.eigvalsh(J) > -1e-12), \"| rank (number of independent Kraus operators):\", int(np.linalg.matrix_rank(J)))\nprint(\"agrees with Qiskit's Choi (same operator, up to the ordering convention):\", np.allclose(np.sort(np.linalg.eigvalsh(J)), np.sort(np.linalg.eigvalsh(Choi(Kraus(amplitude_damping(0.3))).data))))\n\n# --- Stinespring dilation: the channel as a unitary on system + environment followed by tracing out the environment\nK = amplitude_damping(0.3)\nV = np.vstack(K)                                                            # an isometry from the qubit into qubit (x) environment of dimension 2\nprint()\nprint(\"Stinespring isometry V = stack of the Kraus operators satisfies V^dagger V = I:\", np.allclose(V.conj().T @ V, I2))\npsi = V @ np.array([[np.cos(0.4)], [np.sin(0.4)]])\njoint = (psi @ psi.conj().T).reshape(2, 2, 2, 2)                           # indices: environment, system, environment', system'\npsi_in = np.array([[np.cos(0.4)], [np.sin(0.4)]])\nprint(\"tracing out the environment reproduces the channel output:\", np.allclose(np.einsum(\"iaib->ab\", joint), apply(K, psi_in @ psi_in.conj().T)))\nprint(\"a channel with k Kraus operators needs an environment of dimension k, and the environment is where the lost information goes (Wilde, chapter 5)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-channels-advanced",
+              "language": "text",
+              "code": "channel                         trace preserving  maps states to states\namplitude damping (gamma 0.3)               True                   True\ndephasing (p 0.2)                           True                   True\ndepolarizing (p 0.4)                        True                   True\n\ninput Bloch vector (0.6, 0, 0.8); after each channel:\n  amplitude damping (gamma 0.3)  [0.502 0.    0.86 ]\n  dephasing (p 0.2)              [0.36 0.   0.8 ]\n  depolarizing (p 0.4)           [0.36 0.   0.48]\namplitude damping pulls the state towards |0> (z grows) and shrinks x; dephasing only shrinks x and y; depolarizing shrinks everything uniformly by 1 - p\n\ncomposition (dephasing then amplitude damping) has Kraus operators A_i B_j: 4 operators, trace preserving: True | equals applying them one after the other: True\nChoi matrix of amplitude damping is positive semidefinite: True | rank (number of independent Kraus operators): 2\nagrees with Qiskit's Choi (same operator, up to the ordering convention): True\n\nStinespring isometry V = stack of the Kraus operators satisfies V^dagger V = I: True\ntracing out the environment reproduces the channel output: True\na channel with k Kraus operators needs an environment of dimension k, and the environment is where the lost information goes (Wilde, chapter 5)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "All three channels are trace preserving and map 200 random states to valid states. On the Bloch vector (0.6, 0, 0.8) amplitude damping with γ = 0.3 gives (0.502, 0, 0.86): z grows (the state is pulled towards |0⟩) and x shrinks by √(1−γ); dephasing with p = 0.2 gives (0.36, 0, 0.8): only the coherences x and y shrink; depolarizing with p = 0.4 gives (0.36, 0, 0.48): every component shrinks by 1 − p. The composition of two channels has four Kraus operators A_i B_j and equals applying them in turn. The Choi matrix of amplitude damping is positive semidefinite of rank 2 (the number of independent Kraus operators) and its spectrum equals Qiskit's. The stack of the Kraus operators satisfies V†V = I and tracing out the environment reproduces the channel output.\n\n**Reading the pictures.** Amplitude damping models energy relaxation (T1) and dephasing models loss of phase coherence (T2): both appear in the hardware lessons (B5) and in the Qiskit noise models. A channel is irreversible in general because the environment holds the information that was lost; the dilation makes that explicit. **Common mistake:** forgetting the completeness condition Σ K†K = I when defining a noise model by hand (the output then loses trace)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which two conditions define a quantum channel?",
+              "options": [
+                "Completely positive and trace preserving",
+                "Unitary and Hermitian",
+                "Linear and invertible"
+              ],
+              "correct_index": 0,
+              "explanation": "Kraus operators with sum K^dagger K = I give a CPTP map."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does amplitude damping do to a Bloch vector?",
+              "options": [
+                "It pulls it towards |0⟩ (z grows towards 1) and shrinks x and y",
+                "It shrinks all components equally",
+                "It rotates it about the z axis"
+              ],
+              "correct_index": 0,
+              "explanation": "The listing shows (0.6, 0, 0.8) becoming (0.502, 0, 0.86)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the Stinespring dilation?",
+              "options": [
+                "A unitary or isometry on system plus environment, followed by tracing out the environment",
+                "A way to make channels reversible",
+                "A measurement of the environment only"
+              ],
+              "correct_index": 0,
+              "explanation": "Stacking the Kraus operators gives the isometry."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Section 4.4 (Quantum evolutions: Kraus representation), Section 4.7 (Examples of quantum channels) and Chapter 5 (Purified quantum theory: isometric evolution)"
+            },
+            {
+              "book": "B111",
+              "locator": "Qiskit SDK documentation: qiskit.quantum_info.Kraus, Choi and the Aer noise channels"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The Stinespring construction and Choi-Jamiolkowski correspondence are standard results cited to Wilde by section; the Qiskit comparison checks the spectrum of the Choi matrix (the ordering convention differs)."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "1.5 Completely Positive Maps",
+          "summary": "The transpose as a positive but not completely positive map, the Choi test for complete positivity, extensions to entangled inputs, and recovery of Kraus operators from the Choi matrix.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A linear map Φ is **positive** if it maps every state to a state. That is not enough for a physical operation. The system may be **entangled with something else** that Φ does not act on, so the map that is actually applied is id ⊗ Φ, and it must also map states to states. Φ is **completely positive** when id_n ⊗ Φ is positive for every dimension n. The canonical counterexample is the **transpose**: it is positive, but applying it to half of an entangled pair produces an operator with a negative eigenvalue, which is not a state (this is the Peres criterion in disguise, 1.8). The **Choi-Jamiołkowski theorem** gives a finite test: Φ is completely positive exactly when its Choi matrix J(Φ) = Σ|i⟩⟨j| ⊗ Φ(|i⟩⟨j|) is positive semidefinite, and the eigenvectors of J, reshaped, are the Kraus operators (Wilde, sections 4.4 and 4.6).\n\nThe listing tests positivity of the transpose on 1,000 random qubit states, applies id ⊗ T to a Bell pair, computes the Choi matrix of the transpose and shows that it is the swap operator, contrasts it with a Kraus (amplitude-damping) channel whose Choi matrix is positive, tests both maps on 300 random two-qubit states through the extension, and recovers the Kraus operators of the channel from its Choi matrix. The labs use NumPy (and Qiskit's quantum_info module as an independent cross-check where noted) on states and channels generated in the lesson. Random instances use fixed seeds so that the outputs are reproducible; every identity is checked numerically, which is evidence and not a proof, and the lesson says where a proof is in the cited chapters."
+            },
+            {
+              "type": "code",
+              "id": "c-cp-maps",
+              "language": "python",
+              "code": "import numpy as np\n\nrng = np.random.default_rng(15)\nI2 = np.eye(2)\ndef rand_state(d):\n    G = rng.normal(size=(d, d)) + 1j * rng.normal(size=(d, d))\n    r = G @ G.conj().T\n    return r / np.trace(r).real\ndef choi(Phi, d):\n    J = np.zeros((d * d, d * d), dtype=complex)\n    for i in range(d):\n        for j in range(d):\n            E = np.zeros((d, d)); E[i, j] = 1\n            J += np.kron(E, Phi(E))\n    return J\n\n# --- the transpose map is POSITIVE (it maps every state to a state) but NOT completely positive\ntranspose = lambda rho: rho.T\nprint(\"transpose maps 1,000 random qubit states to states (positive):\", all(np.all(np.linalg.eigvalsh(transpose(r)) > -1e-12) for r in (rand_state(2) for _ in range(1000))))\nbell = np.array([1, 0, 0, 1]) / np.sqrt(2)\nrho_bell = np.outer(bell, bell)\ndef partial_transpose_B(rho, dA=2, dB=2):\n    return rho.reshape(dA, dB, dA, dB).transpose(0, 3, 2, 1).reshape(dA * dB, dA * dB)\npt = partial_transpose_B(rho_bell)\nprint(\"applying the transpose to half of a Bell pair (id (x) T) gives a Hermitian operator with eigenvalues\", np.round(np.linalg.eigvalsh(pt), 4), \"-> negative: not a state, so T is not completely positive\")\nJ = choi(transpose, 2)\nprint(\"Choi matrix of the transpose map has eigenvalues\", np.round(np.linalg.eigvalsh(J), 4), \"(a map is completely positive exactly when its Choi matrix is positive semidefinite)\")\nSWAP = np.array([[1, 0, 0, 0], [0, 0, 1, 0], [0, 1, 0, 0], [0, 0, 0, 1]])\nprint(\"the Choi matrix of the transpose IS the swap operator (eigenvalues +1 three times and -1 once):\", np.allclose(J, SWAP))\n\n# --- a channel built from Kraus operators is completely positive: its Choi matrix is positive semidefinite and every extension stays positive\nK = [np.array([[1, 0], [0, np.sqrt(0.6)]]), np.array([[0, np.sqrt(0.4)], [0, 0]])]\nchannel = lambda rho: sum(k @ rho @ k.conj().T for k in K)\nJc = choi(channel, 2)\nprint()\nprint(\"amplitude damping: Choi eigenvalues\", np.round(np.linalg.eigvalsh(Jc), 4), \"-> positive semidefinite, completely positive\")\ndef extended_output(Phi, state_ab, dA=2):\n    # apply (id_A (x) Phi_B) to a bipartite state by acting on the second tensor factor: expand the second factor with matrix units\n    dB = state_ab.shape[0] // dA\n    out = np.zeros_like(state_ab, dtype=complex)\n    blocks = state_ab.reshape(dA, dB, dA, dB)\n    result = np.zeros((dA, dB, dA, dB), dtype=complex)\n    for a in range(dA):\n        for ap in range(dA):\n            result[a, :, ap, :] = Phi(blocks[a, :, ap, :])\n    return result.reshape(dA * dB, dA * dB)\nbad = min(np.linalg.eigvalsh(extended_output(channel, rand_state(4))).min() for _ in range(300))\nprint(\"extension (id (x) channel) applied to 300 random two-qubit states: smallest eigenvalue\", round(float(bad), 6), \"(never negative)\")\nbad_T = min(np.linalg.eigvalsh(extended_output(transpose, rand_state(4))).min() for _ in range(300))\nprint(\"extension (id (x) transpose) applied to 300 random two-qubit states: smallest eigenvalue\", round(float(bad_T), 6), \"(negative values occur for entangled inputs)\")\n\n# --- from the Choi matrix back to Kraus operators: the eigenvectors of J, reshaped, are the Kraus operators\nvalues, vectors = np.linalg.eigh(Jc)\nrecovered = [np.sqrt(values[i]) * vectors[:, i].reshape(2, 2).T for i in range(4) if values[i] > 1e-12]\nrho = rand_state(2)\nprint()\nprint(\"Kraus operators recovered from the eigendecomposition of the Choi matrix:\", len(recovered), \"| they reproduce the channel on a random state:\", np.allclose(sum(k @ rho @ k.conj().T for k in recovered), channel(rho)), \"| trace preserving:\", np.allclose(sum(k.conj().T @ k for k in recovered), I2))\nprint(\"complete positivity matters because a channel acts on a system that may be entangled with the rest of the world; positivity on the system alone is not enough\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-cp-maps",
+              "language": "text",
+              "code": "transpose maps 1,000 random qubit states to states (positive): True\napplying the transpose to half of a Bell pair (id (x) T) gives a Hermitian operator with eigenvalues [-0.5  0.5  0.5  0.5] -> negative: not a state, so T is not completely positive\nChoi matrix of the transpose map has eigenvalues [-1.  1.  1.  1.] (a map is completely positive exactly when its Choi matrix is positive semidefinite)\nthe Choi matrix of the transpose IS the swap operator (eigenvalues +1 three times and -1 once): True\n\namplitude damping: Choi eigenvalues [0.  0.  0.4 1.6] -> positive semidefinite, completely positive\nextension (id (x) channel) applied to 300 random two-qubit states: smallest eigenvalue 0.00052 (never negative)\nextension (id (x) transpose) applied to 300 random two-qubit states: smallest eigenvalue -0.239166 (negative values occur for entangled inputs)\n\nKraus operators recovered from the eigendecomposition of the Choi matrix: 2 | they reproduce the channel on a random state: True | trace preserving: True\ncomplete positivity matters because a channel acts on a system that may be entangled with the rest of the world; positivity on the system alone is not enough",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The transpose maps all 1,000 random qubit states to states, so it is positive; id ⊗ T on a Bell pair has eigenvalues (−0.5, 0.5, 0.5, 0.5), so it is not completely positive; its Choi matrix has eigenvalues (−1, 1, 1, 1) and equals the swap operator. The amplitude-damping channel has Choi eigenvalues (0, 0, 0.4, 1.6), all non-negative, and the extension id ⊗ channel on 300 random two-qubit states never produced a negative eigenvalue (the smallest was +0.00052), while id ⊗ transpose gave eigenvalues as low as −0.239. The eigendecomposition of the Choi matrix returned two Kraus operators that reproduce the channel on a random state and are trace preserving.\n\n**Why complete positivity is the right requirement.** It is not an extra mathematical luxury: any process that can be implemented by a unitary on a larger system followed by discarding part of it is completely positive, and any completely positive trace-preserving map can be implemented that way. Maps that are only positive (time reversal, the transpose, the \"universal NOT\" for qubits) describe operations that cannot be physically implemented on part of an entangled state. **Common mistake:** testing a candidate noise model for positivity on single-system states only; the test must include the entangled extension or the Choi matrix."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is the transpose map not a valid quantum operation?",
+              "options": [
+                "It is positive but not completely positive: id (x) T on a Bell pair has a negative eigenvalue",
+                "It is not linear",
+                "It changes the trace"
+              ],
+              "correct_index": 0,
+              "explanation": "The Choi matrix of the transpose is the swap operator."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "How does the Choi matrix test complete positivity?",
+              "options": [
+                "The map is completely positive exactly when the Choi matrix is positive semidefinite",
+                "When the Choi matrix has trace one",
+                "When it is diagonal"
+              ],
+              "correct_index": 0,
+              "explanation": "J(Phi) = sum |i⟩⟨j| (x) Phi(|i⟩⟨j|)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How are Kraus operators recovered from the Choi matrix?",
+              "options": [
+                "From its eigenvectors, scaled by the square roots of the eigenvalues and reshaped",
+                "From its trace",
+                "From its determinant"
+              ],
+              "correct_index": 0,
+              "explanation": "The number of non-zero eigenvalues is the Kraus rank."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Section 4.4 (Quantum evolutions, Choi-Kraus theorem) and Section 4.6 (Quantum channels are all encompassing; positive versus completely positive maps)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement about the 'universal NOT' being only positive is stated from general knowledge; the Choi test is checked numerically on the examples. Proofs are in the cited sections."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "1.6 Quantum Entropy",
+          "summary": "Von Neumann entropy and its basic properties, negative conditional entropy for the Bell state, and numerical tests of subadditivity, Araki-Lieb and strong subadditivity.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **von Neumann entropy** S(ρ) = −Tr ρ log ρ = −Σ λᵢ log λᵢ (with the eigenvalues λᵢ of ρ) measures the uncertainty of a quantum state (Wilde, section 11.1). It is 0 exactly for pure states, equals log d for the maximally mixed state, never exceeds log d, is invariant under unitaries, and is **concave** in ρ. For a bipartite state, S(AB) is the joint entropy and S(A|B) = S(AB) − S(B) the **conditional entropy**. Unlike the classical case, S(A|B) can be **negative**: for a Bell pair S(AB) = 0 while S(B) = 1 bit, so S(A|B) = −1, a signature of entanglement (Wilde, sections 11.3 and 11.4).\n\nThe main inequalities are **subadditivity** S(AB) ≤ S(A) + S(B), the **Araki-Lieb** inequality S(AB) ≥ |S(A) − S(B)|, and **strong subadditivity** S(AB) + S(BC) ≥ S(B) + S(ABC) (Lieb and Ruskai), the deepest of them and the quantum analogue of the non-negativity of conditional mutual information (Wilde, section 11.9). The listing checks the basic properties on random states and then tests the three inequalities on 400 random three-qubit states of random rank, reporting the smallest slack found. The labs use NumPy (and Qiskit's quantum_info module as an independent cross-check where noted) on states and channels generated in the lesson. Random instances use fixed seeds so that the outputs are reproducible; every identity is checked numerically, which is evidence and not a proof, and the lesson says where a proof is in the cited chapters."
+            },
+            {
+              "type": "code",
+              "id": "c-entropy",
+              "language": "python",
+              "code": "import numpy as np\n\nrng = np.random.default_rng(16)\ndef rand_state(d, rank=None):\n    rank = rank or d\n    G = rng.normal(size=(d, rank)) + 1j * rng.normal(size=(d, rank))\n    r = G @ G.conj().T\n    return r / np.trace(r).real\ndef S(rho):\n    w = np.linalg.eigvalsh(rho)\n    w = w[w > 1e-14]\n    return float(-(w * np.log2(w)).sum())\ndef reduced(rho, dims, keep):\n    # reduced state of the subsystems in `keep` (list of indices) of a state on subsystems with dimensions `dims`\n    n = len(dims)\n    t = rho.reshape(dims + dims)\n    trace_out = [i for i in range(n) if i not in keep]\n    for removed, i in enumerate(sorted(trace_out, reverse=True)):\n        t = np.trace(t, axis1=i, axis2=i + t.ndim // 2)\n    d = int(np.prod([dims[i] for i in keep]))\n    return t.reshape(d, d)\n\n# --- basic properties of the von Neumann entropy\nprint(\"pure state: S =\", abs(round(S(np.outer([1, 0], [1, 0]).astype(float)), 6)), \"| maximally mixed qubit: S =\", round(S(np.eye(2) / 2), 6), \"| maximally mixed on d = 8: S =\", round(S(np.eye(8) / 8), 6), \"= log2(8)\")\nprint(\"0 <= S(rho) <= log2(d) on 1,000 random states of dimension 5:\", all(-1e-9 <= S(rand_state(5)) <= np.log2(5) + 1e-9 for _ in range(1000)))\nU = np.linalg.qr(rng.normal(size=(4, 4)) + 1j * rng.normal(size=(4, 4)))[0]\nrho = rand_state(4)\nprint(\"unitary invariance S(U rho U^dagger) = S(rho):\", np.isclose(S(U @ rho @ U.conj().T), S(rho)))\np = 0.37\nr1, r2 = rand_state(3), rand_state(3)\nprint(\"concavity S(p r1 + (1-p) r2) >= p S(r1) + (1-p) S(r2) on random pairs:\", all(S(p * a + (1 - p) * b) >= p * S(a) + (1 - p) * S(b) - 1e-9 for a, b in ((rand_state(3), rand_state(3)) for _ in range(500))))\n\n# --- the Bell state: the whole is pure but each part is maximally mixed, so the CONDITIONAL entropy is negative\nbell = np.array([1, 0, 0, 1]) / np.sqrt(2)\nrho_ab = np.outer(bell, bell)\nSA = S(reduced(rho_ab, [2, 2], [0])); SB = S(reduced(rho_ab, [2, 2], [1])); SAB = S(rho_ab)\nprint()\nprint(f\"Bell state: S(AB) = {SAB:.4f}, S(A) = {SA:.4f}, S(B) = {SB:.4f}; conditional entropy S(A|B) = S(AB) - S(B) = {SAB - SB:.4f} (negative: impossible for classical variables)\")\nproduct = np.kron(rand_state(2), rand_state(2))\nprint(\"a product state has S(AB) = S(A) + S(B):\", np.isclose(S(product), S(reduced(product, [2, 2], [0])) + S(reduced(product, [2, 2], [1]))))\n\n# --- inequalities, tested on random multipartite states: subadditivity, Araki-Lieb, strong subadditivity\nslack_sub, slack_al, slack_ssa = [], [], []\nfor _ in range(400):\n    r = rand_state(8, rank=int(rng.integers(1, 9)))                      # a random three-qubit state of random rank\n    dims = [2, 2, 2]\n    SA_, SB_, SC_ = (S(reduced(r, dims, [i])) for i in range(3))\n    SAB_, SBC_, SAC_ = S(reduced(r, dims, [0, 1])), S(reduced(r, dims, [1, 2])), S(reduced(r, dims, [0, 2]))\n    SABC_ = S(r)\n    slack_sub.append(SA_ + SB_ - SAB_)                                    # subadditivity: S(A) + S(B) >= S(AB)\n    slack_al.append(SAB_ - abs(SA_ - SB_))                                # Araki-Lieb: S(AB) >= |S(A) - S(B)|\n    slack_ssa.append(SAB_ + SBC_ - SB_ - SABC_)                           # strong subadditivity: S(AB) + S(BC) >= S(B) + S(ABC)\nprint()\nprint(f\"400 random three-qubit states: smallest slack of subadditivity {min(slack_sub):.6f}, Araki-Lieb {min(slack_al):.6f}, strong subadditivity {min(slack_ssa):.6f} (all >= 0)\")\nprint(\"strong subadditivity is the deepest of the three (Lieb and Ruskai); the classical analogue is the non-negativity of conditional mutual information\")\n# a quantity that is NOT monotone like the classical one: conditional entropy can be negative, but mutual information stays non-negative\nmi = lambda r, dims, a, b: S(reduced(r, dims, [a])) + S(reduced(r, dims, [b])) - S(reduced(r, dims, [a, b]))\nprint(\"mutual information I(A:B) = S(A) + S(B) - S(AB) of the Bell state:\", round(mi(rho_ab, [2, 2], 0, 1), 4), \"bits (two perfectly correlated classical bits share 1 bit)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-entropy",
+              "language": "text",
+              "code": "pure state: S = 0.0 | maximally mixed qubit: S = 1.0 | maximally mixed on d = 8: S = 3.0 = log2(8)\n0 <= S(rho) <= log2(d) on 1,000 random states of dimension 5: True\nunitary invariance S(U rho U^dagger) = S(rho): True\nconcavity S(p r1 + (1-p) r2) >= p S(r1) + (1-p) S(r2) on random pairs: True\n\nBell state: S(AB) = 0.0000, S(A) = 1.0000, S(B) = 1.0000; conditional entropy S(A|B) = S(AB) - S(B) = -1.0000 (negative: impossible for classical variables)\na product state has S(AB) = S(A) + S(B): True\n\n400 random three-qubit states: smallest slack of subadditivity 0.015996, Araki-Lieb 0.266698, strong subadditivity 0.263966 (all >= 0)\nstrong subadditivity is the deepest of the three (Lieb and Ruskai); the classical analogue is the non-negativity of conditional mutual information\nmutual information I(A:B) = S(A) + S(B) - S(AB) of the Bell state: 2.0 bits (two perfectly correlated classical bits share 1 bit)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "A pure state has S = 0, the maximally mixed qubit 1 bit and the maximally mixed state on d = 8 gives 3 = log₂8; 1,000 random states of dimension 5 stayed between 0 and log₂5; the entropy is unchanged by a unitary and concave on 500 random pairs. For the Bell state S(AB) = 0, S(A) = S(B) = 1 and S(A|B) = −1; a product state has S(AB) = S(A) + S(B). Over 400 random three-qubit states the smallest slacks were 0.0160 for subadditivity, 0.2667 for Araki-Lieb and 0.2640 for strong subadditivity, all non-negative. The mutual information of the Bell state is 2 bits, while two perfectly correlated classical bits share only 1 bit: quantum correlations can exceed classical ones.\n\n**A caution on what random testing shows.** The slacks are the smallest *seen*; the inequalities are theorems and the test does not prove them, but a violation would be an immediate sign of a bug. The entropy of a subsystem of a random pure state is close to maximal (Page's result, not demonstrated here), so random mixed states drawn this way are rarely near the boundary of the inequalities; the equality cases (pure global states, product states, Markov chains) are where the inequalities are tight. **Common mistake:** applying classical intuition (conditional entropy is never negative; the whole is at least as uncertain as the part) to entangled systems."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is S(A|B) for a Bell pair?",
+              "options": [
+                "-1 bit",
+                "0 bits",
+                "+1 bit"
+              ],
+              "correct_index": 0,
+              "explanation": "S(AB) = 0 and S(B) = 1 give S(A|B) = -1."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which inequality is the quantum analogue of the non-negativity of conditional mutual information?",
+              "options": [
+                "Strong subadditivity",
+                "Subadditivity",
+                "Concavity of the logarithm"
+              ],
+              "correct_index": 0,
+              "explanation": "S(AB) + S(BC) >= S(B) + S(ABC)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the von Neumann entropy of a pure state?",
+              "options": [
+                "0",
+                "log d",
+                "1"
+              ],
+              "correct_index": 0,
+              "explanation": "Only one eigenvalue is non-zero and equal to 1."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Section 11.1 (Quantum entropy), 11.2 (Joint quantum entropy), 11.4 (Conditional quantum entropy) and Section 11.9 (Quantum entropy inequalities, including strong subadditivity)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The inequalities are theorems verified here only by random numerical testing; the remark about Page's result on the entropy of subsystems of random pure states is from general knowledge and is not in the cited sections."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "1.7 Information Measures",
+          "summary": "Relative entropy, trace distance and fidelity with the Fuchs-van de Graaf inequalities, mutual and coherent information of Werner states, the Holevo bound against a brute-force accessible information, and data processing.",
+          "estimated_minutes": 65,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Quantum information theory rests on a few measures. The **relative entropy** D(ρ‖σ) = Tr ρ(log ρ − log σ) is non-negative (**Klein's inequality**) and zero only when ρ = σ; it is the parent of the other entropic quantities (Wilde, section 11.8). The **trace distance** T = ½‖ρ − σ‖₁ is the maximum difference in probability any measurement can produce; the **fidelity** F(ρ,σ) = (Tr √(√ρ σ √ρ))² generalises the overlap |⟨a|b⟩|²; and they are related by the **Fuchs-van de Graaf inequalities** 1 − √F ≤ T ≤ √(1 − F) (Wilde, chapter 9). The **quantum mutual information** I(A:B) = S(A) + S(B) − S(AB) measures total correlations, and the **coherent information** S(B) − S(AB) = −S(A|B) is positive only for sufficiently entangled states and governs the rate at which quantum information can be sent (Wilde, sections 11.5 and 11.6).\n\nFor classical information carried by quantum states, the **Holevo quantity** χ = S(Σ pₓρₓ) − Σ pₓ S(ρₓ) bounds the **accessible information**, the most any measurement can learn about which state was sent; in particular n qubits carry at most n bits (Wilde, section 10.9 and chapter 13). Finally every sensible distinguishability measure obeys **data processing**: a channel cannot increase it. The listing tests all of these: Klein and Fuchs-van de Graaf on 500 random pairs, the Werner family, a brute-force search over projective measurements for the accessible information of two pure states against χ, and monotonicity under depolarizing noise. The labs use NumPy (and Qiskit's quantum_info module as an independent cross-check where noted) on states and channels generated in the lesson. Random instances use fixed seeds so that the outputs are reproducible; every identity is checked numerically, which is evidence and not a proof, and the lesson says where a proof is in the cited chapters."
+            },
+            {
+              "type": "code",
+              "id": "c-information-measures",
+              "language": "python",
+              "code": "import numpy as np\n\nrng = np.random.default_rng(17)\nI2 = np.eye(2)\ndef rand_state(d, rank=None):\n    rank = rank or d\n    G = rng.normal(size=(d, rank)) + 1j * rng.normal(size=(d, rank))\n    r = G @ G.conj().T\n    return r / np.trace(r).real\ndef funm(rho, f):\n    w, v = np.linalg.eigh(rho)\n    return v @ np.diag([f(x) for x in w]) @ v.conj().T\ndef S(rho):\n    w = np.linalg.eigvalsh(rho); w = w[w > 1e-14]\n    return float(-(w * np.log2(w)).sum())\ndef log2m(rho):\n    return funm(rho, lambda x: np.log2(x) if x > 1e-14 else 0.0)\ndef relative_entropy(rho, sigma):                                          # D(rho || sigma) = Tr rho (log rho - log sigma), finite when supp(rho) is in supp(sigma)\n    return float(np.trace(rho @ (log2m(rho) - log2m(sigma))).real)\ndef trace_distance(a, b):\n    return 0.5 * np.abs(np.linalg.eigvalsh(a - b)).sum()\ndef fidelity(a, b):                                                        # Uhlmann: F = (Tr sqrt(sqrt(a) b sqrt(a)))^2\n    sa = funm(a, lambda x: np.sqrt(max(x, 0)))\n    return float(np.trace(funm(sa @ b @ sa, lambda x: np.sqrt(max(x, 0)))).real ** 2)\n\n# --- relative entropy is non-negative (Klein's inequality) and zero only for equal states\npairs = [(rand_state(4), rand_state(4)) for _ in range(500)]\nprint(\"Klein's inequality D(rho || sigma) >= 0 on 500 random pairs:\", all(relative_entropy(a, b) >= -1e-9 for a, b in pairs), \"| D(rho || rho) =\", abs(round(relative_entropy(pairs[0][0], pairs[0][0]), 8)))\n\n# --- distance measures: the Fuchs-van de Graaf inequalities 1 - sqrt(F) <= T <= sqrt(1 - F)\nok = all(1 - np.sqrt(fidelity(a, b)) - 1e-9 <= trace_distance(a, b) <= np.sqrt(1 - fidelity(a, b)) + 1e-9 for a, b in pairs)\nprint(\"Fuchs-van de Graaf inequalities hold on the same 500 pairs:\", ok)\nprint(\"for pure states F = |<a|b>|^2 and T = sqrt(1 - F):\", np.isclose(fidelity(np.outer([1, 0], [1, 0]).astype(complex), np.outer([np.cos(.4), np.sin(.4)], [np.cos(.4), np.sin(.4)]).astype(complex)), np.cos(.4) ** 2))\n\n# --- mutual and coherent information of a bipartite state; the coherent information can be positive only for quantum correlations\ndef reduce_(rho, dims, keep):\n    n = len(dims); t = rho.reshape(dims + dims)\n    for i in sorted([i for i in range(n) if i not in keep], reverse=True):\n        t = np.trace(t, axis1=i, axis2=i + t.ndim // 2)\n    d = int(np.prod([dims[i] for i in keep])); return t.reshape(d, d)\nbell = np.array([1, 0, 0, 1]) / np.sqrt(2); rho_bell = np.outer(bell, bell).astype(complex)\nwerner = lambda p: p * rho_bell + (1 - p) * np.eye(4) / 4\nprint()\nprint(f\"{'Werner state p':>15} {'I(A:B)':>8} {'coherent info -S(A|B)':>22}\")\nfor p in (0.0, 0.3, 0.6, 0.9, 1.0):\n    r = werner(p)\n    SA_, SB_, SAB_ = S(reduce_(r, [2, 2], [0])), S(reduce_(r, [2, 2], [1])), S(r)\n    print(f\"{p:>15} {SA_ + SB_ - SAB_:>8.4f} {SB_ - SAB_:>22.4f}\")\nprint(\"the coherent information S(B) - S(AB) is positive only for strongly entangled states; it is the quantity whose maximisation gives achievable rates for sending quantum information (Wilde, section 11.5)\")\n\n# --- Holevo quantity of an ensemble bounds the information an observer can extract: accessible information <= chi (Holevo)\ndef holevo(probs, states):\n    avg = sum(p * s for p, s in zip(probs, states))\n    return S(avg) - sum(p * S(s) for p, s in zip(probs, states))\na, b = np.array([1, 0], dtype=complex), np.array([np.cos(0.6), np.sin(0.6)], dtype=complex)\nstates = [np.outer(a, a.conj()), np.outer(b, b.conj())]\nchi = holevo([0.5, 0.5], states)\ndef accessible_information(states, probs=(0.5, 0.5), grid=3600):\n    best = 0.0\n    for theta in np.linspace(0, np.pi, grid):                              # projective measurements in the x-z plane of the Bloch sphere, all that is needed for two pure states\n        m = [np.outer(v, v.conj()) for v in (np.array([np.cos(theta), np.sin(theta)], dtype=complex), np.array([-np.sin(theta), np.cos(theta)], dtype=complex))]\n        joint = np.array([[probs[x] * np.trace(m[y] @ states[x]).real for y in range(2)] for x in range(2)])\n        py = joint.sum(0); px = joint.sum(1)\n        info = sum(joint[x, y] * np.log2(joint[x, y] / (px[x] * py[y])) for x in range(2) for y in range(2) if joint[x, y] > 1e-15)\n        best = max(best, info)\n    return best\nacc = accessible_information(states)\nprint()\nprint(f\"two pure states with overlap {abs(np.vdot(a, b)):.4f}: Holevo quantity chi = {chi:.4f} bits, accessible information over all projective measurements = {acc:.4f} bits (<= chi: {acc <= chi + 1e-9}); one qubit carries at most 1 bit\")\north = [np.outer([1, 0], [1, 0]).astype(complex), np.outer([0, 1], [0, 1]).astype(complex)]\nprint(\"orthogonal states reach the bound of 1 bit:\", np.isclose(holevo([0.5, 0.5], orth), 1.0))\n\n# --- data processing: a channel cannot increase the distinguishability of two states or their relative entropy\ndef depolarize(rho, p):\n    return (1 - p) * rho + p * np.eye(rho.shape[0]) / rho.shape[0]\ndecreases = [relative_entropy(depolarize(r, 0.4), depolarize(s, 0.4)) <= relative_entropy(r, s) + 1e-9 for r, s in pairs[:200]]\nprint(\"relative entropy never increases under a depolarizing channel (monotonicity, 200 pairs):\", all(decreases))\nprint(\"trace distance never increases either:\", all(trace_distance(depolarize(r, 0.4), depolarize(s, 0.4)) <= trace_distance(r, s) + 1e-9 for r, s in pairs[:200]))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-information-measures",
+              "language": "text",
+              "code": "Klein's inequality D(rho || sigma) >= 0 on 500 random pairs: True | D(rho || rho) = 0.0\nFuchs-van de Graaf inequalities hold on the same 500 pairs: True\nfor pure states F = |<a|b>|^2 and T = sqrt(1 - F): True\n\n Werner state p   I(A:B)  coherent info -S(A|B)\n            0.0   0.0000                -1.0000\n            0.3   0.1697                -0.8303\n            0.6   0.6432                -0.3568\n            0.9   1.4968                 0.4968\n            1.0   2.0000                 1.0000\nthe coherent information S(B) - S(AB) is positive only for strongly entangled states; it is the quantity whose maximisation gives achievable rates for sending quantum information (Wilde, section 11.5)\n\ntwo pure states with overlap 0.8253: Holevo quantity chi = 0.4275 bits, accessible information over all projective measurements = 0.2441 bits (<= chi: True); one qubit carries at most 1 bit\northogonal states reach the bound of 1 bit: True\nrelative entropy never increases under a depolarizing channel (monotonicity, 200 pairs): True\ntrace distance never increases either: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Klein's inequality and both Fuchs-van de Graaf bounds hold on all 500 random pairs, and for pure states F = |⟨a|b⟩|² and T = √(1−F) as stated. For the Werner family the mutual information rises from 0 (maximally mixed) to 2 bits (Bell state) and the coherent information turns positive between p = 0.6 (−0.357) and p = 0.9 (+0.497), so only strongly entangled Werner states carry usable quantum information in this sense. For two pure states with overlap 0.8253 the Holevo quantity is 0.4275 bits while the best of 3,600 projective measurements extracts 0.2441 bits, below the bound as required; orthogonal states reach the 1-bit limit. Relative entropy and trace distance never increased under a depolarizing channel on 200 pairs, the data-processing property.\n\n**Interpretation.** The gap between the accessible information (0.244) and χ (0.428) shows that a single-copy measurement does not reach the Holevo bound for non-orthogonal states; the bound is reached only asymptotically with collective measurements (the Holevo-Schumacher-Westmoreland theorem, Wilde chapter 20, not demonstrated). The same inequalities are the engine of security proofs for quantum key distribution (an eavesdropper's information is bounded by such quantities, C6). **Common mistake:** confusing the coherent information, which can be negative and has operational meaning only when positive, with the mutual information, which is always non-negative."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What do the Fuchs-van de Graaf inequalities relate?",
+              "options": [
+                "Trace distance and fidelity",
+                "Entropy and purity",
+                "Entanglement and negativity"
+              ],
+              "correct_index": 0,
+              "explanation": "1 - sqrt(F) <= T <= sqrt(1 - F)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does the Holevo quantity bound?",
+              "options": [
+                "The accessible information a measurement can extract about which state was sent",
+                "The size of the Hilbert space",
+                "The entanglement of a state"
+              ],
+              "correct_index": 0,
+              "explanation": "In the lesson chi = 0.4275 bits against an accessible information of 0.2441 bits."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does data processing say?",
+              "options": [
+                "A channel cannot increase the distinguishability of two states or their relative entropy",
+                "Channels always increase entropy",
+                "Measurements preserve entanglement"
+              ],
+              "correct_index": 0,
+              "explanation": "Checked for the depolarizing channel on 200 pairs."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Section 9.1 and 9.2 (trace distance, fidelity) and 9.3 (their relations); Section 11.5 to 11.8 (coherent information, mutual information, relative entropy); Section 10.9 and Chapter 13 (Holevo information)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The accessible-information search is a brute-force scan over projective measurements in one plane of the Bloch sphere, which suffices for two pure states but is not a general optimisation; the Holevo-Schumacher-Westmoreland theorem is mentioned and not demonstrated."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "1.8 Entanglement Theory",
+          "summary": "The PPT criterion for Werner states, concurrence and entanglement of formation, entanglement among random states, and LOCC conversion of pure states by majorization.",
+          "estimated_minutes": 65,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A bipartite state is **separable** if it is a mixture of product states and **entangled** otherwise. Deciding which is hard in general, but for two qubits (and a qubit with a qutrit) the **Peres-Horodecki criterion** is complete: a state is separable exactly when its **partial transpose** has no negative eigenvalue. The negative part of the partial transpose defines the **negativity**, an entanglement monotone. For two qubits there is also an explicit formula: Wootters' **concurrence** C = max(0, λ₁ − λ₂ − λ₃ − λ₄) from the square roots of the eigenvalues of ρ(σ_y⊗σ_y)ρ*(σ_y⊗σ_y), and the **entanglement of formation** is a function of C alone. For a pure state the entropy of either reduced state measures the entanglement (Wilde, section 3.6 and the entanglement-manipulation chapter 19).\n\nIn higher dimension the PPT test is necessary but not sufficient: **bound entangled** states are entangled yet have a positive partial transpose, and no entanglement can be distilled from them (a result of the Horodeckis; stated here without proof). Entanglement cannot be created by **local operations and classical communication (LOCC)**, and for pure states Nielsen's theorem gives the exact conversion rule: |ψ⟩ → |φ⟩ is possible by LOCC exactly when the vector of Schmidt probabilities of ψ is **majorized** by that of φ. The listing tests all of this on the Werner family p|singlet⟩⟨singlet| + (1−p)I/4, on random mixtures of product states, on 2,000 random mixed states, and on Schmidt vectors. The labs use NumPy (and Qiskit's quantum_info module as an independent cross-check where noted) on states and channels generated in the lesson. Random instances use fixed seeds so that the outputs are reproducible; every identity is checked numerically, which is evidence and not a proof, and the lesson says where a proof is in the cited chapters."
+            },
+            {
+              "type": "code",
+              "id": "c-entanglement-theory",
+              "language": "python",
+              "code": "import numpy as np\n\nrng = np.random.default_rng(18)\nI2 = np.eye(2)\nsigma_y = np.array([[0, -1j], [1j, 0]])\nbell = np.array([1, 0, 0, 1]) / np.sqrt(2)\nsinglet = np.array([0, 1, -1, 0]) / np.sqrt(2)\npsi_minus = np.outer(singlet, singlet).astype(complex)\nwerner = lambda p: p * psi_minus + (1 - p) * np.eye(4) / 4\n\ndef partial_transpose(rho, dA=2, dB=2):\n    return rho.reshape(dA, dB, dA, dB).transpose(0, 3, 2, 1).reshape(dA * dB, dA * dB)\ndef negativity(rho, dA=2, dB=2):\n    w = np.linalg.eigvalsh(partial_transpose(rho, dA, dB))\n    return abs(float(-w[w < 0].sum()))\ndef concurrence(rho):                                                      # Wootters' formula for two qubits\n    flip = np.kron(sigma_y, sigma_y)\n    R = rho @ flip @ rho.conj() @ flip\n    lam = np.sqrt(np.clip(np.sort(np.linalg.eigvals(R).real)[::-1], 0, None))\n    return float(max(0, lam[0] - lam[1] - lam[2] - lam[3]))\ndef S(rho):\n    w = np.linalg.eigvalsh(rho); w = w[w > 1e-14]\n    return float(-(w * np.log2(w)).sum())\ndef entanglement_of_formation(C):                                          # for two qubits, a function of the concurrence alone\n    if C <= 0: return 0.0\n    x = (1 + np.sqrt(1 - C ** 2)) / 2\n    return float(-x * np.log2(x) - (1 - x) * np.log2(1 - x))\n\n# --- Peres-Horodecki (PPT) criterion for two qubits: a state is separable exactly when its partial transpose is positive\nprint(f\"{'Werner p':>9} {'min eigenvalue of partial transpose':>37} {'negativity':>11} {'concurrence':>12} {'formula (3p-1)/2':>17} {'entangled'}\")\nfor p in (0.0, 0.2, 1 / 3, 0.4, 0.6, 0.8, 1.0):\n    r = werner(p)\n    print(f\"{p:>9.4f} {np.linalg.eigvalsh(partial_transpose(r)).min():>37.4f} {negativity(r):>11.4f} {concurrence(r):>12.4f} {max(0, (3 * p - 1) / 2):>17.4f} {str(negativity(r) > 1e-9):>9}\")\nprint(\"the Werner state p |singlet><singlet| + (1-p) I/4 is entangled exactly for p > 1/3, and the concurrence follows (3p - 1)/2, as the formula of Wootters predicts\")\n\n# --- entanglement of formation and entanglement entropy for pure states agree\nfor p in (0.6, 1.0):\n    C = concurrence(werner(p))\n    print(f\"p = {p}: entanglement of formation {entanglement_of_formation(C):.4f} ebits (the smallest average entanglement over all pure-state decompositions of the state)\")\nprint(\"for a pure state the entanglement entropy S(rho_A) of the reduced state measures the entanglement: Bell state\", round(S(np.eye(2) / 2), 4), \"ebit\")\n\n# --- separable states have positive partial transpose: random mixtures of product states\ndef rand_pure(d):\n    v = rng.normal(size=d) + 1j * rng.normal(size=d); return v / np.linalg.norm(v)\nsep = sum(np.kron(np.outer(a, a.conj()), np.outer(b, b.conj())) / 20 for a, b in ((rand_pure(2), rand_pure(2)) for _ in range(20)))\nprint()\nprint(\"a random mixture of 20 product states is a state with positive partial transpose (separable):\", np.linalg.eigvalsh(partial_transpose(sep)).min() > -1e-12, \"| negativity\", round(negativity(sep), 6))\nrandom_entangled = 0\nfor _ in range(2000):\n    G = rng.normal(size=(4, 4)) + 1j * rng.normal(size=(4, 4)); r = G @ G.conj().T; r /= np.trace(r).real\n    random_entangled += negativity(r) > 1e-9\nprint(\"fraction of random full-rank two-qubit states that are entangled (random states drawn as G G^dagger with G a complex Gaussian matrix, the Hilbert-Schmidt measure):\", round(random_entangled / 2000, 4), \"-> about three quarters; entanglement is the typical case under this measure, even though it is fragile under noise\")\n\n# --- LOCC cannot create entanglement: Nielsen's theorem for pure states, majorization of the Schmidt coefficients\ndef schmidt_probabilities(psi, dA, dB):\n    return np.sort(np.linalg.svd(psi.reshape(dA, dB), compute_uv=False) ** 2)[::-1]\ndef majorized_by(x, y):                                                      # x is majorized by y: every partial sum of the sorted x is <= that of y\n    return all(np.cumsum(x)[k] <= np.cumsum(y)[k] + 1e-12 for k in range(len(x)))\nmore_entangled, less_entangled = [0.4, 0.35, 0.25, 0.0], [0.6, 0.3, 0.1, 0.0]\nmaximally = [0.25] * 4\ncan_convert = lambda start, end: majorized_by(start, end)                    # Nielsen: |start> -> |end> by LOCC iff the Schmidt vector of start is majorized by that of end\nprint()\nprint(\"Schmidt probabilities: A =\", more_entangled, \" B =\", less_entangled)\nprint(\"A -> B by LOCC is possible (A's vector is majorized by B's):\", can_convert(more_entangled, less_entangled), \"| B -> A is impossible (it would create entanglement):\", not can_convert(less_entangled, more_entangled))\nprint(\"the maximally entangled state converts into both A and B:\", can_convert(maximally, more_entangled) and can_convert(maximally, less_entangled), \"| neither converts into it:\", not can_convert(more_entangled, maximally) and not can_convert(less_entangled, maximally))\nprint(\"note: bound entangled states (entangled but with positive partial transpose) exist in higher dimensions (Horodecki); for two qubits the PPT test is complete\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-entanglement-theory",
+              "language": "text",
+              "code": " Werner p   min eigenvalue of partial transpose  negativity  concurrence  formula (3p-1)/2 entangled\n   0.0000                                0.2500      0.0000       0.0000            0.0000     False\n   0.2000                                0.1000      0.0000       0.0000            0.0000     False\n   0.3333                                0.0000      0.0000       0.0000            0.0000     False\n   0.4000                               -0.0500      0.0500       0.1000            0.1000      True\n   0.6000                               -0.2000      0.2000       0.4000            0.4000      True\n   0.8000                               -0.3500      0.3500       0.7000            0.7000      True\n   1.0000                               -0.5000      0.5000       1.0000            1.0000      True\nthe Werner state p |singlet><singlet| + (1-p) I/4 is entangled exactly for p > 1/3, and the concurrence follows (3p - 1)/2, as the formula of Wootters predicts\np = 0.6: entanglement of formation 0.2502 ebits (the smallest average entanglement over all pure-state decompositions of the state)\np = 1.0: entanglement of formation 1.0000 ebits (the smallest average entanglement over all pure-state decompositions of the state)\nfor a pure state the entanglement entropy S(rho_A) of the reduced state measures the entanglement: Bell state 1.0 ebit\n\na random mixture of 20 product states is a state with positive partial transpose (separable): True | negativity 0.0\nfraction of random full-rank two-qubit states that are entangled (random states drawn as G G^dagger with G a complex Gaussian matrix, the Hilbert-Schmidt measure): 0.755 -> about three quarters; entanglement is the typical case under this measure, even though it is fragile under noise\n\nSchmidt probabilities: A = [0.4, 0.35, 0.25, 0.0]  B = [0.6, 0.3, 0.1, 0.0]\nA -> B by LOCC is possible (A's vector is majorized by B's): True | B -> A is impossible (it would create entanglement): True\nthe maximally entangled state converts into both A and B: True | neither converts into it: True\nnote: bound entangled states (entangled but with positive partial transpose) exist in higher dimensions (Horodecki); for two qubits the PPT test is complete",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The Werner state is entangled exactly for p > 1/3: the minimum eigenvalue of its partial transpose is 0.25 at p = 0, 0 at p = 1/3 and then −0.05, −0.20, −0.35 and −0.50 for p = 0.4, 0.6, 0.8 and 1, and the concurrence follows (3p − 1)/2 exactly (0.1, 0.4, 0.7, 1.0). The entanglement of formation is 0.2502 ebits at p = 0.6 and 1 ebit for the singlet. A random mixture of 20 product states has a positive partial transpose, as separable states must. Among 2,000 random full-rank two-qubit states drawn with the Hilbert-Schmidt measure about 75.5% were entangled, so entanglement is typical under this measure, even though it is fragile when noise is added (the Werner family becomes separable at p = 1/3). For the Schmidt vectors, A = (0.4, 0.35, 0.25, 0) can be converted into B = (0.6, 0.3, 0.1, 0) by LOCC and not the reverse, and the maximally entangled state converts into both while neither converts into it, which is the rule that entanglement can be degraded but not created locally.\n\n**Takeaways.** The PPT test gives a complete answer for two qubits and a simple necessary condition beyond; the negativity and concurrence are computable witnesses of how far a state is from separable; majorization is the exact ordering of pure-state entanglement under LOCC. These tools return in the networking lessons (C4: distributing and purifying entanglement) and in QKD security (C6, where entanglement is the resource of E91). **Common mistake:** reading a large negativity as a measure of *usable* entanglement: distillability and negativity are different questions in higher dimension."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "For which values of p is the Werner state p|singlet⟩⟨singlet| + (1-p) I/4 entangled?",
+              "options": [
+                "p > 1/3",
+                "p > 1/2",
+                "All p > 0"
+              ],
+              "correct_index": 0,
+              "explanation": "The partial transpose has a negative eigenvalue exactly then."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does Nielsen's theorem say about pure-state conversion by LOCC?",
+              "options": [
+                "psi -> phi is possible exactly when the Schmidt probabilities of psi are majorized by those of phi",
+                "Any pure state can be converted into any other",
+                "Only product states can be converted"
+              ],
+              "correct_index": 0,
+              "explanation": "Entanglement cannot be created, only degraded, by LOCC."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is the PPT criterion not complete in high dimension?",
+              "options": [
+                "Bound entangled states are entangled but have a positive partial transpose",
+                "The partial transpose is not defined",
+                "Separable states have negative eigenvalues"
+              ],
+              "correct_index": 0,
+              "explanation": "A result of the Horodeckis, stated without proof in the lesson."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Section 3.6 (Entanglement), Section 3.8 (Schmidt decomposition) and Chapter 19 (Entanglement manipulation: LOCC and the relative entropy of entanglement)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The Peres-Horodecki criterion, Wootters' concurrence formula, Nielsen's majorization theorem, bound entanglement and the roughly 24% separability of Hilbert-Schmidt random two-qubit states are standard results stated from general knowledge; only the numerical consequences were checked here. The sections of Wilde cited cover entanglement and LOCC but not each of these named theorems."
+          },
+          "after": "sec-7"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "c1-n01",
+          "prompt": "What does the spectral theorem state for a Hermitian operator?",
+          "options": [
+            "Real eigenvalues and an orthonormal eigenbasis",
+            "All eigenvalues are positive",
+            "It is unitary"
+          ],
+          "correct_index": 0,
+          "explanation": "H = sum lambda_i |v_i⟩⟨v_i|.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 3.3"
+          }
+        },
+        {
+          "id": "c1-n02",
+          "prompt": "How are Schmidt coefficients obtained?",
+          "options": [
+            "As singular values of the amplitude matrix",
+            "As eigenvalues of the joint state",
+            "As norms of subsystems"
+          ],
+          "correct_index": 0,
+          "explanation": "Theorem 3.8.1.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 3.8"
+          }
+        },
+        {
+          "id": "c1-n03",
+          "prompt": "Why is a mixed state of a subsystem of an entangled pair not 'ignorance'?",
+          "options": [
+            "The mixedness comes from entanglement with the rest",
+            "It is caused by measurement error",
+            "It is a classical mixture of pure states"
+          ],
+          "correct_index": 0,
+          "explanation": "The reduced state of a Bell pair is I/2 although the pair is pure.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 4.3"
+          }
+        },
+        {
+          "id": "c1-n04",
+          "prompt": "What can a POVM have that a projective measurement cannot?",
+          "options": [
+            "More outcomes than the dimension of the system",
+            "Negative probabilities",
+            "Non-orthogonal projectors only"
+          ],
+          "correct_index": 0,
+          "explanation": "The trine POVM has three outcomes on a qubit.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 4.2"
+          }
+        },
+        {
+          "id": "c1-n05",
+          "prompt": "What is the Helstrom bound for equal priors?",
+          "options": [
+            "1/2 + 1/4 |rho0 - rho1|_1",
+            "1/2",
+            "The overlap |⟨a|b⟩|"
+          ],
+          "correct_index": 0,
+          "explanation": "It is attained by projecting on the positive part of rho0 - rho1.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 9.1"
+          }
+        },
+        {
+          "id": "c1-n06",
+          "prompt": "How many Kraus operators does amplitude damping need?",
+          "options": [
+            "Two",
+            "One",
+            "Four"
+          ],
+          "correct_index": 0,
+          "explanation": "The Choi matrix has rank 2.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 4.7"
+          }
+        },
+        {
+          "id": "c1-n07",
+          "prompt": "Why is the transpose map not a physical operation?",
+          "options": [
+            "It is not completely positive",
+            "It is not linear",
+            "It changes dimension"
+          ],
+          "correct_index": 0,
+          "explanation": "id (x) T maps a Bell pair to an operator with a negative eigenvalue.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 4.6"
+          }
+        },
+        {
+          "id": "c1-n08",
+          "prompt": "Which entropy value shows entanglement via conditional entropy?",
+          "options": [
+            "S(A|B) = -1 for a Bell pair",
+            "S(A|B) = 0",
+            "S(A|B) = +1"
+          ],
+          "correct_index": 0,
+          "explanation": "Conditional entropy can be negative only for entangled states.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 11.4"
+          }
+        },
+        {
+          "id": "c1-n09",
+          "prompt": "Which inequality is the deepest of the basic quantum entropy inequalities?",
+          "options": [
+            "Strong subadditivity",
+            "Subadditivity",
+            "Araki-Lieb"
+          ],
+          "correct_index": 0,
+          "explanation": "Lieb and Ruskai.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 11.9"
+          }
+        },
+        {
+          "id": "c1-n10",
+          "prompt": "What does the Holevo quantity bound?",
+          "options": [
+            "The accessible information",
+            "The entanglement",
+            "The channel capacity of a quantum channel for quantum information"
+          ],
+          "correct_index": 0,
+          "explanation": "For n qubits it is at most n bits.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 10.9 and Chapter 13"
+          }
+        },
+        {
+          "id": "c1-n11",
+          "prompt": "A two-qubit Werner state is separable when:",
+          "options": [
+            "p <= 1/3",
+            "p <= 2/3",
+            "p = 0 only"
+          ],
+          "correct_index": 0,
+          "explanation": "The partial transpose is positive for p <= 1/3.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 3.6"
+          }
+        },
+        {
+          "id": "c1-n12",
+          "prompt": "What does Nielsen's theorem say about LOCC?",
+          "options": [
+            "Pure-state conversion is possible exactly when the Schmidt vector is majorized by the target's",
+            "LOCC can create entanglement",
+            "All pure states are interconvertible"
+          ],
+          "correct_index": 0,
+          "explanation": "Entanglement can be degraded but not created locally.",
+          "source": {
+            "book": "B113",
+            "locator": "Chapter 19"
+          }
+        }
+      ],
+      "estimated_minutes": 485,
+      "notes": "Rewrites eight outline sections as lessons with numerically checked listings: Hilbert-space identities and the Schmidt decomposition, density operators with partial traces checked against Qiskit and purification, the trine POVM with its Naimark dilation and the Helstrom bound, Kraus/Choi/Stinespring representations of three noise channels, the transpose map and the Choi test, von Neumann entropy with inequality tests, relative entropy, fidelity and the Holevo bound, and the PPT criterion, concurrence and Nielsen's theorem for Werner states.",
+      "learning_objectives": [
+        "Use the Hilbert-space structure, spectral theorem and Schmidt decomposition to describe composite quantum systems.",
+        "Work with density operators, partial traces and purification, and explain ensemble ambiguity.",
+        "Define and analyse POVMs, their Naimark dilation and optimal state discrimination.",
+        "Represent channels by Kraus operators, Choi matrices and dilations, and test complete positivity.",
+        "Compute and interpret von Neumann entropy, relative entropy, fidelity, trace distance and the Holevo quantity.",
+        "Test entanglement with the PPT criterion and concurrence, and apply Nielsen's majorization rule."
+      ]
+    }
+  ]
+}
