@@ -71,13 +71,48 @@ def seed(db: Session, quiz_dir: Path = QUIZ_DIR) -> dict:
             # A retired question stays in the table (past responses reference it) but is never issued.
             if "active" in q:
                 row.active = bool(q["active"])
-            # Never overwrite tags that curriculum tagging has already set.
-            for field in ("competency_id", "depth", "lesson_id"):
-                if q.get(field) is not None:
-                    setattr(row, field, q[field])
+            _apply_tags(row, q, quiz)
             items += 1
     db.commit()
     return {"modules": modules, "items": items}
+
+
+TAG_FIELDS = ("competency_id", "depth", "lesson_id", "tag_status")
+
+
+def _content_tags(q: dict, quiz: dict) -> dict:
+    """The curriculum tags of one content item. Track A files carry the review status at file level
+    (tagging_status); drafted items elsewhere carry it per item (tag_status)."""
+    tags = {f: q.get(f) for f in ("competency_id", "depth", "lesson_id")}
+    tags["tag_status"] = q.get("tag_status") or (quiz.get("tagging_status") if q.get("competency_id") else None)
+    return tags
+
+
+def _apply_tags(row: models.QuizItem, q: dict, quiz: dict) -> bool:
+    """Copy content tags onto the row. A field the content leaves empty never clears a value already set."""
+    changed = False
+    for field, value in _content_tags(q, quiz).items():
+        if value is not None and getattr(row, field) != value:
+            setattr(row, field, value)
+            changed = True
+    return changed
+
+
+def sync_tags(db: Session, quiz_dir: Path = QUIZ_DIR) -> dict:
+    """Bring competency tags of existing items in line with the content files, without touching prompts,
+    options or answer keys. Runs on every start so tags drafted after a database was seeded reach it."""
+    rows = {r.id: r for r in db.query(models.QuizItem).all()}
+    updated = missing = 0
+    for path in sorted(quiz_dir.glob("*/*.json")):
+        quiz = json.loads(path.read_text(encoding="utf-8"))
+        for q in quiz["questions"]:
+            row = rows.get(q["id"])
+            if row is None:
+                missing += 1  # new items arrive through seed(), which also validates them
+                continue
+            updated += _apply_tags(row, q, quiz)
+    db.commit()
+    return {"updated": updated, "not_in_database": missing}
 
 
 def seed_if_empty(db: Session) -> dict | None:

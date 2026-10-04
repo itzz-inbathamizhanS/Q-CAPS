@@ -45,6 +45,7 @@ def main() -> int:
     with SessionLocal() as db:
         print("curriculum:", {k: v for k, v in import_curriculum(db, DEFAULT_SOURCE).items()})
         seed_quizzes.seed_if_empty(db)
+        print("quiz tags:", seed_quizzes.sync_tags(db))
         print("competencies:", seed_competencies(db))
         user, how = create_admin(db, admin_name, admin_password)
         print(f"admin account {admin_name!r}: {how}")

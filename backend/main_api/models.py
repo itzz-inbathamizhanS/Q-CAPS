@@ -344,6 +344,8 @@ class QuizItem(Base):
     competency_id = Column(String, nullable=True)
     depth = Column(String, nullable=True)
     lesson_id = Column(String, nullable=True)
+    # proposed-unreviewed | reviewed | no-competency. Capability estimates report how many of their items were reviewed.
+    tag_status = Column(String, nullable=True)
     active = Column(Boolean, nullable=False, default=True)
 
 
