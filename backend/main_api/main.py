@@ -141,10 +141,12 @@ def seed_quiz_bank():
     from database import SessionLocal
     from seed_quizzes import seed_if_empty, sync_tags
     from competency.seed import seed_competencies
+    from competency.requirements import backfill
     with SessionLocal() as session:
         seed_if_empty(session)
         sync_tags(session)
         seed_competencies(session)
+        backfill(session)
 
 @app.get("/")
 def root():
@@ -502,6 +504,20 @@ def get_finding_interventions(finding_id: str, db: Session = Depends(get_db), cu
     if not finding or not asset_visible(db, current_user, finding.asset_id):
         raise HTTPException(status_code=404, detail="Finding not found")
     return db.query(models.Intervention).filter(models.Intervention.finding_id == finding_id).order_by(models.Intervention.created_at.desc()).all()
+
+@app.get("/api/findings/{finding_id}/requirements", response_model=List[schemas.FindingRequirementOut])
+def get_finding_requirements(finding_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """The requirement this finding creates and the competencies (with required level) it needs, from the
+    risk-to-skill map. An empty list means no rule maps this finding type (see requirement_map.json)."""
+    finding = db.query(models.Finding).filter(models.Finding.id == finding_id).first()
+    if not finding or not asset_visible(db, current_user, finding.asset_id):
+        raise HTTPException(status_code=404, detail="Finding not found")
+    from competency import requirements
+    rows = db.query(models.FindingRequirement).filter(models.FindingRequirement.finding_id == finding_id)         .order_by(models.FindingRequirement.map_version, models.FindingRequirement.requirement_id, models.FindingRequirement.competency_code).all()
+    names = {c.code: c.name for c in db.query(models.Competency).filter(
+        models.Competency.code.in_([r.competency_code for r in rows])).all()} if rows else {}
+    requirement_map = requirements.load_map()
+    return [{**requirements.describe(r, requirement_map), "competency_name": names.get(r.competency_code)} for r in rows]
 
 @app.get("/api/users/{user_id}/capabilities", response_model=List[schemas.LearnerCapabilityOut])
 def get_user_capabilities(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):

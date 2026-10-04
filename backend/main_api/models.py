@@ -118,6 +118,21 @@ class Finding(Base):
     first_seen = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     last_seen = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+class FindingRequirement(Base):
+    """A requirement a finding creates and one competency it needs, derived from content/curriculum/requirement_map.json
+    (competency/requirements.py). Rows are kept per map version so a result can be traced to the map that produced it."""
+    __tablename__ = "finding_requirements"
+    __table_args__ = (
+        UniqueConstraint("finding_id", "requirement_id", "competency_code", "map_version", name="uq_finding_requirement"),
+    )
+    id = Column(Integer, primary_key=True)
+    finding_id = Column(String, ForeignKey("findings.id"), nullable=False, index=True)
+    requirement_id = Column(String, nullable=False)
+    competency_code = Column(String, nullable=False, index=True)  # Competency.code, e.g. "PQC.6"
+    required_level = Column(String, nullable=False)
+    map_version = Column(String, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
 class Competency(Base):
     __tablename__ = "competencies"
     id = Column(Integer, primary_key=True, index=True)

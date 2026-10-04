@@ -7,6 +7,7 @@ import uuid
 from evidence.normalizer import normalize_scan
 from evidence.hashing import hash_payload
 from evidence.confidence import weighted_confidence
+from competency import requirements
 
 
 def create_evidence(
@@ -60,15 +61,18 @@ def create_evidence(
 # Verified scans -> assets, evidence and findings over time
 # ---------------------------------------------------------------------------
 
-# Only exposures become tracked findings; low/info items are advice and would otherwise drive the
-# exposure-graph recommender.
-SEVERITY_SCORE = {"high": 0.9, "medium": 0.6}
-SEVERITY_LABEL = {"high": "high", "medium": "medium"}
+# High and medium exposures become tracked findings. Low and info items are advice and stay out, except the info
+# findings in TRACKED_INFO: they are not exploitable today but create a post-quantum migration requirement
+# (requirement_map.json), so they must be tracked for the risk-to-skill chain. 0.3 is an ordinal value below
+# medium (0.6) so these planning items sort after current exposures; it is not a calibrated risk.
+SEVERITY_SCORE = {"high": 0.9, "medium": 0.6, "info": 0.3}
+TRACKED_INFO = {"pqc.auth.classical_certificate"}
 
 # Which check has to have completed in a later scan before a missing finding counts as resolved.
 # If that check failed or did not run, the finding stays OPEN: unknown is not fixed.
 FINDING_CHECK = (
     ("pqc.kex.", "tls_key_exchange"),
+    ("pqc.auth.", "certificate"),
     ("tls.kex.", "tls_handshake"),
     ("tls.version.", "tls_handshake"),
     ("tls.legacy.", "legacy_tls"),
@@ -81,7 +85,16 @@ PROTOCOL = {"pqc": "TLS", "tls": "TLS", "certificate": "TLS", "http": "HTTP", "d
 
 
 def severity_label(score: float) -> str:
-    return "high" if score >= 0.8 else "medium"
+    if score >= 0.8:
+        return "high"
+    return "medium" if score >= 0.5 else "info"
+
+
+def _tracked(f: dict) -> bool:
+    severity = f.get("severity")
+    if severity == "info":
+        return f.get("id") in TRACKED_INFO
+    return severity in SEVERITY_SCORE
 
 
 def _check_for(finding_type: str) -> Optional[str]:
@@ -117,20 +130,24 @@ def ingest_scan(db: Session, user: models.User, result: dict) -> Optional[dict]:
 
     now = datetime.now(timezone.utc)
     present = {f["id"]: f for f in (result.get("findings") or [])
-               if isinstance(f, dict) and isinstance(f.get("id"), str) and f.get("severity") in SEVERITY_SCORE}
+               if isinstance(f, dict) and isinstance(f.get("id"), str) and _tracked(f)}
     existing = {f.finding_type: f for f in db.query(models.Finding).filter(models.Finding.asset_id == asset.id).all()}
     checks = result.get("checks") or {}
-    opened = updated = resolved = 0
+    opened = updated = resolved = unmapped = 0
+    touched = []
 
     for fid, f in present.items():
         row = existing.get(fid)
         if row is None:
-            db.add(models.Finding(
+            row = models.Finding(
                 id=str(uuid.uuid4()), asset_id=asset.id, evidence_id=evidence.id, finding_type=fid, title=f.get("title"),
                 algorithm=f.get("algorithm"), protocol=PROTOCOL.get(f.get("category")), severity=SEVERITY_SCORE[f["severity"]],
-                confidence=evidence.confidence, status="OPEN", first_seen=now, last_seen=now))
+                confidence=evidence.confidence, status="OPEN", first_seen=now, last_seen=now)
+            db.add(row)
+            touched.append(row)
             opened += 1
             continue
+        touched.append(row)
         if row.status == "RESOLVED":
             row.status = "OPEN"  # observed again after being resolved
             opened += 1
@@ -147,4 +164,13 @@ def ingest_scan(db: Session, user: models.User, result: dict) -> Optional[dict]:
             row.status, row.last_seen = "RESOLVED", now
             resolved += 1
 
-    return {"asset_id": asset.id, "evidence_id": evidence.id, "opened": opened, "updated": updated, "resolved": resolved}
+    # Requirements and competencies each finding needs (requirement_map.json). A finding with no rule is counted,
+    # not dropped: it stays a tracked finding without a competency requirement.
+    db.flush()
+    requirement_map = requirements.load_map()
+    for row in touched:
+        if not requirements.derive_requirements(db, row, requirement_map):
+            unmapped += 1
+
+    return {"asset_id": asset.id, "evidence_id": evidence.id, "opened": opened, "updated": updated,
+            "resolved": resolved, "unmapped": unmapped}

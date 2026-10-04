@@ -182,7 +182,7 @@ export interface TrackedFinding {
   id: string;
   finding_type: string;
   title: string | null;
-  severity: 'high' | 'medium';
+  severity: 'high' | 'medium' | 'info';
   algorithm: string | null;
   status: string;
   first_seen: string;

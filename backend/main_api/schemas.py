@@ -233,6 +233,18 @@ class ScannerAssetOut(BaseModel):
     last_scanned: Optional[datetime] = None
 
 
+class FindingRequirementOut(BaseModel):
+    requirement_id: str
+    requirement: Optional[str] = None  # None when the row comes from an older map version than the one loaded
+    pqc_relevant: Optional[bool] = None
+    rationale: Optional[str] = None
+    competency_code: str
+    competency_name: Optional[str] = None
+    required_level: str
+    map_version: str
+    map_status: Optional[str] = None  # e.g. "proposed-unreviewed": the mapping is a draft until experts review it
+
+
 class ScannerFindingOut(BaseModel):
     id: str
     finding_type: str
