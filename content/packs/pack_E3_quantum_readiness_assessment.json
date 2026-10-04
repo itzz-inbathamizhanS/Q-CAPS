@@ -1,0 +1,724 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B05",
+      "title": "Becoming Quantum Safe: Protect Your Business and Mitigate Risks with Post-Quantum Cryptography and Crypto-Agility",
+      "authors": "Jai Singh Arun, Ray Harishankar, Walid Rjaibi",
+      "edition": "1st edition",
+      "year": 2025,
+      "publisher": "Wiley"
+    },
+    {
+      "id": "B24",
+      "title": "FIPS 199, Standards for Security Categorization of Federal Information and Information Systems",
+      "authors": "NIST",
+      "edition": "final, accessed 2026-10-03",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B26",
+      "title": "SP 800-30 Rev. 1, Guide for Conducting Risk Assessments",
+      "authors": "Joint Task Force Transformation Initiative",
+      "edition": "September 2012, accessed 2026-10-03",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B85",
+      "title": "IR 8547 (initial public draft), Transition to Post-Quantum Cryptography Standards",
+      "authors": "Dustin Moody, Ray Perlner, Andrew Regenscheid, Angela Robinson, David Cooper",
+      "edition": "November 2024, accessed 2026-10-04",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B99",
+      "title": "CycloneDX Bill of Materials specification, version 1.6 (JSON schema with the Cryptography Bill of Materials extension)",
+      "authors": "OWASP CycloneDX",
+      "edition": "1.6",
+      "year": 2024,
+      "publisher": "OWASP Foundation"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_d_e3_quantum_readiness_assessment",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "3.1 System Inventory (Assessment Context)",
+          "summary": "Grouping the inventory by business function and measuring how complete each record is, so that gaps are visible before scoring.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Module E2 produced a technical inventory: algorithms, certificates, protocols, dependencies. An **assessment** needs that inventory in a form that two audiences can use. Executives think in **business functions** (sales, claims, finance), technical teams in assets and algorithms; the assessment links both by grouping assets under the function they serve and carrying each asset's **criticality**, **owner**, **data impact**, **secrecy lifetime** and the **cryptography** protecting it.\n\nBefore any scoring, measure the **completeness** of the records. A score computed from half-empty records is not a measurement of risk; it is a measurement of what happened to be recorded. The listing organises ten invented assets by function, computes the completeness of every asset over six required fields, and states which assets cannot yet be scored. In the data a missing field is `None`, meaning **unknown**, which is different from zero or from a low value. All assets, scores, efforts, capacities and self-assessment answers are **DEMO DATA** for an invented organisation (ten assets, one of them deliberately almost unknown). The listings compute real scores, rankings, plans and checks from that data; they are not findings about any real organisation, and the weights, bands and effort figures are assumptions stated in the code."
+            },
+            {
+              "type": "code",
+              "id": "c-assess-inventory",
+              "language": "python",
+              "code": "from dataclasses import dataclass, field\nfrom typing import Optional\n# DEMO DATA: an invented mid-sized organisation. None marks a value that nobody has established (UNKNOWN), which is different from a low value.\n@dataclass\nclass Asset:\n    name: str\n    function: str                        # business function\n    owner: Optional[str]\n    criticality: Optional[int]           # 1 (minor) .. 5 (severe) business impact\n    kex: Optional[str]                   # key establishment protecting the data: \"RSA transport\", \"ECDHE-P256\", \"X25519MLKEM768\" or None = unknown\n    auth: Optional[str]                  # authentication key: \"RSA-2048\", \"RSA-1024\", \"ECDSA-P256\", \"Ed25519\" or None = unknown\n    impact: Optional[int]                # FIPS 199 style confidentiality impact 1 (low) .. 3 (high)\n    lifetime: Optional[int]              # years the data must stay confidential\n    exposure: str                        # where the ciphertext travels: internet, partner, stored, internal\n    effort: int                          # estimated migration effort in person-weeks\n    depends_on: tuple = ()\n\nASSETS = [\n    Asset(\"customer portal\",     \"sales\",       \"web team\",     4, \"ECDHE-P256\",     \"RSA-2048\",   2, 7,    \"internet\", 6, (\"identity provider\", \"internal PKI\")),\n    Asset(\"claims upload\",       \"claims\",      \"claims IT\",    4, \"RSA transport\",  \"RSA-2048\",   3, 30,   \"partner\",  8, (\"internal PKI\",)),\n    Asset(\"payments service\",    \"finance\",     \"finance IT\",   5, \"ECDHE-P256\",     \"ECDSA-P256\", 3, 3,    \"internet\", 10, (\"identity provider\", \"internal PKI\", \"HSM\")),\n    Asset(\"identity provider\",   \"platform\",    \"platform\",     5, \"ECDHE-P256\",     \"RSA-2048\",   2, 5,    \"internal\", 12, (\"internal PKI\", \"HSM\")),\n    Asset(\"internal PKI\",        \"platform\",    \"platform\",     5, \"ECDHE-P256\",     \"RSA-2048\",   1, 2,    \"internal\", 20, (\"HSM\",)),\n    Asset(\"HSM\",                 \"platform\",    \"security\",     5, None,             \"RSA-2048\",   3, 10,   \"internal\", 26, ()),\n    Asset(\"backup vault\",        \"operations\",  \"ops\",          3, \"RSA transport\",  \"RSA-2048\",   3, 25,   \"stored\",   5, (\"HSM\",)),\n    Asset(\"HR archive\",          \"people\",      \"HR IT\",        3, \"RSA transport\",  \"RSA-1024\",   2, 40,   \"stored\",   3, ()),\n    Asset(\"mobile API\",          \"sales\",       \"mobile team\",  4, \"X25519MLKEM768\", \"ECDSA-P256\", 2, 10,   \"internet\", 2, (\"identity provider\",)),\n    Asset(\"legacy ERP\",          \"finance\",     None,           None, None,          None,         None, None, \"partner\", 15, (\"internal PKI\",)),\n]\n# Organise the discovered inventory for assessment: group by business function and measure how complete the data is. A field that is None is UNKNOWN, not zero.\nFIELDS = (\"owner\", \"criticality\", \"kex\", \"auth\", \"impact\", \"lifetime\")\ndef completeness(a):\n    return sum(getattr(a, f) is not None for f in FIELDS) / len(FIELDS)\nby_function = {}\nfor a in ASSETS:\n    by_function.setdefault(a.function, []).append(a)\nprint(\"DEMO DATA. inventory grouped by business function\")\nprint(f\"{'function':<12} {'assets':>6}  {'highest criticality':>19}  {'completeness':>12}  members\")\nfor fn, items in sorted(by_function.items()):\n    crit = [a.criticality for a in items if a.criticality is not None]\n    comp = sum(completeness(a) for a in items) / len(items)\n    print(f\"{fn:<12} {len(items):>6}  {(max(crit) if crit else 'unknown'):>19}  {comp:>12.0%}  {', '.join(a.name for a in items)}\")\nprint()\nprint(f\"{'asset':<20} {'complete':>8}  missing fields\")\nfor a in sorted(ASSETS, key=completeness):\n    miss = [f for f in FIELDS if getattr(a, f) is None]\n    print(f\"{a.name:<20} {completeness(a):>8.0%}  {', '.join(miss) if miss else '-'}\")\nready = [a for a in ASSETS if completeness(a) == 1]\nprint()\nprint(f\"assessment-ready assets: {len(ready)} of {len(ASSETS)}; assets that cannot be scored yet: {[a.name for a in ASSETS if completeness(a) < 1]}\")\nprint(\"rule: an asset with missing inputs is reported as 'insufficient evidence' (3.3) and put on an assess-first list; it is neither dropped nor assumed average. Grouping by function lets executives read the result: 'sales' and 'finance' are business units, 'RSA-1024' is not\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-assess-inventory",
+              "language": "text",
+              "code": "DEMO DATA. inventory grouped by business function\nfunction     assets  highest criticality  completeness  members\nclaims            1                    4          100%  claims upload\nfinance           2                    5           50%  payments service, legacy ERP\noperations        1                    3          100%  backup vault\npeople            1                    3          100%  HR archive\nplatform          3                    5           94%  identity provider, internal PKI, HSM\nsales             2                    4          100%  customer portal, mobile API\n\nasset                complete  missing fields\nlegacy ERP                 0%  owner, criticality, kex, auth, impact, lifetime\nHSM                       83%  kex\ncustomer portal          100%  -\nclaims upload            100%  -\npayments service         100%  -\nidentity provider        100%  -\ninternal PKI             100%  -\nbackup vault             100%  -\nHR archive               100%  -\nmobile API               100%  -\n\nassessment-ready assets: 8 of 10; assets that cannot be scored yet: ['HSM', 'legacy ERP']\nrule: an asset with missing inputs is reported as 'insufficient evidence' (3.3) and put on an assess-first list; it is neither dropped nor assumed average. Grouping by function lets executives read the result: 'sales' and 'finance' are business units, 'RSA-1024' is not",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Six functions group the ten assets: claims, finance, operations, people, platform and sales. Eight assets are complete; two are not: the **HSM** is missing its key-establishment record (83% complete) and the **legacy ERP** has **no** record beyond its function and exposure (0%: owner, criticality, key establishment, authentication, impact and lifetime are all unknown). The finance function is therefore only 50% complete and its highest criticality, driven by the payments service (5), is not the whole story because the ERP's criticality is unknown. Platform shows 94% because of the single missing HSM field.\n\n**Operating rule.** Assets with missing inputs are reported as *insufficient evidence* in 3.3 and placed on an **assess-first list**; they are neither dropped from the assessment nor given an average value. The completeness table is itself a deliverable: it tells the programme where discovery (E2) and ownership (E6) must improve before the numbers deserve trust. **Common mistake:** presenting a ranked risk list without saying what fraction of the inventory it covers."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How should a missing input be represented in the assessment data?",
+              "options": [
+                "As unknown (None), not as zero or a default",
+                "As 0",
+                "As 5"
+              ],
+              "correct_index": 0,
+              "explanation": "Unknown is different from low."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why measure completeness before scoring?",
+              "options": [
+                "A score from sparse records reflects what was recorded, not the risk",
+                "To make the report longer",
+                "Because scoring requires 100 assets"
+              ],
+              "correct_index": 0,
+              "explanation": "The legacy ERP is 0% complete."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why group assets by business function?",
+              "options": [
+                "Executives read results by function, while the technical detail stays attached to each asset",
+                "Functions determine algorithms",
+                "It reduces the number of assets"
+              ],
+              "correct_index": 0,
+              "explanation": "Both audiences use the same assessment."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4: Quantum Risk Assessment with heat maps and the Quantum-Safe Readiness Maturity Model (Figures 4-4 and 4-5)"
+            },
+            {
+              "book": "B26",
+              "locator": "NIST SP 800-30 Rev. 1: Section 3.2 (conducting the risk assessment) and Section 2.3 (key risk concepts)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The organisation, assets and completeness figures are DEMO DATA. The six required fields are the lesson's choice, not a standard list."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "3.2 Cryptographic Exposure Analysis",
+          "summary": "A written rule table that classifies key establishment and authentication keys separately and combines them with capturability and secrecy lifetime into harvest exposure.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Exposure analysis joins the facts of E2 (which algorithms protect each asset) with the threat model of E1 and module B8. Two exposures must be kept apart. **Confidentiality exposure** comes from the **key establishment**: an adversary records ciphertext now and a quantum computer breaks the key exchange later (harvest now, decrypt later). **Authentication exposure** comes from **signatures and certificate keys**: forgery becomes possible only from the day a capable machine exists, so there is no harvesting component.\n\nThe listing encodes the judgement as **rule tables** (key establishment: RSA key transport, ECDHE-P256, hybrid X25519MLKEM768; authentication key: RSA-1024, RSA-2048, ECDSA-P256, Ed25519), each rule with a one-line reason, and then derives the harvest exposure of every asset from the key establishment, whether its ciphertext can be captured in bulk (internet, partner link, stored backup) and its secrecy lifetime. An unknown input yields *not determined*, never *safe*. All assets, scores, efforts, capacities and self-assessment answers are **DEMO DATA** for an invented organisation (ten assets, one of them deliberately almost unknown). The listings compute real scores, rankings, plans and checks from that data; they are not findings about any real organisation, and the weights, bands and effort figures are assumptions stated in the code."
+            },
+            {
+              "type": "code",
+              "id": "c-exposure",
+              "language": "python",
+              "code": "from dataclasses import dataclass, field\nfrom typing import Optional\n# DEMO DATA: an invented mid-sized organisation. None marks a value that nobody has established (UNKNOWN), which is different from a low value.\n@dataclass\nclass Asset:\n    name: str\n    function: str                        # business function\n    owner: Optional[str]\n    criticality: Optional[int]           # 1 (minor) .. 5 (severe) business impact\n    kex: Optional[str]                   # key establishment protecting the data: \"RSA transport\", \"ECDHE-P256\", \"X25519MLKEM768\" or None = unknown\n    auth: Optional[str]                  # authentication key: \"RSA-2048\", \"RSA-1024\", \"ECDSA-P256\", \"Ed25519\" or None = unknown\n    impact: Optional[int]                # FIPS 199 style confidentiality impact 1 (low) .. 3 (high)\n    lifetime: Optional[int]              # years the data must stay confidential\n    exposure: str                        # where the ciphertext travels: internet, partner, stored, internal\n    effort: int                          # estimated migration effort in person-weeks\n    depends_on: tuple = ()\n\nASSETS = [\n    Asset(\"customer portal\",     \"sales\",       \"web team\",     4, \"ECDHE-P256\",     \"RSA-2048\",   2, 7,    \"internet\", 6, (\"identity provider\", \"internal PKI\")),\n    Asset(\"claims upload\",       \"claims\",      \"claims IT\",    4, \"RSA transport\",  \"RSA-2048\",   3, 30,   \"partner\",  8, (\"internal PKI\",)),\n    Asset(\"payments service\",    \"finance\",     \"finance IT\",   5, \"ECDHE-P256\",     \"ECDSA-P256\", 3, 3,    \"internet\", 10, (\"identity provider\", \"internal PKI\", \"HSM\")),\n    Asset(\"identity provider\",   \"platform\",    \"platform\",     5, \"ECDHE-P256\",     \"RSA-2048\",   2, 5,    \"internal\", 12, (\"internal PKI\", \"HSM\")),\n    Asset(\"internal PKI\",        \"platform\",    \"platform\",     5, \"ECDHE-P256\",     \"RSA-2048\",   1, 2,    \"internal\", 20, (\"HSM\",)),\n    Asset(\"HSM\",                 \"platform\",    \"security\",     5, None,             \"RSA-2048\",   3, 10,   \"internal\", 26, ()),\n    Asset(\"backup vault\",        \"operations\",  \"ops\",          3, \"RSA transport\",  \"RSA-2048\",   3, 25,   \"stored\",   5, (\"HSM\",)),\n    Asset(\"HR archive\",          \"people\",      \"HR IT\",        3, \"RSA transport\",  \"RSA-1024\",   2, 40,   \"stored\",   3, ()),\n    Asset(\"mobile API\",          \"sales\",       \"mobile team\",  4, \"X25519MLKEM768\", \"ECDSA-P256\", 2, 10,   \"internet\", 2, (\"identity provider\",)),\n    Asset(\"legacy ERP\",          \"finance\",     None,           None, None,          None,         None, None, \"partner\", 15, (\"internal PKI\",)),\n]\n# Cryptographic exposure analysis: a rule table turns algorithm facts into exposure classes, separately for confidentiality (key establishment, HNDL) and authentication (forgery).\n# The rules are written down so that two analysts get the same answer. Unknown inputs produce 'not determined', never 'safe'.\nKEX_RULES = {   # key establishment -> (class, why)\n    \"RSA transport\":  (\"vulnerable, no forward secrecy\", \"session keys are wrapped under the long-term RSA key; one break exposes every recorded session (Shor)\"),\n    \"ECDHE-P256\":     (\"vulnerable to a CRQC\",           \"elliptic-curve Diffie-Hellman falls to Shor's algorithm; recorded exchanges can be attacked one by one\"),\n    \"X25519MLKEM768\": (\"quantum-resistant (hybrid)\",     \"ML-KEM component protects the exchange; the classical component remains as a safety net\"),\n}\nAUTH_RULES = {\n    \"RSA-1024\":   (\"vulnerable now and to a CRQC\", \"1024-bit RSA is below accepted minimum strength today, and falls to Shor\"),\n    \"RSA-2048\":   (\"vulnerable to a CRQC\",         \"factoring (Shor); a forgery risk from the day a CRQC exists, no harvest-now component\"),\n    \"ECDSA-P256\": (\"vulnerable to a CRQC\",         \"elliptic-curve discrete log (Shor)\"),\n    \"Ed25519\":    (\"vulnerable to a CRQC\",         \"elliptic-curve discrete log (Shor)\"),\n}\nCAPTURABLE = {\"internet\", \"partner\", \"stored\"}\ndef analyse(a):\n    kex = KEX_RULES.get(a.kex, (\"not determined\", \"key establishment unknown: discovery has not recorded it\"))\n    auth = AUTH_RULES.get(a.auth, (\"not determined\", \"authentication key unknown\"))\n    harvest = None\n    if a.kex is None or a.lifetime is None:\n        harvest = \"not determined\"\n    elif kex[0].startswith(\"quantum-resistant\"):\n        harvest = \"no\"\n    elif a.exposure in CAPTURABLE and a.lifetime >= 10:\n        harvest = \"YES (capturable ciphertext, long secrecy requirement)\"\n    elif a.exposure in CAPTURABLE:\n        harvest = \"possible (short secrecy requirement: depends on migration time)\"\n    else:\n        harvest = \"lower (ciphertext hard to capture in bulk)\"\n    return kex, auth, harvest\nprint(\"DEMO DATA. exposure per asset\")\nprint(f\"{'asset':<19} {'key establishment':<30} {'authentication key':<30} harvest-now-decrypt-later\")\nfor a in ASSETS:\n    kex, auth, harvest = analyse(a)\n    print(f\"{a.name:<19} {kex[0]:<30} {auth[0]:<30} {harvest}\")\nprint()\nprint(\"evidence behind two of the verdicts:\")\nfor name in (\"claims upload\", \"mobile API\"):\n    a = next(x for x in ASSETS if x.name == name)\n    kex, auth, _ = analyse(a)\n    print(f\"  {name}: {kex[1]}\")\ncounts = {}\nfor a in ASSETS:\n    h = analyse(a)[2]\n    h = \"not determined\" if h.startswith(\"not determined\") else h.split(\" \")[0]\n    counts[h] = counts.get(h, 0) + 1\nprint()\nprint(\"harvest-exposure classes:\", counts)\nprint(\"two reminders: (1) the symmetric part (AES-256) of every asset is not broken by Shor, so the analysis concerns key establishment and signatures; (2) 'not determined' is a finding: legacy ERP must be examined before it can be called safe or exposed\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-exposure",
+              "language": "text",
+              "code": "DEMO DATA. exposure per asset\nasset               key establishment              authentication key             harvest-now-decrypt-later\ncustomer portal     vulnerable to a CRQC           vulnerable to a CRQC           possible (short secrecy requirement: depends on migration time)\nclaims upload       vulnerable, no forward secrecy vulnerable to a CRQC           YES (capturable ciphertext, long secrecy requirement)\npayments service    vulnerable to a CRQC           vulnerable to a CRQC           possible (short secrecy requirement: depends on migration time)\nidentity provider   vulnerable to a CRQC           vulnerable to a CRQC           lower (ciphertext hard to capture in bulk)\ninternal PKI        vulnerable to a CRQC           vulnerable to a CRQC           lower (ciphertext hard to capture in bulk)\nHSM                 not determined                 vulnerable to a CRQC           not determined\nbackup vault        vulnerable, no forward secrecy vulnerable to a CRQC           YES (capturable ciphertext, long secrecy requirement)\nHR archive          vulnerable, no forward secrecy vulnerable now and to a CRQC   YES (capturable ciphertext, long secrecy requirement)\nmobile API          quantum-resistant (hybrid)     vulnerable to a CRQC           no\nlegacy ERP          not determined                 not determined                 not determined\n\nevidence behind two of the verdicts:\n  claims upload: session keys are wrapped under the long-term RSA key; one break exposes every recorded session (Shor)\n  mobile API: ML-KEM component protects the exchange; the classical component remains as a safety net\n\nharvest-exposure classes: {'possible': 2, 'YES': 3, 'lower': 2, 'not determined': 2, 'no': 1}\ntwo reminders: (1) the symmetric part (AES-256) of every asset is not broken by Shor, so the analysis concerns key establishment and signatures; (2) 'not determined' is a finding: legacy ERP must be examined before it can be called safe or exposed",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Three assets are classed **YES** for harvest exposure: the claims upload (RSA key transport, partner link, 30 years), the backup vault (RSA transport, stored backup, 25 years) and the HR archive (RSA transport, stored backup, 40 years, plus an RSA-1024 authentication key that is vulnerable *today*). Two are *possible* (customer portal and payments service use ECDHE over the internet but with secrecy requirements of 7 and 3 years, so the outcome depends on migration time, E1.1), two are *lower* (identity provider and internal PKI: internal traffic is harder to capture in bulk) and one is **no** (the mobile API with the hybrid X25519MLKEM768 key establishment). The HSM and the legacy ERP are **not determined**.\n\n**What the table does and does not say.** Every authentication key is classed vulnerable to a CRQC: that is a forgery risk with a different clock from harvesting. The symmetric ciphers protecting the bulk data are not broken by Shor, so the whole analysis concerns key establishment and signatures. And the evidence column makes each verdict auditable: a reviewer can disagree with a rule instead of with a number. **Common mistake:** merging confidentiality and authentication exposure into one \"quantum-vulnerable\" flag, which hides what must be done first."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is authentication exposure kept separate from harvest exposure?",
+              "options": [
+                "Forgery needs a capable machine to exist, while recorded ciphertext can be attacked later",
+                "They are the same",
+                "Signatures are never affected"
+              ],
+              "correct_index": 0,
+              "explanation": "Different clocks and different mitigations."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "How does the lesson classify an asset whose key establishment is unknown?",
+              "options": [
+                "As not determined",
+                "As safe",
+                "As exposed"
+              ],
+              "correct_index": 0,
+              "explanation": "Unknown is never safe."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is the HR archive worse than the other RSA-transport assets?",
+              "options": [
+                "Its RSA-1024 authentication key is weak even today, and its secrecy requirement is the longest",
+                "It is internal",
+                "It is hybrid"
+              ],
+              "correct_index": 0,
+              "explanation": "40-year lifetime and a 1024-bit key."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4: Quantum Risk Assessment with heat maps and the Quantum-Safe Readiness Maturity Model (Figures 4-4 and 4-5)"
+            },
+            {
+              "book": "B85",
+              "locator": "NIST IR 8547 initial public draft: Section 4 (quantum-vulnerable key establishment and digital signature algorithms)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The rules and thresholds (for example a 10-year secrecy cut-off for YES) are the lesson's conventions, not a standard. All asset data is DEMO DATA."
+          }
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "3.3 Risk Scoring",
+          "summary": "A documented weighted score with interval scoring for unknown inputs, a monotonicity property test, and why the platform's own readiness figure reports unknown instead of zero.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The scoring method of E1.7 is now applied to the full inventory and formalised. **Score** = 100 times the weighted sum of five factors in [0, 1]: algorithm exposure (0.25), sensitivity (0.20), secrecy lifetime (0.25), exposure of the ciphertext (0.15) and criticality (0.15). The algorithm factor takes the worse of the key-establishment factor (RSA transport 1.0, ECDHE 0.7, hybrid 0.1) and 0.8 times the authentication-key factor. Two design decisions matter more than the weights. **Unknown factors give an interval**: with an unknown factor the lower bound counts it as 0 and the upper bound as 1, so an asset with missing evidence is shown as a **range** and flagged *assess first* instead of receiving a made-up number. And the method is tested with a **property test**: making any input worse must never lower the score.\n\nThe listing scores the ten assets, bands them (high from 70, medium from 45) and runs the property test on 20,000 random cases. All assets, scores, efforts, capacities and self-assessment answers are **DEMO DATA** for an invented organisation (ten assets, one of them deliberately almost unknown). The listings compute real scores, rankings, plans and checks from that data; they are not findings about any real organisation, and the weights, bands and effort figures are assumptions stated in the code."
+            },
+            {
+              "type": "code",
+              "id": "c-risk-scoring",
+              "language": "python",
+              "code": "from dataclasses import dataclass, field\nfrom typing import Optional\n# DEMO DATA: an invented mid-sized organisation. None marks a value that nobody has established (UNKNOWN), which is different from a low value.\n@dataclass\nclass Asset:\n    name: str\n    function: str                        # business function\n    owner: Optional[str]\n    criticality: Optional[int]           # 1 (minor) .. 5 (severe) business impact\n    kex: Optional[str]                   # key establishment protecting the data: \"RSA transport\", \"ECDHE-P256\", \"X25519MLKEM768\" or None = unknown\n    auth: Optional[str]                  # authentication key: \"RSA-2048\", \"RSA-1024\", \"ECDSA-P256\", \"Ed25519\" or None = unknown\n    impact: Optional[int]                # FIPS 199 style confidentiality impact 1 (low) .. 3 (high)\n    lifetime: Optional[int]              # years the data must stay confidential\n    exposure: str                        # where the ciphertext travels: internet, partner, stored, internal\n    effort: int                          # estimated migration effort in person-weeks\n    depends_on: tuple = ()\n\nASSETS = [\n    Asset(\"customer portal\",     \"sales\",       \"web team\",     4, \"ECDHE-P256\",     \"RSA-2048\",   2, 7,    \"internet\", 6, (\"identity provider\", \"internal PKI\")),\n    Asset(\"claims upload\",       \"claims\",      \"claims IT\",    4, \"RSA transport\",  \"RSA-2048\",   3, 30,   \"partner\",  8, (\"internal PKI\",)),\n    Asset(\"payments service\",    \"finance\",     \"finance IT\",   5, \"ECDHE-P256\",     \"ECDSA-P256\", 3, 3,    \"internet\", 10, (\"identity provider\", \"internal PKI\", \"HSM\")),\n    Asset(\"identity provider\",   \"platform\",    \"platform\",     5, \"ECDHE-P256\",     \"RSA-2048\",   2, 5,    \"internal\", 12, (\"internal PKI\", \"HSM\")),\n    Asset(\"internal PKI\",        \"platform\",    \"platform\",     5, \"ECDHE-P256\",     \"RSA-2048\",   1, 2,    \"internal\", 20, (\"HSM\",)),\n    Asset(\"HSM\",                 \"platform\",    \"security\",     5, None,             \"RSA-2048\",   3, 10,   \"internal\", 26, ()),\n    Asset(\"backup vault\",        \"operations\",  \"ops\",          3, \"RSA transport\",  \"RSA-2048\",   3, 25,   \"stored\",   5, (\"HSM\",)),\n    Asset(\"HR archive\",          \"people\",      \"HR IT\",        3, \"RSA transport\",  \"RSA-1024\",   2, 40,   \"stored\",   3, ()),\n    Asset(\"mobile API\",          \"sales\",       \"mobile team\",  4, \"X25519MLKEM768\", \"ECDSA-P256\", 2, 10,   \"internet\", 2, (\"identity provider\",)),\n    Asset(\"legacy ERP\",          \"finance\",     None,           None, None,          None,         None, None, \"partner\", 15, (\"internal PKI\",)),\n]\nimport random\n# A documented, repeatable scoring method. score = 100 * sum(weight * factor), factors in [0, 1]. Unknown factors give an INTERVAL (the factor is taken as 0 for the lower bound and 1 for the upper bound).\nWEIGHTS = {\"algorithm\": 0.25, \"sensitivity\": 0.20, \"lifetime\": 0.25, \"exposure\": 0.15, \"criticality\": 0.15}\nKEX_F = {\"RSA transport\": 1.0, \"ECDHE-P256\": 0.7, \"X25519MLKEM768\": 0.1}\nAUTH_F = {\"RSA-1024\": 1.0, \"RSA-2048\": 0.6, \"ECDSA-P256\": 0.6, \"Ed25519\": 0.6}\nEXPO_F = {\"internet\": 1.0, \"partner\": 0.8, \"stored\": 0.5, \"internal\": 0.2}\ndef factors(a):\n    \"\"\"each factor is a number in [0,1] or None (unknown)\"\"\"\n    if a.kex is None and a.auth is None: alg = None\n    else:\n        alg = max(KEX_F.get(a.kex, 0.0), 0.8 * AUTH_F.get(a.auth, 0.0)) if (a.kex is not None and a.auth is not None) else None\n    return {\"algorithm\": alg,\n            \"sensitivity\": None if a.impact is None else a.impact / 3,\n            \"lifetime\": None if a.lifetime is None else min(1.0, a.lifetime / 30),\n            \"exposure\": EXPO_F[a.exposure],\n            \"criticality\": None if a.criticality is None else a.criticality / 5}\ndef score_interval(a):\n    f = factors(a)\n    lo = 100 * sum(WEIGHTS[k] * (v if v is not None else 0.0) for k, v in f.items())\n    hi = 100 * sum(WEIGHTS[k] * (v if v is not None else 1.0) for k, v in f.items())\n    return lo, hi, [k for k, v in f.items() if v is None]\ndef band(lo, hi):\n    if lo >= 70: return \"high\"\n    if hi < 45: return \"low\"\n    if lo >= 45 and hi < 70: return \"medium\"\n    return \"indeterminate: assess first\" if hi - lo > 0 else (\"high\" if lo >= 70 else \"medium\" if lo >= 45 else \"low\")\nprint(\"DEMO DATA. weights:\", WEIGHTS)\nprint(f\"{'asset':<19} {'score':>13}  band\")\nrows = []\nfor a in ASSETS:\n    lo, hi, unknown = score_interval(a)\n    rows.append((a, lo, hi, unknown))\nfor a, lo, hi, unknown in sorted(rows, key=lambda r: -(r[2])):\n    s = f\"{lo:.1f}\" if lo == hi else f\"{lo:.1f}-{hi:.1f}\"\n    print(f\"{a.name:<19} {s:>13}  {band(lo, hi)}\" + (f\"   unknown: {', '.join(unknown)}\" if unknown else \"\"))\n# property test: making any input worse must never lower the score (monotonicity), checked on 20,000 random pairs of assets\nrandom.seed(5)\ndef rand_factor_set():\n    return {k: random.random() for k in WEIGHTS}\ndef score_f(f): return 100 * sum(WEIGHTS[k] * f[k] for k in WEIGHTS)\nviolations = 0\nfor _ in range(20000):\n    f = rand_factor_set(); g = dict(f); k = random.choice(list(WEIGHTS)); g[k] = min(1.0, f[k] + random.random())\n    if score_f(g) < score_f(f) - 1e-12: violations += 1\nprint()\nprint(f\"property test, 20,000 random cases: worsening one factor lowered the score {violations} times (must be 0)\")\nbounded = all(0 <= score_f(rand_factor_set()) <= 100 for _ in range(20000))\nprint(\"score always within 0..100:\", bounded)\nprint()\nprint(\"the legacy ERP has no known inputs except its exposure: its interval is wide, which says 'assess first' honestly; the platform's own readiness figure follows the same principle of reporting unknown when there is no evidence\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-risk-scoring",
+              "language": "text",
+              "code": "DEMO DATA. weights: {'algorithm': 0.25, 'sensitivity': 0.2, 'lifetime': 0.25, 'exposure': 0.15, 'criticality': 0.15}\nasset                       score  band\nlegacy ERP              12.0-97.0  indeterminate: assess first   unknown: algorithm, sensitivity, lifetime, criticality\nclaims upload                94.0  high\nbackup vault                 82.3  high\nHR archive                   79.8  high\nHSM                     46.3-71.3  indeterminate: assess first   unknown: algorithm\npayments service             70.0  high\ncustomer portal              63.7  medium\nmobile API                   60.7  medium\nidentity provider            53.0  medium\ninternal PKI                 43.8  low\n\nproperty test, 20,000 random cases: worsening one factor lowered the score 0 times (must be 0)\nscore always within 0..100: True\n\nthe legacy ERP has no known inputs except its exposure: its interval is wide, which says 'assess first' honestly; the platform's own readiness figure follows the same principle of reporting unknown when there is no evidence",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The claims upload scores 94.0, the backup vault 82.3, the HR archive 79.8, the payments service 70.0 (all high), the customer portal 63.7, the mobile API 60.7 and the identity provider 53.0 (medium) and the internal PKI 43.8 (low). The **legacy ERP** gets the interval 12.0 to 97.0 (four unknown factors) and the **HSM** 46.3 to 71.3 (algorithm unknown); both are *indeterminate: assess first*, and the ERP's interval says the honest thing: nothing can yet be said. The property test finds 0 violations in 20,000 cases and confirms that scores stay within 0 to 100.\n\n**Link to the platform.** The Q-CAPS platform reports a user's readiness as unknown when there is no quiz evidence rather than a score of 0, which follows the same principle. As implemented today it is the mean of quiz scores, a measure of **knowledge** only; an organisational readiness measure should also include the inventory completeness (3.1), exposure (3.2) and maturity (3.5) evidence, which is future work and is stated here as a limitation rather than a feature. **Common mistake:** a single number without its weights, its unknowns and its tests."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How does interval scoring treat an unknown factor?",
+              "options": [
+                "Lower bound counts it as 0, upper bound as 1, giving a range",
+                "It uses 0.5",
+                "It drops the asset"
+              ],
+              "correct_index": 0,
+              "explanation": "The legacy ERP's range is 12.0 to 97.0."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does the monotonicity property test check?",
+              "options": [
+                "That worsening an input never lowers the score",
+                "That the score is an integer",
+                "That weights are equal"
+              ],
+              "correct_index": 0,
+              "explanation": "0 violations in 20,000 cases."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does the platform's readiness figure currently measure?",
+              "options": [
+                "Knowledge, as the mean of quiz scores, and unknown when there is no evidence",
+                "Cryptographic inventory completeness",
+                "Scanner results"
+              ],
+              "correct_index": 0,
+              "explanation": "A fuller organisational measure is future work."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4: Quantum Risk Assessment with heat maps and the Quantum-Safe Readiness Maturity Model (Figures 4-4 and 4-5)"
+            },
+            {
+              "book": "B26",
+              "locator": "NIST SP 800-30 Rev. 1: Section 3.2 (conducting the risk assessment) and Section 2.3 (key risk concepts)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Weights, factor mappings and band limits are DEMO conventions and assumptions of the lesson; the monotonicity test checks the weighted-sum implementation only. The statement about the platform's current readiness calculation reflects the code as of this writing."
+          }
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "3.4 Prioritization",
+          "summary": "Three orders for the same assets: risk alone, risk per unit of effort, and a plan order that respects dependencies, and how far they differ.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Ranking by risk alone is a starting point, not a plan. Two further things change the order. **Dependencies**: a component must be ready before the assets that rely on it (E2.7), so a moderate-risk foundation component is migrated before a high-risk application that depends on it. **Effort**: an asset with high risk and low effort is a quick win that can run in parallel with long foundation work, so risk per person-week is a useful second view.\n\nThe listing prints, for ten invented assets, the risk score (unknown inputs are set to 0.5 **only for this ordering exercise** and flagged; 3.3 is the place for honest intervals), the estimated effort and the risk-per-effort ratio, then builds a **dependency-respecting order**: repeatedly choose, among the assets whose dependencies are already scheduled, the one with the highest risk. It then lists which assets moved relative to the pure risk ranking. All assets, scores, efforts, capacities and self-assessment answers are **DEMO DATA** for an invented organisation (ten assets, one of them deliberately almost unknown). The listings compute real scores, rankings, plans and checks from that data; they are not findings about any real organisation, and the weights, bands and effort figures are assumptions stated in the code."
+            },
+            {
+              "type": "code",
+              "id": "c-prioritization",
+              "language": "python",
+              "code": "from dataclasses import dataclass, field\nfrom typing import Optional\n# DEMO DATA: an invented mid-sized organisation. None marks a value that nobody has established (UNKNOWN), which is different from a low value.\n@dataclass\nclass Asset:\n    name: str\n    function: str                        # business function\n    owner: Optional[str]\n    criticality: Optional[int]           # 1 (minor) .. 5 (severe) business impact\n    kex: Optional[str]                   # key establishment protecting the data: \"RSA transport\", \"ECDHE-P256\", \"X25519MLKEM768\" or None = unknown\n    auth: Optional[str]                  # authentication key: \"RSA-2048\", \"RSA-1024\", \"ECDSA-P256\", \"Ed25519\" or None = unknown\n    impact: Optional[int]                # FIPS 199 style confidentiality impact 1 (low) .. 3 (high)\n    lifetime: Optional[int]              # years the data must stay confidential\n    exposure: str                        # where the ciphertext travels: internet, partner, stored, internal\n    effort: int                          # estimated migration effort in person-weeks\n    depends_on: tuple = ()\n\nASSETS = [\n    Asset(\"customer portal\",     \"sales\",       \"web team\",     4, \"ECDHE-P256\",     \"RSA-2048\",   2, 7,    \"internet\", 6, (\"identity provider\", \"internal PKI\")),\n    Asset(\"claims upload\",       \"claims\",      \"claims IT\",    4, \"RSA transport\",  \"RSA-2048\",   3, 30,   \"partner\",  8, (\"internal PKI\",)),\n    Asset(\"payments service\",    \"finance\",     \"finance IT\",   5, \"ECDHE-P256\",     \"ECDSA-P256\", 3, 3,    \"internet\", 10, (\"identity provider\", \"internal PKI\", \"HSM\")),\n    Asset(\"identity provider\",   \"platform\",    \"platform\",     5, \"ECDHE-P256\",     \"RSA-2048\",   2, 5,    \"internal\", 12, (\"internal PKI\", \"HSM\")),\n    Asset(\"internal PKI\",        \"platform\",    \"platform\",     5, \"ECDHE-P256\",     \"RSA-2048\",   1, 2,    \"internal\", 20, (\"HSM\",)),\n    Asset(\"HSM\",                 \"platform\",    \"security\",     5, None,             \"RSA-2048\",   3, 10,   \"internal\", 26, ()),\n    Asset(\"backup vault\",        \"operations\",  \"ops\",          3, \"RSA transport\",  \"RSA-2048\",   3, 25,   \"stored\",   5, (\"HSM\",)),\n    Asset(\"HR archive\",          \"people\",      \"HR IT\",        3, \"RSA transport\",  \"RSA-1024\",   2, 40,   \"stored\",   3, ()),\n    Asset(\"mobile API\",          \"sales\",       \"mobile team\",  4, \"X25519MLKEM768\", \"ECDSA-P256\", 2, 10,   \"internet\", 2, (\"identity provider\",)),\n    Asset(\"legacy ERP\",          \"finance\",     None,           None, None,          None,         None, None, \"partner\", 15, (\"internal PKI\",)),\n]\n# Prioritization: risk score first, but dependencies (a component must be ready before the assets that rely on it) and effort change the order. Scores use the 3.3 method with unknown factors set to 0.5 ONLY for this ordering exercise and flagged.\nWEIGHTS = {\"algorithm\": 0.25, \"sensitivity\": 0.20, \"lifetime\": 0.25, \"exposure\": 0.15, \"criticality\": 0.15}\nKEX_F = {\"RSA transport\": 1.0, \"ECDHE-P256\": 0.7, \"X25519MLKEM768\": 0.1}\nAUTH_F = {\"RSA-1024\": 1.0, \"RSA-2048\": 0.6, \"ECDSA-P256\": 0.6, \"Ed25519\": 0.6}\nEXPO_F = {\"internet\": 1.0, \"partner\": 0.8, \"stored\": 0.5, \"internal\": 0.2}\ndef score(a):\n    alg = max(KEX_F.get(a.kex, 0.5), 0.8 * AUTH_F.get(a.auth, 0.5))\n    f = {\"algorithm\": alg, \"sensitivity\": 0.5 if a.impact is None else a.impact / 3, \"lifetime\": 0.5 if a.lifetime is None else min(1, a.lifetime / 30),\n         \"exposure\": EXPO_F[a.exposure], \"criticality\": 0.5 if a.criticality is None else a.criticality / 5}\n    return 100 * sum(WEIGHTS[k] * v for k, v in f.items())\nby_name = {a.name: a for a in ASSETS}\nrisk = {a.name: score(a) for a in ASSETS}\nprint(\"DEMO DATA. (1) ranking by risk alone, (2) by risk per person-week of effort, (3) the plan order that respects dependencies\")\nprint(f\"{'asset':<19} {'risk':>6} {'effort (pw)':>11} {'risk / effort':>13}   depends on\")\nfor a in sorted(ASSETS, key=lambda x: -risk[x.name]):\n    print(f\"{a.name:<19} {risk[a.name]:>6.1f} {a.effort:>11} {risk[a.name] / a.effort:>13.2f}   {', '.join(a.depends_on) or '-'}\" + (\"   (unknown inputs set to 0.5)\" if None in (a.impact, a.lifetime, a.criticality, a.kex, a.auth) else \"\"))\n# dependency-respecting order: repeatedly pick, among assets whose dependencies are all scheduled, the one with the highest risk\ndone, order = set(), []\nwhile len(order) < len(ASSETS):\n    ready = [a for a in ASSETS if a.name not in done and all(d in done for d in a.depends_on)]\n    pick = max(ready, key=lambda a: (risk[a.name], a.name))\n    order.append(pick); done.add(pick.name)\nprint()\nprint(\"plan order (highest risk first among assets whose dependencies are already scheduled):\")\nfor i, a in enumerate(order, 1):\n    wait = [d for d in a.depends_on]\n    held_back = max(ASSETS, key=lambda x: risk[x.name]).name == a.name\n    print(f\"  {i:>2}. {a.name:<19} risk {risk[a.name]:>5.1f}\" + (f\"  (after {', '.join(wait)})\" if wait else \"\"))\nrank_risk = [a.name for a in sorted(ASSETS, key=lambda x: -risk[x.name])]\npos = {a.name: i for i, a in enumerate(order)}\nmoved = [(n, rank_risk.index(n) + 1, pos[n] + 1) for n in rank_risk if rank_risk.index(n) != pos[n]]\nprint()\nprint(\"assets whose position differs between the risk ranking and the plan order (name, risk rank, plan position):\")\nfor n, r, p in moved:\n    print(f\"  {n:<19} {r:>2} -> {p:>2}\")\ntotal = sum(a.effort for a in ASSETS)\nprint(f\"total estimated effort {total} person-weeks; the first three items of the plan cost {sum(a.effort for a in order[:3])} person-weeks\")\nprint(\"quick wins are visible in the risk / effort column: items with high risk and low effort can run in parallel with the long foundation work\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-prioritization",
+              "language": "text",
+              "code": "DEMO DATA. (1) ranking by risk alone, (2) by risk per person-week of effort, (3) the plan order that respects dependencies\nasset                 risk effort (pw) risk / effort   depends on\nclaims upload         94.0           8         11.75   internal PKI\nbackup vault          82.3           5         16.47   HSM\nHR archive            79.8           3         26.61   -\npayments service      70.0          10          7.00   identity provider, internal PKI, HSM\ncustomer portal       63.7           6         10.61   identity provider, internal PKI\nmobile API            60.7           2         30.33   identity provider\nHSM                   58.8          26          2.26   -   (unknown inputs set to 0.5)\nlegacy ERP            54.5          15          3.63   internal PKI   (unknown inputs set to 0.5)\nidentity provider     53.0          12          4.42   internal PKI, HSM\ninternal PKI          43.8          20          2.19   HSM\n\nplan order (highest risk first among assets whose dependencies are already scheduled):\n   1. HR archive          risk  79.8\n   2. HSM                 risk  58.8\n   3. backup vault        risk  82.3  (after HSM)\n   4. internal PKI        risk  43.8  (after HSM)\n   5. claims upload       risk  94.0  (after internal PKI)\n   6. legacy ERP          risk  54.5  (after internal PKI)\n   7. identity provider   risk  53.0  (after internal PKI, HSM)\n   8. payments service    risk  70.0  (after identity provider, internal PKI, HSM)\n   9. customer portal     risk  63.7  (after identity provider, internal PKI)\n  10. mobile API          risk  60.7  (after identity provider)\n\nassets whose position differs between the risk ranking and the plan order (name, risk rank, plan position):\n  claims upload        1 ->  5\n  backup vault         2 ->  3\n  HR archive           3 ->  1\n  payments service     4 ->  8\n  customer portal      5 ->  9\n  mobile API           6 -> 10\n  HSM                  7 ->  2\n  legacy ERP           8 ->  6\n  identity provider    9 ->  7\n  internal PKI        10 ->  4\ntotal estimated effort 107 person-weeks; the first three items of the plan cost 34 person-weeks\nquick wins are visible in the risk / effort column: items with high risk and low effort can run in parallel with the long foundation work",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The risk-only ranking begins with the claims upload (94.0), the backup vault (82.3) and the HR archive (79.8). The risk-per-effort column shows the quick wins: the mobile API (30.33), the HR archive (26.61) and the backup vault (16.47); the foundations are expensive for their risk (HSM 2.26, internal PKI 2.19). The plan order starts with the HR archive (no dependencies), then the HSM, the backup vault, the internal PKI, the claims upload, the legacy ERP, the identity provider, the payments service, the customer portal and the mobile API; the claims upload falls from rank 1 to position 5 because it needs the PKI, and the PKI (rank 10 by risk) rises to position 4. Only the backup vault stays within one position of its risk rank; the others move by two to six places. Total estimated effort is 107 person-weeks, and the first three items cost 34.\n\n**Reading the result.** The plan order is a consequence of a written rule and can be reproduced; it is **not** an optimisation (a different effort estimate or a different tie-break would change it). The value of showing the three views is to make the trade-off explicit to those who approve the plan. **Common mistake:** executing the risk ranking as written and then discovering that its first item cannot be finished because its dependency is scheduled last."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does the internal PKI move up in the plan order although its risk rank is last?",
+              "options": [
+                "Other assets depend on it, so it must be ready first",
+                "It has the highest score",
+                "It is cheap"
+              ],
+              "correct_index": 0,
+              "explanation": "Rank 10 by risk, position 4 in the plan."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does the risk-per-effort column identify?",
+              "options": [
+                "Quick wins: high risk and low effort",
+                "The most expensive assets",
+                "Unknown assets"
+              ],
+              "correct_index": 0,
+              "explanation": "Mobile API 30.33, HR archive 26.61."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Is the plan order an optimisation?",
+              "options": [
+                "No, it is the result of a stated rule that can be reproduced and challenged",
+                "Yes, it is optimal",
+                "It is random"
+              ],
+              "correct_index": 0,
+              "explanation": "Different estimates would change it."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4: Quantum Risk Assessment with heat maps and the Quantum-Safe Readiness Maturity Model (Figures 4-4 and 4-5)"
+            },
+            {
+              "book": "B26",
+              "locator": "NIST SP 800-30 Rev. 1: Section 3.2 (conducting the risk assessment) and Section 2.3 (key risk concepts)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Efforts, the 0.5 default used only for ordering, and the tie-break rule are DEMO assumptions; the greedy dependency-respecting order is not an optimal schedule."
+          }
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "3.5 Readiness Maturity Assessment",
+          "summary": "A five-level, five-dimension maturity model scored from recorded evidence, where an unevidenced claim does not count and the overall level is the weakest dimension.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Technical scores describe assets; **maturity** describes the organisation's ability to act on them. The course text presents a five-level model: **Ad hoc** (no visibility, risk unmanaged), **Initial awareness** (stakeholders informed, basic discovery under way), **Structured planning** (enterprise-wide CBOM, strategy and heat maps, tools allocated), **Operational integration** (crypto-agility in the architecture, PQC pilots, crypto metrics on SIEM dashboards) and **Optimized resilience** (automated inventory and monitoring, rollout complete for high-risk systems, continuous improvement). It evaluates readiness over five dimensions: **discovery, strategy, migration, agility and monitoring**.\n\nSelf-assessments inflate. The lesson's method awards a level in a dimension only when it is **claimed and evidenced**, requires the levels to be cumulative (level 3 needs level 2), reports the gap between claim and evidence, and takes the **minimum** over dimensions as the overall level. The level descriptions per dimension in the listing are the lesson's own wording of the model; the answers are DEMO DATA. All assets, scores, efforts, capacities and self-assessment answers are **DEMO DATA** for an invented organisation (ten assets, one of them deliberately almost unknown). The listings compute real scores, rankings, plans and checks from that data; they are not findings about any real organisation, and the weights, bands and effort figures are assumptions stated in the code."
+            },
+            {
+              "type": "code",
+              "id": "c-maturity",
+              "language": "python",
+              "code": "# Organisational readiness maturity: five levels (ad hoc, initial awareness, structured planning, operational integration, optimized resilience) across five dimensions.\n# A level is awarded only when the evidence for it is recorded; a claim without evidence does not count. DEMO DATA: an invented self-assessment.\nLEVELS = [\"Ad hoc\", \"Initial awareness\", \"Structured planning\", \"Operational integration\", \"Optimized resilience\"]\nDIMENSIONS = {\n    \"discovery\":  [\"no inventory\", \"isolated scans or spreadsheets\", \"enterprise inventory / CBOM exists\", \"inventory refreshed automatically from scans\", \"continuous discovery with drift alerts\"],\n    \"strategy\":   [\"none\", \"stakeholders informed\", \"strategy, heat map and tool budget approved\", \"strategy executed with owners per wave\", \"reviewed after each wave with measured results\"],\n    \"migration\":  [\"none\", \"pilot discussed\", \"migration plan with waves\", \"PQC pilots running in production-like systems\", \"rollout complete for high-risk systems\"],\n    \"agility\":    [\"algorithms hard-coded\", \"awareness of agility\", \"central crypto library or policy chosen\", \"agility built into new systems\", \"algorithm change tested in production exercises\"],\n    \"monitoring\": [\"none\", \"ad hoc checks\", \"certificate expiry monitored\", \"crypto metrics on SIEM dashboards\", \"automated policy-drift detection and response\"],\n}\n# for every dimension and level: (claimed by the team, evidence on file)\nanswers = {\n    \"discovery\":  [(True, True), (True, True), (True, False), (False, False), (False, False)],\n    \"strategy\":   [(True, True), (True, True), (True, True), (True, False), (False, False)],\n    \"migration\":  [(True, True), (True, True), (False, False), (False, False), (False, False)],\n    \"agility\":    [(True, True), (True, True), (True, True), (False, False), (False, False)],\n    \"monitoring\": [(True, True), (True, True), (True, True), (True, True), (False, False)],\n}\ndef achieved(dim):\n    \"\"\"highest level L such that levels 1..L all have a claim AND evidence (levels are cumulative)\"\"\"\n    lvl = 0\n    for claimed, evidenced in answers[dim]:\n        if claimed and evidenced: lvl += 1\n        else: break\n    return lvl\ndef claimed_level(dim):\n    lvl = 0\n    for claimed, _ in answers[dim]:\n        if claimed: lvl += 1\n        else: break\n    return lvl\nprint(\"DEMO DATA. level 1 = Ad hoc ... level 5 = Optimized resilience\")\nprint(f\"{'dimension':<11} {'claimed':>8} {'evidenced':>10}   evidence gap\")\nfor d in DIMENSIONS:\n    c, e = claimed_level(d), achieved(d)\n    gap = f\"level {e + 1} claimed but nothing on file: '{DIMENSIONS[d][e]}'\" if c > e else \"-\"\n    print(f\"{d:<11} {c:>8} {e:>10}   {gap}\")\nev = [achieved(d) for d in DIMENSIONS]\ncl = [claimed_level(d) for d in DIMENSIONS]\nprint()\nprint(f\"mean claimed {sum(cl) / len(cl):.1f}, mean evidenced {sum(ev) / len(ev):.1f}\")\nprint(f\"overall level: {min(ev)} ({LEVELS[min(ev) - 1]}), the lowest evidenced dimension: weakest link, because a rollout without discovery or agility is not repeatable\")\nweak = [d for d in DIMENSIONS if achieved(d) == min(ev)]\nprint(\"dimensions holding the organisation at that level:\", weak)\nprint(\"next step to reach level\", min(ev) + 1, \":\", \"; \".join(f\"{d}: {DIMENSIONS[d][min(ev)]}\" for d in weak))\nprint(\"note: the overall level uses the minimum, not the mean, which would hide the bottleneck; and a claim without evidence is reported as a gap, not counted\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-maturity",
+              "language": "text",
+              "code": "DEMO DATA. level 1 = Ad hoc ... level 5 = Optimized resilience\ndimension    claimed  evidenced   evidence gap\ndiscovery          3          2   level 3 claimed but nothing on file: 'enterprise inventory / CBOM exists'\nstrategy           4          3   level 4 claimed but nothing on file: 'strategy executed with owners per wave'\nmigration          2          2   -\nagility            3          3   -\nmonitoring         4          4   -\n\nmean claimed 3.2, mean evidenced 2.8\noverall level: 2 (Initial awareness), the lowest evidenced dimension: weakest link, because a rollout without discovery or agility is not repeatable\ndimensions holding the organisation at that level: ['discovery', 'migration']\nnext step to reach level 3 : discovery: enterprise inventory / CBOM exists; migration: migration plan with waves\nnote: the overall level uses the minimum, not the mean, which would hide the bottleneck; and a claim without evidence is reported as a gap, not counted",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The team claims a mean level of 3.2 but can evidence only 2.8. Discovery is claimed at level 3 (\"enterprise inventory / CBOM exists\") without evidence on file, so it counts as level 2; strategy is claimed at level 4 but only level 3 is evidenced; migration is at 2 (no migration plan with waves), agility at 3 and monitoring at 4. The **overall level is 2 (Initial awareness)**, held by discovery and migration; reaching level 3 needs an enterprise inventory or CBOM and a migration plan with waves, which E2 and E5 deliver.\n\n**Why the minimum.** A rollout without discovery is blind, and one without agility cannot be repeated, so averaging the dimensions would hide the bottleneck. And **evidence requirements** are what make a maturity score credible: a link to the CBOM repository, an approved strategy document, a dashboard. **Common mistake:** letting each team grade itself without evidence."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How is the overall maturity level determined in the lesson?",
+              "options": [
+                "As the lowest evidenced level among the dimensions",
+                "As the mean of claimed levels",
+                "As the highest level"
+              ],
+              "correct_index": 0,
+              "explanation": "The weakest dimension is the bottleneck."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "How does the method treat a claim without evidence?",
+              "options": [
+                "It is reported as a gap and not counted",
+                "It counts fully",
+                "It counts half"
+              ],
+              "correct_index": 0,
+              "explanation": "Discovery was claimed at 3 but evidenced at 2."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which five dimensions does the lesson assess?",
+              "options": [
+                "Discovery, strategy, migration, agility and monitoring",
+                "Cost, people, time, scope and quality",
+                "Confidentiality, integrity, availability, privacy and safety"
+              ],
+              "correct_index": 0,
+              "explanation": "As in the course text's maturity model."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4: Quantum Risk Assessment with heat maps and the Quantum-Safe Readiness Maturity Model (Figures 4-4 and 4-5)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The five levels and the five dimensions follow the course text; the wording of the level criteria for each dimension, the cumulative rule and the use of the minimum are the lesson's own choices, not part of the book's model."
+          }
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "3.6 Migration Planning (Assessment Output)",
+          "summary": "A draft migration plan generated from the assessment, with waves, owners, exit criteria, assess-first flags and automated consistency checks.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The assessment ends with a **draft migration plan**: the bridge to execution in E5. Its quality is determined by whether it is grounded in the discovered state (E2) and the scores (3.3 to 3.5), and whether it is **internally consistent**: every asset scheduled once, each dependency earlier than its dependants, the work per period within capacity, every item with an **owner** and **exit criteria**, and the unknowns flagged as work to do first.\n\nThe listing builds the plan for the ten assets under an assumed capacity of 40 person-weeks per half-year. Assets whose key establishment is already hybrid are left out of the waves (their authentication keys remain, noted in the lesson text), the assets with unknown inputs are flagged **ASSESS FIRST**, items without an owner are reported as blockers, and the plan is checked automatically. It prints the waves, the checks, the schedule against the policy dates quoted in E1.1 and the first wave as JSON. All assets, scores, efforts, capacities and self-assessment answers are **DEMO DATA** for an invented organisation (ten assets, one of them deliberately almost unknown). The listings compute real scores, rankings, plans and checks from that data; they are not findings about any real organisation, and the weights, bands and effort figures are assumptions stated in the code."
+            },
+            {
+              "type": "code",
+              "id": "c-migration-plan",
+              "language": "python",
+              "code": "from dataclasses import dataclass, field\nfrom typing import Optional\n# DEMO DATA: an invented mid-sized organisation. None marks a value that nobody has established (UNKNOWN), which is different from a low value.\n@dataclass\nclass Asset:\n    name: str\n    function: str                        # business function\n    owner: Optional[str]\n    criticality: Optional[int]           # 1 (minor) .. 5 (severe) business impact\n    kex: Optional[str]                   # key establishment protecting the data: \"RSA transport\", \"ECDHE-P256\", \"X25519MLKEM768\" or None = unknown\n    auth: Optional[str]                  # authentication key: \"RSA-2048\", \"RSA-1024\", \"ECDSA-P256\", \"Ed25519\" or None = unknown\n    impact: Optional[int]                # FIPS 199 style confidentiality impact 1 (low) .. 3 (high)\n    lifetime: Optional[int]              # years the data must stay confidential\n    exposure: str                        # where the ciphertext travels: internet, partner, stored, internal\n    effort: int                          # estimated migration effort in person-weeks\n    depends_on: tuple = ()\n\nASSETS = [\n    Asset(\"customer portal\",     \"sales\",       \"web team\",     4, \"ECDHE-P256\",     \"RSA-2048\",   2, 7,    \"internet\", 6, (\"identity provider\", \"internal PKI\")),\n    Asset(\"claims upload\",       \"claims\",      \"claims IT\",    4, \"RSA transport\",  \"RSA-2048\",   3, 30,   \"partner\",  8, (\"internal PKI\",)),\n    Asset(\"payments service\",    \"finance\",     \"finance IT\",   5, \"ECDHE-P256\",     \"ECDSA-P256\", 3, 3,    \"internet\", 10, (\"identity provider\", \"internal PKI\", \"HSM\")),\n    Asset(\"identity provider\",   \"platform\",    \"platform\",     5, \"ECDHE-P256\",     \"RSA-2048\",   2, 5,    \"internal\", 12, (\"internal PKI\", \"HSM\")),\n    Asset(\"internal PKI\",        \"platform\",    \"platform\",     5, \"ECDHE-P256\",     \"RSA-2048\",   1, 2,    \"internal\", 20, (\"HSM\",)),\n    Asset(\"HSM\",                 \"platform\",    \"security\",     5, None,             \"RSA-2048\",   3, 10,   \"internal\", 26, ()),\n    Asset(\"backup vault\",        \"operations\",  \"ops\",          3, \"RSA transport\",  \"RSA-2048\",   3, 25,   \"stored\",   5, (\"HSM\",)),\n    Asset(\"HR archive\",          \"people\",      \"HR IT\",        3, \"RSA transport\",  \"RSA-1024\",   2, 40,   \"stored\",   3, ()),\n    Asset(\"mobile API\",          \"sales\",       \"mobile team\",  4, \"X25519MLKEM768\", \"ECDSA-P256\", 2, 10,   \"internet\", 2, (\"identity provider\",)),\n    Asset(\"legacy ERP\",          \"finance\",     None,           None, None,          None,         None, None, \"partner\", 15, (\"internal PKI\",)),\n]\nimport json\n# Turn the assessment into a draft migration plan: waves that respect dependencies, a capacity limit, and a check against the policy dates. DEMO DATA.\nCAPACITY = 40                      # assumed person-weeks of migration work available per half-year\nWEIGHTS = {\"algorithm\": 0.25, \"sensitivity\": 0.20, \"lifetime\": 0.25, \"exposure\": 0.15, \"criticality\": 0.15}\nKEX_F = {\"RSA transport\": 1.0, \"ECDHE-P256\": 0.7, \"X25519MLKEM768\": 0.1}\nAUTH_F = {\"RSA-1024\": 1.0, \"RSA-2048\": 0.6, \"ECDSA-P256\": 0.6, \"Ed25519\": 0.6}\nEXPO_F = {\"internet\": 1.0, \"partner\": 0.8, \"stored\": 0.5, \"internal\": 0.2}\ndef score(a):\n    alg = max(KEX_F.get(a.kex, 0.5), 0.8 * AUTH_F.get(a.auth, 0.5))\n    f = {\"algorithm\": alg, \"sensitivity\": 0.5 if a.impact is None else a.impact / 3, \"lifetime\": 0.5 if a.lifetime is None else min(1, a.lifetime / 30),\n         \"exposure\": EXPO_F[a.exposure], \"criticality\": 0.5 if a.criticality is None else a.criticality / 5}\n    return 100 * sum(WEIGHTS[k] * v for k, v in f.items())\nrisk = {a.name: score(a) for a in ASSETS}\nalready_done = {a.name for a in ASSETS if a.kex == \"X25519MLKEM768\"}      # key establishment already hybrid: only the authentication keys remain (scheduled with the CA wave in a real plan; kept as a note here)\ntodo = [a for a in ASSETS if a.name not in already_done]\nneeds_assessment = [a for a in todo if None in (a.owner, a.criticality, a.kex, a.auth, a.impact, a.lifetime)]\nplan, scheduled = [], set(already_done)\nwave = 0\nremaining = list(todo)\nwhile remaining:\n    ready = sorted([a for a in remaining if all(d in scheduled for d in a.depends_on)], key=lambda a: (-risk[a.name], a.name))\n    if not ready: raise SystemExit(\"circular dependency\")\n    wave += 1; used, chosen = 0, []\n    for a in ready:\n        if used + a.effort <= CAPACITY or not chosen:\n            chosen.append(a); used += a.effort\n    for a in chosen:\n        remaining.remove(a); scheduled.add(a.name)\n    plan.append({\"wave\": wave, \"half_year\": f\"H{wave}\", \"effort_pw\": used, \"items\": [{\"asset\": a.name, \"owner\": a.owner or \"UNASSIGNED\", \"risk\": round(risk[a.name], 1), \"effort_pw\": a.effort,\n                 \"exit_criteria\": \"hybrid or post-quantum key establishment verified by discovery (E2), certificate or key replaced, rollback tested\", \"needs_assessment_first\": a in needs_assessment} for a in chosen]})\nprint(f\"DEMO DATA. capacity {CAPACITY} person-weeks per half-year; already hybrid and left out of the waves: {sorted(already_done)}\")\nprint(f\"{'wave':<5} {'effort':>7}  items (owner, risk)\")\nfor w in plan:\n    print(f\"{w['half_year']:<5} {w['effort_pw']:>5} pw  \" + \"; \".join(f\"{i['asset']} ({i['owner']}, {i['risk']})\" + (\" [ASSESS FIRST]\" if i['needs_assessment_first'] else \"\") for i in w[\"items\"]))\n# checks the plan must pass\npos = {i[\"asset\"]: w[\"wave\"] for w in plan for i in w[\"items\"]}\nok_dep = all(pos.get(d, 0) <= pos[a.name] and (pos.get(d, 0) < pos[a.name] or d in already_done) for a in todo for d in a.depends_on if d in pos)\nok_cover = set(pos) == {a.name for a in todo}\nok_cap = all(w[\"effort_pw\"] <= CAPACITY or len(w[\"items\"]) == 1 for w in plan)\nprint()\nprint(\"checks: every asset scheduled exactly once:\", ok_cover, \"| each dependency is scheduled in an earlier wave:\", ok_dep, \"| capacity respected (or a single item larger than capacity):\", ok_cap)\nlast = plan[-1][\"half_year\"]\nprint(f\"the plan needs {len(plan)} half-years ({len(plan) / 2:.1f} years). Against the policy dates quoted in E1.1 (NIST IR 8547 draft: deprecation after 2030, disallowance after 2035; NSM-10 goal 2035) a start in January 2027 would finish by the end of {2027 + (len(plan) - 1) // 2}\")\nunowned = [i[\"asset\"] for w in plan for i in w[\"items\"] if i[\"owner\"] == \"UNASSIGNED\"]\nprint(\"items without an owner (a plan blocker):\", unowned)\nprint(\"the legacy ERP appears in the plan flagged ASSESS FIRST: its unknown inputs must be established before its wave starts, and it has no owner, which must be resolved by governance (E6)\")\nprint()\nprint(\"plan as JSON (first wave):\")\nprint(json.dumps(plan[0], indent=1)[:900])"
+            },
+            {
+              "type": "code",
+              "id": "o-c-migration-plan",
+              "language": "text",
+              "code": "DEMO DATA. capacity 40 person-weeks per half-year; already hybrid and left out of the waves: ['mobile API']\nwave   effort  items (owner, risk)\nH1       29 pw  HR archive (HR IT, 79.8); HSM (security, 58.8) [ASSESS FIRST]\nH2       25 pw  backup vault (ops, 82.3); internal PKI (platform, 43.8)\nH3       35 pw  claims upload (claims IT, 94.0); legacy ERP (UNASSIGNED, 54.5) [ASSESS FIRST]; identity provider (platform, 53.0)\nH4       16 pw  payments service (finance IT, 70.0); customer portal (web team, 63.7)\n\nchecks: every asset scheduled exactly once: True | each dependency is scheduled in an earlier wave: True | capacity respected (or a single item larger than capacity): True\nthe plan needs 4 half-years (2.0 years). Against the policy dates quoted in E1.1 (NIST IR 8547 draft: deprecation after 2030, disallowance after 2035; NSM-10 goal 2035) a start in January 2027 would finish by the end of 2028\nitems without an owner (a plan blocker): ['legacy ERP']\nthe legacy ERP appears in the plan flagged ASSESS FIRST: its unknown inputs must be established before its wave starts, and it has no owner, which must be resolved by governance (E6)\n\nplan as JSON (first wave):\n{\n \"wave\": 1,\n \"half_year\": \"H1\",\n \"effort_pw\": 29,\n \"items\": [\n  {\n   \"asset\": \"HR archive\",\n   \"owner\": \"HR IT\",\n   \"risk\": 79.8,\n   \"effort_pw\": 3,\n   \"exit_criteria\": \"hybrid or post-quantum key establishment verified by discovery (E2), certificate or key replaced, rollback tested\",\n   \"needs_assessment_first\": false\n  },\n  {\n   \"asset\": \"HSM\",\n   \"owner\": \"security\",\n   \"risk\": 58.8,\n   \"effort_pw\": 26,\n   \"exit_criteria\": \"hybrid or post-quantum key establishment verified by discovery (E2), certificate or key replaced, rollback tested\",\n   \"needs_assessment_first\": true\n  }\n ]\n}",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The plan has four half-year waves. **H1** (29 person-weeks): HR archive and HSM (assess first); **H2** (25): backup vault and internal PKI; **H3** (35): claims upload, legacy ERP (assess first, **unassigned**) and identity provider; **H4** (16): payments service and customer portal. The mobile API is already hybrid and is left out. All three checks pass: every asset is scheduled exactly once, every dependency is in an earlier wave, and the capacity is respected. Starting in January 2027 the plan would finish by the end of 2028, ahead of the dates in the NIST IR 8547 draft (deprecation after 2030, disallowance after 2035) and the NSM-10 goal of 2035, if the effort estimates and capacity hold.\n\n**Blockers the plan exposes.** The legacy ERP has **no owner**, and its inputs are unknown: governance (E6) must assign ownership, and E2-style discovery must establish its algorithms before its wave. Authentication keys of the mobile API still need a post-quantum signature plan, which a complete plan adds as a separate item. **Common mistake:** presenting a plan with a precise finish date when its inputs include unassessed assets: the date is conditional and should say so."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the plan do with an asset whose inputs are unknown?",
+              "options": [
+                "Flags it ASSESS FIRST and keeps it in the plan",
+                "Drops it",
+                "Schedules it last without a note"
+              ],
+              "correct_index": 0,
+              "explanation": "The legacy ERP and the HSM carry the flag."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Name one consistency check applied to the plan.",
+              "options": [
+                "Every dependency is scheduled in an earlier wave",
+                "Every wave has exactly three items",
+                "No wave exceeds one asset"
+              ],
+              "correct_index": 0,
+              "explanation": "Also: each asset exactly once and capacity respected."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is the plan's finish date conditional?",
+              "options": [
+                "It depends on effort estimates, capacity and the unassessed assets",
+                "Dates are never reliable",
+                "Policy dates change daily"
+              ],
+              "correct_index": 0,
+              "explanation": "State the conditions with the date."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4: Quantum Risk Assessment with heat maps and the Quantum-Safe Readiness Maturity Model (Figures 4-4 and 4-5)"
+            },
+            {
+              "book": "B85",
+              "locator": "NIST IR 8547 initial public draft: Section 4.1.1 (2030 deprecation and 2035 disallowance in Table 2) and the NSM-10 quotation"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The capacity, efforts, start date and wave rule are DEMO assumptions. IR 8547 is an initial public draft and its dates may have changed. The plan is a greedy schedule, not an optimised one."
+          }
+        }
+      ],
+      "quiz": [
+        {
+          "id": "e3-n01",
+          "prompt": "Why is an assessment record's missing field kept as unknown?",
+          "options": [
+            "Unknown is different from zero or low and must stay visible",
+            "Zero is easier to compute",
+            "Unknown is not allowed in code"
+          ],
+          "correct_index": 0,
+          "explanation": "Defaults hide the missing assessment.",
+          "source": {
+            "book": "B26",
+            "locator": "Section 3.2"
+          }
+        },
+        {
+          "id": "e3-n02",
+          "prompt": "Which exposure has a harvest-now-decrypt-later component?",
+          "options": [
+            "Key establishment (confidentiality)",
+            "Digital signatures",
+            "Hash functions"
+          ],
+          "correct_index": 0,
+          "explanation": "Signature forgery needs a capable machine to exist.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 4, risk assessment"
+          }
+        },
+        {
+          "id": "e3-n03",
+          "prompt": "What does 'not determined' mean in the exposure table?",
+          "options": [
+            "The input is unknown and must be examined, not assumed safe",
+            "The asset is safe",
+            "The asset is exposed"
+          ],
+          "correct_index": 0,
+          "explanation": "It is a finding in itself.",
+          "source": {
+            "book": "B26",
+            "locator": "Section 3.2"
+          }
+        },
+        {
+          "id": "e3-n04",
+          "prompt": "How does interval scoring represent an asset with unknown factors?",
+          "options": [
+            "As a range between the best and worst case",
+            "As the mean score",
+            "As zero"
+          ],
+          "correct_index": 0,
+          "explanation": "The legacy ERP: 12.0 to 97.0.",
+          "source": {
+            "book": "B26",
+            "locator": "Section 3.2"
+          }
+        },
+        {
+          "id": "e3-n05",
+          "prompt": "What must a scoring method guarantee about worse inputs?",
+          "options": [
+            "A worse input never lowers the score (monotonicity)",
+            "The score is always an integer",
+            "The score is always 50"
+          ],
+          "correct_index": 0,
+          "explanation": "Checked with a property test.",
+          "source": {
+            "book": "B26",
+            "locator": "Section 3.2"
+          }
+        },
+        {
+          "id": "e3-n06",
+          "prompt": "Why can the plan order differ from the risk ranking?",
+          "options": [
+            "Dependencies and effort change what can and should be done first",
+            "Because of random noise",
+            "Because risk is meaningless"
+          ],
+          "correct_index": 0,
+          "explanation": "The PKI moved from risk rank 10 to position 4.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 4"
+          }
+        },
+        {
+          "id": "e3-n07",
+          "prompt": "What does the risk-per-effort ratio highlight?",
+          "options": [
+            "Quick wins",
+            "The oldest assets",
+            "Vendor risk"
+          ],
+          "correct_index": 0,
+          "explanation": "High risk and low effort.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 4"
+          }
+        },
+        {
+          "id": "e3-n08",
+          "prompt": "How many levels does the course text's readiness maturity model have?",
+          "options": [
+            "Five, from Ad hoc to Optimized resilience",
+            "Three",
+            "Ten"
+          ],
+          "correct_index": 0,
+          "explanation": "Ad hoc, Initial awareness, Structured planning, Operational integration, Optimized resilience.",
+          "source": {
+            "book": "B05",
+            "locator": "Figure 4-5"
+          }
+        },
+        {
+          "id": "e3-n09",
+          "prompt": "Why is the overall maturity the minimum over the dimensions?",
+          "options": [
+            "The weakest dimension is the bottleneck, and the mean would hide it",
+            "The minimum is easier",
+            "Because the book says so"
+          ],
+          "correct_index": 0,
+          "explanation": "A rollout without discovery or agility is not repeatable.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 4, maturity model"
+          }
+        },
+        {
+          "id": "e3-n10",
+          "prompt": "How should a maturity claim without evidence be treated?",
+          "options": [
+            "As a gap that does not count",
+            "As fully valid",
+            "As a failure of the team"
+          ],
+          "correct_index": 0,
+          "explanation": "Evidence makes the score credible.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 4"
+          }
+        },
+        {
+          "id": "e3-n11",
+          "prompt": "What must a consistent draft migration plan guarantee?",
+          "options": [
+            "Each asset scheduled once and each dependency earlier than its dependants",
+            "Equal-size waves",
+            "Identical owners"
+          ],
+          "correct_index": 0,
+          "explanation": "Plus capacity and owners.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 5, the prescriptive approach"
+          }
+        },
+        {
+          "id": "e3-n12",
+          "prompt": "What do the 2030 and 2035 dates in the IR 8547 initial public draft concern?",
+          "options": [
+            "Deprecation and disallowance of quantum-vulnerable public-key algorithms",
+            "The arrival of quantum computers",
+            "AES retirement"
+          ],
+          "correct_index": 0,
+          "explanation": "They are policy dates, not forecasts.",
+          "source": {
+            "book": "B85",
+            "locator": "Table 2"
+          }
+        }
+      ],
+      "estimated_minutes": 300,
+      "notes": "Rewrites the six outline sections as lessons with executed listings on one DEMO DATA organisation: completeness of records, a rule-table exposure analysis, interval risk scoring with a monotonicity property test, three prioritisation views, an evidence-based maturity model and an automatically checked draft migration plan. The platform's current readiness calculation is described as knowledge-only.",
+      "learning_objectives": [
+        "Organise an inventory by business function and measure its completeness before scoring.",
+        "Classify key-establishment and authentication exposure separately with a written, auditable rule table.",
+        "Apply a documented risk score with interval scoring for unknown inputs and test it with a property check.",
+        "Prioritise by risk, effort and dependencies and explain how the orders differ.",
+        "Assess organisational maturity from evidence, using the weakest dimension as the overall level.",
+        "Produce a consistency-checked draft migration plan with owners, exit criteria and assess-first flags."
+      ]
+    }
+  ]
+}
