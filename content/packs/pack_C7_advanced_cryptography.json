@@ -1,0 +1,1151 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B01",
+      "title": "Understanding Cryptography: From Established Symmetric and Asymmetric Ciphers to Post-Quantum Algorithms",
+      "authors": "Christof Paar, Jan Pelzl, Tim Güneysu",
+      "edition": "2nd edition",
+      "year": 2024,
+      "publisher": "Springer"
+    },
+    {
+      "id": "B02",
+      "title": "A Graduate Course in Applied Cryptography",
+      "authors": "Dan Boneh, Victor Shoup",
+      "edition": "Version 0.6",
+      "year": 2023
+    },
+    {
+      "id": "B04",
+      "title": "FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B180",
+      "title": "FIPS 180-4: Secure Hash Standard (SHS)",
+      "authors": "NIST",
+      "edition": "August 2015",
+      "year": 2015,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B181",
+      "title": "FIPS 202: SHA-3 Standard: Permutation-Based Hash and Extendable-Output Functions",
+      "authors": "NIST",
+      "edition": "August 2015",
+      "year": 2015,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B182",
+      "title": "SP 800-38D: Recommendation for Block Cipher Modes of Operation: Galois/Counter Mode (GCM) and GMAC",
+      "authors": "NIST",
+      "edition": "November 2007",
+      "year": 2007,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B183",
+      "title": "SP 800-186: Recommendations for Discrete Logarithm-Based Cryptography: Elliptic Curve Domain Parameters",
+      "authors": "NIST",
+      "edition": "February 2023",
+      "year": 2023,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B184",
+      "title": "SP 800-90A Revision 1: Recommendation for Random Number Generation Using Deterministic Random Bit Generators",
+      "authors": "NIST",
+      "edition": "June 2015",
+      "year": 2015,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B100",
+      "title": "cryptography (Python package) version 50.0.1",
+      "authors": "Python Cryptographic Authority",
+      "edition": "50.0.1",
+      "year": 2026
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_c_c7_advanced_cryptography",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "7.1 Number Theory",
+          "summary": "The Euclidean algorithms, the Chinese remainder theorem, Euler and Fermat, primality tests that fail and succeed, and primitive roots, all checked by brute force.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Public-key cryptography stands on a small set of number-theory tools, and each is short enough to implement and test. The **extended Euclidean algorithm** finds gcd(a, n) together with integers x, y such that a·x + n·y = gcd, which gives the **modular inverse** when the gcd is 1: it is the operation behind RSA key generation and ECC arithmetic (Paar, section 6.3). The **Chinese remainder theorem (CRT)** reconstructs a number from its residues modulo coprime moduli, and RSA decryption uses it to work modulo p and q separately, about four times faster than working modulo n = pq (Paar, section 7.5.2). **Euler's theorem** states a^φ(n) ≡ 1 (mod n) for gcd(a, n) = 1, and **Fermat's little theorem** is the case n prime.\n\nThese theorems drive **primality testing**, which key generation needs (Paar, section 7.6). The simplest test, based on Fermat, declares n probably prime if a^(n−1) ≡ 1 for chosen bases a. It is fooled by **Carmichael numbers** such as 561, composite numbers for which *every* coprime base is a \"liar\". The **Miller-Rabin** test strengthens the condition by examining the square roots of 1 along the way, and for every odd composite at most a quarter of the bases are liars, so a few random bases make the error negligible. Finally, the multiplicative group modulo a prime p is cyclic: a **primitive root** generates all of it, and there are exactly φ(p − 1) of them, which is the structure Diffie-Hellman and ElGamal use. The labs use only the Python standard library plus `cryptography` 50.0.1 (`pip install cryptography==50.0.1`) as an **independent reference** to check each from-scratch implementation. Everything runs on your own machine on data you generate. Attacks are demonstrated only against code and keys written in the lesson and use toy parameters. Never use these implementations to protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-numbertheory",
+              "language": "python",
+              "code": "import math, random\n\ndef ext_gcd(a, b):\n    x0, x1, y0, y1 = 1, 0, 0, 1\n    while b:\n        q, a, b = a // b, b, a % b\n        x0, x1, y0, y1 = x1, x0 - q * x1, y1, y0 - q * y1\n    return a, x0, y0\ndef inverse(a, n):\n    g, x, _ = ext_gcd(a, n)\n    assert g == 1\n    return x % n\n\nrng = random.Random(1)\nchecked = 0\nfor _ in range(2000):\n    n = rng.randrange(3, 10 ** 12); a = rng.randrange(1, n)\n    if math.gcd(a, n) == 1:\n        assert a * inverse(a, n) % n == 1 and inverse(a, n) == pow(a, -1, n)\n        checked += 1\nprint(f\"extended Euclid gives the right modular inverse in all {checked} random cases (compared with Python's pow(a, -1, n))\")\n\ndef is_prime_mr(n, bases=(2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37)):          # deterministic for n < 3.3 * 10^24\n    if n < 2: return False\n    for p in bases:\n        if n % p == 0: return n == p\n    d, r = n - 1, 0\n    while d % 2 == 0: d, r = d // 2, r + 1\n    for a in bases:\n        x = pow(a, d, n)\n        if x in (1, n - 1): continue\n        for _ in range(r - 1):\n            x = x * x % n\n            if x == n - 1: break\n        else:\n            return False\n    return True\ndef random_prime(bits):\n    while True:\n        candidate = rng.getrandbits(bits) | (1 << (bits - 1)) | 1\n        if is_prime_mr(candidate): return candidate\n\np, q = random_prime(64), random_prime(64)\nn, e = p * q, 65537\nd = inverse(e, (p - 1) * (q - 1))\nm = rng.randrange(2, n)\nc = pow(m, e, n)\ndp, dq, q_inv = d % (p - 1), d % (q - 1), inverse(q, p)                            # RSA-CRT: work modulo p and q separately\nm_p, m_q = pow(c, dp, p), pow(c, dq, q)\nh = q_inv * (m_p - m_q) % p\nprint(\"RSA-CRT decryption equals ordinary decryption:\", m_q + h * q == pow(c, d, n) == m)\n\nprint(\"Euler's theorem a^phi(n) = 1 for random coprime pairs:\", all(pow(a, n_phi, n_) == 1 for n_, n_phi, a in ((91, 72, 5), (1001, 720, 3), (3125, 2500, 7))))\nprint(f\"{'n':>6} {'phi(n)':>7} {'Fermat liars (bases 1..n-1 passing)':>37} {'Miller-Rabin liars (bases 2..n-2)':>34}\")\ndef phi(n): return sum(1 for k in range(1, n) if math.gcd(k, n) == 1)\ndef mr_passes(n, a):\n    d, r = n - 1, 0\n    while d % 2 == 0: d, r = d // 2, r + 1\n    x = pow(a, d, n)\n    if x in (1, n - 1): return True\n    for _ in range(r - 1):\n        x = x * x % n\n        if x == n - 1: return True\n    return False\nfor n_ in (561, 1105, 1729, 2465, 91):\n    fermat = sum(1 for a in range(1, n_) if pow(a, n_ - 1, n_) == 1)\n    strong = sum(1 for a in range(2, n_ - 1) if mr_passes(n_, a))\n    print(f\"{n_:>6} {phi(n_):>7} {fermat:>37} {strong:>34}   (n - 3 = {n_ - 3} bases, one quarter = {(n_ - 3) // 4})\")\nprint(\"Miller-Rabin agrees with trial division for every n below 5000:\", all(is_prime_mr(k) == (k > 1 and all(k % t for t in range(2, int(k ** 0.5) + 1))) for k in range(2, 5000)))\n\nprime = 101\nroots = [g for g in range(2, prime) if len({pow(g, k, prime) for k in range(prime - 1)}) == prime - 1]\nprint(f\"primitive roots modulo {prime}: {len(roots)} found, phi({prime - 1}) = {phi(prime - 1)}:\", len(roots) == phi(prime - 1), \"| smallest:\", roots[0])"
+            },
+            {
+              "type": "code",
+              "id": "o-c-numbertheory",
+              "language": "text",
+              "code": "extended Euclid gives the right modular inverse in all 1226 random cases (compared with Python's pow(a, -1, n))\nRSA-CRT decryption equals ordinary decryption: True\nEuler's theorem a^phi(n) = 1 for random coprime pairs: True\n     n  phi(n)   Fermat liars (bases 1..n-1 passing)  Miller-Rabin liars (bases 2..n-2)\n   561     320                                   320                                  8   (n - 3 = 558 bases, one quarter = 139)\n  1105     768                                   768                                 28   (n - 3 = 1102 bases, one quarter = 275)\n  1729    1296                                  1296                                160   (n - 3 = 1726 bases, one quarter = 431)\n  2465    1792                                  1792                                 68   (n - 3 = 2462 bases, one quarter = 615)\n    91      72                                    36                                 16   (n - 3 = 88 bases, one quarter = 22)\nMiller-Rabin agrees with trial division for every n below 5000: True\nprimitive roots modulo 101: 40 found, phi(100) = 40: True | smallest: 2",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Every identity checks out. The Carmichael numbers show why a plain Fermat test is not acceptable: for 561 all 320 coprime bases are liars (the number of passing bases equals φ(561) = 320, and only non-coprime bases ever fail), so a Fermat test with coprime bases can never reveal that 561 = 3·11·17 is composite. The non-Carmichael number 91 is caught by half of the bases. Miller-Rabin's liars (8 for 561, 160 for 1729) are far below the guaranteed quarter bound, so a handful of random bases make a mistake astronomically unlikely, and the deterministic base set used here agrees with trial division for every number below 5,000. Primitive roots exist in the number the theory predicts.\n\n**Why this matters for security.** Key generation with a faulty primality test produces weak keys; RSA decryption with the CRT is fast but a **fault** in one of the two half-computations leaks the factorisation (C10). And the structure of Z_p* (its order p − 1 and the factorisation of that order) is exactly what the discrete-logarithm attacks of the next lesson exploit."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why can a Fermat primality test with several bases still declare a composite number prime?",
+              "options": [
+                "Carmichael numbers such as 561 pass the test for every coprime base",
+                "Fermat's theorem is false",
+                "It only works for even numbers"
+              ],
+              "correct_index": 0,
+              "explanation": "For a Carmichael number every base coprime to n satisfies a^(n-1) = 1 mod n."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does the extended Euclidean algorithm compute that the plain algorithm does not?",
+              "options": [
+                "Integers x, y with ax + ny = gcd(a, n), giving the modular inverse",
+                "The prime factors of n",
+                "The square root of a"
+              ],
+              "correct_index": 0,
+              "explanation": "When the gcd is 1, x is the inverse of a modulo n."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How many primitive roots does the multiplicative group modulo a prime p have?",
+              "options": [
+                "phi(p - 1)",
+                "p - 1",
+                "1"
+              ],
+              "correct_index": 0,
+              "explanation": "A cyclic group of order p - 1 has phi(p - 1) generators; for p = 101 that is 40."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Section 6.3 (Essential Number Theory for Public-Key Algorithms), 7.5.2 (Fast Decryption with the Chinese Remainder Theorem) and 7.6 (Finding Large Primes: primality tests)"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 8.2 (Some Abstract Algebra: groups, cyclic groups, subgroups)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement that at most a quarter of bases are Miller-Rabin liars for any odd composite, and the deterministic base set bound, are standard results confirmed here only for small numbers, not quoted from the cited sections."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "7.2 Factoring and Discrete Logarithms",
+          "summary": "Pollard's rho, baby-step giant-step and Pohlig-Hellman implemented and measured, and why group order structure and size set the security of RSA and Diffie-Hellman.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "RSA is as hard as factoring n = pq (for the textbook attack), and Diffie-Hellman, ElGamal and DSA are as hard as the **discrete logarithm problem (DLP)**: given g and h = g^x in a group, find x. Paar (sections 8.3 and 8.3.3) separates two kinds of attack. **Generic** attacks work in any group and cost about the square root of the group order: **baby-step giant-step** stores about √n values to find x in about √n steps, and **Pollard's rho** achieves the same running time with negligible memory by following a pseudo-random walk until it collides. **Special** attacks exploit structure. The **Pohlig-Hellman** algorithm splits a DLP in a group of order N = q₁^e₁···q_k^e_k into DLPs in the small prime-power subgroups, so its cost is governed by the **largest prime factor** of N and not by N itself; this is why DH groups use a prime p for which (p − 1)/2 is also prime (a *safe prime*, Paar section 8.4). In prime fields **index calculus** attacks are sub-exponential and set the key sizes for classical RSA and DH (2048 bits and more), while elliptic curves have no known attack better than the generic ones, which is why 256-bit curves suffice (B7).\n\nThe first listing implements Pollard's rho to factor semiprimes and measures the number of steps against the √p scaling for the smaller factor. The second solves a 36-bit DLP by baby-step giant-step and then shows Pohlig-Hellman breaking a 62-bit DLP in a prime field whose p − 1 is smooth in a fraction of a second, while the same size with a safe prime gains nothing. All attacks are against numbers generated by the lesson. The labs use only the Python standard library plus `cryptography` 50.0.1 (`pip install cryptography==50.0.1`) as an **independent reference** to check each from-scratch implementation. Everything runs on your own machine on data you generate. Attacks are demonstrated only against code and keys written in the lesson and use toy parameters. Never use these implementations to protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-factoring",
+              "language": "python",
+              "code": "import math, random\n\nrng = random.Random(7)\ndef is_prime(n):\n    if n < 2: return False\n    for p in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):\n        if n % p == 0: return n == p\n    d, r = n - 1, 0\n    while d % 2 == 0: d, r = d // 2, r + 1\n    for a in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):\n        x = pow(a, d, n)\n        if x in (1, n - 1): continue\n        for _ in range(r - 1):\n            x = x * x % n\n            if x == n - 1: break\n        else:\n            return False\n    return True\ndef random_prime(bits):\n    while True:\n        c = rng.getrandbits(bits) | (1 << (bits - 1)) | 1\n        if is_prime(c): return c\n\ndef pollard_rho(n, c=1):\n    x = y = 2; steps = 0\n    while True:\n        x = (x * x + c) % n\n        y = (y * y + c) % n; y = (y * y + c) % n                 # the tortoise takes one step, the hare two\n        steps += 1\n        d = math.gcd(abs(x - y), n)\n        if d == n:\n            c += 1; x = y = 2; continue                           # cycle without a factor: retry with another polynomial\n        if d > 1:\n            return d, steps\n\nprint(f\"{'smaller prime (bits)':>20} {'modulus (bits)':>15} {'rho steps':>10} {'sqrt(p)':>10} {'steps / sqrt(p)':>16}   factor found\")\nfor bits in (16, 20, 24, 28, 32):\n    p, q = random_prime(bits), random_prime(bits + 8)\n    n = p * q\n    factor, steps = pollard_rho(n)\n    assert factor in (p, q) and n % factor == 0\n    print(f\"{bits:>20} {n.bit_length():>15} {steps:>10,} {math.isqrt(min(p, q)):>10,} {steps / math.sqrt(min(p, q)):>16.2f}   {'smaller' if factor == min(p, q) else 'larger'} prime\")\nprint(\"work grows with the square root of the SMALLER prime factor, so balanced primes are chosen for RSA\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-factoring",
+              "language": "text",
+              "code": "smaller prime (bits)  modulus (bits)  rho steps    sqrt(p)  steps / sqrt(p)   factor found\n                  16              40        185        249             0.74   smaller prime\n                  20              47      1,030        813             1.27   smaller prime\n                  24              55      5,372      3,011             1.78   smaller prime\n                  28              64     19,586     13,766             1.42   smaller prime\n                  32              71     53,196     57,873             0.92   smaller prime\nwork grows with the square root of the SMALLER prime factor, so balanced primes are chosen for RSA",
+              "caption": "Expected output"
+            },
+            {
+              "type": "code",
+              "id": "c-dlp",
+              "language": "python",
+              "code": "import math, random\n\nrng = random.Random(11)\ndef is_prime(n):\n    if n < 2: return False\n    for p in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):\n        if n % p == 0: return n == p\n    d, r = n - 1, 0\n    while d % 2 == 0: d, r = d // 2, r + 1\n    for a in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):\n        x = pow(a, d, n)\n        if x in (1, n - 1): continue\n        for _ in range(r - 1):\n            x = x * x % n\n            if x == n - 1: break\n        else:\n            return False\n    return True\n\ndef bsgs(g, h, p, order):\n    m = math.isqrt(order) + 1\n    baby = {pow(g, j, p): j for j in range(m)}                      # store g^j for j < m\n    factor = pow(g, -m, p)\n    gamma = h\n    for i in range(m + 1):\n        if gamma in baby:\n            return i * m + baby[gamma], m                            # x = i m + j\n        gamma = gamma * factor % p\n    return None, m\n\n# --- generic attack on a 36-bit prime field\np = next(c for c in (rng.getrandbits(36) | (1 << 35) | 1 for _ in iter(int, 1)) if is_prime(c))\ng = 2\norder = p - 1\nx_true = rng.randrange(2, order); h = pow(g, x_true, p)\nx, m = bsgs(g, h, p, order)\nprint(f\"36-bit prime p: baby-step giant-step stored {m:,} values (about sqrt(p)) and found an exponent with g^x = h:\", pow(g, x, p) == h)\n\n# --- Pohlig-Hellman: p - 1 smooth (a bad choice) versus a safe prime\ndef smooth_prime():\n    primes = [2, 3, 5, 7, 11, 13, 17]\n    while True:\n        n = 1\n        while n.bit_length() < 61:\n            n *= rng.choice(primes)\n        if is_prime(n + 1):\n            return n + 1\ndef factorise_smooth(n):\n    out, d = {}, 2\n    while n > 1:\n        while n % d == 0: out[d] = out.get(d, 0) + 1; n //= d\n        d += 1\n    return out\ndef pohlig_hellman(g, h, p):\n    N = p - 1\n    residues, moduli, work = [], [], 0\n    for q, e in factorise_smooth(N).items():\n        pe = q ** e\n        gi, hi = pow(g, N // pe, p), pow(h, N // pe, p)            # project the problem into the subgroup of order q^e\n        x_sub, steps = bsgs(gi, hi, p, pe)\n        work += steps\n        residues.append(x_sub); moduli.append(pe)\n    x, M = 0, 1\n    for r, mod in zip(residues, moduli):                            # combine with the Chinese remainder theorem\n        x += M * ((r - x) * pow(M, -1, mod) % mod); M *= mod\n    return x % N, work\n\np_smooth = smooth_prime()\ng = next(a for a in range(2, 50) if all(pow(a, (p_smooth - 1) // q, p_smooth) != 1 for q in factorise_smooth(p_smooth - 1)))\nx_true = rng.randrange(2, p_smooth - 1); h = pow(g, x_true, p_smooth)\nx, work = pohlig_hellman(g, h, p_smooth)\nprint(f\"smooth p - 1 = {factorise_smooth(p_smooth - 1)}: the {p_smooth.bit_length()}-bit DLP solved with about {work:,} group steps (generic attack would need about {math.isqrt(p_smooth):,}):\", pow(g, x, p_smooth) == h)\n\nq_prime = next(c for c in (rng.getrandbits(60) | (1 << 59) | 1 for _ in iter(int, 1)) if is_prime(c) and is_prime(2 * c + 1))\np_safe = 2 * q_prime + 1\nprint(f\"safe prime p = 2q + 1 with q = {q_prime}: p - 1 has the prime factor q of {q_prime.bit_length()} bits, so Pohlig-Hellman still needs about {math.isqrt(q_prime):,} steps (the generic cost), no saving\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-dlp",
+              "language": "text",
+              "code": "36-bit prime p: baby-step giant-step stored 240,370 values (about sqrt(p)) and found an exponent with g^x = h: True\nsmooth p - 1 = {2: 6, 5: 2, 7: 5, 11: 4, 13: 4, 17: 2}: the 62-bit DLP solved with about 455 group steps (generic attack would need about 1,802,710,912): True\nsafe prime p = 2q + 1 with q = 698990780969429951: p - 1 has the prime factor q of 60 bits, so Pohlig-Hellman still needs about 836,056,685 steps (the generic cost), no saving",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The first table is the √p law: the number of rho steps divided by √p stays between 0.7 and 1.8 while the smaller prime grows from 16 to 32 bits, so every 2 bits added to a factor doubles the work. That is the generic cost of a square-root attack, and it is why RSA needs primes of equal size (the work depends on the **smaller** factor) and why general-purpose factoring methods that are far better than rho (the number field sieve) are what determine today's key sizes. The DLP listing shows two facts. Generic baby-step giant-step on a 36-bit field stored 240,370 values: feasible, but 2^18 work for a 36-bit group means 2^64 for a 128-bit group, which is out of reach. And **structure is fatal**: a 62-bit prime whose p − 1 factors into small primes falls to Pohlig-Hellman after a few hundred steps, millions of times fewer than the generic attack, while a safe prime of the same size forces the full square-root work.\n\n**Link to the quantum threat (B8).** Shor's algorithm solves both problems in polynomial time regardless of structure, so safe primes and key sizes do not help against it; they only matter against classical attackers, which is the situation today."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Roughly how does the work of Pollard's rho factoring grow with the size of the smaller prime factor p?",
+              "options": [
+                "Like the square root of p",
+                "Like p",
+                "Like log p"
+              ],
+              "correct_index": 0,
+              "explanation": "The measured steps divided by sqrt(p) stay roughly constant."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why are safe primes used for Diffie-Hellman groups?",
+              "options": [
+                "So p - 1 has a large prime factor and Pohlig-Hellman gives no shortcut",
+                "They make exponentiation faster",
+                "They are required by Shor's algorithm"
+              ],
+              "correct_index": 0,
+              "explanation": "With p = 2q + 1 and q prime, the group has a large prime-order subgroup."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Does a safe prime protect against Shor's algorithm?",
+              "options": [
+                "No, Shor's algorithm solves the discrete logarithm in polynomial time in any such group",
+                "Yes",
+                "Only for 2048-bit primes"
+              ],
+              "correct_index": 0,
+              "explanation": "Key size and group structure help only against classical attacks."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Section 8.3.3 (Attacks Against the Discrete Logarithm Problem: generic and Pohlig-Hellman) and Section 8.4 (Security of the Diffie-Hellman Key Exchange)"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 7.9 (Attacks on RSA: factoring)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Pollard's rho and baby-step giant-step are standard algorithms implemented here for the lesson; the claims about index calculus and the number field sieve setting classical key sizes are summarised from Paar's overview and not re-read."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "7.3 Elliptic Curves",
+          "summary": "NIST P-256 implemented from scratch and checked against an independent library: point addition, scalar multiplication, ECDH and the cost of double-and-add.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "An **elliptic curve** over a prime field is the set of points (x, y) satisfying y² = x³ + ax + b (mod p), together with a point at infinity that acts as the identity. Points can be **added** by a geometric rule, which turns the curve into a group (Paar, section 9.1). Adding a point to itself k times is **scalar multiplication**, kG, computed with **double-and-add**; recovering k from kG is the **elliptic-curve discrete logarithm problem**, for which no attack better than the generic square-root ones is known (Paar, sections 9.2 and 9.4). **NIST P-256** is the curve with p = 2²⁵⁶ − 2²²⁴ + 2¹⁹² + 2⁹⁶ − 1, a = −3, a published b, a base point G, and a prime group order n; the parameters are in NIST SP 800-186, section 3.2.1.3. **ECDH** is then Diffie-Hellman with scalar multiplication: Alice sends aG, Bob sends bG, and both compute abG.\n\nThe listing implements the group law with the point at infinity and the standard formulas for adding and doubling, with the P-256 parameters typed from SP 800-186. Correctness is established **against an independent implementation**: the public key of a random private scalar, and an ECDH shared secret, must equal those computed by the `cryptography` package (OpenSSL). It also checks n·G = infinity and that the group laws hold, and then counts the group operations that double-and-add performs for different scalars. The count depends on the **number of 1 bits** in the scalar, which is why a naive implementation leaks secret information through its timing (C10, C11). The labs use only the Python standard library plus `cryptography` 50.0.1 (`pip install cryptography==50.0.1`) as an **independent reference** to check each from-scratch implementation. Everything runs on your own machine on data you generate. Attacks are demonstrated only against code and keys written in the lesson and use toy parameters. Never use these implementations to protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-ec",
+              "language": "python",
+              "code": "import random\nfrom cryptography.hazmat.primitives import serialization\nfrom cryptography.hazmat.primitives.asymmetric import ec\n\n# NIST P-256 (SP 800-186, section 3.2.1.3)\np = 2 ** 256 - 2 ** 224 + 2 ** 192 + 2 ** 96 - 1\na = p - 3\nb = 0x5ac635d8aa3a93e7b3ebbd55769886bc651d06b0cc53b0f63bce3c3e27d2604b\nG = (0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296, 0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5)\nn = 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551\nINF = None\n\ndef on_curve(P):\n    return P is INF or (P[1] ** 2 - (P[0] ** 3 + a * P[0] + b)) % p == 0\noperations = {\"add\": 0, \"double\": 0}\ndef add(P, Q):\n    if P is INF: return Q\n    if Q is INF: return P\n    (x1, y1), (x2, y2) = P, Q\n    if x1 == x2 and (y1 + y2) % p == 0:\n        return INF\n    if P == Q:\n        operations[\"double\"] += 1\n        slope = (3 * x1 * x1 + a) * pow(2 * y1, -1, p) % p\n    else:\n        operations[\"add\"] += 1\n        slope = (y2 - y1) * pow(x2 - x1, -1, p) % p\n    x3 = (slope * slope - x1 - x2) % p\n    return (x3, (slope * (x1 - x3) - y1) % p)\ndef multiply(k, P):                                                 # double-and-add, most significant bit first\n    result = INF\n    for bit in bin(k)[2:]:\n        result = add(result, result)\n        if bit == \"1\":\n            result = add(result, P)\n    return result\n\nprint(\"base point is on the curve:\", on_curve(G), \"| n * G = infinity:\", multiply(n, G) is INF)\nrng = random.Random(5)\nd1, d2 = rng.randrange(2, n), rng.randrange(2, n)\nprint(\"group laws: (d1 + d2) G = d1 G + d2 G:\", multiply((d1 + d2) % n, G) == add(multiply(d1, G), multiply(d2, G)), \"| d1 (d2 G) = d2 (d1 G):\", multiply(d1, multiply(d2, G)) == multiply(d2, multiply(d1, G)))\n\nreference_public = ec.derive_private_key(d1, ec.SECP256R1()).public_key().public_numbers()\nprint(\"my public key d1*G equals the one computed by the cryptography package (OpenSSL):\", multiply(d1, G) == (reference_public.x, reference_public.y))\npeer = ec.derive_private_key(d2, ec.SECP256R1())\nsecret_reference = int.from_bytes(ec.derive_private_key(d1, ec.SECP256R1()).exchange(ec.ECDH(), peer.public_key()), \"big\")\nprint(\"my ECDH shared secret (x coordinate of d1 d2 G) equals OpenSSL's:\", multiply(d1, multiply(d2, G))[0] == secret_reference)\n\nprint(f\"{'scalar':<28} {'bits':>5} {'1 bits':>7} {'doublings':>10} {'additions':>10}\")\nfor label, k in ((\"2^255 (a single 1 bit)\", 2 ** 255), (\"2^255 + 1\", 2 ** 255 + 1), (\"random 256-bit scalar\", d1), (\"(2^256 - 1) mod n\", (2 ** 256 - 1) % n)):\n    operations[\"add\"] = operations[\"double\"] = 0\n    multiply(k, G)\n    print(f\"{label:<28} {k.bit_length():>5} {bin(k).count('1'):>7} {operations['double']:>10} {operations['add']:>10}\")\n\ntiny_p, tiny_a, tiny_b = 97, 2, 3\npoints = [(x, y) for x in range(tiny_p) for y in range(tiny_p) if (y * y - (x ** 3 + tiny_a * x + tiny_b)) % tiny_p == 0]\nprint(f\"tiny curve y^2 = x^3 + 2x + 3 over F_97: {len(points) + 1} points; Hasse bound {tiny_p + 1} +/- {2 * tiny_p ** 0.5:.1f}:\", abs(len(points) + 1 - (tiny_p + 1)) <= 2 * tiny_p ** 0.5)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-ec",
+              "language": "text",
+              "code": "base point is on the curve: True | n * G = infinity: True\ngroup laws: (d1 + d2) G = d1 G + d2 G: True | d1 (d2 G) = d2 (d1 G): True\nmy public key d1*G equals the one computed by the cryptography package (OpenSSL): True\nmy ECDH shared secret (x coordinate of d1 d2 G) equals OpenSSL's: True\nscalar                        bits  1 bits  doublings  additions\n2^255 (a single 1 bit)         256       1        255          0\n2^255 + 1                      256       2        255          1\nrandom 256-bit scalar          256     138        255        137\n(2^256 - 1) mod n              224      89        223         88\ntiny curve y^2 = x^3 + 2x + 3 over F_97: 100 points; Hasse bound 98 +/- 19.7: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The decisive checks are the comparisons with OpenSSL: a from-scratch implementation that produces the same public key and the same ECDH secret as an independent, widely used library for a random 256-bit private key is, for practical purposes, correct, and it confirms the parameters were transcribed correctly from SP 800-186. The group laws and n·G = infinity hold. The Hasse bound on the toy curve (the number of points lies within 2√p of p + 1) is the property that makes the order of a curve computable and that lets designers pick curves of prime order.\n\nThe operation counts are the security finding: the doublings are 255 for every 256-bit scalar and the **additions equal the number of 1 bits minus one** (the last row is a shorter scalar because it was reduced modulo n, so it has fewer doublings), so the sequence of operations, and therefore the timing and the power trace, depends on the secret scalar. A scalar with a single 1 bit needs no additions at all. Production code uses **constant-time** methods (a Montgomery ladder or fixed-window methods with constant-time table lookups), and the next module on implementation attacks shows what a timing observer can learn from the naive loop. **Common mistakes:** using a curve that is not on the curve (invalid-curve attacks: always validate received points) and forgetting that this affine implementation is slow (each addition needs a modular inversion; real code uses projective coordinates)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How can an implementation of ECDH be validated without trusting its own code?",
+              "options": [
+                "Compare its public keys and shared secrets with an independent implementation for random keys",
+                "Check that it runs fast",
+                "Read the source"
+              ],
+              "correct_index": 0,
+              "explanation": "Matching results for random inputs against OpenSSL is strong evidence of correctness."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does naive double-and-add leak information about the scalar?",
+              "options": [
+                "The number and order of additions depend on the 1 bits of the secret",
+                "It uses too much memory",
+                "It always takes the same time"
+              ],
+              "correct_index": 0,
+              "explanation": "The doublings are fixed, but additions occur only at 1 bits."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does the Hasse bound say?",
+              "options": [
+                "The number of points on a curve over F_p is within 2 sqrt(p) of p + 1",
+                "The curve has exactly p points",
+                "The group order is always prime"
+              ],
+              "correct_index": 0,
+              "explanation": "It bounds the group order and underlies point counting."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Section 9.1 (How to Compute with Elliptic Curves), 9.2 (Building a Discrete Logarithm Problem), 9.3 (ECDH) and 9.4 (Security)"
+            },
+            {
+              "book": "B183",
+              "locator": "Section 3.2.1.3 (Curve P-256): p, a, b, base point and order"
+            },
+            {
+              "book": "B100",
+              "locator": "Package: ec.derive_private_key and ECDH exchange used as the independent reference"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The Hasse bound is stated from standard theory and checked on the toy curve only. The remark about projective coordinates and the Montgomery ladder is general implementation knowledge."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "7.4 Advanced Symmetric Cryptography",
+          "summary": "GCM built from scratch (GF(2^128) multiplication and GHASH) and checked against AES-GCM, nonce reuse measured, and the meet-in-the-middle attack on double encryption.",
+          "estimated_minutes": 65,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Galois/Counter Mode (GCM)** is the authenticated-encryption mode behind most TLS traffic (Paar section 13.3.4; NIST SP 800-38D). It combines **counter-mode encryption** (a keystream from encrypting an incrementing counter block, XORed with the data) with the **GHASH** authentication function: a polynomial-style hash in the finite field GF(2¹²⁸) with a hash subkey H = E_K(0¹²⁸). GHASH treats the associated data and ciphertext, padded to 16-byte blocks and followed by a length block, as coefficients and evaluates by Horner's rule, multiplying by H in GF(2¹²⁸) at each step; the tag is that value XORed with the encryption of the initial counter block. For a 96-bit nonce the initial counter is the nonce followed by the 32-bit value 1.\n\nThe same simplicity makes the mode **fragile**: if a nonce is ever reused with the same key, the two keystreams are identical, so the XOR of two ciphertexts equals the XOR of the two plaintexts and all confidentiality is lost; the authentication key can also be recovered, which allows forgeries (the lesson demonstrates the keystream leak). The first listing implements GF(2¹²⁸) multiplication and GHASH, builds GCM from AES in counter mode, and checks that the **ciphertext and tag equal those of the `cryptography` package** for random inputs, then demonstrates nonce reuse. The second listing shows why simply encrypting twice does not double the security of a block cipher: **meet-in-the-middle** reduces the work for double encryption from 2^(2k) to about 2^(k+1), demonstrated on a toy 16-bit cipher so that you can run the whole attack. The labs use only the Python standard library plus `cryptography` 50.0.1 (`pip install cryptography==50.0.1`) as an **independent reference** to check each from-scratch implementation. Everything runs on your own machine on data you generate. Attacks are demonstrated only against code and keys written in the lesson and use toy parameters. Never use these implementations to protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-gcm",
+              "language": "python",
+              "code": "import os, random\nfrom cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes\nfrom cryptography.hazmat.primitives.ciphers.aead import AESGCM\n\ndef aes_block(key, block):\n    encryptor = Cipher(algorithms.AES(key), modes.ECB()).encryptor()           # AES is used only as the raw block cipher\n    return encryptor.update(block) + encryptor.finalize()\n\nR_POLY = 0xE1 << 120                                                             # the GCM reduction polynomial x^128 + x^7 + x^2 + x + 1 in GCM's bit order\ndef gf_mul(x, y):\n    z, v = 0, y\n    for i in range(128):\n        if (x >> (127 - i)) & 1:\n            z ^= v\n        v = (v >> 1) ^ R_POLY if v & 1 else v >> 1\n    return z\ndef ghash(h, aad, ciphertext):\n    def blocks(data):\n        data = data + bytes(-len(data) % 16)\n        return [int.from_bytes(data[i:i + 16], \"big\") for i in range(0, len(data), 16)]\n    y = 0\n    for block in blocks(aad) + blocks(ciphertext) + [(len(aad) * 8 << 64) | (len(ciphertext) * 8)]:\n        y = gf_mul(y ^ block, h)\n    return y\ndef gctr(key, counter_block, data):\n    out = b\"\"\n    counter = int.from_bytes(counter_block, \"big\")\n    for i in range(0, len(data), 16):\n        keystream = aes_block(key, counter.to_bytes(16, \"big\"))\n        out += bytes(a ^ b for a, b in zip(data[i:i + 16], keystream))\n        counter = (counter & ~0xFFFFFFFF) | ((counter + 1) & 0xFFFFFFFF)       # only the low 32 bits of the counter increment\n    return out\ndef gcm_encrypt(key, nonce, plaintext, aad=b\"\"):\n    h = int.from_bytes(aes_block(key, bytes(16)), \"big\")\n    j0 = nonce + (1).to_bytes(4, \"big\")\n    ciphertext = gctr(key, (int.from_bytes(j0, \"big\") + 1).to_bytes(16, \"big\"), plaintext)\n    tag = bytes(a ^ b for a, b in zip(ghash(h, aad, ciphertext).to_bytes(16, \"big\"), aes_block(key, j0)))\n    return ciphertext, tag\n\nrng = random.Random(3)\nagreed = 0\nfor trial in range(20):\n    key, nonce = bytes(rng.getrandbits(8) for _ in range(16)), bytes(rng.getrandbits(8) for _ in range(12))\n    plaintext = bytes(rng.getrandbits(8) for _ in range(rng.randrange(0, 70)))\n    aad = bytes(rng.getrandbits(8) for _ in range(rng.randrange(0, 40)))\n    mine = gcm_encrypt(key, nonce, plaintext, aad)\n    reference = AESGCM(key).encrypt(nonce, plaintext, aad)\n    agreed += (mine[0] + mine[1] == reference)\nprint(f\"my GCM equals AES-GCM from the cryptography package (ciphertext and tag) in {agreed} of 20 random trials, lengths 0 to 69 bytes\")\n\nkey, nonce = os.urandom(16), os.urandom(12)\nm1, m2 = b\"attack at dawn!!\", b\"retreat at dusk!\"\nc1, _ = gcm_encrypt(key, nonce, m1); c2, _ = gcm_encrypt(key, nonce, m2)           # the SAME nonce twice: a fatal mistake\nxor_ciphertexts = bytes(a ^ b for a, b in zip(c1, c2))\nxor_plaintexts = bytes(a ^ b for a, b in zip(m1, m2))\nprint(\"nonce reuse: XOR of the two ciphertexts equals XOR of the two plaintexts:\", xor_ciphertexts == xor_plaintexts)\nguess = b\"attack at dawn!!\"\nprint(\"knowing one plaintext reveals the other without the key:\", bytes(a ^ b for a, b in zip(xor_ciphertexts, guess)) == m2)"
+            },
+            {
+              "type": "code",
+              "id": "o-c-gcm",
+              "language": "text",
+              "code": "my GCM equals AES-GCM from the cryptography package (ciphertext and tag) in 20 of 20 random trials, lengths 0 to 69 bytes\nnonce reuse: XOR of the two ciphertexts equals XOR of the two plaintexts: True\nknowing one plaintext reveals the other without the key: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "code",
+              "id": "c-mitm",
+              "language": "python",
+              "code": "import time\n\nMASK = 0xFFFF\ndef rotl(x, r): return ((x << r) | (x >> (16 - r))) & MASK\ndef rotr(x, r): return ((x >> r) | (x << (16 - r))) & MASK\nODD = (0x9E37, 0x85EB, 0xC2B3, 0x27D5)\nINV = tuple(pow(m, -1, 1 << 16) for m in ODD)\ndef encrypt(key, x):                                                  # a toy 4-round cipher with 16-bit blocks and keys (NOT secure)\n    for i in range(4):\n        x = rotl(((x ^ ((key * (i + 3) + i) & MASK)) * ODD[i]) & MASK, 5)\n    return x\ndef decrypt(key, y):\n    for i in reversed(range(4)):\n        y = ((rotr(y, 5) * INV[i]) & MASK) ^ ((key * (i + 3) + i) & MASK)\n    return y\nprint(\"decrypt inverts encrypt for a sample of keys and blocks:\", all(decrypt(k, encrypt(k, x)) == x for k in (0, 1, 12345, 65535) for x in (0, 1, 777, 65535)))\n\nk1, k2 = 0x1A2B, 0xC3D4\npairs = [(p, encrypt(k2, encrypt(k1, p))) for p in (0x0123, 0x4567, 0x89AB)]       # known plaintext / ciphertext pairs of the double encryption\nstart = time.perf_counter()\ntable = {}\nfor key in range(1 << 16):                                              # forward half: E_k1(p0) for every k1\n    table.setdefault(encrypt(key, pairs[0][0]), []).append(key)\ncandidates = []\nfor key in range(1 << 16):                                              # backward half: D_k2(c0) for every k2; a match means E_k1(p0) = D_k2(c0)\n    for k_first in table.get(decrypt(key, pairs[0][1]), []):\n        if all(encrypt(key, encrypt(k_first, p)) == c for p, c in pairs[1:]):\n            candidates.append((k_first, key))\nprint(\"meet-in-the-middle found the key pair:\", candidates == [(k1, k2)] or (k1, k2) in candidates, f\"| candidate pairs surviving the extra plaintexts: {len(candidates)}\")\nprint(f\"work: 2 x 2^16 = {2 * (1 << 16):,} cipher operations plus a table of {len(table):,} entries, against 2^32 = {1 << 32:,} for brute force of both keys\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-mitm",
+              "language": "text",
+              "code": "decrypt inverts encrypt for a sample of keys and blocks: True\nmeet-in-the-middle found the key pair: True | candidate pairs surviving the extra plaintexts: 1\nwork: 2 x 2^16 = 131,072 cipher operations plus a table of 41,531 entries, against 2^32 = 4,294,967,296 for brute force of both keys",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The first listing agrees with AES-GCM for every random combination of key, nonce, plaintext length and associated data, which validates the understanding of GHASH, the counter handling (only the low 32 bits increment) and the tag computation against an independent implementation. The nonce-reuse test then shows the failure concretely: the XOR of the ciphertexts is the XOR of the plaintexts, so anyone who can guess or knows one message recovers the other. The standard defence is to **never** reuse a (key, nonce) pair: use a counter or a random 96-bit nonce with a bounded number of messages per key, or a nonce-misuse-resistant mode where that risk is unacceptable.\n\nThe second listing recovers both 16-bit keys of the double-encrypted toy cipher with 2·2¹⁶ operations and a table of about 41,500 distinct entries (the 2¹⁶ keys map to fewer distinct values), instead of 2³² trials, so doubling the key bits of a cipher bought only one extra bit of security. That is why 2DES was never used and why triple DES uses three-key meet-in-the-middle-resistant constructions (Paar section 5.3). The toy cipher is **not secure** and exists only so the whole attack runs in a second; the principle is exact: time-memory trade-offs, not key length alone, set the security of cascades. **Quantum footnote (B8):** Grover's algorithm halves the effective key length of the symmetric primitives, so 128-bit keys give about 64 bits of quantum search security and AES-256 is the recommended choice for long-term secrecy."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What happens if a GCM nonce is reused with the same key?",
+              "options": [
+                "The XOR of the ciphertexts equals the XOR of the plaintexts, and authentication can be broken",
+                "Nothing, nonces are optional",
+                "Only the tag changes"
+              ],
+              "correct_index": 0,
+              "explanation": "The same keystream is used twice."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does meet-in-the-middle do to double encryption with k-bit keys?",
+              "options": [
+                "It reduces the work from about 2^(2k) to about 2^(k+1) at the cost of memory",
+                "It makes it twice as strong",
+                "It breaks every block cipher"
+              ],
+              "correct_index": 0,
+              "explanation": "Forward and backward tables meet at the intermediate value."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How is a from-scratch cryptographic implementation best validated?",
+              "options": [
+                "Against an independent implementation on many random inputs, plus standard test vectors",
+                "By reading it carefully",
+                "By timing it"
+              ],
+              "correct_index": 0,
+              "explanation": "Agreement across random inputs finds bugs that a few hand-picked vectors miss."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B182",
+              "locator": "Section 6.4 (GHASH function) and the GCM algorithm definitions (GCTR, J0 for a 96-bit IV)"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 13.3.4 (Authenticated Encryption: Galois Counter Mode) and Section 5.3.1 (Double Encryption and Meet-in-the-Middle Attack)"
+            },
+            {
+              "book": "B100",
+              "locator": "Package: AESGCM and raw AES-ECB used as the independent reference"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement that nonce reuse also lets an attacker recover the GCM authentication key and forge messages is standard (the 'forbidden attack') but is described, not demonstrated, here. The toy cipher is deliberately insecure."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "7.5 Hash Functions (Internal Construction)",
+          "summary": "SHA-256 and SHA-3 implemented from scratch and checked against hashlib, and the length-extension attack that breaks secret-prefix MACs.",
+          "estimated_minutes": 70,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "SHA-2 (FIPS 180-4) is a **Merkle-Damgård** construction: the message is padded (a 1 bit, zeros, and the 64-bit message length), cut into 512-bit blocks, and a **compression function** updates a 256-bit state block by block, starting from fixed initial values. The final state *is* the digest. That design has a famous consequence: the digest is the complete internal state, so anyone who knows SHA256(m) can **continue hashing from it** and compute SHA256(m ‖ padding ‖ extra) without knowing m, only its length. This **length-extension attack** breaks the naive MAC SHA256(secret ‖ message), and it is the reason **HMAC** wraps the hash twice with keyed pads (Paar section 13.2). SHA-3 (FIPS 202) is a different design: a **sponge** that absorbs the padded message into the first r bits (the *rate*) of a 1600-bit state, applies the Keccak-f permutation, and squeezes the output from the same bits; the hidden *capacity* part of the state is never output, so length extension does not apply.\n\nThe listing implements the SHA-256 compression function and compares with `hashlib`, performs the length-extension attack against a naive MAC verifier (an **attack on a toy service written for the lesson**), shows that HMAC resists the same trick, and implements Keccak-f[1600] and the SHA3-256 sponge, again checking against `hashlib`. The labs use only the Python standard library plus `cryptography` 50.0.1 (`pip install cryptography==50.0.1`) as an **independent reference** to check each from-scratch implementation. Everything runs on your own machine on data you generate. Attacks are demonstrated only against code and keys written in the lesson and use toy parameters. Never use these implementations to protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-hashes",
+              "language": "python",
+              "code": "import hashlib, hmac, os, struct\n\nK = [int(x, 16) for x in (\n    \"428a2f98 71374491 b5c0fbcf e9b5dba5 3956c25b 59f111f1 923f82a4 ab1c5ed5 d807aa98 12835b01 243185be 550c7dc3 72be5d74 80deb1fe 9bdc06a7 c19bf174 \"\n    \"e49b69c1 efbe4786 0fc19dc6 240ca1cc 2de92c6f 4a7484aa 5cb0a9dc 76f988da 983e5152 a831c66d b00327c8 bf597fc7 c6e00bf3 d5a79147 06ca6351 14292967 \"\n    \"27b70a85 2e1b2138 4d2c6dfc 53380d13 650a7354 766a0abb 81c2c92e 92722c85 a2bfe8a1 a81a664b c24b8b70 c76c51a3 d192e819 d6990624 f40e3585 106aa070 \"\n    \"19a4c116 1e376c08 2748774c 34b0bcb5 391c0cb3 4ed8aa4a 5b9cca4f 682e6ff3 748f82ee 78a5636f 84c87814 8cc70208 90befffa a4506ceb bef9a3f7 c67178f2\").split()]\nH0 = [0x6a09e667, 0xbb67ae85, 0x3c6ef372, 0xa54ff53a, 0x510e527f, 0x9b05688c, 0x1f83d9ab, 0x5be0cd19]\nM32 = 0xFFFFFFFF\nrotr = lambda x, n: ((x >> n) | (x << (32 - n))) & M32\n\ndef compress(state, block):\n    w = list(struct.unpack(\">16I\", block))\n    for i in range(16, 64):\n        s0 = rotr(w[i - 15], 7) ^ rotr(w[i - 15], 18) ^ (w[i - 15] >> 3)\n        s1 = rotr(w[i - 2], 17) ^ rotr(w[i - 2], 19) ^ (w[i - 2] >> 10)\n        w.append((w[i - 16] + s0 + w[i - 7] + s1) & M32)\n    a, b, c, d, e, f, g, h = state\n    for i in range(64):\n        t1 = (h + (rotr(e, 6) ^ rotr(e, 11) ^ rotr(e, 25)) + ((e & f) ^ (~e & g)) + K[i] + w[i]) & M32\n        t2 = ((rotr(a, 2) ^ rotr(a, 13) ^ rotr(a, 22)) + ((a & b) ^ (a & c) ^ (b & c))) & M32\n        h, g, f, e, d, c, b, a = g, f, e, (d + t1) & M32, c, b, a, (t1 + t2) & M32\n    return [(x + y) & M32 for x, y in zip(state, (a, b, c, d, e, f, g, h))]\ndef padding(length):\n    return b\"\\x80\" + bytes((55 - length) % 64) + struct.pack(\">Q\", length * 8)\ndef sha256(message, state=None, already=0):\n    state = list(state or H0)\n    data = message + padding(already + len(message))\n    for i in range(0, len(data), 64):\n        state = compress(state, data[i:i + 64])\n    return struct.pack(\">8I\", *state)\n\ntests = [b\"\", b\"abc\", b\"a\" * 55, b\"a\" * 56, b\"a\" * 64, os.urandom(1000)]\nprint(\"my SHA-256 equals hashlib for\", len(tests), \"messages including the padding boundary lengths 55, 56 and 64:\", all(sha256(m) == hashlib.sha256(m).digest() for m in tests))\nprint(\"FIPS 180-4 example, SHA-256('abc') =\", sha256(b\"abc\").hex()[:16] + \"...\")\n\n# --- the length-extension attack on the toy MAC SHA256(secret || message)\nsecret = os.urandom(16)\nnaive_tag = lambda message: hashlib.sha256(secret + message).digest()\ndef naive_verify(message, tag): return hmac.compare_digest(naive_tag(message), tag)\nmessage, tag = b\"amount=100&to=alice\", naive_tag(b\"amount=100&to=alice\")\nextra = b\"&amount=9999&to=mallory\"\nsecret_length = 16                                                    # the attacker needs only a guess of the length, found by trying 1..64\nglue = padding(secret_length + len(message))\nstate = list(struct.unpack(\">8I\", tag))                               # the digest IS the internal state after the last block\nforged_tag = sha256(extra, state=state, already=secret_length + len(message) + len(glue))\nforged_message = message + glue + extra\nprint(\"SIMULATION: forged message accepted by the naive MAC verifier:\", naive_verify(forged_message, forged_tag), \"| forged message:\", forged_message[:30], \"...\")\nhmac_tag = hmac.new(secret, message, hashlib.sha256).digest()\nhmac_forged = hmac.new(secret, forged_message, hashlib.sha256).digest()\nprint(\"the same forgery does not work against HMAC (the forged tag differs from the real HMAC of the new message):\", sha256(extra, list(struct.unpack(\">8I\", hmac_tag)), secret_length + len(message) + len(glue)) != hmac_forged)\n\n# --- SHA-3: the Keccak sponge\nRC = [0x0000000000000001, 0x0000000000008082, 0x800000000000808A, 0x8000000080008000, 0x000000000000808B, 0x0000000080000001, 0x8000000080008081, 0x8000000000008009,\n      0x000000000000008A, 0x0000000000000088, 0x0000000080008009, 0x000000008000000A, 0x000000008000808B, 0x800000000000008B, 0x8000000000008089, 0x8000000000008003,\n      0x8000000000008002, 0x8000000000000080, 0x000000000000800A, 0x800000008000000A, 0x8000000080008081, 0x8000000000008080, 0x0000000080000001, 0x8000000080008008]\nM64 = (1 << 64) - 1\nrotl64 = lambda x, n: ((x << n) | (x >> (64 - n))) & M64 if n else x\ndef keccak_f(A):\n    for rnd in range(24):\n        C = [A[x] ^ A[x + 5] ^ A[x + 10] ^ A[x + 15] ^ A[x + 20] for x in range(5)]\n        D = [C[(x - 1) % 5] ^ rotl64(C[(x + 1) % 5], 1) for x in range(5)]\n        A = [A[i] ^ D[i % 5] for i in range(25)]                                       # theta\n        x, y, current = 1, 0, A[1]\n        for t in range(24):                                                           # rho and pi\n            x, y = y, (2 * x + 3 * y) % 5\n            current, A[x + 5 * y] = A[x + 5 * y], rotl64(current, ((t + 1) * (t + 2) // 2) % 64)\n        for row in range(0, 25, 5):                                                   # chi\n            line = A[row:row + 5]\n            A[row:row + 5] = [line[x] ^ (~line[(x + 1) % 5] & line[(x + 2) % 5]) for x in range(5)]\n        A[0] ^= RC[rnd]                                                               # iota\n    return A\ndef sha3_256(message):\n    rate = 136                                                                        # bytes: 1600 - 2 * 256 = 1088 bits\n    padded = bytearray(message) + b\"\\x06\"\n    padded += bytes(-len(padded) % rate); padded[-1] |= 0x80\n    A = [0] * 25\n    for i in range(0, len(padded), rate):\n        for j in range(rate // 8):\n            A[j] ^= int.from_bytes(padded[i + 8 * j:i + 8 * j + 8], \"little\")         # absorb\n        A = keccak_f(A)\n    return b\"\".join(lane.to_bytes(8, \"little\") for lane in A)[:32]                    # squeeze\nsha3_tests = [b\"\", b\"abc\", b\"a\" * 135, b\"a\" * 136, b\"a\" * 137, os.urandom(500)]\nprint(\"my SHA3-256 equals hashlib for\", len(sha3_tests), \"messages including the rate boundary lengths 135, 136 and 137:\", all(sha3_256(m) == hashlib.sha3_256(m).digest() for m in sha3_tests))\nprint(\"SHA3-256('') =\", sha3_256(b\"\").hex()[:16] + \"... (FIPS 202 empty-message value starts a7ffc6f8bf1ed766)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-hashes",
+              "language": "text",
+              "code": "my SHA-256 equals hashlib for 6 messages including the padding boundary lengths 55, 56 and 64: True\nFIPS 180-4 example, SHA-256('abc') = ba7816bf8f01cfea...\nSIMULATION: forged message accepted by the naive MAC verifier: True | forged message: b'amount=100&to=alice\\x80\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00\\x00' ...\nthe same forgery does not work against HMAC (the forged tag differs from the real HMAC of the new message): True\nmy SHA3-256 equals hashlib for 6 messages including the rate boundary lengths 135, 136 and 137: True\nSHA3-256('') = a7ffc6f8bf1ed766... (FIPS 202 empty-message value starts a7ffc6f8bf1ed766)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Both implementations match `hashlib` for the awkward lengths around the padding boundaries, where most hand-written hash functions fail. The extension attack works exactly as theory says: from the tag of one message the attacker computed a valid tag for the longer message that includes the padding of the original, without the secret, and the toy service accepted it; the attacker only needs the **length** of the secret, which can be found by trying lengths until the service accepts. HMAC, whose outer hash conceals the inner state, resisted. SHA-3's sponge never exposes the capacity, so its raw hash is not susceptible, although you should still use a keyed construction such as KMAC (or HMAC-SHA3) for authentication instead of improvising.\n\n**Practical rules.** Never build a MAC as H(key ‖ message); use HMAC or a modern authenticated-encryption mode. Remember that SHA-256 and SHA3-256 offer about 128 bits of collision resistance (B8: the birthday bound) and that quantum collision search does not threaten that level. And never implement these primitives yourself for production use: the listings are for understanding and validation."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does the length-extension attack work against SHA-256 but not against SHA3-256?",
+              "options": [
+                "A Merkle-Damgard digest is the full internal state, while the sponge hides its capacity",
+                "SHA-256 is weaker in collision resistance",
+                "SHA-3 uses longer keys"
+              ],
+              "correct_index": 0,
+              "explanation": "From a SHA-256 digest an attacker can resume hashing; the SHA-3 output never reveals the hidden capacity."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the right way to build a MAC from a hash?",
+              "options": [
+                "HMAC, which wraps the hash with keyed inner and outer pads",
+                "Hash the key and message concatenated",
+                "Hash the message twice"
+              ],
+              "correct_index": 0,
+              "explanation": "H(key || message) is vulnerable to length extension for Merkle-Damgard hashes."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which message lengths are most informative when testing a hash implementation?",
+              "options": [
+                "Lengths at the padding and rate boundaries",
+                "Only very long messages",
+                "Only the empty message"
+              ],
+              "correct_index": 0,
+              "explanation": "Padding bugs show up where the length field spills into a new block."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B180",
+              "locator": "Section 5.1.1 (padding), Section 6.2 (SHA-256: message schedule, compression function, initial hash values)"
+            },
+            {
+              "book": "B181",
+              "locator": "Section 3 (Keccak-p permutation: theta, rho, pi, chi, iota) and Section 5 (sponge construction, padding, SHA3-256 with rate 1088)"
+            },
+            {
+              "book": "B01",
+              "locator": "Sections 11.4 (SHA-2), 11.5 (SHA-3) and 13.2 (MACs from hash functions: HMAC)"
+            },
+            {
+              "book": "B02",
+              "locator": "Section 6.4.3 (Extension attacks on cascade constructions)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement about the length-extension attack on SHA-256 is standard and is demonstrated by the executed forgery; the cited Boneh-Shoup section discusses extension attacks on the cascade construction in general. The FIPS 202 empty-message digest prefix quoted in the output was recalled and is checked by the comparison with hashlib, not read from the standard."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "7.6 KEM Security",
+          "summary": "Chosen-ciphertext attacks on a malleable scheme, and a Fujisaki-Okamoto-style transform with implicit rejection that stops them, run on toy parameters.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Confidentiality definitions form a ladder. **IND-CPA** (indistinguishability under chosen-plaintext attack) asks that an attacker who can encrypt anything cannot tell which of two chosen messages a ciphertext hides. **IND-CCA2** adds a **decryption oracle**: the attacker may submit any ciphertext except the challenge and learn the result, and must still learn nothing. CCA security matters because real systems leak decryption results (error messages, timing, behaviour on later use). A scheme that is **malleable**, meaning an attacker can transform a ciphertext into one for a related plaintext, is never CCA-secure. RSA and ElGamal are both malleable (Paar section 7.7 explains RSA's multiplicative property, which is why padding is needed).\n\nThe standard way to obtain CCA security from a CPA-secure scheme is the **Fujisaki-Okamoto (FO) transform**: derive the encryption randomness *from the message* (r = H(m)), and at decryption **re-encrypt the recovered message and compare it with the received ciphertext**; if they differ, reject. FIPS 203's ML-KEM uses an FO transform with **implicit rejection** (section 6.3: when the re-encryption check fails the algorithm outputs a pseudo-random key derived from a secret value instead of an error). The listing demonstrates the principle on a toy ElGamal scheme in the multiplicative group modulo the Mersenne prime 2⁵²¹ − 1 (a toy: do not use it for real data). First it mounts a **chosen-ciphertext attack**: the attacker doubles the second ciphertext component, the decryption oracle returns twice the secret message, and the attacker divides by two. Then it applies the transform and shows that the same attack yields only a random-looking key. The labs use only the Python standard library plus `cryptography` 50.0.1 (`pip install cryptography==50.0.1`) as an **independent reference** to check each from-scratch implementation. Everything runs on your own machine on data you generate. Attacks are demonstrated only against code and keys written in the lesson and use toy parameters. Never use these implementations to protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-fo",
+              "language": "python",
+              "code": "import hashlib, random\n\nP = 2 ** 521 - 1                                                      # a Mersenne prime: a toy group, not for real use\nG = 3\nrng = random.Random(8)\ndef H(*parts, tag=b\"\"):\n    digest = hashlib.sha512(tag + b\"\".join(len(str(x)).to_bytes(2, \"big\") + str(x).encode() for x in parts)).digest()\n    return int.from_bytes(digest, \"big\")\n\nsecret = rng.randrange(2, P - 1)\npublic = pow(G, secret, P)\n\n# --- plain (CPA-secure) ElGamal: a malleable scheme\ndef encrypt(m, r): return pow(G, r, P), m * pow(public, r, P) % P\ndef decrypt(c): return c[1] * pow(c[0], P - 1 - secret, P) % P\nmessage = rng.randrange(2, P - 1)\nchallenge = encrypt(message, rng.randrange(2, P - 1))\nprint(\"plain ElGamal decrypts correctly:\", decrypt(challenge) == message)\nmodified = (challenge[0], 2 * challenge[1] % P)                       # the attacker doubles the plaintext without knowing it\noracle_answer = decrypt(modified)                                     # the decryption oracle answers for any ciphertext except the challenge\nprint(\"CCA attack on plain ElGamal: the attacker recovers the secret message from the oracle's answer:\", oracle_answer * pow(2, -1, P) % P == message)\n\n# --- Fujisaki-Okamoto style KEM with implicit rejection\nz = rng.randrange(2, P - 1)                                           # secret rejection value stored in the private key\ndef encaps():\n    m = rng.randrange(2, P - 1)                                       # a random group element is the encapsulated secret\n    r = H(m, tag=b\"coins\") % (P - 1)                                  # the coins are derived from the message\n    c = encrypt(m, r)\n    return c, H(m, c, tag=b\"key\") % 2 ** 256\ndef decaps(c):\n    m = decrypt(c)\n    r = H(m, tag=b\"coins\") % (P - 1)\n    if encrypt(m, r) != c:                                            # re-encryption check fails: the ciphertext was not honestly generated\n        return H(z, c, tag=b\"reject\") % 2 ** 256                      # implicit rejection: a pseudo-random key, no error signal\n    return H(m, c, tag=b\"key\") % 2 ** 256\nc, key = encaps()\nprint(\"FO-KEM: honest ciphertext gives the same key on both sides:\", decaps(c) == key)\ntampered = (c[0], 2 * c[1] % P)\nrejected = decaps(tampered)\nprint(\"the doubling attack now returns a key unrelated to the original:\", rejected != key, \"| and the answer is deterministic:\", rejected == decaps(tampered))\ntampered_keys = {decaps((c[0], (c[1] * k) % P)) for k in range(2, 12)}\nprint(\"ten different tampered ciphertexts give ten different pseudo-random keys:\", len(tampered_keys) == 10 and key not in tampered_keys)\nprint(\"no tampered ciphertext reveals the relation between plaintexts: the oracle's output is a hash that depends on the secret rejection value z\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-fo",
+              "language": "text",
+              "code": "plain ElGamal decrypts correctly: True\nCCA attack on plain ElGamal: the attacker recovers the secret message from the oracle's answer: True\nFO-KEM: honest ciphertext gives the same key on both sides: True\nthe doubling attack now returns a key unrelated to the original: True | and the answer is deterministic: True\nten different tampered ciphertexts give ten different pseudo-random keys: True\nno tampered ciphertext reveals the relation between plaintexts: the oracle's output is a hash that depends on the secret rejection value z",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The first attack is the textbook reason ElGamal and RSA cannot be used directly as KEMs in an adaptive setting: with one oracle query the attacker recovers the message. After the transform, every modified ciphertext fails the re-encryption check, and because the failure path returns a **pseudo-random key derived from a secret** (not an error message and not a visible difference in behaviour), the oracle leaks nothing the attacker can use. That is the design of ML-KEM's decapsulation, which you implemented the checks for in B10: the FO transform converts a CPA-secure lattice encryption scheme (K-PKE) into the CCA-secure KEM.\n\n**Caveats.** The proof that the FO transform gives CCA security assumes the underlying scheme has the right properties (for lattice schemes, a negligible decryption-failure probability) and, for the classical analysis, models the hash functions as random oracles; for quantum adversaries there are separate analyses. The listing is a **conceptual toy**: the group is small in structure, the encapsulated secret is a raw group element, and it is not a secure scheme."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does a decryption oracle add to the CPA attacker's power in the CCA2 game?",
+              "options": [
+                "It lets the attacker decrypt any ciphertext except the challenge",
+                "It lets the attacker choose the key",
+                "It lets the attacker encrypt twice"
+              ],
+              "correct_index": 0,
+              "explanation": "A malleable scheme falls to a single oracle query on a modified ciphertext."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does the FO transform check during decapsulation?",
+              "options": [
+                "That re-encrypting the decrypted message with coins derived from it reproduces the received ciphertext",
+                "That the ciphertext is short",
+                "That the key is random"
+              ],
+              "correct_index": 0,
+              "explanation": "A modified ciphertext fails this check."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is implicit rejection?",
+              "options": [
+                "Returning a pseudo-random key derived from a secret instead of an error when the check fails",
+                "Silently accepting the ciphertext",
+                "Deleting the private key"
+              ],
+              "correct_index": 0,
+              "explanation": "It hides from the attacker whether the ciphertext was valid."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "Section 3.2 (the ML-KEM scheme and IND-CCA2 security) and Section 6.3 (internal decapsulation: re-encryption and implicit rejection)"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 7.7 (RSA in practice: padding, malleability) and Section 7.8 (Key Encapsulation)"
+            },
+            {
+              "book": "B02",
+              "locator": "Chapters on chosen-ciphertext security (the CCA game and why it matters)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The Boneh-Shoup chapters on CCA security are cited at chapter level only. The claim that quantum analyses of the FO transform differ from the classical one is a general remark; the toy scheme is a teaching construction."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "7.7 Signature Security",
+          "summary": "Existential forgery against textbook RSA, ECDSA private-key recovery from a repeated nonce on P-256, and deterministic signatures.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The security goal for signatures is **existential unforgeability under chosen-message attack (EUF-CMA)**: even an attacker who can obtain signatures on messages of their choice cannot produce a valid signature on any *new* message. Schemes that look fine on paper often fail this definition when implemented naively. **Textbook RSA signatures** (s = m^d mod n with no hashing or padding) are **existentially forgeable**: pick any s, compute m = s^e mod n, and (m, s) is a valid pair (Paar section 10.2.3). They are also **multiplicative**: the product of two signatures is the signature of the product of the messages. Hashing the message first, and using a padding scheme such as PSS, closes these holes because a forger would have to find a *preimage* of the hash.\n\n**ECDSA** has a different weak point: each signature uses a fresh secret nonce k, and if the same k is ever used for two messages, the private key can be computed from the two signatures with a few lines of algebra (Paar section 10.5.3 on the reuse of the ephemeral key). With s = k⁻¹(z + r·d) mod n, two signatures with the same k (and thus the same r) give k = (z₁ − z₂)/(s₁ − s₂) and then d = (s·k − z₁)/r. Real systems have lost keys this way, and *biased* nonces (a few predictable bits) can be exploited with lattice methods. Defences are **deterministic nonce derivation** from the key and message (RFC 6979 for ECDSA, and built into EdDSA) or hedged randomness, plus never reusing state. The listing runs all of this on a P-256 implementation interoperating with the `cryptography` package, so the recovered key is checked against the real one. It uses toy RSA keys for the forgeries. The labs use only the Python standard library plus `cryptography` 50.0.1 (`pip install cryptography==50.0.1`) as an **independent reference** to check each from-scratch implementation. Everything runs on your own machine on data you generate. Attacks are demonstrated only against code and keys written in the lesson and use toy parameters. Never use these implementations to protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-signatures",
+              "language": "python",
+              "code": "import hashlib, random\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa, utils\n\n# --- textbook RSA signatures (a 1024-bit key generated for the exercise; raw modular arithmetic, no hashing, no padding)\nnumbers = rsa.generate_private_key(65537, 1024).private_numbers()\nn, e, d = numbers.public_numbers.n, numbers.public_numbers.e, numbers.d\nsign_raw = lambda m: pow(m, d, n)\nverify_raw = lambda m, s: pow(s, e, n) == m\nrng = random.Random(4)\ns_forged = rng.randrange(2, n)\nm_forged = pow(s_forged, e, n)                                        # choose the signature first, then compute the message it signs\nprint(\"existential forgery: (m, s) built without the private key verifies:\", verify_raw(m_forged, s_forged))\nm1, m2 = rng.randrange(2, n), rng.randrange(2, n)\nprint(\"multiplicative forgery: sign(m1) * sign(m2) is a valid signature on m1 * m2:\", verify_raw(m1 * m2 % n, sign_raw(m1) * sign_raw(m2) % n))\ndigest = lambda msg: int.from_bytes(hashlib.sha256(msg).digest(), \"big\")\nhash_then_sign_verify = lambda msg, s: pow(s, e, n) == digest(msg)\nprint(\"after hashing, the forged pair no longer corresponds to any message the forger can name:\", not hash_then_sign_verify(b\"pay mallory 1000\", s_forged))\n\n# --- ECDSA on P-256 and nonce reuse\ncurve_n = 0xffffffff00000000ffffffffffffffffbce6faada7179e84f3b9cac2fc632551\np = 2 ** 256 - 2 ** 224 + 2 ** 192 + 2 ** 96 - 1; a = p - 3\nG = (0x6b17d1f2e12c4247f8bce6e563a440f277037d812deb33a0f4a13945d898c296, 0x4fe342e2fe1a7f9b8ee7eb4a7c0f9e162bce33576b315ececbb6406837bf51f5)\ndef add(P, Q):\n    if P is None: return Q\n    if Q is None: return P\n    if P[0] == Q[0] and (P[1] + Q[1]) % p == 0: return None\n    slope = ((3 * P[0] ** 2 + a) * pow(2 * P[1], -1, p) if P == Q else (Q[1] - P[1]) * pow(Q[0] - P[0], -1, p)) % p\n    x = (slope * slope - P[0] - Q[0]) % p\n    return (x, (slope * (P[0] - x) - P[1]) % p)\ndef multiply(k, P):\n    result = None\n    for bit in bin(k)[2:]:\n        result = add(result, result)\n        if bit == \"1\": result = add(result, P)\n    return result\ndef ecdsa_sign(private, message, k):\n    z = digest(message) % curve_n\n    r = multiply(k, G)[0] % curve_n\n    return r, pow(k, -1, curve_n) * (z + r * private) % curve_n\nprivate = rng.randrange(2, curve_n)\nreference_public = ec.derive_private_key(private, ec.SECP256R1()).public_key()\nk_reused = rng.randrange(2, curve_n)\nmsg1, msg2 = b\"transfer 10 to alice\", b\"transfer 99 to bob\"\n(r1, s1), (r2, s2) = ecdsa_sign(private, msg1, k_reused), ecdsa_sign(private, msg2, k_reused)\nreference_public.verify(utils.encode_dss_signature(r1, s1), msg1, ec.ECDSA(hashes.SHA256()))\nreference_public.verify(utils.encode_dss_signature(r2, s2), msg2, ec.ECDSA(hashes.SHA256()))\nprint(\"my ECDSA signatures verify under the cryptography package (OpenSSL):\", True, \"| the two signatures share r:\", r1 == r2)\nz1, z2 = digest(msg1) % curve_n, digest(msg2) % curve_n\nk_recovered = (z1 - z2) * pow(s1 - s2, -1, curve_n) % curve_n\nd_recovered = (s1 * k_recovered - z1) * pow(r1, -1, curve_n) % curve_n\nprint(\"SIMULATION: nonce k recovered from the two signatures:\", k_recovered == k_reused, \"| private key recovered:\", d_recovered == private)\nforged_r, forged_s = ecdsa_sign(d_recovered, b\"transfer 1000000 to mallory\", rng.randrange(2, curve_n))\nreference_public.verify(utils.encode_dss_signature(forged_r, forged_s), b\"transfer 1000000 to mallory\", ec.ECDSA(hashes.SHA256()))\nprint(\"a signature forged with the recovered key is accepted by OpenSSL for the real public key:\", True)\n\n# --- deterministic signatures remove the nonce failure mode\nkey = ed25519.Ed25519PrivateKey.generate()\nprint(\"Ed25519 derives its nonce from the key and message; signing the same message twice gives identical signatures:\", key.sign(b\"msg\") == key.sign(b\"msg\"), \"| different messages give unrelated nonces:\", key.sign(b\"msg\")[:32] != key.sign(b\"msg2\")[:32])"
+            },
+            {
+              "type": "code",
+              "id": "o-c-signatures",
+              "language": "text",
+              "code": "existential forgery: (m, s) built without the private key verifies: True\nmultiplicative forgery: sign(m1) * sign(m2) is a valid signature on m1 * m2: True\nafter hashing, the forged pair no longer corresponds to any message the forger can name: True\nmy ECDSA signatures verify under the cryptography package (OpenSSL): True | the two signatures share r: True\nSIMULATION: nonce k recovered from the two signatures: True | private key recovered: True\na signature forged with the recovered key is accepted by OpenSSL for the real public key: True\nEd25519 derives its nonce from the key and message; signing the same message twice gives identical signatures: True | different messages give unrelated nonces: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Both families of failure are real and cheap. The RSA forgeries need no private key at all (one exponentiation), and the ECDSA attack turned two signatures into the complete private key; the final line shows the recovered key signing a message that OpenSSL accepts for the real public key, which is what a real attacker would do with a stolen key. The lesson of the **ECDSA** example is about *state*: the algorithm is secure only if every nonce is fresh and unpredictable, which is easy to violate by a faulty random generator, a virtual-machine snapshot restored twice, or a bug. Deterministic nonce derivation (the design of EdDSA, and RFC 6979 for ECDSA) removes the dependence on fresh randomness at signing time, at the price of making fault attacks easier to mount, which hedged variants address.\n\n**For PQC.** ML-DSA also avoids the problem by default: FIPS 204 specifies a hedged variant that mixes fresh randomness with a value stored in the private key, as you saw in B10; and the one-time and stateful hash-based schemes have the same *kind* of failure (state reuse breaks them) in a different place, as the B9 task showed. **Rules:** never sign unhashed data with raw RSA, use PSS or a modern scheme, derive nonces deterministically or hedge them, and treat signing keys as devices whose state must be protected."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How is a forged (message, signature) pair built against textbook RSA signatures?",
+              "options": [
+                "Choose a signature s, then compute m = s^e mod n",
+                "Factor n",
+                "Guess the private exponent"
+              ],
+              "correct_index": 0,
+              "explanation": "Without hashing or padding, any s is a valid signature on s^e mod n."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What happens if an ECDSA signer reuses a nonce for two messages?",
+              "options": [
+                "The private key can be computed from the two signatures",
+                "Nothing",
+                "Only the first signature is invalid"
+              ],
+              "correct_index": 0,
+              "explanation": "k = (z1 - z2)/(s1 - s2), then d follows from either signature."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How does EdDSA avoid ECDSA's nonce failure?",
+              "options": [
+                "It derives the nonce deterministically from the private key and the message",
+                "It uses no nonce",
+                "It reuses one nonce on purpose"
+              ],
+              "correct_index": 0,
+              "explanation": "Identical messages give identical signatures and different messages give unrelated nonces."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Section 10.2.3 (security of RSA signatures: existential forgery), Section 10.5.3 (ECDSA security: reuse of the ephemeral key)"
+            },
+            {
+              "book": "B02",
+              "locator": "Chapter 13 (Digital signatures: EUF-CMA and hash-then-sign)"
+            },
+            {
+              "book": "B100",
+              "locator": "Package: ec, rsa and ed25519 used as the independent reference"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statements about RFC 6979, hedged signatures and lattice attacks on biased nonces are standard and described from general knowledge; RFC 6979 and the Boneh-Shoup chapter were not read here. The recovered-key attack is demonstrated only against keys created in the lesson."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "7.8 Provable-Security Concepts",
+          "summary": "Security as a game: IND-CPA experiments run against ECB, a repeated nonce and a sound mode, with measured advantages.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Provable security** replaces \"no one has broken it\" with a precise statement: *any* attacker that breaks the scheme could be turned into an attacker that breaks a problem believed to be hard, so the scheme is at least as hard to break. The pieces are definitions, assumptions and reductions. A **security definition** is a **game** between a challenger and an adversary; the adversary's **advantage** is how much better than random guessing it wins. For **semantic security / IND-CPA** (Boneh and Shoup, chapters 2 and 5), the challenger picks a random bit b and a key, lets the adversary submit two equal-length messages m₀, m₁, encrypts m_b, and the adversary must guess b; the scheme is secure if every efficient adversary has negligible advantage |2·Pr[win] − 1|. A **reduction** shows that a successful adversary yields a distinguisher against an assumed primitive such as a pseudo-random function (a block cipher in practice), so a break of the mode implies a break of AES; it says nothing if the assumption is false or the model does not match the implementation (side channels, bad randomness).\n\nGames make the definitions executable. The listing implements the IND-CPA challenger with AES from the `cryptography` package and three modes: **ECB** (equal blocks give equal ciphertext blocks), a counter mode with a **fixed nonce** (the keystream is the same each time), and counter mode with a **fresh random nonce**. For each it runs a natural adversary 2,000 times and reports the measured advantage. It also plays a **PRG game** that separates a linear congruential generator from random bytes. The first two modes fall completely, the third resists, which is what the definition predicts. The labs use only the Python standard library plus `cryptography` 50.0.1 (`pip install cryptography==50.0.1`) as an **independent reference** to check each from-scratch implementation. Everything runs on your own machine on data you generate. Attacks are demonstrated only against code and keys written in the lesson and use toy parameters. Never use these implementations to protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-games",
+              "language": "python",
+              "code": "import os, random\nfrom cryptography.hazmat.primitives.ciphers import Cipher, algorithms, modes\n\ndef aes(key, mode):\n    return Cipher(algorithms.AES(key), mode).encryptor()\ndef ecb_encrypt(key, message):\n    e = aes(key, modes.ECB()); return e.update(message) + e.finalize()\ndef ctr_encrypt(key, nonce, message):\n    e = aes(key, modes.CTR(nonce)); return e.update(message) + e.finalize()\n\nclass Challenger:\n    # IND-CPA game: a random bit b and a fresh key; the adversary may encrypt anything, then gets the encryption of one of two messages\n    def __init__(self, mode, rng):\n        self.rng = rng                                                        # a seeded generator keeps this lesson's output reproducible; a real game uses fresh randomness\n        self.mode, self.key, self.b = mode, rng.randbytes(16), rng.getrandbits(1)\n        self.fixed_nonce = bytes(16)\n    def encrypt(self, message):\n        if self.mode == \"ecb\": return ecb_encrypt(self.key, message)\n        if self.mode == \"ctr-fixed-nonce\": return ctr_encrypt(self.key, self.fixed_nonce, message)\n        return self._ctr_random(message)\n    def _ctr_random(self, message):\n        nonce = self.rng.randbytes(16)\n        return nonce + ctr_encrypt(self.key, nonce, message)\n    def challenge(self, m0, m1):\n        return self.encrypt((m0, m1)[self.b])\n\ndef adversary_ecb(game):\n    block_a, block_b = b\"A\" * 16, b\"B\" * 16\n    ciphertext = game.challenge(block_a + block_a, block_a + block_b)       # message 0 repeats a block, message 1 does not\n    return 0 if ciphertext[:16] == ciphertext[16:32] else 1\ndef adversary_fixed_nonce(game):\n    zero = bytes(16)\n    keystream = game.encrypt(zero)                                        # with a fixed nonce, encrypting zeros reveals the keystream\n    ciphertext = game.challenge(zero, b\"\\x01\" * 16)\n    return 0 if ciphertext == keystream else 1\ndef adversary_best_guess(game):\n    game.challenge(bytes(16), b\"\\x01\" * 16)\n    return game.rng.getrandbits(1)                                         # nothing in the transcript helps: guess\n\ndef run(mode, adversary, trials=2000):\n    rng = random.Random(99)\n    wins = 0\n    for _ in range(trials):\n        game = Challenger(mode, rng)\n        wins += adversary(game) == game.b\n    return abs(2 * wins / trials - 1)                                      # advantage = |2 Pr[win] - 1|\n\nprint(f\"{'mode':<22} {'adversary':<30} {'measured advantage':>19}\")\nfor mode, name, adversary in ((\"ecb\", \"repeated-block distinguisher\", adversary_ecb), (\"ctr-fixed-nonce\", \"keystream-reuse distinguisher\", adversary_fixed_nonce),\n                              (\"ctr-random-nonce\", \"repeated-block distinguisher\", adversary_ecb), (\"ctr-random-nonce\", \"keystream-reuse distinguisher\", adversary_fixed_nonce),\n                              (\"ctr-random-nonce\", \"guessing\", adversary_best_guess)):\n    advantage = run(mode, adversary)\n    print(f\"{mode:<22} {name:<30} {advantage:>19.3f}\" + (\"   <- broken\" if advantage > 0.9 else \"   <- negligible\" if advantage < 0.1 else \"\"))\n\n# --- PRG game: a linear congruential generator is predictable from its output\nM, A, C = 2 ** 31, 1103515245, 12345\ndef lcg_outputs(seed, count):\n    x, out = seed, []\n    for _ in range(count):\n        x = (A * x + C) % M; out.append(x)\n    return out\ndef prg_distinguisher(outputs):\n    return 1 if all((A * outputs[i] + C) % M == outputs[i + 1] for i in range(len(outputs) - 1)) else 0     # \"1\" = looks like the LCG\nrng = random.Random(5)\nwins = 0\nfor _ in range(1000):\n    if rng.getrandbits(1):\n        wins += prg_distinguisher(lcg_outputs(rng.randrange(M), 4)) == 1             # sample from the LCG: the distinguisher says LCG\n    else:\n        wins += prg_distinguisher([rng.randrange(M) for _ in range(4)]) == 0         # sample from the uniform distribution\nprint(f\"PRG game: LCG versus uniform, advantage {abs(2 * wins / 1000 - 1):.3f} (the generator's next value follows from the previous one)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-games",
+              "language": "text",
+              "code": "mode                   adversary                       measured advantage\necb                    repeated-block distinguisher                 1.000   <- broken\nctr-fixed-nonce        keystream-reuse distinguisher                1.000   <- broken\nctr-random-nonce       repeated-block distinguisher                 0.040   <- negligible\nctr-random-nonce       keystream-reuse distinguisher                0.030   <- negligible\nctr-random-nonce       guessing                                     0.038   <- negligible\nPRG game: LCG versus uniform, advantage 1.000 (the generator's next value follows from the previous one)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The measured advantages match the theory exactly: the ECB distinguisher and the keystream-reuse distinguisher win every time against their targets (advantage 1.000), while the same adversaries and a plain guesser have advantage close to 0 against the random-nonce mode, whose measured values (0.030 to 0.040) are the statistical noise of 2,000 trials (the standard deviation is about 0.02). The LCG is distinguished from random with advantage 1: knowing the generator's structure, a single output predicts the next.\n\n**What provable security does and does not give.** It forces definitions to be precise (what the attacker may do, what winning means) and shows exactly which assumptions a scheme rests on: that AES is a good pseudo-random function, that nonces are fresh, that keys are secret and random. It does not cover what the model leaves out: timing and power leakage (C10), faults, protocol misuse, or an adversary stronger than the one modelled (quantum, B8). The **random oracle model** treats a hash function as a perfectly random function to make proofs possible; proofs in that model are valuable evidence but are heuristic for any concrete hash, which is why the FO transform and signature schemes list their assumptions explicitly (7.6, 7.7). Read every security claim as: *under this definition, with this attacker, assuming this problem is hard*."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How is the advantage of an adversary in an IND-CPA game defined?",
+              "options": [
+                "|2 Pr[adversary guesses the bit] - 1|",
+                "The number of queries it makes",
+                "The size of the key"
+              ],
+              "correct_index": 0,
+              "explanation": "Winning with probability 1/2 gives advantage 0; winning always gives advantage 1."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does ECB mode fail the IND-CPA game?",
+              "options": [
+                "Equal plaintext blocks produce equal ciphertext blocks, so the adversary can tell the messages apart",
+                "It uses a short key",
+                "It is slow"
+              ],
+              "correct_index": 0,
+              "explanation": "The adversary submits a message with a repeated block and one without."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does a security reduction show?",
+              "options": [
+                "That breaking the scheme would break an assumed-hard primitive, under a stated model",
+                "That the scheme is unbreakable",
+                "That the key is long enough"
+              ],
+              "correct_index": 0,
+              "explanation": "It transfers trust to the assumption; it does not cover attacks outside the model."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B02",
+              "locator": "Chapter 2 (Encryption: semantic security) and Chapter 5 (Chosen plaintext security), including randomized counter mode; Section 8.10 (random oracles as a heuristic)"
+            },
+            {
+              "book": "B01",
+              "locator": "Section 5.1 (Modes of operation: ECB, CBC, CTR) and Section 2.2 (PRNGs and the linear congruential generator)"
+            },
+            {
+              "book": "B100",
+              "locator": "Package: AES in ECB and CTR modes"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The challenger and adversaries are implementations written for the lesson of the textbook definitions; Boneh-Shoup chapters are cited at chapter level. The remark that proofs in the random-oracle model are heuristic for a concrete hash is the standard caveat (cited section 8.10.2)."
+          },
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "7.9 Cryptographic Protocols",
+          "summary": "Man-in-the-middle against unauthenticated Diffie-Hellman, authenticated key exchange with signatures, and Lowe's attack on the Needham-Schroeder public-key protocol as a simulation.",
+          "estimated_minutes": 65,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **protocol** composes primitives into a conversation, and protocols fail even when every primitive is secure. Diffie-Hellman (B7) gives two parties a shared secret over a public channel, but it does not tell either party **who** they share it with. An active attacker who sits between them runs one exchange with each and relays (and reads) all traffic: the **man-in-the-middle attack** (Paar section 14.4.1). The cure is **authentication of the exchanged values**, for example signing them with long-term keys whose public halves are known (through certificates, B6): the party signs both ephemeral shares, so a substituted share makes the signature fail. TLS 1.3 does exactly this (B6).\n\nEven authentication can be composed wrongly. The **Needham-Schroeder public-key protocol** (1978) uses nonces encrypted under public keys: A sends {Na, A} to B; B replies {Na, Nb} to A; A returns {Nb} to B. It looked correct for 17 years until Gavin Lowe found an attack in 1995: if A starts a session with a **malicious but legitimate** party M, then M can relay A's messages to B and make B believe it is talking to A. The fix is to include the **responder's identity** in message 2: {Na, Nb, B}. The listing simulates the protocol with symbolic encryption (each message records which public key can open it), runs the attack and shows that the fix defeats it. It also runs real X25519 and Ed25519 operations for the Diffie-Hellman part. All of it is a **simulation** or a local exchange between objects created in the lesson. The labs use only the Python standard library plus `cryptography` 50.0.1 (`pip install cryptography==50.0.1`) as an **independent reference** to check each from-scratch implementation. Everything runs on your own machine on data you generate. Attacks are demonstrated only against code and keys written in the lesson and use toy parameters. Never use these implementations to protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-protocols-c7",
+              "language": "python",
+              "code": "from cryptography.hazmat.primitives import serialization\nfrom cryptography.hazmat.primitives.asymmetric.ed25519 import Ed25519PrivateKey\nfrom cryptography.hazmat.primitives.asymmetric.x25519 import X25519PrivateKey\nfrom cryptography.exceptions import InvalidSignature\n\nraw = lambda public: public.public_bytes(serialization.Encoding.Raw, serialization.PublicFormat.Raw)\nalice, bob, mallory = X25519PrivateKey.generate(), X25519PrivateKey.generate(), X25519PrivateKey.generate()\n\n# --- unauthenticated Diffie-Hellman: Mallory substitutes her own share in both directions\nkey_a = alice.exchange(mallory.public_key())               # Alice thinks this is the key shared with Bob\nkey_b = bob.exchange(mallory.public_key())                 # Bob thinks it is shared with Alice\nkey_m_a, key_m_b = mallory.exchange(alice.public_key()), mallory.exchange(bob.public_key())\nprint(\"SIMULATION unauthenticated DH: Mallory shares a key with Alice and one with Bob, and can read and relay everything:\", key_a == key_m_a and key_b == key_m_b, \"| Alice and Bob share a key:\", key_a == key_b)\n\n# --- authenticated: each side signs (its share, the peer's share, the peer's name) with a long-term key known in advance\nalice_identity, bob_identity = Ed25519PrivateKey.generate(), Ed25519PrivateKey.generate()\ndef signed_share(identity, own_share, peer_share, peer_name):\n    message = raw(own_share) + raw(peer_share) + peer_name\n    return identity.sign(message)\ndef verify_share(identity_public, own_share, peer_share, receiver_name, signature):\n    try:\n        identity_public.verify(signature, raw(own_share) + raw(peer_share) + receiver_name); return True\n    except InvalidSignature:\n        return False\nsig_from_alice = signed_share(alice_identity, alice.public_key(), bob.public_key(), b\"bob\")\nprint(\"honest run: Bob verifies Alice's signature over (her share, his share):\", verify_share(alice_identity.public_key(), alice.public_key(), bob.public_key(), b\"bob\", sig_from_alice))\nprint(\"Mallory substitutes her share: Bob's check fails:\", not verify_share(alice_identity.public_key(), mallory.public_key(), bob.public_key(), b\"bob\", sig_from_alice))\nmallory_identity = Ed25519PrivateKey.generate()\nforged = signed_share(mallory_identity, mallory.public_key(), bob.public_key(), b\"bob\")\nprint(\"Mallory signs with her own key: Bob, who knows Alice's key, rejects it:\", not verify_share(alice_identity.public_key(), mallory.public_key(), bob.public_key(), b\"bob\", forged))\n\n# --- Needham-Schroeder public-key protocol and Lowe's attack (symbolic simulation)\nclass Enc:\n    def __init__(self, owner, *payload): self.owner, self.payload = owner, payload\n    def open(self, agent):\n        return self.payload if agent == self.owner else None                  # only the key owner can read the contents\ndef run(fixed):\n    log = {\"Na\": \"Na\", \"Nb\": \"Nb\"}\n    # A deliberately starts a session with M, who is a legitimate but malicious participant\n    msg1 = Enc(\"M\", log[\"Na\"], \"A\")                                           # A -> M: {Na, A}_M\n    content = msg1.open(\"M\"); mallory_knows_na = content[0]\n    relay1 = Enc(\"B\", mallory_knows_na, \"A\")                                  # M -> B: {Na, A}_B   (M poses as A)\n    na_seen_by_b, claimed_sender = relay1.open(\"B\")\n    msg2 = Enc(\"A\", na_seen_by_b, log[\"Nb\"], \"B\") if fixed else Enc(\"A\", na_seen_by_b, log[\"Nb\"])     # B -> \"A\": {Na, Nb[, B]}_A\n    relay2 = msg2                                                             # M cannot read it but forwards it to A\n    opened = relay2.open(\"A\")\n    if fixed and opened[2] != \"M\":                                            # A expected the responder to be M, but the message names B\n        return {\"attack_succeeds\": False, \"why\": \"A aborts: the responder named in message 2 (B) is not the party A is talking to (M)\"}\n    na_ok = opened[0] == log[\"Na\"]\n    msg3 = Enc(\"M\", opened[1])                                                # A -> M: {Nb}_M\n    nb_known_to_m = msg3.open(\"M\")[0]\n    relay3 = Enc(\"B\", nb_known_to_m)                                          # M -> B: {Nb}_B\n    b_accepts = relay3.open(\"B\")[0] == log[\"Nb\"]\n    return {\"attack_succeeds\": na_ok and b_accepts, \"why\": \"B accepts and believes it is talking to A, and M knows both nonces\"}\nprint(\"original protocol:\", run(fixed=False))\nprint(\"with Lowe's fix (responder identity in message 2):\", run(fixed=True))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-protocols-c7",
+              "language": "text",
+              "code": "SIMULATION unauthenticated DH: Mallory shares a key with Alice and one with Bob, and can read and relay everything: True | Alice and Bob share a key: False\nhonest run: Bob verifies Alice's signature over (her share, his share): True\nMallory substitutes her share: Bob's check fails: True\nMallory signs with her own key: Bob, who knows Alice's key, rejects it: True\noriginal protocol: {'attack_succeeds': True, 'why': 'B accepts and believes it is talking to A, and M knows both nonces'}\nwith Lowe's fix (responder identity in message 2): {'attack_succeeds': False, 'why': 'A aborts: the responder named in message 2 (B) is not the party A is talking to (M)'}",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The first run is the classic failure of key exchange without authentication: Mallory ends up with a key shared with each victim and the two victims do *not* share a key, yet each believes the exchange succeeded. Signing the shares **together with the identity of the peer** prevents the substitution: Bob's verification fails for Mallory's share, and fails for a signature from a key he does not associate with Alice. The Needham-Schroeder simulation reproduces Lowe's attack: with the original messages, B accepts a session in which Mallory knows both nonces; including the responder's identity lets A detect that the message was produced by a different party than the one it was addressing.\n\n**Lessons for protocol design.** (1) Authentication must **bind the parties' identities** into what is authenticated; secrecy of a nonce is not enough. (2) Protocols need analysis, ideally machine-checked: the Needham-Schroeder flaw survived years of human review, which is why modern protocols such as TLS 1.3 were verified with formal tools (11.11 returns to this). (3) Post-quantum protocols inherit the same issues: replacing a KEM or a signature changes none of these binding requirements (B11, hybrid key exchange). The simulation models only the symbolic attack and an attacker who is a legitimate participant, as in Lowe's analysis; real analysis is broader."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is Diffie-Hellman without authentication insecure against an active attacker?",
+              "options": [
+                "The attacker can run separate exchanges with each party and relay traffic",
+                "The shared secret is too short",
+                "The group is too small"
+              ],
+              "correct_index": 0,
+              "explanation": "Neither party learns whose public share it received."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What did Lowe's fix add to the Needham-Schroeder public-key protocol?",
+              "options": [
+                "The responder's identity in the second message",
+                "A third nonce",
+                "A longer key"
+              ],
+              "correct_index": 0,
+              "explanation": "It lets the initiator see that the reply came from a different party than the one it addressed."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why sign both the sender's share and the peer's share in an authenticated exchange?",
+              "options": [
+                "It binds the signature to this particular exchange and prevents substitution or replay",
+                "To shorten the signature",
+                "To hide the shares"
+              ],
+              "correct_index": 0,
+              "explanation": "A signature over only one share could be reused in another context."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Section 14.4.1 (Man-in-the-Middle Attack) and Section 14.3.2 (Needham-Schroeder Protocol, symmetric-key version)"
+            },
+            {
+              "book": "B02",
+              "locator": "Chapters on key exchange and authenticated key exchange"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Lowe's attack (G. Lowe, Information Processing Letters, 1995) and the public-key Needham-Schroeder protocol are described from general knowledge; the cited Paar section covers the symmetric-key protocol. The paper could not be read here."
+          },
+          "after": "sec-8"
+        },
+        {
+          "slug": "sec-10",
+          "action": "replace",
+          "title": "7.10 Randomness and Key Generation",
+          "summary": "Statistical tests, state recovery of Python's Mersenne Twister, brute-forcing a time-seeded key, shared RSA primes, and the entropy arithmetic of key generation.",
+          "estimated_minutes": 65,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Every key is only as strong as the randomness that produced it. A **true random number generator (TRNG)** measures a physical process; a **pseudo-random generator (PRNG)** stretches a short seed into a long stream; a **cryptographically secure PRNG (CSPRNG)** additionally resists prediction even when the attacker sees outputs (Paar section 2.2 distinguishes these; the linear congruential generator is the classic example of a PRNG that is **not** secure). NIST SP 800-90A specifies deterministic random bit generators built from hash functions, HMAC and block ciphers, seeded from an entropy source (SP 800-90B). The practical rules: use the operating system's CSPRNG (`os.urandom`, `secrets`), never `random` or `rand()`, and make sure the seed has **enough entropy**: a generator seeded from the clock has only as many bits of security as the attacker's uncertainty about the time.\n\nThis lesson demonstrates four failure modes with real code against generators the lesson controls. (1) **Statistical tests**: simple monobit and runs tests (in the spirit of NIST's suite) distinguish a weak generator's low bits from random. (2) **State recovery**: Python's Mersenne Twister (`random`) is predictable; from 624 consecutive 32-bit outputs its state can be reconstructed and every later output predicted. (3) **Weak seeding**: a key derived from a time-based seed can be brute-forced over the plausible seeds. (4) **Shared primes**: devices that generate RSA keys with too little entropy can produce moduli that share a prime factor, and the greatest common divisor of two such moduli factors both. Finally it computes the **min-entropy** arithmetic that tells you how much raw randomness a 128-bit key needs. The labs use only the Python standard library plus `cryptography` 50.0.1 (`pip install cryptography==50.0.1`) as an **independent reference** to check each from-scratch implementation. Everything runs on your own machine on data you generate. Attacks are demonstrated only against code and keys written in the lesson and use toy parameters. Never use these implementations to protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-random",
+              "language": "python",
+              "code": "import math, os, random, struct\n\n# --- (1) simple statistical tests (monobit and runs), in the spirit of NIST SP 800-22\ndef bits_of(data): return [(byte >> i) & 1 for byte in data for i in range(8)]\ndef monobit_p(bits):\n    s = abs(sum(2 * b - 1 for b in bits))\n    return math.erfc(s / math.sqrt(2 * len(bits)))\ndef runs_p(bits):\n    n = len(bits); pi = sum(bits) / n\n    if abs(pi - 0.5) >= 2 / math.sqrt(n): return 0.0\n    v = 1 + sum(bits[i] != bits[i + 1] for i in range(n - 1))\n    return math.erfc(abs(v - 2 * n * pi * (1 - pi)) / (2 * math.sqrt(2 * n) * pi * (1 - pi)))\nlcg_state = 12345\ndef lcg_low_bytes(count):                                           # the low byte of a classic LCG: its lowest bit simply alternates\n    global lcg_state\n    out = bytearray()\n    for _ in range(count):\n        lcg_state = (1103515245 * lcg_state + 12345) % 2 ** 31\n        out.append(lcg_state & 0xFF)\n    return bytes(out)\ngood, weak = bits_of(os.urandom(12500)), [byte & 1 for byte in lcg_low_bytes(100000)]\nprint(f\"os.urandom: monobit pass (p > 0.01): {monobit_p(good) > 0.01}, runs pass: {runs_p(good) > 0.01}  (a good source fails each test about 1% of the time by chance)\")\nprint(f\"LCG lowest bit of each output: monobit pass: {monobit_p(weak) > 0.01}, runs pass: {runs_p(weak) > 0.01}  <- the runs test exposes the alternating low bit\")\n\n# --- (2) Mersenne Twister state recovery\ndef untemper(y):\n    y ^= y >> 18\n    y ^= (y << 15) & 0xEFC60000\n    t = y\n    for _ in range(4): t = y ^ ((t << 7) & 0x9D2C5680)\n    y = t\n    t = y\n    for _ in range(3): t = y ^ (t >> 11)\n    return t\nvictim = random.Random(2026)\nobserved = [victim.getrandbits(32) for _ in range(624)]\nclone = random.Random()\nclone.setstate((3, tuple(untemper(v) for v in observed) + (624,), None))\nfuture_real = [victim.getrandbits(32) for _ in range(5)]\nfuture_predicted = [clone.getrandbits(32) for _ in range(5)]\nprint(\"SIMULATION Mersenne Twister: after seeing 624 outputs the next outputs are predicted exactly:\", future_real == future_predicted)\n\n# --- (3) a key from a time-based seed can be brute-forced\nseed = 1_790_000_000 + 41_237                                          # a Unix time within a known day\nkey = random.Random(seed).randbytes(16)\nknown_plaintext = b\"HEADER:v1;\"\nkeystream_sample = bytes(a ^ b for a, b in zip(known_plaintext, key))   # the attacker sees a ciphertext of known plaintext\nfound = next(s for s in range(1_790_000_000, 1_790_000_000 + 86_400) if bytes(a ^ b for a, b in zip(known_plaintext, random.Random(s).randbytes(16))) == keystream_sample)\nprint(f\"time-seeded key: the 128-bit key was recovered by trying {found - 1_790_000_000 + 1:,} of the 86,400 candidate seeds in the day; effective security about {math.log2(86400):.1f} bits, not 128\")\n\n# --- (4) shared prime factors from low-entropy key generation\ndef is_prime(n):\n    if n < 2: return False\n    for p in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):\n        if n % p == 0: return n == p\n    d, r = n - 1, 0\n    while d % 2 == 0: d, r = d // 2, r + 1\n    for a in (2, 3, 5, 7, 11, 13, 17, 19, 23, 29, 31, 37):\n        x = pow(a, d, n)\n        if x in (1, n - 1): continue\n        for _ in range(r - 1):\n            x = x * x % n\n            if x == n - 1: break\n        else: return False\n    return True\nrng = random.Random(77)\npool = []\nwhile len(pool) < 30:\n    c = rng.getrandbits(48) | (1 << 47) | 1\n    if is_prime(c) and c not in pool: pool.append(c)                   # the devices' 'random' primes come from a small pool (poor entropy at boot)\nmoduli = [rng.sample(pool, 2) for _ in range(40)]\nkeys = [p * q for p, q in moduli]\nbroken = 0\nfor i in range(len(keys)):\n    for j in range(i + 1, len(keys)):\n        g = math.gcd(keys[i], keys[j])\n        if 1 < g < keys[i]:\n            broken += 1\nfactorable = {i for i in range(len(keys)) if any(1 < math.gcd(keys[i], keys[j]) < keys[i] for j in range(len(keys)) if j != i)}\nprint(f\"{len(keys)} RSA-style moduli built from a pool of {len(pool)} primes: {len(factorable)} of them share a prime with another and are factored by a gcd, without any factoring algorithm\")\n\n# --- entropy arithmetic\np1 = 0.7                                                              # a biased physical source: P(1) = 0.7\nshannon = -(p1 * math.log2(p1) + (1 - p1) * math.log2(1 - p1))\nmin_entropy = -math.log2(max(p1, 1 - p1))\nprint(f\"biased bit source with P(1) = 0.7: Shannon entropy {shannon:.3f} bits per bit, min-entropy {min_entropy:.3f}; a 128-bit key needs about {math.ceil(128 / min_entropy)} raw bits (after conditioning)\")\nprint(f\"birthday bound: random 64-bit identifiers collide after about {math.sqrt(math.pi / 2 * 2 ** 64):,.0f} draws; for 128 bits {math.sqrt(math.pi / 2 * 2 ** 128):.2e}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-random",
+              "language": "text",
+              "code": "os.urandom: monobit pass (p > 0.01): True, runs pass: True  (a good source fails each test about 1% of the time by chance)\nLCG lowest bit of each output: monobit pass: True, runs pass: False  <- the runs test exposes the alternating low bit\nSIMULATION Mersenne Twister: after seeing 624 outputs the next outputs are predicted exactly: True\ntime-seeded key: the 128-bit key was recovered by trying 41,238 of the 86,400 candidate seeds in the day; effective security about 16.4 bits, not 128\n40 RSA-style moduli built from a pool of 30 primes: 39 of them share a prime with another and are factored by a gcd, without any factoring algorithm\nbiased bit source with P(1) = 0.7: Shannon entropy 0.881 bits per bit, min-entropy 0.515; a 128-bit key needs about 249 raw bits (after conditioning)\nbirthday bound: random 64-bit identifiers collide after about 5,382,943,231 draws; for 128 bits 2.31e+19",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The runs test catches the weak generator that the monobit test passes (the lowest bit of the generator's outputs is balanced but strictly alternates 0, 1, 0, 1), showing why a battery of tests is used, and also why passing tests proves nothing about security: the Mersenne Twister passes simple tests like these and is nevertheless **completely predictable** after 624 outputs. The time-seeded key reduced a 128-bit key to about 16 bits of work, and the pool of primes made most of the 40 moduli factorable by a single gcd, with no sophisticated number theory. These are the same weaknesses found in real products: keys generated at first boot on embedded devices before the system had gathered entropy produced widespread shared primes in Internet-wide surveys (a well-documented finding, though not re-read for this lesson).\n\n**Rules.** Use the platform CSPRNG, which is reseeded from hardware and system events; never seed security-relevant generators from time, process IDs or counters; on virtual machines and embedded devices make sure entropy is available **before** generating long-term keys; use a conditioned source whose min-entropy you have estimated; and remember **birthday effects**: random identifiers need twice the bits of the collision resistance you want. Post-quantum keys are generated from the same randomness (ML-KEM and ML-DSA key generation take a 32 or 64-byte seed from an approved generator), so the same discipline applies (C10, C11)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is Python's random module not suitable for generating keys?",
+              "options": [
+                "Its state can be recovered from 624 outputs, after which all later outputs are predictable",
+                "It is too slow",
+                "It outputs too few bits"
+              ],
+              "correct_index": 0,
+              "explanation": "The Mersenne Twister is not a CSPRNG even though it passes statistical tests."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the effective strength of a 128-bit key derived from a clock-based seed known to within one day?",
+              "options": [
+                "About 16 bits",
+                "128 bits",
+                "64 bits"
+              ],
+              "correct_index": 0,
+              "explanation": "The attacker only needs to try the 86,400 possible seeds."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How can two RSA moduli generated with poor entropy be broken without factoring?",
+              "options": [
+                "If they share a prime factor, their gcd reveals it",
+                "By guessing the exponent",
+                "By a quantum computer only"
+              ],
+              "correct_index": 0,
+              "explanation": "gcd(n1, n2) = p when n1 = pq1 and n2 = pq2."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B01",
+              "locator": "Section 2.2 (Random Number Generators: TRNG, PRNG, the linear congruential generator, and cryptographically secure PRNGs)"
+            },
+            {
+              "book": "B184",
+              "locator": "Recommendation for random number generation using deterministic random bit generators (hash, HMAC and block-cipher based DRBGs)"
+            },
+            {
+              "book": "B02",
+              "locator": "Chapter 3 (Stream ciphers: pseudo-random generators and their security definition)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The reference to Internet-wide surveys of shared RSA primes (Heninger et al. 2012) is from memory and was not read here. The simplified monobit and runs tests follow the idea of the NIST SP 800-22 tests but are not the full suite."
+          },
+          "after": "sec-9"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "c7-n01",
+          "prompt": "Which numbers show that the plain Fermat primality test is unreliable?",
+          "options": [
+            "Carmichael numbers such as 561",
+            "Mersenne primes",
+            "Powers of 2"
+          ],
+          "correct_index": 0,
+          "explanation": "Every coprime base is a Fermat liar for a Carmichael number.",
+          "source": {
+            "book": "B01",
+            "locator": "Section 7.6"
+          }
+        },
+        {
+          "id": "c7-n02",
+          "prompt": "How does Pollard's rho scale with the smaller prime factor p?",
+          "options": [
+            "About sqrt(p) steps",
+            "About p steps",
+            "About log p steps"
+          ],
+          "correct_index": 0,
+          "explanation": "The measured steps over sqrt(p) stay roughly constant.",
+          "source": {
+            "book": "B01",
+            "locator": "Section 7.9"
+          }
+        },
+        {
+          "id": "c7-n03",
+          "prompt": "Why does Pohlig-Hellman break DLP groups with smooth order?",
+          "options": [
+            "The problem splits into small prime-power subgroups",
+            "It factors the modulus",
+            "It guesses the key"
+          ],
+          "correct_index": 0,
+          "explanation": "Cost depends on the largest prime factor of the group order.",
+          "source": {
+            "book": "B01",
+            "locator": "Section 8.3.3"
+          }
+        },
+        {
+          "id": "c7-n04",
+          "prompt": "What does naive double-and-add leak?",
+          "options": [
+            "The number of 1 bits of the scalar through the sequence of operations",
+            "The modulus",
+            "The curve equation"
+          ],
+          "correct_index": 0,
+          "explanation": "Additions occur only at 1 bits.",
+          "source": {
+            "book": "B01",
+            "locator": "Section 9.5"
+          }
+        },
+        {
+          "id": "c7-n05",
+          "prompt": "What happens when a GCM nonce is reused with the same key?",
+          "options": [
+            "Ciphertext XOR equals plaintext XOR and authentication can be broken",
+            "Only performance suffers",
+            "The key rotates"
+          ],
+          "correct_index": 0,
+          "explanation": "The same keystream is generated twice.",
+          "source": {
+            "book": "B182",
+            "locator": "GCM definition"
+          }
+        },
+        {
+          "id": "c7-n06",
+          "prompt": "Why does length extension work on SHA-256 but not on SHA3-256?",
+          "options": [
+            "The SHA-256 digest is its full internal state; the sponge hides its capacity",
+            "SHA-3 is longer",
+            "SHA-256 is broken"
+          ],
+          "correct_index": 0,
+          "explanation": "Merkle-Damgard digests can be extended; sponge outputs cannot.",
+          "source": {
+            "book": "B01",
+            "locator": "Sections 11.4 and 11.5"
+          }
+        },
+        {
+          "id": "c7-n07",
+          "prompt": "What does the FO transform check at decapsulation?",
+          "options": [
+            "That re-encrypting the recovered message reproduces the ciphertext",
+            "The key size",
+            "The nonce"
+          ],
+          "correct_index": 0,
+          "explanation": "Tampered ciphertexts fail and are rejected implicitly.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 6.3"
+          }
+        },
+        {
+          "id": "c7-n08",
+          "prompt": "How can an ECDSA private key be recovered?",
+          "options": [
+            "From two signatures that used the same nonce",
+            "From one signature",
+            "From the public key alone"
+          ],
+          "correct_index": 0,
+          "explanation": "k = (z1 - z2)/(s1 - s2), then d from s = k^-1 (z + r d).",
+          "source": {
+            "book": "B01",
+            "locator": "Section 10.5.3"
+          }
+        },
+        {
+          "id": "c7-n09",
+          "prompt": "What is the advantage of an adversary in an IND-CPA game?",
+          "options": [
+            "|2 Pr[win] - 1|",
+            "Its running time",
+            "The number of oracle queries"
+          ],
+          "correct_index": 0,
+          "explanation": "Winning half the time gives advantage 0.",
+          "source": {
+            "book": "B02",
+            "locator": "Chapters 2 and 5"
+          }
+        },
+        {
+          "id": "c7-n10",
+          "prompt": "What attack does Lowe's fix to Needham-Schroeder public-key prevent?",
+          "options": [
+            "A relay in which a malicious participant makes B believe it is talking to A",
+            "A brute-force of nonces",
+            "A timing attack"
+          ],
+          "correct_index": 0,
+          "explanation": "Including the responder's identity exposes the relay.",
+          "source": {
+            "book": "B01",
+            "locator": "Section 14.3.2 (symmetric version) and protocol analysis"
+          }
+        },
+        {
+          "id": "c7-n11",
+          "prompt": "Why is Mersenne Twister output unsuitable for keys?",
+          "options": [
+            "Its state is recoverable from 624 outputs",
+            "It is biased",
+            "It is slow"
+          ],
+          "correct_index": 0,
+          "explanation": "All later outputs become predictable.",
+          "source": {
+            "book": "B01",
+            "locator": "Section 2.2"
+          }
+        },
+        {
+          "id": "c7-n12",
+          "prompt": "Roughly how many 64-bit random identifiers can be drawn before a collision is likely?",
+          "options": [
+            "About 2^32",
+            "About 2^64",
+            "About 2^16"
+          ],
+          "correct_index": 0,
+          "explanation": "The birthday bound is about the square root of the space.",
+          "source": {
+            "book": "B01",
+            "locator": "Section 11.2.3"
+          }
+        }
+      ],
+      "estimated_minutes": 615,
+      "notes": "Rewrites ten outline sections as lessons with from-scratch implementations validated against the cryptography package and NIST parameters: number theory, Pollard rho, BSGS and Pohlig-Hellman, P-256 matching OpenSSL, GCM and a meet-in-the-middle attack, SHA-256 and SHA3-256 matching hashlib with a length-extension forgery, a toy FO-transform KEM, ECDSA nonce-reuse key recovery, IND-CPA games, a Needham-Schroeder attack simulation, and randomness failures.",
+      "learning_objectives": [
+        "Implement and test the number-theoretic tools behind RSA and Diffie-Hellman and explain why a Fermat test is not enough.",
+        "Measure generic and structured discrete-logarithm and factoring attacks and explain how group structure sets key choices.",
+        "Implement P-256, GCM and the hash functions from scratch and validate them against an independent library.",
+        "Demonstrate chosen-ciphertext attacks and the Fujisaki-Okamoto transform with implicit rejection.",
+        "Demonstrate forgery and nonce-reuse attacks on signatures and explain deterministic signing.",
+        "Run security games, analyse protocol attacks, and test randomness for weaknesses."
+      ]
+    }
+  ]
+}
