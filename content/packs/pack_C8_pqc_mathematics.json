@@ -1,0 +1,1241 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B01",
+      "title": "Understanding Cryptography: From Established Symmetric and Asymmetric Ciphers to Post-Quantum Algorithms",
+      "authors": "Christof Paar, Jan Pelzl, Tim Güneysu",
+      "edition": "2nd edition",
+      "year": 2024,
+      "publisher": "Springer",
+      "isbn": "978-3-662-69007-9"
+    },
+    {
+      "id": "B02",
+      "title": "A Graduate Course in Applied Cryptography",
+      "authors": "Dan Boneh, Victor Shoup",
+      "edition": "Version 0.6",
+      "year": 2023
+    },
+    {
+      "id": "B03",
+      "title": "A Tutorial on Post-quantum Cryptography (slides)",
+      "authors": "Douglas R. Stinson",
+      "edition": "11 August 2025",
+      "year": 2025,
+      "publisher": "University of Waterloo"
+    },
+    {
+      "id": "B04",
+      "title": "FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B07",
+      "title": "Mathematical Foundations for Post-Quantum Cryptography (Mathematics for Industry 40)",
+      "authors": "Tsuyoshi Takagi, Masato Wakayama, Noboru Kunihiro, Keisuke Tanaka, Kazufumi Kimoto, Momonari Kudo (eds.)",
+      "edition": "Mathematics for Industry 40",
+      "year": 2026,
+      "publisher": "Springer"
+    },
+    {
+      "id": "B90",
+      "title": "kyber-py: a pure Python implementation of ML-KEM (FIPS 203), version 1.2.0 (PyPI package metadata)",
+      "authors": "Package authors",
+      "edition": "1.2.0",
+      "year": 2025
+    },
+    {
+      "id": "B91",
+      "title": "dilithium-py: a pure Python implementation of ML-DSA (FIPS 204), version 1.4.0 (PyPI package metadata)",
+      "authors": "Package authors",
+      "edition": "1.4.0",
+      "year": 2025
+    },
+    {
+      "id": "B92",
+      "title": "FIPS 204: Module-Lattice-Based Digital Signature Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B93",
+      "title": "FIPS 205: Stateless Hash-Based Digital Signature Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B94",
+      "title": "NIST IR 8545: Status Report on the Fourth Round of the NIST Post-Quantum Cryptography Standardization Process",
+      "authors": "NIST",
+      "edition": "March 2025",
+      "year": 2025,
+      "publisher": "NIST"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_c_c8_pqc_mathematics",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "8.1 Lattice Concepts",
+          "summary": "Bases, volume, Gram-Schmidt, LLL reduction implemented and verified exactly, Babai decoding with good and bad bases, and how close LLL gets to the shortest vector.",
+          "estimated_minutes": 70,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **lattice** is the set of all integer combinations of linearly independent vectors b1, ..., bd, called a **basis**. A lattice has infinitely many bases: two bases describe the same lattice exactly when they differ by a **unimodular** integer matrix (determinant ±1), and the **volume** |det B| is the same for all of them (B07, Nakamura and Yasuda, section 2.1). The **Gram-Schmidt** vectors turn a basis into orthogonal ones, and the volume equals the product of their lengths. A basis is *good* when its vectors are short and nearly orthogonal and *bad* when they are long and nearly parallel; the same lattice can be given either way.\n\nTwo problems matter for cryptography (B07, section 2.2). The **shortest vector problem (SVP)** asks for a shortest non-zero lattice vector, of length λ1; it is NP-hard under randomised reductions. The **closest vector problem (CVP)** asks for the lattice point nearest to a target. Both are easy given a good basis and believed hard given a bad one, which is the design idea behind lattice cryptography. For a random lattice the **Gaussian heuristic** predicts λ1 ≈ sqrt(d/(2πe)) · vol^(1/d). The **LLL algorithm** turns any basis into a reduced one in polynomial time: it is *size-reduced* (|μij| ≤ 1/2) and satisfies the **Lovász condition** between neighbouring Gram-Schmidt vectors; its first vector is at most (1/(δ − 1/4))^((d−1)/4) · vol^(1/d). The strength of LLL is far better in practice than that bound, but it is still exponentially far from the shortest vector in high dimension, and this gap is what the security of lattice schemes rests on.\n\nThe first listing implements LLL with floating-point Gram-Schmidt and then **verifies the result exactly with rational arithmetic**, so the checker does not trust the floating-point code. It shows the same two-dimensional lattice described by two bases, and then **Babai's nearest-plane decoding** in dimension 12 with a good basis, a bad basis and the LLL-reduced bad basis. The labs use Python with NumPy, plus the pure-Python reference libraries kyber-py and dilithium-py (the same ones used in B10) as independent cross-checks. Everything runs on your own machine and every attack is mounted against toy parameters generated in the lesson. The toy schemes are for understanding only and must never protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-lattice-basics",
+              "language": "python",
+              "code": "import math, random\nimport numpy as np\nfrom fractions import Fraction\n\ndef lll(basis, delta=0.99):\n    B = np.array(basis, dtype=np.int64)\n    n = len(B)\n    Bs = np.zeros((n, B.shape[1])); mu = np.zeros((n, n)); nrm = np.zeros(n)\n    valid = 0\n    def gram_schmidt_row(i):\n        v = B[i].astype(float)\n        for j in range(i):\n            mu[i, j] = (B[i] @ Bs[j]) / nrm[j]\n            v = v - mu[i, j] * Bs[j]\n        Bs[i] = v; nrm[i] = v @ v\n    k = 1\n    while k < n:\n        while valid <= k:\n            gram_schmidt_row(valid); valid += 1\n        for j in range(k - 1, -1, -1):                                  # size reduction\n            q = int(round(mu[k, j]))\n            if q:\n                B[k] -= q * B[j]\n                mu[k, :j + 1] -= q * np.concatenate((mu[j, :j], [1.0]))\n        gram_schmidt_row(k)\n        if nrm[k] >= (delta - mu[k, k - 1] ** 2) * nrm[k - 1]:        # Lovasz condition holds: move on\n            k += 1\n        else:                                                           # otherwise swap and step back\n            B[[k, k - 1]] = B[[k - 1, k]]\n            valid = max(k - 1, 0)\n            k = max(k - 1, 1)\n    return B.tolist()\n\ndef check_lll_reduced(basis, delta=0.98):\n    # exact rational verification of the two LLL conditions (the float code above is not trusted)\n    n = len(basis)\n    Bs, mu = [], [[Fraction(0)] * n for _ in range(n)]\n    sq = lambda v: sum(x * x for x in v)\n    for i in range(n):\n        v = [Fraction(x) for x in basis[i]]\n        for j in range(i):\n            mu[i][j] = sum(Fraction(a) * b for a, b in zip(basis[i], Bs[j])) / sq(Bs[j])\n            v = [a - mu[i][j] * b for a, b in zip(v, Bs[j])]\n        Bs.append(v)\n    tol = Fraction(1, 10 ** 9)\n    size_reduced = all(abs(mu[i][j]) <= Fraction(1, 2) + tol for i in range(n) for j in range(i))\n    d = Fraction(delta).limit_denominator(1000)\n    lovasz = all(sq(Bs[k]) >= (d - mu[k][k - 1] ** 2) * sq(Bs[k - 1]) - tol for k in range(1, n))\n    return size_reduced, lovasz\nrng = random.Random(2)\ndet2 = lambda M: M[0][0] * M[1][1] - M[0][1] * M[1][0]\nnorm = lambda v: math.sqrt(sum(x * x for x in v))\n\n# --- the same two-dimensional lattice described by a good basis and by a bad one\ngood = [[7, 2], [-3, 9]]\nU = [[17, 10], [12, 7]]                                                # an integer matrix with determinant -1 (unimodular)\nbad = [[sum(U[i][k] * good[k][j] for k in range(2)) for j in range(2)] for i in range(2)]\nprint(\"determinant of U:\", det2(U), \"| lattice volume from the good basis:\", abs(det2(good)), \"and from the bad basis:\", abs(det2(bad)))\nprint(\"bad basis:\", bad, \"with lengths\", [round(norm(v), 1) for v in bad])\nreduced = lll(bad)\nprint(\"LLL on the bad basis:\", reduced, \"with lengths\", [round(norm(v), 1) for v in reduced], \"| good basis lengths\", [round(norm(v), 1) for v in good])\nprint(\"LLL result verified exactly:\", check_lll_reduced(reduced))\n\ndef hadamard_ratio(B):\n    return (abs(round(np.linalg.det(np.array(B, dtype=float)))) / np.prod([norm(v) for v in B])) ** (1 / len(B))\n\n# --- Babai's nearest-plane algorithm: decoding with a good basis works, with a bad basis it fails\nn = 12\ngood = [[25 if i == j else rng.randint(-3, 3) for j in range(n)] for i in range(n)]\nM = [[1 if i == j else 0 for j in range(n)] for i in range(n)]\nfor _ in range(60):                                                    # a random unimodular matrix built from row operations\n    i, j = rng.sample(range(n), 2)\n    c = rng.choice((-2, -1, 1, 2))\n    M[i] = [a + c * b for a, b in zip(M[i], M[j])]\nbad = (np.array(M) @ np.array(good)).tolist()\nreduced = lll(bad)\nprint(\"size of the largest entry: good basis\", max(abs(x) for r in good for x in r), \"| bad basis\", max(abs(x) for r in bad for x in r), \"| after LLL\", max(abs(x) for r in reduced for x in r))\nprint(\"Hadamard ratio (1 = orthogonal): good %.2f, bad %.4f, LLL-reduced %.2f\" % (hadamard_ratio(good), hadamard_ratio(bad), hadamard_ratio(reduced)))\n\ndef babai(B, target):\n    Bf = np.array(B, dtype=float)\n    Bs = np.zeros_like(Bf)\n    for i in range(len(B)):\n        Bs[i] = Bf[i] - sum((Bf[i] @ Bs[j]) / (Bs[j] @ Bs[j]) * Bs[j] for j in range(i))\n    v = np.array(target, dtype=float)\n    for i in reversed(range(len(B))):\n        v = v - round((v @ Bs[i]) / (Bs[i] @ Bs[i])) * Bf[i]            # peel off one coordinate per Gram-Schmidt direction\n    return np.array(target) - np.round(v)                                # the lattice point that was found\n\ngood_arr = np.array(good)\ntrials, wins = 300, {\"good basis\": 0, \"bad basis\": 0, \"LLL-reduced bad basis\": 0}\nfor _ in range(trials):\n    coefficients = np.array([rng.randint(-50, 50) for _ in range(n)])\n    point = coefficients @ good_arr                                      # a random lattice point\n    error = np.array([rng.randint(-6, 6) for _ in range(n)])\n    target = point + error\n    for name, basis in ((\"good basis\", good), (\"bad basis\", bad), (\"LLL-reduced bad basis\", reduced)):\n        wins[name] += bool(np.array_equal(babai(basis, target), point))\nfor name, count in wins.items():\n    print(f\"decoding a lattice point plus noise in [-6, 6]^12 with the {name}: {count} of {trials} correct\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-lattice-basics",
+              "language": "text",
+              "code": "determinant of U: -1 | lattice volume from the good basis: 69 and from the bad basis: 69\nbad basis: [[89, 124], [63, 87]] with lengths [152.6, 107.4]\nLLL on the bad basis: [[7, 2], [-3, 9]] with lengths [7.3, 9.5] | good basis lengths [7.3, 9.5]\nLLL result verified exactly: (True, True)\nsize of the largest entry: good basis 25 | bad basis 5722 | after LLL 25\nHadamard ratio (1 = orthogonal): good 0.97, bad 0.0136, LLL-reduced 0.97\ndecoding a lattice point plus noise in [-6, 6]^12 with the good basis: 300 of 300 correct\ndecoding a lattice point plus noise in [-6, 6]^12 with the bad basis: 0 of 300 correct\ndecoding a lattice point plus noise in [-6, 6]^12 with the LLL-reduced bad basis: 300 of 300 correct",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The determinant of the transformation is −1, so both bases describe the same lattice of volume 69, yet the bad basis has vectors of length 107 and 153 against 7 and 9 for the good one. LLL recovers exactly the good basis, and the exact rational check confirms both LLL conditions. In dimension 12 the effect on decoding is total: with the good basis Babai's algorithm recovers the right lattice point in all 300 trials, with the bad basis in **none**, and with the LLL-reduced version of the bad basis in all 300. The Hadamard ratio measures this orthogonality (1 for orthogonal vectors, 0.0136 for the bad basis).\n\nThis is the essence of the public/private key idea in lattice cryptography (the GGH-style intuition): publish a bad basis, keep a good one. It is also a warning: in *small* dimension LLL repairs a bad basis, so the dimension must be large enough that LLL and its stronger relatives fail. The next listing measures how far LLL gets from the best possible answer."
+            },
+            {
+              "type": "code",
+              "id": "c-lll-quality",
+              "language": "python",
+              "code": "import math, random\nimport numpy as np\nfrom fractions import Fraction\n\ndef lll(basis, delta=0.99):\n    B = np.array(basis, dtype=np.int64)\n    n = len(B)\n    Bs = np.zeros((n, B.shape[1])); mu = np.zeros((n, n)); nrm = np.zeros(n)\n    valid = 0\n    def gram_schmidt_row(i):\n        v = B[i].astype(float)\n        for j in range(i):\n            mu[i, j] = (B[i] @ Bs[j]) / nrm[j]\n            v = v - mu[i, j] * Bs[j]\n        Bs[i] = v; nrm[i] = v @ v\n    k = 1\n    while k < n:\n        while valid <= k:\n            gram_schmidt_row(valid); valid += 1\n        for j in range(k - 1, -1, -1):                                  # size reduction\n            q = int(round(mu[k, j]))\n            if q:\n                B[k] -= q * B[j]\n                mu[k, :j + 1] -= q * np.concatenate((mu[j, :j], [1.0]))\n        gram_schmidt_row(k)\n        if nrm[k] >= (delta - mu[k, k - 1] ** 2) * nrm[k - 1]:        # Lovasz condition holds: move on\n            k += 1\n        else:                                                           # otherwise swap and step back\n            B[[k, k - 1]] = B[[k - 1, k]]\n            valid = max(k - 1, 0)\n            k = max(k - 1, 1)\n    return B.tolist()\n\ndef check_lll_reduced(basis, delta=0.98):\n    # exact rational verification of the two LLL conditions (the float code above is not trusted)\n    n = len(basis)\n    Bs, mu = [], [[Fraction(0)] * n for _ in range(n)]\n    sq = lambda v: sum(x * x for x in v)\n    for i in range(n):\n        v = [Fraction(x) for x in basis[i]]\n        for j in range(i):\n            mu[i][j] = sum(Fraction(a) * b for a, b in zip(basis[i], Bs[j])) / sq(Bs[j])\n            v = [a - mu[i][j] * b for a, b in zip(v, Bs[j])]\n        Bs.append(v)\n    tol = Fraction(1, 10 ** 9)\n    size_reduced = all(abs(mu[i][j]) <= Fraction(1, 2) + tol for i in range(n) for j in range(i))\n    d = Fraction(delta).limit_denominator(1000)\n    lovasz = all(sq(Bs[k]) >= (d - mu[k][k - 1] ** 2) * sq(Bs[k - 1]) - tol for k in range(1, n))\n    return size_reduced, lovasz\nrng = random.Random(5)\n\ndef q_ary_kernel_basis(n, q, rng):\n    # random lattice {x in Z^n : A x = 0 mod q} with n/2 constraints, as an explicit basis (volume q^(n/2))\n    h = n // 2\n    A1 = [[rng.randrange(q) for _ in range(h)] for _ in range(h)]\n    basis = []\n    for i in range(h):\n        row = [0] * n; row[i] = 1\n        for r in range(h): row[h + r] = (-A1[r][i]) % q\n        basis.append(row)\n    for r in range(h):\n        row = [0] * n; row[h + r] = q; basis.append(row)\n    return basis\n\ndef enumerate_shortest(B):\n    # exact shortest vector by Fincke-Pohst enumeration over the coefficients of a reduced basis (small dimensions only)\n    n = len(B)\n    Bf = np.array(B, dtype=float)\n    Bs = np.zeros_like(Bf); mu = np.zeros((n, n)); nrm = np.zeros(n)\n    for i in range(n):\n        Bs[i] = Bf[i]\n        for j in range(i):\n            mu[i, j] = Bf[i] @ Bs[j] / nrm[j]\n            Bs[i] = Bs[i] - mu[i, j] * Bs[j]\n        nrm[i] = Bs[i] @ Bs[i]\n    best = [float(Bf[0] @ Bf[0]) - 1e-6, None]\n    nodes = [0]\n    def search(i, coefficients, partial):\n        nodes[0] += 1\n        centre = -sum(coefficients[j] * mu[j, i] for j in range(i + 1, n))\n        radius = math.sqrt(max(best[0] - partial, 0) / nrm[i])\n        for x in range(math.ceil(centre - radius), math.floor(centre + radius) + 1):\n            coefficients[i] = x\n            d = partial + (x - centre) ** 2 * nrm[i]\n            if d > best[0]:\n                continue\n            if i == 0:\n                if any(coefficients) and d < best[0]:\n                    best[0], best[1] = d, list(coefficients)\n            else:\n                search(i - 1, coefficients, d)\n        coefficients[i] = 0\n    search(n - 1, [0] * n, 0.0)\n    if best[1] is None:\n        return B[0], nodes[0]\n    return (np.array(best[1]) @ np.array(B)).tolist(), nodes[0]\n\nq, delta = 257, 0.99\nalpha = 1 / (delta - 0.25)\nprint(f\"{'dim':>4} {'|b1| of LLL':>12} {'Gaussian heuristic':>19} {'|b1| / GH':>10} {'root Hermite factor':>20} {'guaranteed bound':>17}\")\nfor n in (10, 20, 30, 40):\n    ratios, hermite, first = [], [], []\n    for trial in range(2):\n        basis = q_ary_kernel_basis(n, q, rng)\n        volume_root = q ** 0.5                                             # volume q^(n/2), so volume^(1/n) = sqrt(q)\n        b1 = min(math.sqrt(sum(x * x for x in v)) for v in lll(basis))\n        gh = math.sqrt(n / (2 * math.pi * math.e)) * volume_root\n        first.append(b1); ratios.append(b1 / gh); hermite.append((b1 / volume_root) ** (1 / n))\n    gh = math.sqrt(n / (2 * math.pi * math.e)) * volume_root\n    print(f\"{n:>4} {np.mean(first):>12.2f} {gh:>19.2f} {np.mean(ratios):>10.2f} {np.mean(hermite):>20.4f} {alpha ** ((n - 1) / 4) * volume_root:>17.1f}\")\n\nprint()\nprint(\"exact shortest vector against LLL (the LLL guarantee relates |b1| to lambda_1; in practice it is far better):\")\nfor n in (8, 12, 16):\n    basis = lll(q_ary_kernel_basis(n, q, rng))\n    b1 = math.sqrt(sum(x * x for x in basis[0]))\n    shortest, nodes = enumerate_shortest(basis)\n    lam = math.sqrt(sum(x * x for x in shortest))\n    gh = math.sqrt(n / (2 * math.pi * math.e)) * q ** 0.5\n    print(f\"dim {n:>2}: |b1| from LLL {b1:6.2f}, exact lambda_1 {lam:6.2f} (found by visiting {nodes:,} enumeration nodes), Gaussian heuristic {gh:6.2f}, worst case allowed by LLL {2 ** ((n - 1) / 2) * lam:8.1f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-lll-quality",
+              "language": "text",
+              "code": " dim  |b1| of LLL  Gaussian heuristic  |b1| / GH  root Hermite factor  guaranteed bound\n  10        14.30               12.27       1.17               0.9884              31.6\n  20        19.22               17.35       1.11               1.0089              67.0\n  30        24.62               21.25       1.16               1.0144             142.2\n  40        27.51               24.53       1.12               1.0136             302.0\n\nexact shortest vector against LLL (the LLL guarantee relates |b1| to lambda_1; in practice it is far better):\ndim  8: |b1| from LLL  14.07, exact lambda_1  14.07 (found by visiting 10 enumeration nodes), Gaussian heuristic  10.97, worst case allowed by LLL    159.2\ndim 12: |b1| from LLL  14.04, exact lambda_1  14.04 (found by visiting 12 enumeration nodes), Gaussian heuristic  13.44, worst case allowed by LLL    635.2\ndim 16: |b1| from LLL  19.44, exact lambda_1  19.44 (found by visiting 420 enumeration nodes), Gaussian heuristic  15.52, worst case allowed by LLL   3519.4",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "On random q-ary lattices the shortest vector LLL finds is within about 11 to 17 percent above the Gaussian-heuristic length for these dimensions, and the exact enumeration agrees with LLL in dimensions 8 to 16 (LLL happened to find a shortest vector each time here). The measured root Hermite factor per dimension, (|b1| / vol^(1/d))^(1/d), is between 0.99 and 1.015; these lattices contain the vector q·e_i, so for small dimensions |b1| is capped by q and the factor is smaller than for a generic lattice, and the figure should not be generalised. The guaranteed bound is much weaker than what LLL achieves. In high dimension this changes: the exponent in the guarantee, and the measured factor, make LLL useless against dimension-500 lattices, and the security analysis moves to BKZ, which calls an exact or sieving SVP solver on blocks of size β (B07, DeepBKZ chapter, section 2.2); lesson 8.10 turns that into numbers.\n\n**Common mistakes:** treating the LLL guarantee as the real behaviour (it is a worst-case bound, practice is far better in small dimension), and treating small-dimension experiments as evidence about security (the toy results here say only that toy parameters are insecure)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does Babai's algorithm fail with a bad basis but succeed with a good one for the same lattice?",
+              "options": [
+                "Rounding in the Gram-Schmidt directions only isolates the right point when the basis is short and nearly orthogonal",
+                "The lattices are different",
+                "The bad basis has fewer vectors"
+              ],
+              "correct_index": 0,
+              "explanation": "Both bases generate the same lattice; only the geometry of the basis differs."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which two conditions define an LLL-reduced basis?",
+              "options": [
+                "Size reduction (|mu| at most 1/2) and the Lovasz condition on neighbouring Gram-Schmidt vectors",
+                "Orthogonality and unit length",
+                "Integer entries and positive determinant"
+              ],
+              "correct_index": 0,
+              "explanation": "LLL swaps and size-reduces until both hold."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does the Gaussian heuristic predict?",
+              "options": [
+                "The length of the shortest vector of a random lattice from its volume and dimension",
+                "The number of bases of a lattice",
+                "The running time of LLL"
+              ],
+              "correct_index": 0,
+              "explanation": "lambda_1 is about sqrt(d / (2 pi e)) times vol^(1/d)."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B07",
+              "locator": "Nakamura and Yasuda, 'Expanded Lattices for Solving Ring-Based LWE and NTRU Problems': Section 2.1 (Lattices, volume, Gram-Schmidt) and Section 2.2 (SVP, CVP, Kannan embedding, Gaussian heuristic)"
+            },
+            {
+              "book": "B07",
+              "locator": "Nakamura et al., 'Parallel DeepBKZ 2.0': Section 2.1 (lattice basics, Gaussian heuristic) and Section 2.2 (LLL conditions and bounds, BKZ)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The LLL algorithm is described in the cited chapters but the original paper (Lenstra, Lenstra and Lovasz 1982) was not read. The implementation is a floating-point version whose output is verified exactly, with the Lovasz parameter checked at 0.98 and used at 0.99."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "8.2 LWE (Learning With Errors)",
+          "summary": "Regev-style encryption built and measured, why the error makes the problem hard, and a real lattice attack (Kannan embedding with LLL) that recovers secrets of toy size.",
+          "estimated_minutes": 75,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **Learning With Errors (LWE)** problem: a secret vector s in Z_q^n is fixed; each sample is a random vector a together with b = ⟨a, s⟩ + e (mod q), where e is a small error drawn from a narrow distribution. The **search** problem is to find s from many samples; the **decision** problem is to tell such samples from uniformly random ones. Without e this is linear algebra and Gaussian elimination solves it from n equations; with e it is believed hard, and Regev showed it is as hard as worst-case lattice problems (a result cited from the literature, not reproduced here). ML-KEM is built on a structured version of this problem (FIPS 203, section 3: \"module-LWE\"), and the ML-KEM secret and error use a centred binomial distribution (η in {2, 3}).\n\nA **Regev-style public-key encryption** of one bit works as follows. The public key is (A, b = A s + e). To encrypt a bit, pick a random subset r of the rows, send c1 = rᵀA and c2 = rᵀb + bit·⌊q/2⌋. The receiver computes c2 − ⟨c1, s⟩ = ⟨r, e⟩ + bit·⌊q/2⌋ and decides by whether the result is near 0 or near q/2. It is correct as long as the accumulated noise ⟨r, e⟩ stays below q/4, and the first listing measures that margin, shows what happens when the error is too large, and contrasts the noise-free and the noisy problem. The labs use Python with NumPy, plus the pure-Python reference libraries kyber-py and dilithium-py (the same ones used in B10) as independent cross-checks. Everything runs on your own machine and every attack is mounted against toy parameters generated in the lesson. The toy schemes are for understanding only and must never protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-lwe-basics",
+              "language": "python",
+              "code": "import math, random\nimport numpy as np\n\nrng = np.random.default_rng(7)\nq = 3329\n\ndef centered_binomial(eta, size):\n    return rng.integers(0, 2, (*size, eta)).sum(-1) - rng.integers(0, 2, (*size, eta)).sum(-1)\n\n# --- Regev-style public-key encryption of one bit from LWE\nn, m, eta = 32, 128, 2\ns = centered_binomial(eta, (n,))\nA = rng.integers(0, q, (m, n))\ne = centered_binomial(eta, (m,))\nb = (A @ s + e) % q                                                     # the public key is (A, b): m noisy equations in the secret s\n\ndef encrypt(bit):\n    r = rng.integers(0, 2, m)                                           # a random subset of the m equations\n    return (r @ A) % q, (r @ b + bit * (q // 2)) % q\n\ndef decrypt(ciphertext):\n    c1, c2 = ciphertext\n    x = (c2 - c1 @ s) % q                                               # = r.e + bit * q/2 (mod q)\n    return int(q // 4 < x < 3 * q // 4)\n\nbits = rng.integers(0, 2, 2000)\nprint(\"decryption correct for\", sum(decrypt(encrypt(int(t))) == t for t in bits), \"of\", len(bits), \"random bits\")\nprint(\"worst-case noise bound |r.e| <= m * max|e| =\", m * 2, \"against the decryption margin q/4 =\", q // 4, \"-> correct for every key and message\")\nsample = []\nfor _ in range(2000):\n    r = rng.integers(0, 2, m)\n    sample.append(int(r @ e))\nprint(f\"measured noise r.e over 2000 encryptions: mean {np.mean(sample):.2f}, standard deviation {np.std(sample):.2f}, largest {max(abs(x) for x in sample)}; prediction |e| / 2 = {np.linalg.norm(e) / 2:.2f} for this particular error vector\")\n\n# --- too much noise breaks correctness: the same scheme with a larger error distribution\nfor width in (100, 200, 300, 400):\n    e_big = rng.integers(-width, width + 1, m)\n    b_big = (A @ s + e_big) % q\n    fails = 0\n    for t in bits[:1000]:\n        r = rng.integers(0, 2, m)\n        c1, c2 = (r @ A) % q, (r @ b_big + int(t) * (q // 2)) % q\n        fails += int(q // 4 < (c2 - c1 @ s) % q < 3 * q // 4) != t\n    print(f\"error uniform in [-{width}, {width}]: {fails:>4} of 1000 decryptions wrong\")\n\n# --- without noise the problem is linear algebra: Gaussian elimination mod q recovers the secret from n equations\ndef solve_mod(A_rows, rhs, q):\n    M = [list(map(int, row)) + [int(v)] for row, v in zip(A_rows, rhs)]\n    size = len(M[0]) - 1\n    for col in range(size):\n        pivot = next(r for r in range(col, len(M)) if M[r][col] % q)\n        M[col], M[pivot] = M[pivot], M[col]\n        inv = pow(M[col][col], -1, q)\n        M[col] = [x * inv % q for x in M[col]]\n        for r in range(len(M)):\n            if r != col and M[r][col]:\n                factor = M[r][col]\n                M[r] = [(x - factor * y) % q for x, y in zip(M[r], M[col])]\n    return np.array([M[i][-1] for i in range(size)])\nsecret_mod = s % q\nprint(\"exact equations (no error): Gaussian elimination recovers the secret:\", np.array_equal(solve_mod(A[:n], (A @ s)[:n] % q, q), secret_mod))\nprint(\"noisy equations (same A, error in {-2..2}): the same solver returns the secret:\", np.array_equal(solve_mod(A[:n], b[:n], q), secret_mod))\n\n# --- decision LWE by exhaustive search: feasible only because n and q are tiny\ntn, tq, tm = 4, 17, 12\ntA = rng.integers(0, tq, (tm, tn))\nts = rng.integers(0, tq, tn)\nte = rng.integers(-1, 2, tm)\nreal = (tA @ ts + te) % tq\nuniform = rng.integers(0, tq, tm)\ngrid = np.array(np.meshgrid(*[np.arange(tq)] * tn, indexing=\"ij\")).reshape(tn, -1).T      # all q^n candidate secrets\nresiduals = (grid @ tA.T - real[None, :] + tq // 2) % tq - tq // 2\nfits_real = int((np.abs(residuals).max(1) <= 1).sum())\nresiduals = (grid @ tA.T - uniform[None, :] + tq // 2) % tq - tq // 2\nfits_uniform = int((np.abs(residuals).max(1) <= 1).sum())\nprint(f\"toy LWE with n = {tn}, q = {tq}: {len(grid):,} candidate secrets tried; secrets consistent with small errors: real samples {fits_real}, uniform samples {fits_uniform}\")\nprint(f\"the search space q^n is {len(grid):,} here, but for n = 256 and q = 3329 it is 2^{256 * math.log2(3329):.0f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-lwe-basics",
+              "language": "text",
+              "code": "decryption correct for 2000 of 2000 random bits\nworst-case noise bound |r.e| <= m * max|e| = 256 against the decryption margin q/4 = 832 -> correct for every key and message\nmeasured noise r.e over 2000 encryptions: mean -2.87, standard deviation 6.11, largest 22; prediction |e| / 2 = 6.12 for this particular error vector\nerror uniform in [-100, 100]:   18 of 1000 decryptions wrong\nerror uniform in [-200, 200]:  289 of 1000 decryptions wrong\nerror uniform in [-300, 300]:  594 of 1000 decryptions wrong\nerror uniform in [-400, 400]:  454 of 1000 decryptions wrong\nexact equations (no error): Gaussian elimination recovers the secret: True\nnoisy equations (same A, error in {-2..2}): the same solver returns the secret: False\ntoy LWE with n = 4, q = 17: 83,521 candidate secrets tried; secrets consistent with small errors: real samples 1, uniform samples 0\nthe search space q^n is 83,521 here, but for n = 256 and q = 3329 it is 2^2995",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "With errors in [−2, 2] and 128 samples the worst possible noise is 256, far below q/4 = 832, so decryption is correct for every key and message (2,000 of 2,000 here), and the measured spread of the noise (6.11) matches the prediction |e|/2 = 6.12 for this key. When the error is widened the margin disappears: errors up to ±100 already give wrong decryptions for 18 of 1,000 bits, and at ±200 and ±300 the failure rate is 29 percent and 59 percent (it falls again at ±400 only because the noise wraps around modulo q). This is the **correctness/security tradeoff** of every LWE scheme: more noise is harder to attack but breaks decryption. Gaussian elimination recovers the secret from exact equations but returns a wrong answer on the noisy ones, which is the whole point of the error. The exhaustive-search demonstration in the last lines is feasible only because n = 4 and q = 17 (83,521 candidate secrets): it finds exactly one consistent secret for real samples and none for uniform samples, which is a **distinguisher**, and the search space for n = 256 and q = 3329 is 2^2995.\n\nBrute force is not the real threat. The relevant attack turns LWE into a lattice problem: the vector (e, 1) is an unusually short vector in a lattice built from the public key. This is **Kannan's embedding** (B07, section 2.2), and the second listing mounts it with LLL against toy instances."
+            },
+            {
+              "type": "code",
+              "id": "c-primal-attack",
+              "language": "python",
+              "code": "import math, random\nimport numpy as np\nfrom fractions import Fraction\n\ndef lll(basis, delta=0.99):\n    B = np.array(basis, dtype=np.int64)\n    n = len(B)\n    Bs = np.zeros((n, B.shape[1])); mu = np.zeros((n, n)); nrm = np.zeros(n)\n    valid = 0\n    def gram_schmidt_row(i):\n        v = B[i].astype(float)\n        for j in range(i):\n            mu[i, j] = (B[i] @ Bs[j]) / nrm[j]\n            v = v - mu[i, j] * Bs[j]\n        Bs[i] = v; nrm[i] = v @ v\n    k = 1\n    while k < n:\n        while valid <= k:\n            gram_schmidt_row(valid); valid += 1\n        for j in range(k - 1, -1, -1):                                  # size reduction\n            q = int(round(mu[k, j]))\n            if q:\n                B[k] -= q * B[j]\n                mu[k, :j + 1] -= q * np.concatenate((mu[j, :j], [1.0]))\n        gram_schmidt_row(k)\n        if nrm[k] >= (delta - mu[k, k - 1] ** 2) * nrm[k - 1]:        # Lovasz condition holds: move on\n            k += 1\n        else:                                                           # otherwise swap and step back\n            B[[k, k - 1]] = B[[k - 1, k]]\n            valid = max(k - 1, 0)\n            k = max(k - 1, 1)\n    return B.tolist()\n\ndef check_lll_reduced(basis, delta=0.98):\n    # exact rational verification of the two LLL conditions (the float code above is not trusted)\n    n = len(basis)\n    Bs, mu = [], [[Fraction(0)] * n for _ in range(n)]\n    sq = lambda v: sum(x * x for x in v)\n    for i in range(n):\n        v = [Fraction(x) for x in basis[i]]\n        for j in range(i):\n            mu[i][j] = sum(Fraction(a) * b for a, b in zip(basis[i], Bs[j])) / sq(Bs[j])\n            v = [a - mu[i][j] * b for a, b in zip(v, Bs[j])]\n        Bs.append(v)\n    tol = Fraction(1, 10 ** 9)\n    size_reduced = all(abs(mu[i][j]) <= Fraction(1, 2) + tol for i in range(n) for j in range(i))\n    d = Fraction(delta).limit_denominator(1000)\n    lovasz = all(sq(Bs[k]) >= (d - mu[k][k - 1] ** 2) * sq(Bs[k - 1]) - tol for k in range(1, n))\n    return size_reduced, lovasz\nrng = random.Random(3)\n\ndef lwe_instance(n, q, m, bound):\n    # \"normal form\" LWE: A = [I | A'] makes the lattice basis explicit; b = s A + e with errors in [-bound, bound]\n    A2 = [[rng.randrange(q) for _ in range(m - n)] for _ in range(n)]\n    A = [[1 if i == j else 0 for j in range(n)] + A2[i] for i in range(n)]\n    s = [rng.randrange(q) for _ in range(n)]\n    e = [rng.randint(-bound, bound) for _ in range(m)]\n    b = [(sum(s[i] * A[i][j] for i in range(n)) + e[j]) % q for j in range(m)]\n    return A, s, e, b\n\ndef primal_attack(A, b, q, n, m, bound):\n    # Kannan embedding: the lattice generated by the rows of A and q * I, plus the row (b, 1).\n    # The vector (b, 1) minus the lattice point s*A is (e, 1), which is unusually short; LLL may expose it.\n    basis = [row + [0] for row in A]\n    for j in range(m - n):\n        row = [0] * (m + 1); row[n + j] = q; basis.append(row)\n    basis.append(list(b) + [1])\n    reduced = lll(basis)\n    for v in reduced:\n        if abs(v[-1]) == 1:\n            candidate = [x * v[-1] for x in v[:-1]]\n            if max(abs(x) for x in candidate) <= bound:\n                return candidate, reduced\n    return None, reduced\n\nq, bound = 97, 1\nprint(f\"{'n':>3} {'samples m':>9} {'lattice dim':>12} {'error recovered':>16} {'secret recovered':>17}\")\nfor n in (8, 16, 24, 32):\n    m = 2 * n\n    ok_e = ok_s = 0\n    trials = 1 if n == 32 else 2\n    for _ in range(trials):\n        A, s, e, b = lwe_instance(n, q, m, bound)\n        candidate, reduced = primal_attack(A, b, q, n, m, bound)\n        if candidate == e:\n            ok_e += 1\n            recovered = [(b[i] - candidate[i]) % q for i in range(n)]       # the first n columns of A are the identity, so b - e starts with s\n            ok_s += recovered == s\n    print(f\"{n:>3} {m:>9} {m + 1:>12} {ok_e:>13} / {trials} {ok_s:>14} / {trials}\")\n\nA, s, e, b = lwe_instance(8, q, 16, bound)\ncandidate, reduced = primal_attack(A, b, q, 8, 16, bound)\nprint(\"for n = 8 the LLL basis passes the exact check of both LLL conditions:\", check_lll_reduced(reduced))\ndim = 17\ngaussian = math.sqrt(dim / (2 * math.pi * math.e)) * q ** ((16 - 8) / dim)\nprint(f\"why the attack can work: |(e, 1)| = {math.sqrt(sum(x * x for x in e) + 1):.2f}, while a typical shortest vector of a random lattice of this volume has length about {gaussian:.2f} (Gaussian heuristic), so (e, 1) is an unusually short, hence findable, vector\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-primal-attack",
+              "language": "text",
+              "code": "  n samples m  lattice dim  error recovered  secret recovered\n  8        16           17             2 / 2              2 / 2\n 16        32           33             2 / 2              2 / 2\n 24        48           49             2 / 2              2 / 2\n 32        64           65             1 / 1              1 / 1\nfor n = 8 the LLL basis passes the exact check of both LLL conditions: (True, True)\nwhy the attack can work: |(e, 1)| = 3.74, while a typical shortest vector of a random lattice of this volume has length about 8.59 (Gaussian heuristic), so (e, 1) is an unusually short, hence findable, vector",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "LLL recovered the complete error vector, and hence the secret, in every trial for secret lengths 8, 16, 24 and 32 (with q = 97, errors in {−1, 0, 1} and twice as many samples as unknowns). The reason is geometric: the target vector (e, 1) has norm about 3.7 while a typical shortest vector of that lattice has length about 8.6, so it is the unique unusually short vector and the reduction exposes it. The same code with n = 40 and m = 80 failed in all three trials when I tried it during authoring (about 50 seconds each, not part of the listing); the point where plain LLL stops working is exactly why real parameters use n·k of 512 and more. Stronger reduction (BKZ with large blocks) moves that threshold, and lesson 8.10 estimates by how much.\n\n**What this shows.** (1) The toy parameters are broken by a polynomial-time algorithm, so toy-size experiments can never support a security claim. (2) The attack needs the error to be *short*: the cost depends on the ratio between the error length and the lattice's natural scale, which is why the modulus q and the error width are chosen together. **Common mistake:** adding more samples always helps the attacker only up to a point; the estimator in 8.10 optimises the number of samples used."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why can't Gaussian elimination solve LWE when it solves the noise-free problem?",
+              "options": [
+                "Each equation carries a small error, so solving exactly produces a wrong secret",
+                "The matrix is singular",
+                "The modulus is composite"
+              ],
+              "correct_index": 0,
+              "explanation": "The solver's answer is exact for the noisy right-hand side, not for the true secret."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is unusual about the vector (e, 1) in Kannan's embedding?",
+              "options": [
+                "It is much shorter than a typical shortest vector of the lattice, so lattice reduction can expose it",
+                "It is the longest vector",
+                "It has no entries"
+              ],
+              "correct_index": 0,
+              "explanation": "The error is small, which makes (e, 1) unique and findable."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What happens to Regev-style decryption as the error width grows?",
+              "options": [
+                "The accumulated noise exceeds q/4 and decryptions fail",
+                "The key becomes longer",
+                "Nothing changes"
+              ],
+              "correct_index": 0,
+              "explanation": "Larger errors make attacks harder but threaten correctness."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B07",
+              "locator": "Nakamura and Yasuda, 'Expanded Lattices for Solving Ring-Based LWE and NTRU Problems': Section 2.2 (Kannan's embedding turns approximate CVP into approximate SVP) and the LWE sections"
+            },
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 3 (the ML-KEM construction rests on module-LWE) and Section 4 (centred binomial sampling)"
+            },
+            {
+              "book": "B03",
+              "locator": "Stinson, 'A Tutorial on Post-quantum Cryptography': the slide stating that many post-quantum schemes rely on the Learning With Errors problem"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Regev's worst-case-to-average-case reduction is cited from the literature and was not read here. The failure of the attack at n = 40 is a single authoring observation (3 of 3 trials), not part of a checked listing."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "8.3 Ring-LWE",
+          "summary": "Polynomial rings modulo x^256 + 1, the number-theoretic transform from FIPS 203 implemented and checked against schoolbook multiplication and kyber-py, and ring-LWE encryption with measured noise.",
+          "estimated_minutes": 75,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Plain LWE needs a huge matrix. **Ring-LWE** replaces the integers by the ring R_q = Z_q[x]/(x^n + 1): an element is a polynomial of degree below n and multiplication wraps around with a sign change because x^n = −1 (a **negacyclic** convolution). One ring element then plays the role of a whole n × n matrix, so public keys shrink by a factor of n, and multiplication can be done with a fast transform. The price is extra structure that plain LWE does not have, and the security assumption is correspondingly stronger (ring-LWE).\n\nThe fast transform is the **number-theoretic transform (NTT)**, a Fourier transform over Z_q. For ML-KEM q = 3329 = 2^8 · 13 + 1 and n = 256 (FIPS 203, section 4.3), so q has a primitive 256th root of unity ζ = 17 but no 512th root: the transform splits x^256 + 1 only down to 128 factors of degree 2, and the final pointwise step multiplies degree-1 polynomials (the base-case multiplication of FIPS 203, Algorithms 11 and 12). The listing implements Algorithms 9 to 12 from the standard, checks the NTT product against schoolbook multiplication, counts the modular multiplications, and compares the transform with the one inside kyber-py. The labs use Python with NumPy, plus the pure-Python reference libraries kyber-py and dilithium-py (the same ones used in B10) as independent cross-checks. Everything runs on your own machine and every attack is mounted against toy parameters generated in the lesson. The toy schemes are for understanding only and must never protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-ntt",
+              "language": "python",
+              "code": "import random\nfrom kyber_py.ml_kem import ML_KEM_512\n\nq, n = 3329, 256\nZETA = 17                                                               # a primitive 256th root of unity modulo 3329 (FIPS 203, section 4.3)\nbitrev7 = lambda i: int(format(i, \"07b\")[::-1], 2)\nzetas = [pow(ZETA, bitrev7(i), q) for i in range(128)]\ncounter = {\"mul\": 0}\ndef mulq(a, b):\n    counter[\"mul\"] += 1\n    return a * b % q\n\ndef ntt(f):                                                             # FIPS 203, Algorithm 9\n    f = list(f); i = 1; length = 128\n    while length >= 2:\n        for start in range(0, 256, 2 * length):\n            zeta = zetas[i]; i += 1\n            for j in range(start, start + length):\n                t = mulq(zeta, f[j + length])\n                f[j + length] = (f[j] - t) % q\n                f[j] = (f[j] + t) % q\n        length //= 2\n    return f\n\ndef inverse_ntt(f):                                                     # FIPS 203, Algorithm 10\n    f = list(f); i = 127; length = 2\n    while length <= 128:\n        for start in range(0, 256, 2 * length):\n            zeta = zetas[i]; i -= 1\n            for j in range(start, start + length):\n                t = f[j]\n                f[j] = (t + f[j + length]) % q\n                f[j + length] = mulq(zeta, (f[j + length] - t) % q)\n        length *= 2\n    return [mulq(x, 3303) for x in f]                                   # 3303 = 128^-1 mod 3329\n\ndef multiply_ntts(f, g):                                                # FIPS 203, Algorithms 11 and 12: 128 products of degree-1 polynomials\n    h = [0] * 256\n    for i in range(128):\n        gamma = pow(ZETA, 2 * bitrev7(i) + 1, q)\n        a0, a1, b0, b1 = f[2 * i], f[2 * i + 1], g[2 * i], g[2 * i + 1]\n        h[2 * i] = (mulq(a0, b0) + mulq(mulq(a1, b1), gamma)) % q\n        h[2 * i + 1] = (mulq(a0, b1) + mulq(a1, b0)) % q\n    return h\n\ndef schoolbook(f, g):                                                   # multiplication in Z_q[x] / (x^256 + 1): x^256 = -1\n    h = [0] * 256\n    for i in range(256):\n        for j in range(256):\n            k = i + j\n            if k < 256: h[k] = (h[k] + f[i] * g[j]) % q\n            else: h[k - 256] = (h[k - 256] - f[i] * g[j]) % q\n    return h\n\nrng = random.Random(9)\nprint(\"q - 1 =\", q - 1, \"= 2^8 * 13, so q has 256th roots of unity but no 512th root:\", pow(ZETA, 128, q) == q - 1, \"(zeta^128 = -1)\", \"| (q - 1) divisible by 512:\", (q - 1) % 512 == 0)\nf = [rng.randrange(q) for _ in range(256)]\ng = [rng.randrange(q) for _ in range(256)]\nprint(\"inverse NTT undoes the NTT:\", inverse_ntt(ntt(f)) == f)\ncounter[\"mul\"] = 0\nproduct_ntt = inverse_ntt(multiply_ntts(ntt(f), ntt(g)))\nntt_cost = counter[\"mul\"]\nprint(\"NTT-based product equals the schoolbook product mod x^256 + 1:\", product_ntt == schoolbook(f, g), \"| 20 more random pairs:\", all(\n    inverse_ntt(multiply_ntts(ntt(a), ntt(b))) == schoolbook(a, b) for a, b in ((([rng.randrange(q) for _ in range(256)]), ([rng.randrange(q) for _ in range(256)])) for _ in range(20))))\nprint(f\"modular multiplications: schoolbook {256 * 256:,}; NTT route {ntt_cost:,} (two forward NTTs, 128 base-case products, one inverse NTT), about {256 * 256 / ntt_cost:.0f} times fewer\")\n\nreference = ML_KEM_512.R(list(f)).to_ntt().coeffs                  # kyber-py transforms the list in place, so pass a copy\nprint(\"my NTT of f equals the NTT inside kyber-py:\", list(reference) == ntt(f))\nunit = [0] * 256; unit[1] = 1\nxpow = f\nfor _ in range(256):                                                    # multiplying by x 256 times is multiplying by x^256 = -1\n    xpow = schoolbook(xpow, unit)\nprint(\"negacyclic wrap: x^256 times f equals -f:\", xpow == [(-c) % q for c in f])\nprint(\"the NTT is a ring isomorphism: product of NTTs is the NTT of the product (coefficient-wise on 128 degree-1 pieces):\", multiply_ntts(ntt(f), ntt(g)) == ntt(schoolbook(f, g)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-ntt",
+              "language": "text",
+              "code": "q - 1 = 3328 = 2^8 * 13, so q has 256th roots of unity but no 512th root: True (zeta^128 = -1) | (q - 1) divisible by 512: False\ninverse NTT undoes the NTT: True\nNTT-based product equals the schoolbook product mod x^256 + 1: True | 20 more random pairs: True\nmodular multiplications: schoolbook 65,536; NTT route 3,584 (two forward NTTs, 128 base-case products, one inverse NTT), about 18 times fewer\nmy NTT of f equals the NTT inside kyber-py: True\nnegacyclic wrap: x^256 times f equals -f: True\nthe NTT is a ring isomorphism: product of NTTs is the NTT of the product (coefficient-wise on 128 degree-1 pieces): True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The NTT-based product equals schoolbook multiplication for every pair tested, and the transform equals kyber-py's output coefficient by coefficient (note that kyber-py transforms the list it is given in place). The cost is 3,584 modular multiplications against 65,536, about 18 times fewer, which matters because ML-KEM multiplies many ring elements per operation. The check that x^256 · f = −f confirms the negacyclic wrap-around, and the incomplete structure is visible in the arithmetic: 3328 is not divisible by 512, so there is no complete NTT for q = 3329 (ML-DSA's q behaves differently; see 8.5).\n\nThe second listing builds the cryptosystem on top: a ring-LWE (Lyubashevsky-Peikert-Regev style) encryption of 256 bits at once."
+            },
+            {
+              "type": "code",
+              "id": "c-ringlwe",
+              "language": "python",
+              "code": "import math\nimport numpy as np\n\nq, n, eta = 3329, 256, 2\nrng = np.random.default_rng(11)\n\ndef cbd(size=n):\n    return rng.integers(0, 2, (size, eta)).sum(1) - rng.integers(0, 2, (size, eta)).sum(1)\n\ndef ring_mul(f, g):\n    # product in Z_q[x] / (x^256 + 1): the part of the product above degree 255 wraps around with a minus sign\n    c = np.convolve(f, g)\n    c = np.concatenate((c, np.zeros(2 * n - len(c), dtype=c.dtype)))\n    return (c[:n] - c[n:]) % q\n\n# --- ring-LWE public-key encryption of 256 bits at once (message bit i is carried by coefficient i)\na = rng.integers(0, q, n)                                              # one uniformly random ring element is the whole \"matrix\"\ns, e = cbd(), cbd()\nb = (ring_mul(a, s) + e) % q\nhalf = (q + 1) // 2                                                    # 1665, the encoding of a 1 bit\n\ndef encrypt(message):\n    r, e1, e2 = cbd(), cbd(), cbd()\n    u = (ring_mul(a, r) + e1) % q\n    v = (ring_mul(b, r) + e2 + half * message) % q\n    return u, v\n\ndef decrypt(u, v):\n    x = (v - ring_mul(s, u)) % q\n    return ((x > q // 4) & (x < 3 * q // 4)).astype(int)\n\ntrials, wrong_bits, noise_samples = 300, 0, []\nfor _ in range(trials):\n    message = rng.integers(0, 2, n)\n    u, v = encrypt(message)\n    wrong_bits += int((decrypt(u, v) != message).sum())\n    noise = ((v - ring_mul(s, u) - half * message + q // 2) % q) - q // 2          # the decryption noise, centred around 0\n    noise_samples.append(noise)\nnoise_samples = np.concatenate(noise_samples)\nprint(f\"{trials} encryptions of 256 random bits: {wrong_bits} wrong bits out of {trials * n:,}\")\nvariance = 2 * n * 1.0 * 1.0 + 1.0                                     # Var(e r) + Var(s e1) + Var(e2), each coefficient with variance eta/2 = 1\nprint(f\"decryption noise: standard deviation {noise_samples.std():.2f} measured, {math.sqrt(variance):.2f} predicted (sqrt(2 * 256 + 1)); largest seen {int(np.abs(noise_samples).max())}\")\nprint(f\"the failure threshold q/4 = {q // 4} is {(q // 4) / math.sqrt(variance):.0f} standard deviations away, so failures never occur in practice\")\n\n# --- what the ring structure buys: size of the public matrix\nunstructured_bits = n * n * 12                                         # a 256 x 256 matrix of 12-bit numbers (LWE with the same secret length)\nring_bits = n * 12                                                     # one ring element describes the whole matrix\nprint(f\"public matrix for secret length 256: unstructured LWE {unstructured_bits // 8:,} bytes, ring-LWE {ring_bits // 8:,} bytes (factor {unstructured_bits // ring_bits})\")\nrows = np.array([np.roll(a, i) for i in range(n)])                      # multiplication by a is a 256 x 256 matrix that is determined by its first row\nfor i in range(n):\n    rows[i, :i] = (-rows[i, :i]) % q                                    # entries that wrapped around pick up a minus sign\nx = rng.integers(0, q, n)\nprint(\"multiplying by a equals multiplying by a negacyclic 256 x 256 matrix built from a single row:\", np.array_equal((x @ rows) % q, ring_mul(a, x)))\nprint(\"so a ring-LWE sample is an LWE sample whose matrix has this special structure; the extra structure is the extra assumption\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-ringlwe",
+              "language": "text",
+              "code": "300 encryptions of 256 random bits: 0 wrong bits out of 76,800\ndecryption noise: standard deviation 23.24 measured, 22.65 predicted (sqrt(2 * 256 + 1)); largest seen 97\nthe failure threshold q/4 = 832 is 37 standard deviations away, so failures never occur in practice\npublic matrix for secret length 256: unstructured LWE 98,304 bytes, ring-LWE 384 bytes (factor 256)\nmultiplying by a equals multiplying by a negacyclic 256 x 256 matrix built from a single row: True\nso a ring-LWE sample is an LWE sample whose matrix has this special structure; the extra structure is the extra assumption",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "All 76,800 encrypted bits decrypt correctly. The decryption noise has measured standard deviation 23.2 against the predicted sqrt(2·256 + 1) = 22.65 (each coefficient of e·r and s·e1 is a sum of 256 products of unit-variance values, plus e2), so the failure threshold q/4 = 832 is about 37 standard deviations away. The ring structure shrinks the public matrix for a secret of length 256 from 98,304 bytes to 384 bytes, a factor of 256, and the last check shows that multiplication by one polynomial *is* multiplication by a 256 × 256 matrix that is fixed by its first row (with sign changes for the wrapped entries). A ring-LWE sample is therefore an LWE sample with a structured matrix, and every attack on plain LWE applies, while a hypothetical attack could also exploit the structure; no such attack better than the general ones is known for these parameters, and that is an assumption and not a theorem.\n\n**Common mistakes:** forgetting the sign when a product wraps past x^255 (this gives a cyclic and not a negacyclic ring, with different security properties), and confusing the NTT-domain representation with coefficients when serialising (FIPS 203 keeps keys in a defined byte format for exactly this reason)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is multiplication in Z_q[x]/(x^256 + 1) called negacyclic?",
+              "options": [
+                "Terms past degree 255 wrap around with a minus sign because x^256 = -1",
+                "Coefficients are negative",
+                "It uses a cyclic group of order 256"
+              ],
+              "correct_index": 0,
+              "explanation": "x^256 equals minus one in this ring."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does ML-KEM's NTT stop at degree-2 pieces?",
+              "options": [
+                "q = 3329 has a primitive 256th root of unity but no 512th",
+                "The standard forbids it",
+                "Degree-1 pieces are faster"
+              ],
+              "correct_index": 0,
+              "explanation": "q - 1 = 2^8 * 13 is not divisible by 512."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does the ring structure save and what does it cost?",
+              "options": [
+                "It shrinks keys by a factor of n and adds structure whose hardness is a stronger assumption",
+                "It makes the scheme unconditionally secure",
+                "It removes the need for noise"
+              ],
+              "correct_index": 0,
+              "explanation": "The ring-LWE assumption is stronger than the LWE assumption."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 4.3 (Number-theoretic transform: zeta = 17, Algorithms 9 and 10; multiplication in T_q, Algorithms 11 and 12)"
+            },
+            {
+              "book": "B90",
+              "locator": "kyber-py: R.to_ntt() used as the independent reference for the transform"
+            },
+            {
+              "book": "B07",
+              "locator": "Nakamura and Yasuda, 'Expanded Lattices for Solving Ring-Based LWE and NTRU Problems': ring-LWE and the expanded lattice of a ring element"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The LPR-style scheme in the listing is a teaching construction using the ML-KEM ring and noise, not ML-KEM itself (no compression, no re-encryption check). The statement that no better-than-general attack on these ring parameters is known is a general summary, not a sourced claim."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "8.4 Module-LWE",
+          "summary": "A module-LWE sample seen as a structured integer LWE sample, and the ML-KEM sizes and parameters reproduced from FIPS 203 and checked against kyber-py.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Module-LWE** sits between the two extremes. The public matrix A is a k × k matrix of ring elements, and the secret and error are vectors of k ring elements. With k = 1 it is ring-LWE; with n = 1 and large k it is plain LWE. A module scheme reaches different security levels by changing the **rank k** while the ring, the modulus and the noise stay the same, which is why ML-KEM-512, -768 and -1024 differ mainly in k = 2, 3, 4 (FIPS 203, Table 2) and why the same optimised ring arithmetic serves all three. A smaller structure than ring-LWE per level, a larger one than plain LWE, makes the extra-structure assumption weaker than for ring-LWE of the same dimension.\n\nThe first listing computes a module-LWE sample with ring arithmetic and again as an ordinary integer LWE sample with a 512 × 512 matrix built from negacyclic blocks, and shows that the two views agree. The second reproduces the key and ciphertext size formulas of ML-KEM from the parameters and compares them with FIPS 203 Table 3 and with the real objects produced by kyber-py. The labs use Python with NumPy, plus the pure-Python reference libraries kyber-py and dilithium-py (the same ones used in B10) as independent cross-checks. Everything runs on your own machine and every attack is mounted against toy parameters generated in the lesson. The toy schemes are for understanding only and must never protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-modulelwe",
+              "language": "python",
+              "code": "import numpy as np\n\nq, n, eta = 3329, 256, 2\nrng = np.random.default_rng(21)\ncbd = lambda: rng.integers(0, 2, (n, eta)).sum(1) - rng.integers(0, 2, (n, eta)).sum(1)\n\ndef ring_mul(f, g):\n    c = np.convolve(f, g)\n    c = np.concatenate((c, np.zeros(2 * n - len(c), dtype=c.dtype)))\n    return (c[:n] - c[n:]) % q\n\ndef negacyclic_block(a):\n    # the n x n integer matrix M(a) with M(a) @ x = a * x in the ring (column j holds a * x^j)\n    M = np.zeros((n, n), dtype=np.int64)\n    for j in range(n):\n        shifted = np.zeros(n, dtype=np.int64)\n        shifted[j:] = a[:n - j]\n        shifted[:j] = -a[n - j:]                                        # coefficients that pass x^255 come back negated\n        M[:, j] = shifted % q\n    return M\n\nk = 2                                                                   # module rank of ML-KEM-512\nA = [[rng.integers(0, q, n) for _ in range(k)] for _ in range(k)]       # a k x k matrix of ring elements\ns = [cbd() for _ in range(k)]\ne = [cbd() for _ in range(k)]\n\n# the module-LWE sample b = A s + e, computed with ring arithmetic\nb_ring = [(sum(ring_mul(A[i][j], s[j]) for j in range(k)) + e[i]) % q for i in range(k)]\n\n# the same sample as an ordinary LWE sample: a (k*n) x (k*n) integer matrix, secret and error of length k*n\nbig = np.block([[negacyclic_block(A[i][j]) for j in range(k)] for i in range(k)])\nb_flat = (big @ np.concatenate(s) + np.concatenate(e)) % q\nprint(\"module-LWE sample, ring view and integer-matrix view agree:\", np.array_equal(np.concatenate(b_ring), b_flat))\nprint(f\"the equivalent LWE problem has dimension {k * n} (secret length), an integer matrix with {big.size:,} entries, but only {k * k * n:,} of them are independent\")\nprint(\"independent entries / matrix entries =\", f\"1/{big.size // (k * k * n)}\", \"- this redundancy is the algebraic structure that standard LWE does not have\")\n\nprint()\nprint(\"the module rank k sets the secret length n * k (n = 256) and the size of the public matrix:\")\nprint(f\"{'k':>3} {'secret length':>14} {'ring elements in A':>19} {'size of A (12-bit coefficients)':>32} {'unstructured LWE, same secret length':>38}\")\nfor kk in (1, 2, 3, 4):\n    print(f\"{kk:>3} {kk * n:>14} {kk * kk:>19} {kk * kk * n * 12 // 8:>26,} bytes {(kk * n) ** 2 * 12 // 8:>32,} bytes\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-modulelwe",
+              "language": "text",
+              "code": "module-LWE sample, ring view and integer-matrix view agree: True\nthe equivalent LWE problem has dimension 512 (secret length), an integer matrix with 262,144 entries, but only 1,024 of them are independent\nindependent entries / matrix entries = 1/256 - this redundancy is the algebraic structure that standard LWE does not have\n\nthe module rank k sets the secret length n * k (n = 256) and the size of the public matrix:\n  k  secret length  ring elements in A  size of A (12-bit coefficients)   unstructured LWE, same secret length\n  1            256                   1                        384 bytes                           98,304 bytes\n  2            512                   4                      1,536 bytes                          393,216 bytes\n  3            768                   9                      3,456 bytes                          884,736 bytes\n  4           1024                  16                      6,144 bytes                        1,572,864 bytes",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The two views agree. The equivalent plain LWE problem has secret length 512 and a matrix with 262,144 entries, but only 1,024 of them are independent, a redundancy of a factor of 256: that redundancy is the module (and ring) structure. For rank 4 the public matrix is 6,144 bytes against 1,572,864 for an unstructured matrix of the same secret length."
+            },
+            {
+              "type": "code",
+              "id": "c-mlkem-sizes",
+              "language": "python",
+              "code": "from kyber_py.ml_kem import ML_KEM_512, ML_KEM_768, ML_KEM_1024\n\n# FIPS 203, Table 2 (k, eta1, eta2, du, dv) and Table 3 (sizes in bytes), typed from the standard\ntable2 = {\"ML-KEM-512\": (2, 3, 2, 10, 4), \"ML-KEM-768\": (3, 2, 2, 10, 4), \"ML-KEM-1024\": (4, 2, 2, 11, 5)}\ntable3 = {\"ML-KEM-512\": (800, 1632, 768), \"ML-KEM-768\": (1184, 2400, 1088), \"ML-KEM-1024\": (1568, 3168, 1568)}\ninstances = {\"ML-KEM-512\": ML_KEM_512, \"ML-KEM-768\": ML_KEM_768, \"ML-KEM-1024\": ML_KEM_1024}\n\nprint(f\"{'parameter set':<12} {'(k, eta1, eta2, du, dv)':<26} {'matches Table 2':<16} {'ek formula':>10} {'ek real':>8} {'dk formula':>11} {'dk real':>8} {'ct formula':>11} {'ct real':>8} {'matches Table 3'}\")\nfor name, (k, eta1, eta2, du, dv) in table2.items():\n    kem = instances[name]\n    ek, dk = kem.keygen()\n    key, ct = kem.encaps(ek)\n    ek_formula = 384 * k + 32                                          # k polynomials of 256 12-bit coefficients, plus the 32-byte seed for the matrix\n    dk_formula = 768 * k + 96                                          # decryption key + ek + hash of ek + rejection value z\n    ct_formula = 32 * (du * k + dv)                                    # k polynomials compressed to du bits, one compressed to dv bits\n    params = (kem.k, kem.eta_1, kem.eta_2, kem.du, kem.dv)\n    real = (len(ek), len(dk), len(ct))\n    print(f\"{name:<12} {str(params):<26} {str(params == (k, eta1, eta2, du, dv)):<16} {ek_formula:>10} {len(ek):>8} {dk_formula:>11} {len(dk):>8} {ct_formula:>11} {len(ct):>8} {real == table3[name] and (ek_formula, dk_formula, ct_formula) == table3[name]}\")\n    assert kem.decaps(dk, ct) == key\nprint(\"encapsulation and decapsulation agree for all three parameter sets\")\n\nprint()\nprint(\"lattice dimension of the underlying LWE problem and the secret/error distributions:\")\nfor name, (k, eta1, eta2, du, dv) in table2.items():\n    print(f\"{name}: secret and error vectors of length {256 * k}, secret coefficients in [-{eta1}, {eta1}] (variance {eta1 / 2}), encryption noise in [-{eta2}, {eta2}], u compressed to {du} bits, v to {dv} bits\")\nprint(\"the modulus q = 3329 and the ring degree n = 256 are the same for all three: the security level is scaled only by the module rank k\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-mlkem-sizes",
+              "language": "text",
+              "code": "parameter set (k, eta1, eta2, du, dv)    matches Table 2  ek formula  ek real  dk formula  dk real  ct formula  ct real matches Table 3\nML-KEM-512   (2, 3, 2, 10, 4)           True                    800      800        1632     1632         768      768 True\nML-KEM-768   (3, 2, 2, 10, 4)           True                   1184     1184        2400     2400        1088     1088 True\nML-KEM-1024  (4, 2, 2, 11, 5)           True                   1568     1568        3168     3168        1568     1568 True\nencapsulation and decapsulation agree for all three parameter sets\n\nlattice dimension of the underlying LWE problem and the secret/error distributions:\nML-KEM-512: secret and error vectors of length 512, secret coefficients in [-3, 3] (variance 1.5), encryption noise in [-2, 2], u compressed to 10 bits, v to 4 bits\nML-KEM-768: secret and error vectors of length 768, secret coefficients in [-2, 2] (variance 1.0), encryption noise in [-2, 2], u compressed to 10 bits, v to 4 bits\nML-KEM-1024: secret and error vectors of length 1024, secret coefficients in [-2, 2] (variance 1.0), encryption noise in [-2, 2], u compressed to 11 bits, v to 5 bits\nthe modulus q = 3329 and the ring degree n = 256 are the same for all three: the security level is scaled only by the module rank k",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "The formulas ek = 384k + 32, dk = 768k + 96 and ciphertext = 32(d_u·k + d_v) reproduce all nine numbers of FIPS 203 Table 3 and the lengths of the real keys produced by kyber-py, and the parameters read from kyber-py equal Table 2. They also explain the sizes: an encapsulation key is k polynomials of 256 twelve-bit coefficients plus a 32-byte seed for A, and the ciphertext is compressed (u to d_u bits, v to d_v bits) to save bandwidth at the price of extra noise, which is part of why the decryption failure rate is not simply determined by η (lesson 8.10).\n\n**Design takeaway.** Scaling security by the module rank, not by changing q or n, keeps one implementation, one NTT and one set of constants for all three levels; this is an engineering argument, not a security proof, and the security level of each set comes from the estimates of 8.10."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How do the three ML-KEM parameter sets differ in structure?",
+              "options": [
+                "Mainly in the module rank k (2, 3, 4), with the same ring, modulus and similar noise",
+                "They use different moduli",
+                "They use different ring degrees"
+              ],
+              "correct_index": 0,
+              "explanation": "n = 256 and q = 3329 are fixed in FIPS 203."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does a module-LWE public matrix take far fewer bytes than an unstructured LWE matrix of the same secret length?",
+              "options": [
+                "Each ring element describes a whole negacyclic block",
+                "The entries are smaller",
+                "The matrix is sparse"
+              ],
+              "correct_index": 0,
+              "explanation": "Only k*k*n of the (k*n)^2 entries are independent."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What fixes the size of an ML-KEM ciphertext?",
+              "options": [
+                "32(d_u k + d_v) bytes, from the compression parameters and the rank",
+                "The message length",
+                "The shared secret size only"
+              ],
+              "correct_index": 0,
+              "explanation": "u has k polynomials compressed to d_u bits, v one polynomial compressed to d_v bits."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Table 1 (decapsulation failure rates), Table 2 (parameter sets) and Table 3 (sizes of keys and ciphertexts)"
+            },
+            {
+              "book": "B90",
+              "locator": "kyber-py: ML_KEM_512, ML_KEM_768, ML_KEM_1024 keygen, encaps and decaps used to check sizes and parameters"
+            },
+            {
+              "book": "B07",
+              "locator": "Nakamura and Yasuda: structured (ring and module) LWE viewed as LWE with an expanded lattice"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The comparison of module-LWE with ring-LWE and plain LWE in assumption strength is a general statement from the literature, not from a source read for this lesson."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "8.5 SIS/Module-SIS",
+          "summary": "The short integer solution problem as a hash-collision problem, an LLL attack that finds a collision for the smallest toy and fails for larger ones, and the ring structure of ML-DSA.",
+          "estimated_minutes": 65,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **Short Integer Solution (SIS)** problem: given a random matrix A in Z_q^(n×m), find a non-zero short integer vector x with A x = 0 (mod q). It is the dual partner of LWE and the basis of lattice signatures and hashing. **Ajtai's hash** h(x) = A x mod q on bit strings x in {0,1}^m compresses when m > n log2 q, and a collision (x1 ≠ x2 with h(x1) = h(x2)) is exactly a SIS solution x1 − x2 with entries in {−1, 0, 1}, so finding collisions is as hard as SIS. The vectors with A x = 0 form a q-ary lattice of volume q^n, so SIS is a short-vector problem in that lattice, and LLL applies. **Module-SIS** replaces integers by module elements over R_q in the same way module-LWE does.\n\nML-DSA (FIPS 204) is a lattice signature built on these problems; the design reduces forgery to module-SIS and key recovery to module-LWE (a statement from the design literature, not from the standard text). The first listing builds Ajtai hashes of increasing size and attacks them with LLL; the second reproduces the ML-DSA parameters and key and signature sizes from FIPS 204 and checks them against dilithium-py. The labs use Python with NumPy, plus the pure-Python reference libraries kyber-py and dilithium-py (the same ones used in B10) as independent cross-checks. Everything runs on your own machine and every attack is mounted against toy parameters generated in the lesson. The toy schemes are for understanding only and must never protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-sis",
+              "language": "python",
+              "code": "import math, random\nimport numpy as np\nfrom fractions import Fraction\n\ndef lll(basis, delta=0.99):\n    B = np.array(basis, dtype=np.int64)\n    n = len(B)\n    Bs = np.zeros((n, B.shape[1])); mu = np.zeros((n, n)); nrm = np.zeros(n)\n    valid = 0\n    def gram_schmidt_row(i):\n        v = B[i].astype(float)\n        for j in range(i):\n            mu[i, j] = (B[i] @ Bs[j]) / nrm[j]\n            v = v - mu[i, j] * Bs[j]\n        Bs[i] = v; nrm[i] = v @ v\n    k = 1\n    while k < n:\n        while valid <= k:\n            gram_schmidt_row(valid); valid += 1\n        for j in range(k - 1, -1, -1):                                  # size reduction\n            q = int(round(mu[k, j]))\n            if q:\n                B[k] -= q * B[j]\n                mu[k, :j + 1] -= q * np.concatenate((mu[j, :j], [1.0]))\n        gram_schmidt_row(k)\n        if nrm[k] >= (delta - mu[k, k - 1] ** 2) * nrm[k - 1]:        # Lovasz condition holds: move on\n            k += 1\n        else:                                                           # otherwise swap and step back\n            B[[k, k - 1]] = B[[k - 1, k]]\n            valid = max(k - 1, 0)\n            k = max(k - 1, 1)\n    return B.tolist()\n\ndef check_lll_reduced(basis, delta=0.98):\n    # exact rational verification of the two LLL conditions (the float code above is not trusted)\n    n = len(basis)\n    Bs, mu = [], [[Fraction(0)] * n for _ in range(n)]\n    sq = lambda v: sum(x * x for x in v)\n    for i in range(n):\n        v = [Fraction(x) for x in basis[i]]\n        for j in range(i):\n            mu[i][j] = sum(Fraction(a) * b for a, b in zip(basis[i], Bs[j])) / sq(Bs[j])\n            v = [a - mu[i][j] * b for a, b in zip(v, Bs[j])]\n        Bs.append(v)\n    tol = Fraction(1, 10 ** 9)\n    size_reduced = all(abs(mu[i][j]) <= Fraction(1, 2) + tol for i in range(n) for j in range(i))\n    d = Fraction(delta).limit_denominator(1000)\n    lovasz = all(sq(Bs[k]) >= (d - mu[k][k - 1] ** 2) * sq(Bs[k - 1]) - tol for k in range(1, n))\n    return size_reduced, lovasz\nrng = random.Random(1)\n\ndef sis_instance(n, q, m):\n    # A = [A' | I] (n x m) over Z_q. The lattice {x : A x = 0 mod q} has an explicit basis and volume q^n.\n    A1 = [[rng.randrange(q) for _ in range(m - n)] for _ in range(n)]\n    A = [row + [1 if i == j else 0 for j in range(n)] for i, row in enumerate(A1)]\n    basis = []\n    for i in range(m - n):\n        row = [0] * m; row[i] = 1\n        for r in range(n): row[m - n + r] = (-A1[r][i]) % q\n        basis.append(row)\n    for r in range(n):\n        row = [0] * m; row[m - n + r] = q; basis.append(row)\n    return A, basis\n\ndef matvec(A, x, q):\n    return [sum(a * b for a, b in zip(row, x)) % q for row in A]\n\nq = 257\nprint(\"Ajtai-style hash h(x) = A x mod q on bit strings x in {0,1}^m; a collision is two different bit strings with the same hash\")\nprint(f\"{'n':>3} {'m':>4} {'input bits':>10} {'output bits':>12} {'shortest LLL vector':>20} {'largest entry':>14} {'collision?'}\")\nfor n, m in ((6, 60), (8, 80), (10, 100), (12, 120)):\n    A, basis = sis_instance(n, q, m)\n    reduced = lll(basis)\n    v = min(reduced, key=lambda x: sum(a * a for a in x))\n    norm = math.sqrt(sum(a * a for a in v))\n    largest = max(abs(a) for a in v)\n    verdict = \"\"\n    if largest <= 1:\n        x1 = [1 if a == 1 else 0 for a in v]                           # the positive part of the short vector\n        x2 = [1 if a == -1 else 0 for a in v]                          # the negative part: A (x1 - x2) = 0, so A x1 = A x2\n        assert x1 != x2 and matvec(A, x1, q) == matvec(A, x2, q)\n        verdict = f\"yes: two distinct inputs with {sum(x1)} and {sum(x2)} ones hash to the same value\"\n    else:\n        verdict = f\"no: an entry of size {largest} is not a difference of two bit strings\"\n    print(f\"{n:>3} {m:>4} {m:>10} {round(n * math.log2(q)):>12} {norm:>20.2f} {largest:>14} {verdict}\")\n\nprint()\nprint(\"the pigeonhole bound says collisions exist once 2^m > q^n; the attack needs more: a short enough kernel vector\")\nfor n, m in ((6, 60), (8, 80), (10, 100), (12, 120)):\n    ternary_vectors = math.log2(3) * m - n * math.log2(q)\n    print(f\"n = {n:>2}, m = {m:>2}: expected number of kernel vectors with entries in {{-1, 0, 1}} is about 2^{ternary_vectors:.0f}\" if ternary_vectors > 0 else f\"n = {n:>2}, m = {m:>2}: no ternary kernel vector is expected\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-sis",
+              "language": "text",
+              "code": "Ajtai-style hash h(x) = A x mod q on bit strings x in {0,1}^m; a collision is two different bit strings with the same hash\n  n    m input bits  output bits  shortest LLL vector  largest entry collision?\n  6   60         60           48                 4.24              1 yes: two distinct inputs with 9 and 9 ones hash to the same value\n  8   80         80           64                 5.00              2 no: an entry of size 2 is not a difference of two bit strings\n 10  100        100           80                 6.93              2 no: an entry of size 2 is not a difference of two bit strings\n 12  120        120           96                 9.27              2 no: an entry of size 2 is not a difference of two bit strings\n\nthe pigeonhole bound says collisions exist once 2^m > q^n; the attack needs more: a short enough kernel vector\nn =  6, m = 60: expected number of kernel vectors with entries in {-1, 0, 1} is about 2^47\nn =  8, m = 80: expected number of kernel vectors with entries in {-1, 0, 1} is about 2^63\nn = 10, m = 100: expected number of kernel vectors with entries in {-1, 0, 1} is about 2^78\nn = 12, m = 120: expected number of kernel vectors with entries in {-1, 0, 1} is about 2^94",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "For the smallest instance (n = 6, m = 60, so 60 input bits against 48 output bits) LLL finds a kernel vector with entries in {−1, 0, 1}; splitting it into its positive and negative parts gives two different bit strings that hash to the same value, a **real collision** verified by the code. For the larger instances LLL finds shorter vectors (norm 5 to 9) but their largest entry is 2, so they are **not** differences of bit strings: no collision. The last lines explain why this is a limit of the algorithm and not of the problem: for n = 8, m = 80 about 2^63 ternary kernel vectors are expected to exist, but LLL does not find one. That is the gap between *existence* and *findability* on which SIS-based security rests, and it widens quickly with dimension.\n\nNow the real parameters."
+            },
+            {
+              "type": "code",
+              "id": "c-mldsa-params",
+              "language": "python",
+              "code": "from dilithium_py.ml_dsa import ML_DSA_44, ML_DSA_65, ML_DSA_87\n\nq = 8380417\nprint(\"q = 2^23 - 2^13 + 1:\", q == 2 ** 23 - 2 ** 13 + 1, \"| q - 1 =\", q - 1, \"= 2^13 *\", (q - 1) // 2 ** 13, \"| 512 divides q - 1:\", (q - 1) % 512 == 0)\nprint(\"zeta = 1753 is a primitive 512th root of unity (zeta^256 = -1):\", pow(1753, 256, q) == q - 1, \"-> a complete NTT down to degree-0 pieces is possible for ML-DSA, unlike ML-KEM (q = 3329, only 256th roots)\")\n\n# FIPS 204, Table 1 (typed from the standard): (k, l), eta, tau, gamma1, gamma2 divisor, beta, omega\ntable1 = {\"ML-DSA-44\": ((4, 4), 2, 39, 2 ** 17, 88, 78, 80), \"ML-DSA-65\": ((6, 5), 4, 49, 2 ** 19, 32, 196, 55), \"ML-DSA-87\": ((8, 7), 2, 60, 2 ** 19, 32, 120, 75)}\ntable2 = {\"ML-DSA-44\": (1312, 2560, 2420), \"ML-DSA-65\": (1952, 4032, 3309), \"ML-DSA-87\": (2592, 4896, 4627)}     # FIPS 204 Table 2: pk, sk, signature bytes\ninstances = {\"ML-DSA-44\": ML_DSA_44, \"ML-DSA-65\": ML_DSA_65, \"ML-DSA-87\": ML_DSA_87}\nbitlen = lambda x: x.bit_length()\n\nprint()\nprint(f\"{'parameter set':<10} {'parameters match Table 1':>25} {'beta = tau * eta':>17} {'pk formula/real':>16} {'sk formula/real':>16} {'sig formula/real':>17} {'matches Table 2':>16}\")\nfor name, ((k, l), eta, tau, gamma1, divisor, beta, omega) in table1.items():\n    dsa = instances[name]\n    same = (dsa.k, dsa.l) == (k, l) and (dsa.eta, dsa.tau, dsa.gamma_1, dsa.gamma_2, dsa.beta, dsa.omega) == (eta, tau, gamma1, (q - 1) // divisor, beta, omega)\n    d = 13\n    pk_formula = 32 + 32 * k * (bitlen(q - 1) - d)                          # seed rho + k polynomials of the high bits t1 (10 bits per coefficient)\n    sk_formula = 32 + 32 + 64 + 32 * ((l + k) * bitlen(2 * eta) + d * k)    # rho, K, tr, then s1, s2 and the low bits t0\n    sig_formula = dsa.c_tilde_bytes + 32 * l * (1 + bitlen(gamma1 - 1)) + omega + k       # challenge hash, z, hint\n    pk, sk = dsa.keygen()\n    message = b\"a message signed with a toy parameter check\"\n    signature = dsa.sign(sk, message)\n    assert dsa.verify(pk, message, signature) and not dsa.verify(pk, message + b\"!\", signature)\n    print(f\"{name:<10} {str(same):>25} {str(beta == tau * eta):>17} {str((pk_formula, len(pk))):>16} {str((sk_formula, len(sk))):>16} {str((sig_formula, len(signature))):>17} {str((pk_formula, sk_formula, sig_formula) == table2[name] == (len(pk), len(sk), len(signature))):>16}\")\n\nprint()\nprint(\"size of the lattice problem: the public matrix A (k x l over R_q) gives the module-SIS instance [A | I] with 256 (k + l) unknowns and 256 k equations\")\nfor name, ((k, l), eta, tau, gamma1, divisor, beta, omega) in table1.items():\n    print(f\"{name}: A is {k} x {l}, so {256 * (k + l)} unknowns and {256 * k} equations; masking range gamma1 = 2^{gamma1.bit_length() - 1}, norm bound beta = tau * eta = {beta}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-mldsa-params",
+              "language": "text",
+              "code": "q = 2^23 - 2^13 + 1: True | q - 1 = 8380416 = 2^13 * 1023 | 512 divides q - 1: True\nzeta = 1753 is a primitive 512th root of unity (zeta^256 = -1): True -> a complete NTT down to degree-0 pieces is possible for ML-DSA, unlike ML-KEM (q = 3329, only 256th roots)\n\nparameter set  parameters match Table 1  beta = tau * eta  pk formula/real  sk formula/real  sig formula/real  matches Table 2\nML-DSA-44                       True              True     (1312, 1312)     (2560, 2560)      (2420, 2420)             True\nML-DSA-65                       True              True     (1952, 1952)     (4032, 4032)      (3309, 3309)             True\nML-DSA-87                       True              True     (2592, 2592)     (4896, 4896)      (4627, 4627)             True\n\nsize of the lattice problem: the public matrix A (k x l over R_q) gives the module-SIS instance [A | I] with 256 (k + l) unknowns and 256 k equations\nML-DSA-44: A is 4 x 4, so 2048 unknowns and 1024 equations; masking range gamma1 = 2^17, norm bound beta = tau * eta = 78\nML-DSA-65: A is 6 x 5, so 2816 unknowns and 1536 equations; masking range gamma1 = 2^19, norm bound beta = tau * eta = 196\nML-DSA-87: A is 8 x 7, so 3840 unknowns and 2048 equations; masking range gamma1 = 2^19, norm bound beta = tau * eta = 120",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "The ML-DSA parameter sets in dilithium-py equal FIPS 204 Table 1, β = τ·η holds for all three, and the key and signature size formulas reproduce Table 2 (1,312, 2,560 and 2,420 bytes for ML-DSA-44, and the corresponding values for -65 and -87) and the sizes of real keys and signatures. The modulus q = 2^23 − 2^13 + 1 = 8,380,417 has q − 1 = 2^13 · 1,023, so a **512th** root of unity exists (ζ = 1753) and a **complete** NTT is possible, unlike for ML-KEM's q = 3329 in 8.3. The matrix A of ML-DSA-44 is 4 × 4 over R_q, giving a module-SIS instance with 2,048 unknowns and 1,024 equations.\n\n**Why SIS and LWE appear together.** An LWE-based public key hides a secret in noisy equations, and a SIS-based signature proves knowledge of a short solution without revealing it; both are short-vector problems in lattices of related shape, which is why one estimator (8.10) covers both. **Common mistake:** equating \"LLL did not find a collision\" with \"no collision exists\" — the toy shows that collisions exist in abundance and only the search is hard."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is a collision of Ajtai's hash in terms of SIS?",
+              "options": [
+                "A non-zero kernel vector with entries in {-1, 0, 1}: the difference of two bit strings",
+                "Any vector of large norm",
+                "A vector with all entries equal"
+              ],
+              "correct_index": 0,
+              "explanation": "A(x1 - x2) = 0 with x1 - x2 ternary."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why can ML-DSA use a complete NTT while ML-KEM cannot?",
+              "options": [
+                "q = 8380417 has a 512th root of unity (512 divides q - 1), q = 3329 does not",
+                "ML-DSA uses smaller polynomials",
+                "ML-KEM does not use polynomials"
+              ],
+              "correct_index": 0,
+              "explanation": "q - 1 = 2^13 * 1023 versus 2^8 * 13."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What did the LLL attack on larger Ajtai instances show?",
+              "options": [
+                "Short kernel vectors were found but not short enough to give a collision; hardness is about findability",
+                "No collisions exist",
+                "The hash is broken for all sizes"
+              ],
+              "correct_index": 0,
+              "explanation": "About 2^63 ternary kernel vectors are expected to exist for n = 8, m = 80."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B92",
+              "locator": "FIPS 204, Section 4 (Table 1: ML-DSA parameter sets; Table 2: sizes of keys and signatures) and Section 6"
+            },
+            {
+              "book": "B91",
+              "locator": "dilithium-py: ML_DSA_44, ML_DSA_65, ML_DSA_87 keygen, sign and verify used to check parameters and sizes"
+            },
+            {
+              "book": "B07",
+              "locator": "Nakamura and Yasuda, Section 2.2 and the q-ary lattice constructions: short-vector problems in lattices of volume q^n"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The reduction of ML-DSA unforgeability to module-SIS and of key security to module-LWE comes from the CRYSTALS-Dilithium design papers, which were not read; FIPS 204 specifies the algorithm and parameters. The Ajtai-hash correspondence is a standard textbook construction demonstrated here, not cited."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "8.6 Merkle Trees",
+          "summary": "Authentication paths reproduced from the slides (nodes 26, 13, 6, 3, 1 and siblings 27, 12, 7, 2), tamper detection, path sizes, and a leaf/inner-node confusion that domain separation prevents.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **Merkle tree** authenticates many values with one short public value. For 2^d keys K1, ..., K(2^d) the leaves are the hashes of the keys, every inner node is the hash of its two children's concatenation, and the **root** is the public key. To prove that K_i belongs to the tree, a signer supplies K_i and the **sibling nodes along the path** from its leaf to the root, d hash values in all; the verifier recomputes the root and compares (B03, Stinson, the slides on Merkle trees). In the numbering of the slides node j has children 2j and 2j + 1, leaf K_i is node i + 2^d − 1, and the sibling of node j is j + 1 if j is even and j − 1 if odd. The tree is only used to authenticate the public keys of **one-time** signatures, which sign the actual messages; this is how a hash-based scheme turns one-time keys into 2^d signatures with a single public key (the idea of 1979 that XMSS and SLH-DSA build on).\n\nThe listing reproduces the slides' depth-4 example (signing message 11 uses nodes 26, 13, 6, 3, 1 and supplies 27, 12, 7, 2), authenticates all 16 keys, tests modified keys and wrong positions, and shows how the path length grows with the height. It then demonstrates a subtle flaw of the plain definition V(j) = h(V(2j) ‖ V(2j+1)): an inner node's two children, concatenated, look exactly like a 64-byte leaf, so without **domain separation** a verifier that does not insist on fixed-length keys can be fooled. The labs use Python with NumPy, plus the pure-Python reference libraries kyber-py and dilithium-py (the same ones used in B10) as independent cross-checks. Everything runs on your own machine and every attack is mounted against toy parameters generated in the lesson. The toy schemes are for understanding only and must never protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-merkle",
+              "language": "python",
+              "code": "import hashlib, random\n\nH = lambda data: hashlib.sha256(data).digest()\nrng = random.Random(6)\n\n# --- the depth-4 tree of the slides: leaf keys K1..K16 sit at nodes 16..31, node j has children 2j and 2j+1\ndef build_tree(keys, leaf_hash, node_hash):\n    d = len(keys).bit_length() - 1\n    assert len(keys) == 2 ** d\n    V = {}\n    for i, key in enumerate(keys):\n        V[2 ** d + i] = leaf_hash(key)\n    for j in range(2 ** d - 1, 0, -1):\n        V[j] = node_hash(V[2 * j], V[2 * j + 1])\n    return V, d\n\ndef auth_path(d, i):\n    # for key K_i (i = 1..2^d) return the nodes on the path to the root and the sibling nodes that must be supplied\n    node = i + 2 ** d - 1\n    path, siblings = [node], []\n    while node > 1:\n        siblings.append(node + 1 if node % 2 == 0 else node - 1)\n        node //= 2\n        path.append(node)\n    return path, siblings\n\ndef verify(key, i, supplied, d, root, leaf_hash, node_hash):\n    node, value = i + 2 ** d - 1, leaf_hash(key)\n    for sibling_value in supplied:\n        value = node_hash(value, sibling_value) if node % 2 == 0 else node_hash(sibling_value, value)\n        node //= 2\n    return value == root\n\nnaive_leaf, naive_node = (lambda k: H(k)), (lambda l, r: H(l + r))                           # the slides' definition: V(j) = h(V(2j) || V(2j+1))\nsafe_leaf, safe_node = (lambda k: H(b\"\\x00\" + k)), (lambda l, r: H(b\"\\x01\" + l + r))         # domain separation between leaves and inner nodes\n\nkeys = [bytes(rng.getrandbits(8) for _ in range(32)) for _ in range(16)]                     # stand-ins for one-time public keys K1..K16\nV, d = build_tree(keys, naive_leaf, naive_node)\npath, siblings = auth_path(d, 11)\nprint(\"signing message 11: nodes on the path\", path, \"| sibling nodes to supply\", siblings, \"(the slides give 26, 13, 6, 3, 1 and 27, 12, 7, 2)\")\nsupplied = [V[j] for j in siblings]\nprint(\"authentication of K11 against the root:\", verify(keys[10], 11, supplied, d, V[1], naive_leaf, naive_node), \"| signature carries\", len(supplied), \"hash values =\", 32 * len(supplied), \"bytes of path\")\nprint(\"all 16 keys authenticate:\", all(verify(keys[i - 1], i, [V[j] for j in auth_path(d, i)[1]], d, V[1], naive_leaf, naive_node) for i in range(1, 17)))\nprint(\"a modified key is rejected:\", not verify(keys[10][:-1] + b\"X\", 11, supplied, d, V[1], naive_leaf, naive_node), \"| the right key at the wrong position is rejected:\", not verify(keys[10], 12, supplied, d, V[1], naive_leaf, naive_node))\n\nprint()\nprint(\"size against tree height (one hash value of 32 bytes per level):\", {height: 32 * height for height in (4, 10, 16, 20)}, \"bytes of authentication path; the public key stays one 32-byte root\")\n\n# --- second-preimage confusion between a leaf and an inner node when hashes are not domain separated\nV4, d4 = build_tree(keys[:4], naive_leaf, naive_node)                                        # an honest 4-leaf tree and its root\nroot_honest = V4[1]\nfake_leaf_data = V4[2] + V4[3]                                                               # the two level-1 hashes, 64 bytes, presented as ONE leaf \"key\"\nprint(\"without domain separation, a single fake 64-byte leaf hashes to the honest root:\", naive_leaf(fake_leaf_data) == root_honest)\nV4s, _ = build_tree(keys[:4], safe_leaf, safe_node)\nfake_root_safe = safe_leaf(V4s[2] + V4s[3])\nprint(\"with a 0x00 prefix for leaves and 0x01 for inner nodes, the same trick gives a different value:\", fake_root_safe != V4s[1])\nprint(\"a verifier that accepts a path of length 0 for the fake leaf would accept a 64-byte 'public key' for the honest tree in the naive scheme:\", verify(fake_leaf_data, 1, [], 0, root_honest, naive_leaf, naive_node), \"| in the separated scheme:\", verify(fake_leaf_data, 1, [], 0, V4s[1], safe_leaf, safe_node))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-merkle",
+              "language": "text",
+              "code": "signing message 11: nodes on the path [26, 13, 6, 3, 1] | sibling nodes to supply [27, 12, 7, 2] (the slides give 26, 13, 6, 3, 1 and 27, 12, 7, 2)\nauthentication of K11 against the root: True | signature carries 4 hash values = 128 bytes of path\nall 16 keys authenticate: True\na modified key is rejected: True | the right key at the wrong position is rejected: True\n\nsize against tree height (one hash value of 32 bytes per level): {4: 128, 10: 320, 16: 512, 20: 640} bytes of authentication path; the public key stays one 32-byte root\nwithout domain separation, a single fake 64-byte leaf hashes to the honest root: True\nwith a 0x00 prefix for leaves and 0x01 for inner nodes, the same trick gives a different value: True\na verifier that accepts a path of length 0 for the fake leaf would accept a 64-byte 'public key' for the honest tree in the naive scheme: True | in the separated scheme: False",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The code derives exactly the path and sibling nodes of the slides, and all 16 keys authenticate, while a modified key or the right key at the wrong position is rejected. A path is only d·32 bytes: 640 bytes for a tree with 2^20 leaves, while the public key stays 32 bytes. The last three lines show the confusion attack concretely: the concatenation of two level-1 hashes, presented as one 64-byte leaf, hashes to the honest root in the naive scheme, and a verifier that accepts a zero-length path would accept it; with a 0x00 prefix for leaves and a 0x01 prefix for inner nodes the values differ and the same trick fails. In a one-time-signature setting the keys have a fixed length, which also blocks the trick, but domain separation is a cheap, robust defence and is standard practice (for example the certificate-transparency Merkle tree construction does this); SLH-DSA instead uses addresses that identify every hash call by its position and type.\n\n**Common mistakes:** accepting variable-length leaves, omitting the position (the index) from verification so that a valid key can be claimed at another position, and forgetting that the scheme's security also depends on the one-time signature never signing twice (8.7)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "For key K11 in a depth-4 tree, which sibling nodes does the signature carry?",
+              "options": [
+                "Nodes 27, 12, 7 and 2",
+                "Nodes 26, 13, 6, 3 and 1",
+                "All 16 leaves"
+              ],
+              "correct_index": 0,
+              "explanation": "The path is 26, 13, 6, 3, 1; the siblings are 27, 12, 7, 2."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "How long is the authentication path in a Merkle tree with 2^20 leaves and 32-byte hashes?",
+              "options": [
+                "20 * 32 = 640 bytes",
+                "32 bytes",
+                "2^20 * 32 bytes"
+              ],
+              "correct_index": 0,
+              "explanation": "One sibling per level."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why prefix leaf and inner-node hashes differently?",
+              "options": [
+                "So an inner node's pair of children cannot be passed off as a leaf",
+                "To shorten the hash",
+                "To encrypt the tree"
+              ],
+              "correct_index": 0,
+              "explanation": "Domain separation removes the leaf/inner-node confusion."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B03",
+              "locator": "Stinson, 'A Tutorial on Post-quantum Cryptography': Merkle trees (node numbering, V(j) definition, signing the 11th message with nodes 26, 13, 6, 3, 1 and siblings 27, 12, 7, 2) and multilevel Merkle trees"
+            },
+            {
+              "book": "B93",
+              "locator": "FIPS 205, the hypertree and XMSS tree description (the use of addresses for domain separation)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement that certificate-transparency Merkle trees use 0x00 and 0x01 prefixes (RFC 6962) is from general knowledge; the RFC was not read here. The SLH-DSA address mechanism is mentioned as described in FIPS 205 and not demonstrated."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "8.7 Hash-Based Signatures",
+          "summary": "Lamport and Winternitz signatures reproduced from the slides, key reuse and checksum attacks run exhaustively, HORS reuse, and the SLH-DSA size formulas checked against FIPS 205.",
+          "estimated_minutes": 80,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Hash-based signatures** need only a secure hash function, which is why their security is the best understood of the post-quantum families (B03). **Lamport's one-time scheme** (1979) signs a k-bit message by choosing, for each bit position i, two secret values y(i,0) and y(i,1) and publishing their images z(i,j) = f(y(i,j)); the signature reveals y(i, x_i) for each message bit x_i, and the verifier checks f(y(i,x_i)) = z(i,x_i). Each key signs **once**. The **Winternitz** scheme shortens signatures with hash chains: a w-bit digit x is signed by revealing the x-th element of a chain of 2^w − 1 hash applications, and the verifier hashes the remaining 2^w − 1 − x steps to reach the public end of the chain. Because anyone can hash *forward*, a **checksum** C = Σ(2^w − 1 − x_i) is signed as well, so raising one digit forces another to drop, which would need hashing *backward*. **HORS** is a few-time scheme: the message hash selects a k-subset of t secret values to reveal, and security degrades as the revealed subsets cover more of the keys. The standard **SLH-DSA** (FIPS 205) combines WOTS+ one-time keys, XMSS-style trees (8.6), a hypertree of d layers and FORS few-time signatures at the leaves.\n\nThe first listing reproduces the slides' toy Lamport example with f(y) = 3^y mod 7879 (and shows that a function with an easy inverse gives no security), and then implements Lamport with SHA-256 and measures what **key reuse** costs. The labs use Python with NumPy, plus the pure-Python reference libraries kyber-py and dilithium-py (the same ones used in B10) as independent cross-checks. Everything runs on your own machine and every attack is mounted against toy parameters generated in the lesson. The toy schemes are for understanding only and must never protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-lamport",
+              "language": "python",
+              "code": "import hashlib, random\n\n# --- the toy example from the slides: f(y) = 3^y mod 7879, k = 3\nf = lambda y: pow(3, y, 7879)\ny = {(1, 0): 5831, (2, 0): 803, (3, 0): 4285, (1, 1): 735, (2, 1): 2467, (3, 1): 6449}\nz = {key: f(v) for key, v in y.items()}\nprint(\"public key z (slides: 2009 4672 268 / 3810 4721 5731):\", [z[(i, 0)] for i in (1, 2, 3)], [z[(i, 1)] for i in (1, 2, 3)])\nmessage = (1, 1, 0)\nsignature = [y[(i + 1, bit)] for i, bit in enumerate(message)]\nprint(\"signature on (1, 1, 0) (slides: 735, 2467, 4285):\", signature, \"| verification f(a_i) = z_i,x_i:\", all(f(a) == z[(i + 1, bit)] for i, (a, bit) in enumerate(zip(signature, message))))\n\n# an attacker who can invert f needs no secret: this f is NOT one-way (discrete logarithm in a tiny group)\ndef invert(value):\n    return next(candidate for candidate in range(7879) if f(candidate) == value)\nforged_message = (0, 1, 1)\nforged = [invert(z[(i + 1, bit)]) for i, bit in enumerate(forged_message)]\nprint(\"forged signature on (0, 1, 1) by brute-forcing the preimages:\", forged, \"| accepted:\", all(f(a) == z[(i + 1, bit)] for i, (a, bit) in enumerate(zip(forged, forged_message))), \"(the scheme is only as secure as the one-way function)\")\n\n# --- a real Lamport scheme with SHA-256 on 256-bit digests\nrng = random.Random(8)\nH = lambda data: hashlib.sha256(data).digest()\ndef bits_of(digest):\n    return [(byte >> (7 - i)) & 1 for byte in digest for i in range(8)]\ndef keygen():\n    sk = [[bytes(rng.getrandbits(8) for _ in range(32)) for _ in range(2)] for _ in range(256)]\n    return sk, [[H(a), H(b)] for a, b in sk]\ndef sign(sk, msg):\n    return [sk[i][bit] for i, bit in enumerate(bits_of(H(msg)))]\ndef verify(pk, msg, sig):\n    return all(H(sig[i]) == pk[i][bit] for i, bit in enumerate(bits_of(H(msg))))\n\nsk, pk = keygen()\nm1, m2 = b\"pay alice 10\", b\"pay bob 20\"\ns1, s2 = sign(sk, m1), sign(sk, m2)\nprint(\"Lamport signature verifies:\", verify(pk, m1, s1), \"| wrong message rejected:\", not verify(pk, m2, s1))\nprint(f\"sizes: private key {256 * 2 * 32:,} bytes, public key {256 * 2 * 32:,} bytes, signature {256 * 32:,} bytes for one message\")\n\n# --- reusing the key: every signature reveals half of the secret; the attacker collects them\nsigned = [b\"message number %d\" % i for i in range(12)]\nsignatures = [sign(sk, m) for m in signed]\nrevealed = {}\nprint(f\"{'signatures seen':>16} {'positions with only one value known':>36} {'chance that a random new digest is signable':>44}\")\nfor t in range(1, 13):\n    for i, bit in enumerate(bits_of(H(signed[t - 1]))):\n        revealed[(i, bit)] = signatures[t - 1][i]\n    one_sided = sum(1 for i in range(256) if ((i, 0) in revealed) != ((i, 1) in revealed))\n    print(f\"{t:>16} {one_sided:>36} {'2^-' + str(one_sided):>44}\")\n    if t == 6:\n        after_six = dict(revealed)                                      # what the attacker knows after observing six signatures\ndef attacker_can_sign(msg):\n    return all((i, bit) in after_six for i, bit in enumerate(bits_of(H(msg))))\ntries, forged_message = 0, None\nwhile forged_message is None:\n    tries += 1\n    candidate = b\"transfer everything to mallory #%d\" % tries\n    if attacker_can_sign(candidate):\n        forged_message = candidate\nforged_signature = [after_six[(i, bit)] for i, bit in enumerate(bits_of(H(forged_message)))]\nprint(f\"after only 6 signatures under one key, the attacker found a message the signer never signed after {tries} hash evaluations; accepted by the real verifier:\", verify(pk, forged_message, forged_signature), \"|\", forged_message.decode())\nprint(\"a Lamport key is one-time: the first signature already reveals half of the secret, and each further signature roughly halves the part that is still hidden (expected work for the forgery above: about 2^5 = 32 hashes)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-lamport",
+              "language": "text",
+              "code": "public key z (slides: 2009 4672 268 / 3810 4721 5731): [2009, 4672, 268] [3810, 4721, 5731]\nsignature on (1, 1, 0) (slides: 735, 2467, 4285): [735, 2467, 4285] | verification f(a_i) = z_i,x_i: True\nforged signature on (0, 1, 1) by brute-forcing the preimages: [5831, 2467, 6449] | accepted: True (the scheme is only as secure as the one-way function)\nLamport signature verifies: True | wrong message rejected: True\nsizes: private key 16,384 bytes, public key 16,384 bytes, signature 8,192 bytes for one message\n signatures seen  positions with only one value known  chance that a random new digest is signable\n               1                                  256                                       2^-256\n               2                                  120                                       2^-120\n               3                                   56                                        2^-56\n               4                                   33                                        2^-33\n               5                                   14                                        2^-14\n               6                                    5                                         2^-5\n               7                                    1                                         2^-1\n               8                                    1                                         2^-1\n               9                                    1                                         2^-1\n              10                                    0                                         2^-0\n              11                                    0                                         2^-0\n              12                                    0                                         2^-0\nafter only 6 signatures under one key, the attacker found a message the signer never signed after 10 hash evaluations; accepted by the real verifier: True | transfer everything to mallory #10\na Lamport key is one-time: the first signature already reveals half of the secret, and each further signature roughly halves the part that is still hidden (expected work for the forgery above: about 2^5 = 32 hashes)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The toy numbers equal the slides' (public key 2009, 4672, 268, 3810, 4721, 5731; signature 735, 2467, 4285). Because 3^y mod 7879 can be inverted by brute force, the forged signature on (0, 1, 1) verifies: **a one-time signature is only as secure as its one-way function**. For SHA-256 Lamport, one signature already reveals half the secret (256 hash values of 32 bytes; keys of 16 KB). With each further signature the number of positions where only one value is known roughly halves: 120 after two signatures, 56 after three, 5 after six. After six signatures the attacker needed only 10 hash evaluations to find a new message whose digest bits are all already revealed, and the forged signature was accepted by the real verifier. That is why a one-time key **must never sign twice**, and why stateful schemes treat state reuse as a catastrophic failure (a backup restored twice can reuse a key).\n\nNext the Winternitz example of the slides, with an exhaustive check of the checksum, and the HORS attack."
+            },
+            {
+              "type": "code",
+              "id": "c-wots-hors",
+              "language": "python",
+              "code": "import hashlib, itertools, math, random\n\n# --- Winternitz one-time signatures with w = 3 bits per chain, as in the slides (k = 9 message bits, 3 chains)\nH = lambda data: hashlib.sha256(data).digest()\nW, TOP = 3, 2 ** 3 - 1                                                  # chain length 2^w - 1 = 7 applications of the hash\ndef chain(value, steps):\n    for _ in range(steps):\n        value = H(value)\n    return value\ndef chunks(bits9):\n    return [int(bits9[i:i + 3], 2) for i in range(0, 9, 3)]\ndef checksum_chunks(xs):\n    c = sum(TOP - x for x in xs)                                          # C = sum (2^w - 1 - x_i)\n    return c, [int(format(c, \"06b\")[i:i + 3], 2) for i in (0, 3)]        # C padded to 6 bits, split into two 3-bit chunks\n\nrng = random.Random(4)\nsecret = [bytes(rng.getrandbits(8) for _ in range(32)) for _ in range(5)]         # three message chains and two checksum chains\npublic = [chain(s, TOP) for s in secret]\n\ndef sign(bits9, with_checksum=True):\n    xs = chunks(bits9)\n    if with_checksum:\n        xs = xs + checksum_chunks(xs[:3])[1]\n    return [chain(secret[i], x) for i, x in enumerate(xs)], xs\ndef verify(sig, xs):\n    return all(chain(a, TOP - x) == public[i] for i, (a, x) in enumerate(zip(sig, xs)))\n\nmessage = \"011101001\"\nxs = chunks(message)\nC, extra = checksum_chunks(xs)\nprint(\"message 011101001 gives chunks\", xs, \"| checksum C =\", C, \"= binary\", format(C, \"04b\"), \"-> chunks\", extra, \"(slides: 3, 5, 1; C = 12 = 1100; chunks 1 and 4)\")\nsignature, all_chunks = sign(message)\nprint(\"signature verifies:\", verify(signature, all_chunks), f\"| size {len(signature)} hash values for a {len(message)}-bit message\")\n\n# --- without the checksum the scheme is forgeable: hashing a revealed chain value forward gives any larger chunk\nsimple_signature, simple_chunks = sign(message, with_checksum=False)\nforged_message = \"101110100\"\nforged_chunks = chunks(forged_message)\nforged = [chain(simple_signature[i], forged_chunks[i] - simple_chunks[i]) for i in range(3)]\nprint(\"without checksum, a forged signature on 101110100 built only by hashing forward (x' = 5, 6, 4 are each at least x = 3, 5, 1):\", all(chain(a, TOP - x) == public[i] for i, (a, x) in enumerate(zip(forged, forged_chunks))))\nforgeable_without = sum(1 for m in range(512) if all(a >= b for a, b in zip(chunks(format(m, \"09b\")), xs))) - 1\nprint(\"number of other messages forgeable that way without a checksum:\", forgeable_without, \"(= (8-3)(8-5)(8-1) - 1)\")\n\n# --- with the checksum: exhaustive check over all 512 messages\ndef attacker_can_derive(target_message):\n    t = chunks(target_message); t = t + checksum_chunks(t)[1]\n    return all(a >= b for a, b in zip(t, all_chunks))                     # a chain can only be advanced, never moved back\nforgeable_with = [format(m, \"09b\") for m in range(512) if format(m, \"09b\") != message and attacker_can_derive(format(m, \"09b\"))]\nprint(\"with the checksum, messages whose signature can be derived from this one by hashing forward:\", len(forgeable_with), \"of 511 -> raising a message chunk lowers the checksum, which would need a chain value to be moved backwards\")\n\n# --- HORS few-time signatures: the attack from the slides (t = 32 keys, k = 4 revealed per signature)\nsets = [{13, 21, 25, 27}, {5, 6, 13, 24}, {2, 21, 26, 30}, {5, 8, 18, 27}, {4, 9, 26, 29}]\ntarget = {2, 13, 18, 29}\nunion = set().union(*sets)\nprint(\"indices revealed by the five signatures:\", sorted(union), \"| the sixth message needs\", sorted(target), \"-> all already revealed:\", target <= union)\nrng = random.Random(10)\nt_keys, k_rev, trials = 32, 4, 20000\nprint(f\"one signature reveals 4 of 32 keys; a random new message needs a specific 4-subset, chance 1 / C(32, 4) = 1 / {math.comb(t_keys, k_rev):,}\")\nprint(f\"{'signatures seen':>16} {'average keys revealed':>22} {'chance that a random new message can be forged (simulation, 20,000 trials)':>74}\")\nfor seen in (2, 4, 8, 12, 16):\n    forged_count, revealed_total = 0, 0\n    for _ in range(trials):\n        known = set()\n        for _ in range(seen):\n            known |= set(rng.sample(range(32), k_rev))\n        revealed_total += len(known)\n        forged_count += set(rng.sample(range(32), k_rev)) <= known\n    print(f\"{seen:>16} {revealed_total / trials:>22.1f} {forged_count / trials:>74.4f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-wots-hors",
+              "language": "text",
+              "code": "message 011101001 gives chunks [3, 5, 1] | checksum C = 12 = binary 1100 -> chunks [1, 4] (slides: 3, 5, 1; C = 12 = 1100; chunks 1 and 4)\nsignature verifies: True | size 5 hash values for a 9-bit message\nwithout checksum, a forged signature on 101110100 built only by hashing forward (x' = 5, 6, 4 are each at least x = 3, 5, 1): True\nnumber of other messages forgeable that way without a checksum: 104 (= (8-3)(8-5)(8-1) - 1)\nwith the checksum, messages whose signature can be derived from this one by hashing forward: 0 of 511 -> raising a message chunk lowers the checksum, which would need a chain value to be moved backwards\nindices revealed by the five signatures: [2, 4, 5, 6, 8, 9, 13, 18, 21, 24, 25, 26, 27, 29, 30] | the sixth message needs [2, 13, 18, 29] -> all already revealed: True\none signature reveals 4 of 32 keys; a random new message needs a specific 4-subset, chance 1 / C(32, 4) = 1 / 35,960\n signatures seen  average keys revealed chance that a random new message can be forged (simulation, 20,000 trials)\n               2                    7.5                                                                     0.0011\n               4                   13.2                                                                     0.0240\n               8                   21.0                                                                     0.1750\n              12                   25.6                                                                     0.4035\n              16                   28.2                                                                     0.6005",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t3",
+              "markdown": "The Winternitz numbers equal the slides': message 011101001 gives digits 3, 5, 1, checksum C = 12 = 1100, hence checksum digits 1 and 4. **Without** the checksum, a forged signature on 101110100 is built by hashing the revealed chain values forward, and there are 104 = (8−3)(8−5)(8−1) − 1 other messages forgeable that way. **With** the checksum, the exhaustive check over all 512 messages finds none: raising any message digit lowers the checksum, which would require moving a chain value backwards. The HORS example of the slides is confirmed (five signatures reveal 15 of 32 secret values and the sixth message needs four of them), and the simulation shows how fast the forgery probability grows with the number of signatures: 0.1 percent after 2 signatures, 2.4 percent after 4, 17.5 percent after 8, and 60 percent after 16, which is why HORS is a *few*-time scheme.\n\nFinally the parameter sets of the standard."
+            },
+            {
+              "type": "code",
+              "id": "c-slhdsa",
+              "language": "python",
+              "code": "import math\n\n# FIPS 205, Table 2 (typed from the standard): name -> (n, h, d, h', a, k, lg_w, m, pk bytes, signature bytes)\ntable2 = {\n    \"SLH-DSA-*-128s\": (16, 63, 7, 9, 12, 14, 4, 30, 32, 7856),\n    \"SLH-DSA-*-128f\": (16, 66, 22, 3, 6, 33, 4, 34, 32, 17088),\n    \"SLH-DSA-*-192s\": (24, 63, 7, 9, 14, 17, 4, 39, 48, 16224),\n    \"SLH-DSA-*-192f\": (24, 66, 22, 3, 8, 33, 4, 42, 48, 35664),\n    \"SLH-DSA-*-256s\": (32, 64, 8, 8, 14, 22, 4, 47, 64, 29792),\n    \"SLH-DSA-*-256f\": (32, 68, 17, 4, 9, 35, 4, 49, 64, 49856),\n}\nprint(f\"{'set':<16} {'h = d h':>8} {'WOTS+ len':>10} {'m formula':>10} {'sig formula':>12} {'sig table':>10} {'pk formula':>11} {'pk table':>9} {'agree':>6} {'leaves per XMSS tree':>20}\")\nfor name, (n, h, d, hp, a, k, lg_w, m, pk, sig) in table2.items():\n    w = 2 ** lg_w\n    len1 = math.ceil(8 * n / lg_w)                                        # message digits in base w\n    len2 = math.floor(math.log2(len1 * (w - 1)) / lg_w) + 1               # checksum digits\n    wots_len = len1 + len2\n    m_formula = math.ceil(k * a / 8) + math.ceil((h - h // d) / 8) + math.ceil((h // d) / 8)\n    sig_formula = (1 + k * (1 + a) + h + d * wots_len) * n                # randomizer + FORS (k trees: a secret + a path) + d WOTS+ signatures and their paths\n    pk_formula = 2 * n                                                    # PK.seed and PK.root\n    agree = (h == d * hp, m_formula == m, sig_formula == sig, pk_formula == pk)\n    print(f\"{name:<16} {d * hp:>8} {wots_len:>10} {m_formula:>10} {sig_formula:>12,} {sig:>10,} {pk_formula:>11} {pk:>9} {str(all(agree)):>6} {'2^' + str(hp):>20}\")\n\nprint()\nprint(\"the hypertree of height h has 2^h leaves, so a key pair has 2^63 to 2^68 one-time slots; the standard states the sets were designed for at most 2^64 signatures per key pair\")\nprint(\"the 's' sets are small and slow to sign, the 'f' sets sign faster with larger signatures; every set uses a public key of only 2n bytes\")\nprint(\"comparison with lattice signatures (FIPS 204): ML-DSA-44 signature 2,420 bytes against SLH-DSA 128s at 7,856 bytes: about\", round(7856 / 2420, 1), \"times larger\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-slhdsa",
+              "language": "text",
+              "code": "set               h = d h  WOTS+ len  m formula  sig formula  sig table  pk formula  pk table  agree leaves per XMSS tree\nSLH-DSA-*-128s         63         35         30        7,856      7,856          32        32   True                  2^9\nSLH-DSA-*-128f         66         35         34       17,088     17,088          32        32   True                  2^3\nSLH-DSA-*-192s         63         51         39       16,224     16,224          48        48   True                  2^9\nSLH-DSA-*-192f         66         51         42       35,664     35,664          48        48   True                  2^3\nSLH-DSA-*-256s         64         67         47       29,792     29,792          64        64   True                  2^8\nSLH-DSA-*-256f         68         67         49       49,856     49,856          64        64   True                  2^4\n\nthe hypertree of height h has 2^h leaves, so a key pair has 2^63 to 2^68 one-time slots; the standard states the sets were designed for at most 2^64 signatures per key pair\nthe 's' sets are small and slow to sign, the 'f' sets sign faster with larger signatures; every set uses a public key of only 2n bytes\ncomparison with lattice signatures (FIPS 204): ML-DSA-44 signature 2,420 bytes against SLH-DSA 128s at 7,856 bytes: about 3.2 times larger",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t4",
+              "markdown": "The size formula (1 + k(1 + a) + h + d·len)·n reproduces the signature size of every one of the six FIPS 205 parameter sets, and the formulas for the WOTS+ length, the message-digest length m and the public-key size 2n agree as well. The sizes tell the engineering story: signatures of 7,856 to 49,856 bytes against 2,420 for ML-DSA-44 (about 3.2 times larger for the smallest set) while public keys are only 32 to 64 bytes. In exchange the security rests on the hash function alone, with no algebraic structure to attack. **Operational point:** SLH-DSA is **stateless** (it avoids the reuse problem by using a huge hypertree and picking leaves pseudo-randomly), while XMSS and LMS are stateful and need careful state management."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does a Winternitz signature include a checksum?",
+              "options": [
+                "Without it an attacker can hash revealed chain values forward to sign other messages",
+                "To detect transmission errors",
+                "To shorten the signature"
+              ],
+              "correct_index": 0,
+              "explanation": "The checksum decreases when message digits increase, blocking forward-only forgery."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What happened after six Lamport signatures under one key in the lesson?",
+              "options": [
+                "A new message could be forged with about 2^5 hash evaluations",
+                "Nothing, Lamport keys are reusable",
+                "The key refreshed itself"
+              ],
+              "correct_index": 0,
+              "explanation": "Five positions had only one revealed value, so about 2^5 tries were needed."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What makes SLH-DSA stateless?",
+              "options": [
+                "A hypertree so large that leaves can be chosen pseudo-randomly with negligible repetition",
+                "It uses no hashing",
+                "It signs only once"
+              ],
+              "correct_index": 0,
+              "explanation": "Instead of tracking used one-time keys, it relies on the huge number of leaves."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B03",
+              "locator": "Stinson, 'A Tutorial on Post-quantum Cryptography': Lamport signature scheme (toy example with f(y) = 3^y mod 7879), Winternitz scheme (hash chains, checksum, k = 9 and w = 3 example), HORS and its attack example"
+            },
+            {
+              "book": "B93",
+              "locator": "FIPS 205, Section 11 (Table 2: the 12 parameter sets, key and signature sizes) and the descriptions of WOTS+, XMSS, the hypertree and FORS"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement that XMSS and LMS are stateful and SLH-DSA stateless is general knowledge consistent with FIPS 205's title; the WOTS+ construction in the standard differs from the plain Winternitz scheme of the slides (it adds randomisation per chain), which the listing does not implement."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "8.8 Coding Theory",
+          "summary": "Hamming and Golay codes built and checked exhaustively: parity checks, syndromes, weight distributions, perfect codes, and the Gilbert-Varshamov guarantee.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **binary linear code** [n, k, d] is a k-dimensional subspace of GF(2)^n; its words are the **codewords**, and d is the **minimum distance** (smallest weight of a non-zero codeword), so the code corrects any ⌊(d−1)/2⌋ errors. A code can be described by a **parity-check matrix** H: a word c is a codeword when H c = 0, and for a received word r = c + e the **syndrome** H r = H e depends only on the error. If all error patterns of weight up to t have distinct syndromes, a table maps each syndrome to its error and decoding is a lookup. A code is **perfect** when the spheres of radius t around the codewords tile the whole space exactly; the Hamming codes (t = 1) and the binary **Golay code** [23, 12, 7] (t = 3) are the classical perfect codes. The **Gilbert-Varshamov** bound guarantees that good codes exist; it is non-constructive, and good *random* codes have no known efficient decoder, which is the foundation of code-based cryptography (8.9).\n\nThe listing builds the Hamming [7, 4] code and the Golay [23, 12] code (as a cyclic code with generator polynomial x^11 + x^10 + x^6 + x^5 + x^4 + x^2 + 1) and verifies every property above by exhaustive enumeration. The labs use Python with NumPy, plus the pure-Python reference libraries kyber-py and dilithium-py (the same ones used in B10) as independent cross-checks. Everything runs on your own machine and every attack is mounted against toy parameters generated in the lesson. The toy schemes are for understanding only and must never protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-codes",
+              "language": "python",
+              "code": "import itertools, math, random\nfrom collections import Counter\n\nrng = random.Random(12)\nweight = lambda x: bin(x).count(\"1\")\n\n# --- Hamming [7, 4, 3]: the syndrome of a single error is the binary number of its position\nH = [[(col >> row) & 1 for col in range(1, 8)] for row in range(3)]      # parity-check matrix: column j is the binary representation of j\ndef syndrome_hamming(word_bits):\n    return sum((sum(H[r][c] * word_bits[c] for c in range(7)) % 2) << r for r in range(3))\ncodewords = [w for w in itertools.product((0, 1), repeat=7) if syndrome_hamming(w) == 0]\nprint(\"Hamming code: number of codewords\", len(codewords), \"= 2^4 | minimum distance\", min(sum(w) for w in codewords if any(w)))\nfixed = 0\nfor word in codewords:\n    for pos in range(7):\n        received = list(word); received[pos] ^= 1\n        s = syndrome_hamming(received)\n        received[s - 1] ^= 1                                              # the syndrome names the flipped position (1-based)\n        fixed += tuple(received) == word\nprint(\"every single-bit error in every codeword corrected:\", fixed == len(codewords) * 7, f\"({fixed} cases)\")\nprint(\"sphere-packing check: 2^4 codewords * (1 + 7 single-error patterns) =\", 16 * 8, \"= 2^7, so the Hamming code is perfect\")\n\n# --- the binary Golay code [23, 12, 7]: cyclic, generator polynomial g(x) = x^11 + x^10 + x^6 + x^5 + x^4 + x^2 + 1\nG = 0b110001110101                                                       # 0xC75\ndef poly_mul(a, b):                                                       # carry-less multiplication over GF(2)\n    out = 0\n    while b:\n        if b & 1: out ^= a\n        a <<= 1; b >>= 1\n    return out\ndef poly_mod(a, g):\n    glen = g.bit_length()\n    while a.bit_length() >= glen:\n        a ^= g << (a.bit_length() - glen)\n    return a\nwords = [poly_mul(m, G) for m in range(2 ** 12)]                          # every message polynomial times g(x) gives a codeword\nprint()\nprint(\"Golay code: codewords\", len(set(words)), \"= 2^12 | all have degree below 23:\", max(w.bit_length() for w in words) <= 23)\ndistribution = Counter(weight(w) for w in words)\nprint(\"weight distribution:\", dict(sorted(distribution.items())), \"| minimum distance\", min(w for w in distribution if w), \"-> corrects up to 3 errors\")\nprint(\"a codeword shifted cyclically stays a codeword (cyclic code):\", all(poly_mod(((w << 1) | (w >> 22)) & (2 ** 23 - 1), G) == 0 for w in words[:500]))\nprint(\"sphere-packing:\", sum(math.comb(23, i) for i in range(4)), \"error patterns of weight <= 3, times 2^12 codewords =\", sum(math.comb(23, i) for i in range(4)) * 2 ** 12, \"= 2^23:\", sum(math.comb(23, i) for i in range(4)) * 2 ** 12 == 2 ** 23, \"-> the Golay code is perfect\")\n\n# --- syndrome decoding with a table: one entry per correctable error pattern\ntable = {}\nfor t in range(4):\n    for positions in itertools.combinations(range(23), t):\n        e = sum(1 << p for p in positions)\n        table[poly_mod(e, G)] = e\nprint(\"syndromes of all error patterns of weight <= 3 are distinct:\", len(table) == sum(math.comb(23, i) for i in range(4)), f\"({len(table)} patterns, 2^11 = {2 ** 11} possible syndromes)\")\ncorrect = 0\ntrials = 3000\nfor _ in range(trials):\n    sent = rng.choice(words)\n    error = sum(1 << p for p in rng.sample(range(23), rng.randint(0, 3)))\n    received = sent ^ error\n    decoded = received ^ table[poly_mod(received, G)]\n    correct += decoded == sent\nprint(f\"decoding {trials} random codewords with 0 to 3 random errors: {correct} correct\")\nmiscorrected = 0\nfor _ in range(trials):\n    sent = rng.choice(words)\n    received = sent ^ sum(1 << p for p in rng.sample(range(23), 4))\n    miscorrected += (received ^ table[poly_mod(received, G)]) != sent\nprint(f\"with 4 errors the decoder always lands on a different codeword (perfect code, no detection): {miscorrected} of {trials} wrong\")\n\n# --- random linear codes: the Gilbert-Varshamov bound says good codes exist, but it does not say how to decode them\ndef gv_guaranteed_distance(n, k):\n    # largest d with sum_{i=0}^{d-2} C(n-1, i) < 2^(n-k): a linear [n, k, d] code exists\n    d = 2\n    while sum(math.comb(n - 1, i) for i in range(0, d - 1)) < 2 ** (n - k):\n        d += 1\n    return d - 1\nprint()\nprint(\"Gilbert-Varshamov: a binary linear [n, k, d] code exists whenever sum_{i=0}^{d-2} C(n-1, i) < 2^(n-k):\")\nfor n, k in ((23, 12), (64, 32), (128, 64), (1024, 512)):\n    d = gv_guaranteed_distance(n, k)\n    print(f\"[{n}, {k}]: a code with distance {d} is guaranteed, correcting {(d - 1) // 2} errors (rate {k / n:.2f})\" + (\"; the Golay code has distance 7 and does better than the guarantee\" if n == 23 else \"\"))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-codes",
+              "language": "text",
+              "code": "Hamming code: number of codewords 16 = 2^4 | minimum distance 3\nevery single-bit error in every codeword corrected: True (112 cases)\nsphere-packing check: 2^4 codewords * (1 + 7 single-error patterns) = 128 = 2^7, so the Hamming code is perfect\n\nGolay code: codewords 4096 = 2^12 | all have degree below 23: True\nweight distribution: {0: 1, 7: 253, 8: 506, 11: 1288, 12: 1288, 15: 506, 16: 253, 23: 1} | minimum distance 7 -> corrects up to 3 errors\na codeword shifted cyclically stays a codeword (cyclic code): True\nsphere-packing: 2048 error patterns of weight <= 3, times 2^12 codewords = 8388608 = 2^23: True -> the Golay code is perfect\nsyndromes of all error patterns of weight <= 3 are distinct: True (2048 patterns, 2^11 = 2048 possible syndromes)\ndecoding 3000 random codewords with 0 to 3 random errors: 3000 correct\nwith 4 errors the decoder always lands on a different codeword (perfect code, no detection): 3000 of 3000 wrong\n\nGilbert-Varshamov: a binary linear [n, k, d] code exists whenever sum_{i=0}^{d-2} C(n-1, i) < 2^(n-k):\n[23, 12]: a code with distance 5 is guaranteed, correcting 2 errors (rate 0.52); the Golay code has distance 7 and does better than the guarantee\n[64, 32]: a code with distance 9 is guaranteed, correcting 4 errors (rate 0.50)\n[128, 64]: a code with distance 17 is guaranteed, correcting 8 errors (rate 0.50)\n[1024, 512]: a code with distance 116 is guaranteed, correcting 57 errors (rate 0.50)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "For the Hamming code all 112 single-bit errors in all 16 codewords are corrected by reading the syndrome as a position, and 16 · 8 = 2^7 confirms perfection. For the Golay code the enumeration of all 4,096 codewords finds minimum distance 7 and the weight distribution 1, 253, 506, 1288, 1288, 506, 253, 1 (at weights 0, 7, 8, 11, 12, 15, 16, 23); the sphere-packing identity (1 + 23 + 253 + 1771) · 2^12 = 2^23 holds exactly, so the code is perfect; the 2,048 syndromes of the error patterns of weight at most 3 are all distinct, and the table decoder corrected all 3,000 random words with up to 3 errors. With four errors it **always** decodes to a wrong codeword (3,000 of 3,000), which shows that a perfect code cannot even detect that decoding failed. The Gilbert-Varshamov lines show the guaranteed distance for random codes of rate one half, for instance distance 9 for [64, 32] and 116 for [1024, 512]; the Golay code (distance 7, the guarantee says 5) beats the guarantee because it is special.\n\n**Takeaway for cryptography.** Decoding a code with a known structure is fast (a table, or the algebraic decoders of Goppa codes); decoding a random-looking linear code is a hard problem. A code-based scheme publishes a disguised version of a structured code, so that only the owner can decode quickly."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the syndrome of a received word depend on?",
+              "options": [
+                "Only the error pattern, since H c = 0 for codewords",
+                "The transmitted codeword",
+                "The message length"
+              ],
+              "correct_index": 0,
+              "explanation": "H(c + e) = H e."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does 'perfect' mean for the Golay code?",
+              "options": [
+                "Spheres of radius 3 around the codewords cover all 2^23 words exactly once",
+                "It has no codewords of odd weight",
+                "It has distance 23"
+              ],
+              "correct_index": 0,
+              "explanation": "(1 + 23 + 253 + 1771) * 2^12 = 2^23."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How many errors does a code with minimum distance 7 correct?",
+              "options": [
+                "Up to 3",
+                "Up to 7",
+                "Up to 6"
+              ],
+              "correct_index": 0,
+              "explanation": "floor((d - 1) / 2) = 3."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B94",
+              "locator": "NIST IR 8545 describes Classic McEliece as the code-based KEM and gives its key sizes (Table 8); used in 8.9"
+            }
+          ],
+          "needs_verification": {
+            "reason": "No on-disk textbook chapter on coding theory was read for this lesson; the definitions, the Golay code generator polynomial and the Gilbert-Varshamov bound are standard results that the listing checks by exhaustive computation (weights, distinctness of syndromes, sphere packing) but does not cite to a page."
+          },
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "8.9 Syndrome Decoding",
+          "summary": "The decoding problem, Prange's information-set decoding implemented and compared with its predicted iteration count, and the same estimate for the Classic McEliece parameter sets with their public-key sizes reproduced from IR 8545.",
+          "estimated_minutes": 65,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Syndrome decoding**: given a parity-check matrix H (r × n), a syndrome s and a weight w, find an error vector e with H e = s and weight at most w. For random codes this problem is NP-hard in the worst case (a classical result by Berlekamp, McEliece and van Tilborg, cited from the literature), and the best known algorithms, the **information-set decoding (ISD)** family, are exponential even for the quantum versions (with a square-root speed-up of the search part). **Prange's algorithm**, the simplest ISD, guesses that all errors lie in a chosen set of r positions, solves the linear system restricted to those columns, and succeeds when the guess was right; the success probability per attempt is C(r, w)/C(n, w) times the probability (about 0.2888) that the restricted matrix is invertible. Better variants (Stern, Dumer, MMT, BJMM) reduce the cost by tens of bits at the same parameters.\n\nThe **McEliece** cryptosystem hides a structured code (a binary Goppa code with fast decoding) behind a random-looking parity-check matrix and publishes it; a legitimate receiver decodes quickly, an attacker faces syndrome decoding for a random-looking code. **Classic McEliece**, a KEM in the fourth NIST round (B94), uses this with parameters (n, m, t), where the code has length n, the field has degree m, and corrects t errors, so the check matrix has r = m·t rows. The listing runs Prange against random instances, compares the measured number of iterations with the prediction, and applies the formulas to the real parameter sets, whose public-key sizes are checked against IR 8545. The labs use Python with NumPy, plus the pure-Python reference libraries kyber-py and dilithium-py (the same ones used in B10) as independent cross-checks. Everything runs on your own machine and every attack is mounted against toy parameters generated in the lesson. The toy schemes are for understanding only and must never protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-isd",
+              "language": "python",
+              "code": "import math, random\n\nrng = random.Random(14)\n\n# Binary matrices are stored as Python integers, one integer per row, so elimination is XOR of integers.\ndef random_parity_check(n, r):\n    return [rng.getrandbits(n) for _ in range(r)]                        # a random r x n parity-check matrix (code of length n, dimension n - r)\n\ndef syndrome(Hrows, e):\n    return sum((bin(row & e).count(\"1\") & 1) << i for i, row in enumerate(Hrows))\n\ndef solve_on_columns(Hrows, s, columns):\n    # solve H_I x = s over GF(2) restricted to the chosen r columns; returns x as an n-bit error vector or None if H_I is singular\n    r = len(Hrows)\n    rows = []\n    for i, row in enumerate(Hrows):\n        sub = 0\n        for j, c in enumerate(columns):\n            sub |= ((row >> c) & 1) << j\n        rows.append((sub, (s >> i) & 1))\n    pivots = []\n    work = [list(x) for x in rows]\n    for col in range(r):\n        pivot = next((i for i in range(col, r) if (work[i][0] >> col) & 1), None)\n        if pivot is None:\n            return None\n        work[col], work[pivot] = work[pivot], work[col]\n        for i in range(r):\n            if i != col and (work[i][0] >> col) & 1:\n                work[i][0] ^= work[col][0]; work[i][1] ^= work[col][1]\n    e = 0\n    for j, c in enumerate(columns):\n        if work[j][1]:\n            e |= 1 << c\n    return e\n\ndef prange(Hrows, n, s, w, limit=200000):\n    r = len(Hrows)\n    for iteration in range(1, limit + 1):\n        columns = rng.sample(range(n), r)                                # guess the r positions that contain all the errors\n        e = solve_on_columns(Hrows, s, columns)\n        if e is not None and bin(e).count(\"1\") <= w:\n            assert syndrome(Hrows, e) == s\n            return e, iteration\n    return None, limit\n\ninvertible = 1.0\nfor i in range(1, 60):\n    invertible *= 1 - 2.0 ** -i                                           # probability that a random square binary matrix is invertible\nprint(f\"probability that a random binary square matrix is invertible: {invertible:.4f}\")\n\nprint()\nprint(f\"{'n':>4} {'r = n - k':>9} {'w':>3} {'expected iterations (theory)':>30} {'measured, mean of 40 runs':>26} {'brute force C(n, w)':>20}\")\nfor n, r, w in ((48, 24, 4), (64, 32, 5), (80, 40, 6), (96, 48, 7)):\n    p_success = math.comb(r, w) / math.comb(n, w)                         # all w errors fall inside the r guessed positions\n    theory = 1 / (p_success * invertible)\n    runs = []\n    for _ in range(40):\n        Hrows = random_parity_check(n, r)\n        positions = rng.sample(range(n), w)\n        e_true = sum(1 << p for p in positions)\n        s = syndrome(Hrows, e_true)\n        e, iterations = prange(Hrows, n, s, w)\n        runs.append(iterations)\n    print(f\"{n:>4} {r:>9} {w:>3} {theory:>30.1f} {sum(runs) / len(runs):>26.1f} {math.comb(n, w):>20,}\")\nprint(\"Prange's information-set decoding finds an error vector of weight <= w with the given syndrome; it beats brute force by a growing factor\")\n\n# --- the same estimate for the Classic McEliece parameter sets (n, m = field degree, t = errors); k = n - m t\nprint()\nprint(\"Prange iteration counts for Classic McEliece code parameters (n, k = n - m t, t errors). Better algorithms (Stern, MMT, BJMM) need FEWER operations than this,\")\nprint(\"so these numbers are an upper bound on the attacker's cost and not a security claim:\")\nprint(f\"{'parameter set':<16} {'n':>5} {'k':>5} {'t':>4} {'log2 iterations (Prange)':>25} {'public key bytes: formula':>26} {'IR 8545 Table 8':>16}\")\ntable8 = {\"mceliece348864\": 261120, \"mceliece460896\": 524160, \"mceliece6688128\": 1044992, \"mceliece6960119\": 1047319, \"mceliece8192128\": 1357824}\nparameters = {\"mceliece348864\": (3488, 12, 64), \"mceliece460896\": (4608, 13, 96), \"mceliece6688128\": (6688, 13, 128), \"mceliece6960119\": (6960, 13, 119), \"mceliece8192128\": (8192, 13, 128)}\nfor name, (n, m, t) in parameters.items():\n    r = m * t\n    k = n - r\n    log2_iterations = math.log2(math.comb(n, t)) - math.log2(math.comb(r, t)) - math.log2(invertible)\n    pk_bytes = r * math.ceil(k / 8)                                       # systematic form: the r x k part of the parity-check matrix, one row at a time\n    print(f\"{name:<16} {n:>5} {k:>5} {t:>4} {log2_iterations:>25.1f} {pk_bytes:>26,} {table8[name]:>16,}  {'match' if pk_bytes == table8[name] else 'DIFFERENT'}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-isd",
+              "language": "text",
+              "code": "probability that a random binary square matrix is invertible: 0.2888\n\n   n r = n - k   w   expected iterations (theory)  measured, mean of 40 runs  brute force C(n, w)\n  48        24   4                           63.4                       46.5              194,580\n  64        32   5                          131.1                      139.2            7,624,512\n  80        40   6                          271.1                      296.5          300,500,200\n  96        48   7                          560.6                      529.5       11,919,192,480\nPrange's information-set decoding finds an error vector of weight <= w with the given syndrome; it beats brute force by a growing factor\n\nPrange iteration counts for Classic McEliece code parameters (n, k = n - m t, t errors). Better algorithms (Stern, MMT, BJMM) need FEWER operations than this,\nso these numbers are an upper bound on the attacker's cost and not a security claim:\nparameter set        n     k    t  log2 iterations (Prange)  public key bytes: formula  IR 8545 Table 8\nmceliece348864    3488  2720   64                     144.6                    261,120          261,120  match\nmceliece460896    4608  3360   96                     186.7                    524,160          524,160  match\nmceliece6688128   6688  5024  128                     264.1                  1,044,992        1,044,992  match\nmceliece6960119   6960  5413  119                     265.2                  1,047,319        1,047,319  match\nmceliece8192128   8192  6528  128                     301.9                  1,357,824        1,357,824  match",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The measured mean number of Prange iterations tracks the prediction 1/(p · 0.2888) closely (46.5 against 63.4, 139.2 against 131.1, 296.5 against 271.1 and 529.5 against 560.6 for the four sizes; the number of iterations is a geometric random variable, so a mean of 40 runs has a relative uncertainty of about 16 percent), while brute force would need hundreds of thousands to billions of steps, so ISD gains a rapidly growing factor. For the Classic McEliece parameters the same formula gives about 2^145, 2^187, 2^264, 2^265 and 2^302 iterations for the five sets; these are **upper bounds on the attacker's cost** because better ISD algorithms need fewer operations, and the table is not a statement of the sets' security (that comes from the designers' analysis with the best known algorithms, which I did not reproduce). What the listing does verify is the arithmetic of the sizes: the formula r·⌈k/8⌉ for the public key reproduces all five public-key sizes of IR 8545 Table 8 exactly (261,120 to 1,357,824 bytes). The size is the real cost of McEliece: public keys of hundreds of kilobytes to over a megabyte, against 800 to 1,568 bytes for ML-KEM, with very small ciphertexts (96 to 208 bytes in that table).\n\n**Common mistakes:** quoting the Prange count as the security level; forgetting that the structured code must not be recoverable from the public matrix (the security of McEliece depends on the Goppa code looking random, an assumption); and ignoring the key size in protocol design (hybrid key exchange in TLS with a megabyte key is impractical, which is why ML-KEM is the standard choice for TLS)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does information-set decoding gamble on in each iteration?",
+              "options": [
+                "That all errors lie inside the r positions chosen for the linear solve",
+                "That the syndrome is zero",
+                "That the code is a Goppa code"
+              ],
+              "correct_index": 0,
+              "explanation": "The success probability is C(r, w) / C(n, w) times the invertibility probability."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why are the Prange iteration counts in the lesson upper bounds on the attack cost?",
+              "options": [
+                "Better ISD algorithms such as Stern and BJMM need fewer operations",
+                "Prange's algorithm is the fastest",
+                "They ignore the key size"
+              ],
+              "correct_index": 0,
+              "explanation": "Refinements reduce the cost by many bits at the same parameters."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the practical drawback of Classic McEliece?",
+              "options": [
+                "Very large public keys (hundreds of kilobytes to over a megabyte)",
+                "Very large ciphertexts",
+                "No known attacks to analyse"
+              ],
+              "correct_index": 0,
+              "explanation": "IR 8545 Table 8 lists the sizes; ciphertexts are only about 100 to 200 bytes."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B94",
+              "locator": "NIST IR 8545, Table 8 (Classic McEliece keys and ciphertext sizes in bytes) and the description of the fourth-round code-based candidates"
+            },
+            {
+              "book": "B07",
+              "locator": "Takagi et al. (ed.): the chapters on code-based and rank-metric syndrome decoding problems for background on decoding problems"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The parameters (n, m, t) of the Classic McEliece sets were typed from the Classic McEliece specification and are supported only indirectly: they reproduce IR 8545's five public-key sizes exactly, but the specification itself was not read. The NP-hardness result for general decoding and the claim about quantum speed-ups of ISD are cited from the literature without a source on disk."
+          },
+          "after": "sec-8"
+        },
+        {
+          "slug": "sec-10",
+          "action": "replace",
+          "title": "8.10 Security Assumptions and Parameter Tradeoffs",
+          "summary": "A core-SVP primal-attack estimator that reproduces the shape of the ML-KEM parameter ladder, one-at-a-time parameter experiments, and an exact decryption-failure calculation validated by simulation.",
+          "estimated_minutes": 70,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Every scheme in this module rests on an **assumption**: that a specific problem is hard. Lattice schemes assume LWE, SIS and their ring and module variants, hash-based schemes assume properties of the hash function, code-based schemes assume that decoding a random-looking code is hard. A **parameter set** picks sizes so that the best known attack costs at least the target (NIST categories 1, 3 and 5 correspond to the difficulty of breaking AES-128, -192 and -256 respectively), while keeping the decryption failure rate and the key and ciphertext sizes acceptable.\n\nFor lattice schemes the standard way to estimate the attack cost is the **primal attack** with BKZ lattice reduction. BKZ with block size β calls an SVP solver in dimension β and reaches the root Hermite factor δ(β) = ((πβ)^(1/β) · β/(2πe))^(1/(2(β−1))); the embedded vector (e, 1) is found when sqrt(β) · σ ≤ δ(β)^(2β − d − 1) · q^(m/d), with d = m + n + 1 and the number of samples m chosen to make β smallest. The **core-SVP** model then charges about 2^(0.292 β) operations classically and 2^(0.265 β) quantumly for the SVP call and ignores everything else. The listing implements this estimate, varies parameters one at a time, and then computes the **decryption failure probability** of a toy ring scheme exactly (by convolving probability distributions) and by simulation. The labs use Python with NumPy, plus the pure-Python reference libraries kyber-py and dilithium-py (the same ones used in B10) as independent cross-checks. Everything runs on your own machine and every attack is mounted against toy parameters generated in the lesson. The toy schemes are for understanding only and must never protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-estimator",
+              "language": "python",
+              "code": "import math\nimport numpy as np\n\n# ---------------------------------------------------------------- part 1: a core-SVP style estimate of the primal attack on LWE\ndef delta_beta(b):\n    # root Hermite factor reached by BKZ with block size b (the standard heuristic formula)\n    return ((math.pi * b) ** (1 / b) * b / (2 * math.pi * math.e)) ** (1 / (2 * (b - 1)))\n\ndef primal_beta(n, q, sigma):\n    # smallest block size b for which the unusually short vector (e, 1) is found: sqrt(b) * sigma <= delta_b^(2b - d - 1) * q^(m / d),\n    # minimised over the number m of samples used, with d = m + n + 1 the dimension of the embedded lattice\n    best = None\n    for m in range(n, 3 * n + 1, max(1, n // 64)):\n        d = m + n + 1\n        for b in range(50, d):\n            if math.sqrt(b) * sigma <= delta_beta(b) ** (2 * b - d - 1) * q ** (m / d):\n                if best is None or b < best:\n                    best = b\n                break\n    return best\n\ndef bits(b):\n    return 0.292 * b, 0.265 * b                                           # classical and quantum sieving exponents used for core-SVP\n\nprint(\"primal-attack estimate for the three ML-KEM parameter sets (secret and error ~ centred binomial with eta1, so sigma^2 = eta1 / 2)\")\nprint(f\"{'parameter set':<12} {'secret length n*k':>18} {'eta1':>5} {'block size beta':>16} {'classical bits':>15} {'quantum bits':>13} {'NIST category':>14}\")\nfor name, k, eta, category in ((\"ML-KEM-512\", 2, 3, 1), (\"ML-KEM-768\", 3, 2, 3), (\"ML-KEM-1024\", 4, 2, 5)):\n    b = primal_beta(256 * k, 3329, math.sqrt(eta / 2))\n    c, qb = bits(b)\n    print(f\"{name:<12} {256 * k:>18} {eta:>5} {b:>16} {c:>15.1f} {qb:>13.1f} {category:>14}\")\nprint(\"the estimate counts only the cost of one SVP call in dimension beta (the 'core-SVP' model): it ignores memory, the number of calls and known refinements,\")\nprint(\"so it is a rough guide to the relative strength of the parameter sets, not a certified security level\")\n\nprint()\nprint(\"tradeoffs: change one parameter at a time, starting from the ML-KEM-512 shape (k = 2, q = 3329, eta = 3)\")\nprint(f\"{'change':<34} {'block size beta':>16} {'classical bits':>15}\")\nbase = dict(k=2, q=3329, eta=3)\ndef row(label, **override):\n    p = {**base, **override}\n    b = primal_beta(256 * p[\"k\"], p[\"q\"], math.sqrt(p[\"eta\"] / 2))\n    print(f\"{label:<34} {b:>16} {bits(b)[0]:>15.1f}\")\nrow(\"baseline (k = 2, q = 3329, eta = 3)\")\nrow(\"module rank k = 3\", k=3)\nrow(\"module rank k = 4\", k=4)\nrow(\"narrower noise, eta = 1\", eta=1)\nrow(\"wider noise, eta = 6\", eta=6)\nrow(\"smaller modulus, q = 1000\", q=1000)\nrow(\"larger modulus, q = 8380417 (ML-DSA's q)\", q=8380417)\n\n# ---------------------------------------------------------------- part 2: the price of noise is decryption failure; exact calculation versus simulation\nq, n, eta = 3329, 256, 32                                                  # an exaggerated noise width so that failures are frequent enough to measure\ndef cbd_pmf(eta):\n    from math import comb\n    binom = np.array([comb(eta, i) for i in range(eta + 1)], dtype=float) / 2 ** eta\n    pmf = np.convolve(binom, binom[::-1])                                  # a - b with a, b ~ Binomial(eta, 1/2)\n    return pmf, -eta                                                       # distribution over -eta..eta\n\npmf, lo = cbd_pmf(eta)\nvalues = np.arange(lo, lo + len(pmf))\nproduct = {}\nfor i, pi in enumerate(pmf):\n    for j, pj in enumerate(pmf):\n        v = int(values[i] * values[j])\n        product[v] = product.get(v, 0.0) + pi * pj                           # distribution of a product of two independent centred-binomial values\nlo_p, hi_p = min(product), max(product)\nterm = np.zeros(hi_p - lo_p + 1)\nfor v, pr in product.items():\n    term[v - lo_p] = pr\nsize = 1 << 21\ndef power_by_fft(arr, offset, count):\n    # distribution of the sum of `count` independent copies; the support starts at count * offset\n    padded = np.zeros(size); padded[:len(arr)] = arr\n    transform = np.fft.rfft(padded) ** count\n    return np.fft.irfft(transform, size), count * offset\ntotal, start = power_by_fft(term, lo_p, 2 * n)                              # e.r and s.e1 contribute 2n product terms in each coefficient\ne2 = np.zeros(size); e2[:len(pmf)] = pmf\ntotal = np.fft.irfft(np.fft.rfft(total) * np.fft.rfft(e2), size)\nstart += lo\nsupport = np.arange(start, start + size)\ntotal = np.clip(total, 0, None)\nprint()\nprint(f\"toy ring-LWE with n = 256, q = 3329 and eta = {eta}: total probability mass of the noise distribution {total.sum():.6f}\")\nvariance = float((total * support.astype(float) ** 2).sum())\nprint(f\"exact standard deviation of the decryption noise {math.sqrt(variance):.1f} (formula sqrt(2 n (eta/2)^2 + eta/2) = {math.sqrt(2 * n * (eta / 2) ** 2 + eta / 2):.1f})\")\ndef fails(noise_value, bit):\n    x = (noise_value + bit * ((q + 1) // 2)) % q\n    decoded = int(q // 4 < x < 3 * q // 4)\n    return decoded != bit\nexact = 0.0\nfor bit in (0, 1):\n    mask = np.array([fails(int(v), bit) for v in support[np.abs(support) < 4 * q]])\n    exact += 0.5 * float(total[np.abs(support) < 4 * q][mask].sum())\nprint(f\"exact probability that one coefficient decrypts wrongly: {exact:.4f}\")\n\nrng = np.random.default_rng(5)\ndef centred(size_):\n    return rng.integers(0, 2, (size_, eta)).sum(1) - rng.integers(0, 2, (size_, eta)).sum(1)\ndef ring_mul(f, g):\n    c = np.convolve(f, g); c = np.concatenate((c, np.zeros(2 * n - len(c), dtype=c.dtype)))\n    return (c[:n] - c[n:]) % q\na = rng.integers(0, q, n)\nwrong = count = 0\nfor _ in range(150):\n    s_, e_, r_, e1_, e2_ = (centred(n) for _ in range(5))\n    b_ = (ring_mul(a, s_) + e_) % q\n    u = (ring_mul(a, r_) + e1_) % q\n    message = rng.integers(0, 2, n)\n    v = (ring_mul(b_, r_) + e2_ + ((q + 1) // 2) * message) % q\n    x = (v - ring_mul(s_, u)) % q\n    decoded = ((x > q // 4) & (x < 3 * q // 4)).astype(int)\n    wrong += int((decoded != message).sum()); count += n\nprint(f\"simulation of the real toy scheme: {wrong} wrong coefficients out of {count:,} = {wrong / count:.4f}\")\nprint(\"for the real ML-KEM sets the same method (with compression included) gives the failure rates of FIPS 203, Table 1: 2^-138.8, 2^-164.8 and 2^-174.8\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-estimator",
+              "language": "text",
+              "code": "primal-attack estimate for the three ML-KEM parameter sets (secret and error ~ centred binomial with eta1, so sigma^2 = eta1 / 2)\nparameter set  secret length n*k  eta1  block size beta  classical bits  quantum bits  NIST category\nML-KEM-512                  512     3              406           118.6         107.6              1\nML-KEM-768                  768     2              625           182.5         165.6              3\nML-KEM-1024                1024     2              878           256.4         232.7              5\nthe estimate counts only the cost of one SVP call in dimension beta (the 'core-SVP' model): it ignores memory, the number of calls and known refinements,\nso it is a rough guide to the relative strength of the parameter sets, not a certified security level\n\ntradeoffs: change one parameter at a time, starting from the ML-KEM-512 shape (k = 2, q = 3329, eta = 3)\nchange                              block size beta  classical bits\nbaseline (k = 2, q = 3329, eta = 3)              406           118.6\nmodule rank k = 3                               661           193.0\nmodule rank k = 4                               925           270.1\nnarrower noise, eta = 1                         346           101.0\nwider noise, eta = 6                            452           132.0\nsmaller modulus, q = 1000                       492           143.7\nlarger modulus, q = 8380417 (ML-DSA's q)              155            45.3\n\ntoy ring-LWE with n = 256, q = 3329 and eta = 32: total probability mass of the noise distribution 1.000000\nexact standard deviation of the decryption noise 362.1 (formula sqrt(2 n (eta/2)^2 + eta/2) = 362.1)\nexact probability that one coefficient decrypts wrongly: 0.0217\nsimulation of the real toy scheme: 823 wrong coefficients out of 38,400 = 0.0214\nfor the real ML-KEM sets the same method (with compression included) gives the failure rates of FIPS 203, Table 1: 2^-138.8, 2^-164.8 and 2^-174.8",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The estimator gives block sizes 406, 625 and 878 for the three ML-KEM sets, so core-SVP costs of about 2^119, 2^183 and 2^256 classically (2^108, 2^166 and 2^233 quantumly), a ladder that rises with the NIST category: 1, 3 and 5. These values are in the range of the published analyses of Kyber that I remember (not re-read here, so treat the comparison as unverified), and the estimate is a deliberately simple model: it ignores the memory cost of sieving, the polynomial overhead, the dual attack and a number of refinements, so it indicates relative strength and does not certify an absolute level. The one-at-a-time experiments show the tradeoffs. Raising the module rank from 2 to 3 to 4 raises β from 406 to 661 and 925. Narrower noise (η = 1) lowers β to 346, wider noise (η = 6) raises it to 452, but wider noise also raises the decryption failure probability, which is the correctness price of 8.2. A smaller modulus raises the hardness at the same noise (q = 1000 gives 492) because the noise is relatively larger, while a modulus like ML-DSA's 8,380,417 with the same small noise would be very weak (β = 155): the *ratio* of modulus to noise width is what matters, and signatures use a larger modulus with correspondingly larger secrets and different bounds.\n\nThe failure calculation shows the method of the standard. For the toy with η = 32 the exact distribution gives a per-coefficient failure probability of 0.0217 (standard deviation of the noise 362.1, equal to the closed form), and the simulation of the actual toy scheme measures 0.0214. FIPS 203 Table 1 lists 2^-138.8, 2^-164.8 and 2^-174.8 for the three real sets, obtained by the same kind of calculation with the compression noise included (the toy has no compression). **Why failure probability matters:** the CCA transform of ML-KEM (B9) assumes that honestly generated ciphertexts essentially never fail, because a failure is observable and can leak information about the secret key.\n\n**Honest limits.** None of this proves security. Security estimates are statements about the *best known* attacks, and they have been revised before (for instance by new cost models for sieving and by new attack techniques), so standards add margin and the community keeps analysing. A reasoned position: lattice assumptions are well studied but structured variants add an assumption; hash-based signatures rest on the least; and code-based schemes have the longest analysis history but the largest keys."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the core-SVP model count?",
+              "options": [
+                "The cost of one SVP call in dimension beta, about 2^(0.292 beta) classically",
+                "The total cost of the whole attack including memory",
+                "The key size"
+              ],
+              "correct_index": 0,
+              "explanation": "It is a simple model that ignores refinements, so it is a guide and not a certificate."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does widening the noise help security but hurt a KEM?",
+              "options": [
+                "It makes the LWE problem harder but raises the decryption failure probability",
+                "It shortens the key",
+                "It removes the need for a modulus"
+              ],
+              "correct_index": 0,
+              "explanation": "Correctness requires the accumulated noise to stay below q/4."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is the decryption failure probability security relevant for a CCA-secure KEM?",
+              "options": [
+                "Failures are observable and can leak information about the secret key",
+                "Failures speed up encryption",
+                "Failures change the modulus"
+              ],
+              "correct_index": 0,
+              "explanation": "The security proof of the FO transform assumes a negligible failure rate."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Table 1 (decapsulation failure rates) and Table 2 (parameter sets and their security categories)"
+            },
+            {
+              "book": "B07",
+              "locator": "Nakamura et al., 'Parallel DeepBKZ 2.0', Section 2.2 (BKZ, block size, Gram-Schmidt profile) for the reduction algorithms behind the estimate"
+            },
+            {
+              "book": "B94",
+              "locator": "NIST IR 8545: the security categories and the relation of KEM parameter sets to them"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The estimator formulas and the constants 0.292 and 0.265 are taken from the literature on the primal attack and core-SVP costs and were not read from a source on disk; the comparison with published Kyber estimates (block sizes of about 406, 623 and 873) is from memory. NIST's category definitions are described from SP 800-57 context cited in FIPS 205, not re-read. The claim that estimates have been revised is general knowledge."
+          },
+          "after": "sec-9"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "c8-n01",
+          "prompt": "What does a unimodular matrix do to a lattice basis?",
+          "options": [
+            "It gives another basis of the same lattice and leaves the volume unchanged",
+            "It changes the lattice",
+            "It makes the basis orthogonal"
+          ],
+          "correct_index": 0,
+          "explanation": "A matrix with determinant plus or minus one maps bases of a lattice to bases of the same lattice.",
+          "source": {
+            "book": "B07",
+            "locator": "Section 2.1"
+          }
+        },
+        {
+          "id": "c8-n02",
+          "prompt": "What is Kannan's embedding used for?",
+          "options": [
+            "To turn a closest vector problem into a shortest vector problem",
+            "To compress keys",
+            "To compute the NTT"
+          ],
+          "correct_index": 0,
+          "explanation": "The vector (e, 1) is the unusually short vector of the embedded lattice.",
+          "source": {
+            "book": "B07",
+            "locator": "Section 2.2"
+          }
+        },
+        {
+          "id": "c8-n03",
+          "prompt": "Why does Babai's nearest-plane decoding need a good basis?",
+          "options": [
+            "The rounding only isolates the right point when the basis vectors are short and nearly orthogonal",
+            "It works only for two dimensions",
+            "It requires a prime modulus"
+          ],
+          "correct_index": 0,
+          "explanation": "With a bad basis the lesson's decoding succeeded 0 of 300 times.",
+          "source": {
+            "book": "B07",
+            "locator": "Sections 2.1 and 2.2"
+          }
+        },
+        {
+          "id": "c8-n04",
+          "prompt": "What makes LWE harder than a system of linear equations?",
+          "options": [
+            "Each equation has a small random error",
+            "The modulus is secret",
+            "The matrix is secret"
+          ],
+          "correct_index": 0,
+          "explanation": "Without the error, Gaussian elimination recovers the secret.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 3"
+          }
+        },
+        {
+          "id": "c8-n05",
+          "prompt": "Why is q = 3329 incompatible with a complete NTT of length 256?",
+          "options": [
+            "It has a primitive 256th root of unity but no 512th root",
+            "It is not prime",
+            "It is too small"
+          ],
+          "correct_index": 0,
+          "explanation": "q - 1 = 2^8 * 13 is not divisible by 512.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 4.3"
+          }
+        },
+        {
+          "id": "c8-n06",
+          "prompt": "How are ML-KEM-512, -768 and -1024 mainly distinguished?",
+          "options": [
+            "By the module rank k = 2, 3, 4",
+            "By the modulus",
+            "By the ring degree"
+          ],
+          "correct_index": 0,
+          "explanation": "n = 256 and q = 3329 are common to all three.",
+          "source": {
+            "book": "B04",
+            "locator": "Table 2"
+          }
+        },
+        {
+          "id": "c8-n07",
+          "prompt": "What is a collision of Ajtai's hash function?",
+          "options": [
+            "A short non-zero solution of A x = 0 with entries in {-1, 0, 1}",
+            "Two equal inputs",
+            "A zero matrix"
+          ],
+          "correct_index": 0,
+          "explanation": "The difference of two colliding bit strings is such a vector.",
+          "source": {
+            "book": "B07",
+            "locator": "Section 2.2 and the q-ary lattice construction"
+          }
+        },
+        {
+          "id": "c8-n08",
+          "prompt": "Why does a Merkle tree signature carry log2(number of leaves) hash values?",
+          "options": [
+            "One sibling hash per level of the path to the root",
+            "One per message bit",
+            "One per signer"
+          ],
+          "correct_index": 0,
+          "explanation": "A path in a tree with 2^20 leaves needs 20 hash values.",
+          "source": {
+            "book": "B03",
+            "locator": "Merkle trees"
+          }
+        },
+        {
+          "id": "c8-n09",
+          "prompt": "What is the purpose of the Winternitz checksum?",
+          "options": [
+            "To prevent forging by hashing chain values forward",
+            "To detect transmission errors",
+            "To shorten the key"
+          ],
+          "correct_index": 0,
+          "explanation": "Raising a message digit lowers the checksum, which cannot be done by hashing forward.",
+          "source": {
+            "book": "B03",
+            "locator": "Winternitz signature scheme"
+          }
+        },
+        {
+          "id": "c8-n10",
+          "prompt": "What does the syndrome of a received word depend on?",
+          "options": [
+            "Only on the error vector",
+            "On the transmitted codeword",
+            "On the message"
+          ],
+          "correct_index": 0,
+          "explanation": "H(c + e) = He because Hc = 0.",
+          "source": {
+            "book": "B01",
+            "locator": "Code-based cryptosystems"
+          }
+        },
+        {
+          "id": "c8-n11",
+          "prompt": "What does Prange's algorithm assume in each iteration?",
+          "options": [
+            "That all errors lie inside the chosen set of r positions",
+            "That the code is cyclic",
+            "That the syndrome is zero"
+          ],
+          "correct_index": 0,
+          "explanation": "The success probability is C(r, w)/C(n, w) times the invertibility probability.",
+          "source": {
+            "book": "B94",
+            "locator": "Classic McEliece"
+          }
+        },
+        {
+          "id": "c8-n12",
+          "prompt": "Why does widening the LWE error distribution help security but hurt ML-KEM?",
+          "options": [
+            "It makes attacks harder but raises the decryption failure probability",
+            "It shortens ciphertexts",
+            "It removes the need for hashing"
+          ],
+          "correct_index": 0,
+          "explanation": "Correctness needs the accumulated noise to stay below q/4.",
+          "source": {
+            "book": "B04",
+            "locator": "Table 1 and Table 2"
+          }
+        }
+      ],
+      "estimated_minutes": 670,
+      "notes": "Rewrites ten outline sections as lessons with executed listings: exactly verified LLL and Babai decoding, Regev encryption and a Kannan-embedding attack, the FIPS 203 NTT checked against kyber-py, module-LWE sizes matching FIPS 203, an Ajtai-hash collision by LLL, ML-DSA parameters and sizes matching FIPS 204, Merkle paths from the slides, Lamport and Winternitz attacks, SLH-DSA sizes matching FIPS 205, Golay and Hamming codes, Prange decoding with Classic McEliece key sizes matching IR 8545, and a core-SVP estimator with an exact failure-probability calculation.",
+      "learning_objectives": [
+        "Describe lattices, bases and volume, run and exactly verify LLL, and explain why a good basis decodes where a bad one fails.",
+        "Explain LWE and mount a lattice attack on toy instances, relating the error width to correctness and security.",
+        "Implement the ML-KEM number-theoretic transform from FIPS 203 and explain ring and module structure with sizes.",
+        "Explain SIS and module-SIS through a collision attack, and relate ML-DSA's parameters to FIPS 204.",
+        "Build Merkle trees and hash-based one-time and few-time signatures, and show why key reuse and a missing checksum are fatal.",
+        "Build Hamming and Golay codes, run information-set decoding, and use a core-SVP estimate and an exact failure calculation to reason about parameters."
+      ]
+    }
+  ]
+}
