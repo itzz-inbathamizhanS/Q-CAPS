@@ -244,6 +244,9 @@ def grade_attempt(db: Session, user: models.User, attempt_id: str, answers: list
         correct_answers=correct_count, total_questions=total,
     ))
     db.commit()
+    # The graded responses are new evidence for the competencies these items are tagged with.
+    from competency import capability
+    capability.refresh(db, user.id, capability.codes_for_items(db, item_ids))
 
     return {
         "attempt_id": attempt.id,

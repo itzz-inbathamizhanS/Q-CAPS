@@ -115,3 +115,17 @@ test('practicals: duplicate ids', () => {
   f.practicals = [{ kind: 'lab', id: 'x' }, { kind: 'lab', id: 'x' }];
   has(validateCompetencyModel(f), 'duplicate lab x');
 });
+
+// --- structured level rules (T1.4) ---
+test('level rule must agree with its evidence text', () => {
+  const f = fixture();
+  f.model.capability_levels.min_items_for_known = 3;
+  f.model.capability_levels.levels[2] = { id: 'Developing', rank: 2, evidence: 'At least 60% on Aware/Explain items', rule: { requires: 'Beginner', depths: ['Aware', 'Explain'], min_share: 0.6 } };
+  f.model.capability_levels.levels[1] = { id: 'Beginner', rank: 1, evidence: 'At least 3 items', rule: { min_items: 3 } };
+  assert.deepStrictEqual(validateCompetencyModel(f), []);
+  f.model.capability_levels.levels[2].rule.min_share = 0.7;
+  has(validateCompetencyModel(f), 'does not match its evidence text');
+  f.model.capability_levels.levels[2].rule = { requires: 'Advanced', depths: ['Deep'], min_share: 0.6 };
+  has(validateCompetencyModel(f), 'which is not a lower level');
+  has(validateCompetencyModel(f), 'unknown depth Deep in rule');
+});

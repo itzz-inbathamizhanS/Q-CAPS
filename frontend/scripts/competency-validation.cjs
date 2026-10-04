@@ -29,6 +29,25 @@ function validateCompetencyModel({ model, lessonDoc, manifestModuleIds, quizItem
   if (levels.length !== 5) err(`expected 5 capability levels, found ${levels.length}`);
   if (levels[0]?.id !== 'Unknown') err('lowest capability level must be Unknown (no evidence is not a low score)');
 
+  // The backend applies each level's structured rule; it must say the same as the level's evidence text.
+  const minItems = model.capability_levels?.min_items_for_known;
+  const levelRank = new Map(levels.map((lv) => [lv.id, lv.rank]));
+  for (const lv of levels) {
+    const rule = lv.rule;
+    if (!rule) continue;
+    const text = lv.evidence || '';
+    if (rule.min_share != null && !text.includes(`${Math.round(rule.min_share * 100)}%`)) {
+      err(`level ${lv.id}: rule min_share ${rule.min_share} does not match its evidence text "${text}"`);
+    }
+    if (rule.min_items != null && rule.min_items !== minItems) err(`level ${lv.id}: rule min_items ${rule.min_items} differs from min_items_for_known ${minItems}`);
+    if ((rule.min_items != null || rule.below_min_items) && !text.includes(String(minItems))) {
+      err(`level ${lv.id}: evidence text does not mention the ${minItems}-item threshold`);
+    }
+    if (rule.requires != null && !(levelRank.get(rule.requires) < lv.rank)) err(`level ${lv.id}: requires ${rule.requires}, which is not a lower level`);
+    for (const d of rule.depths || []) if (!depthIds.has(d)) err(`level ${lv.id}: unknown depth ${d} in rule`);
+    if (rule.passed_practicals && !/practical/i.test(text)) err(`level ${lv.id}: rule needs a practical but the evidence text does not say so`);
+  }
+
   const checkTag = (where, competency, depth) => {
     if (!competencyIds.has(competency)) err(`${where}: unknown competency ${competency}`);
     if (!depthIds.has(depth)) err(`${where}: unknown depth ${depth}`);

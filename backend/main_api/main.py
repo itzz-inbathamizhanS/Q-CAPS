@@ -513,7 +513,8 @@ def get_finding_requirements(finding_id: str, db: Session = Depends(get_db), cur
     if not finding or not asset_visible(db, current_user, finding.asset_id):
         raise HTTPException(status_code=404, detail="Finding not found")
     from competency import requirements
-    rows = db.query(models.FindingRequirement).filter(models.FindingRequirement.finding_id == finding_id)         .order_by(models.FindingRequirement.map_version, models.FindingRequirement.requirement_id, models.FindingRequirement.competency_code).all()
+    rows = (db.query(models.FindingRequirement).filter(models.FindingRequirement.finding_id == finding_id)
+            .order_by(models.FindingRequirement.map_version, models.FindingRequirement.requirement_id, models.FindingRequirement.competency_code).all())
     names = {c.code: c.name for c in db.query(models.Competency).filter(
         models.Competency.code.in_([r.competency_code for r in rows])).all()} if rows else {}
     requirement_map = requirements.load_map()
@@ -523,8 +524,11 @@ def get_finding_requirements(finding_id: str, db: Session = Depends(get_db), cur
 def get_user_capabilities(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     if current_user.id != user_id and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Not authorized to view this user's capabilities")
-    capabilities = db.query(models.LearnerCapability).filter(models.LearnerCapability.user_id == user_id).all()
-    return capabilities
+    rows = (db.query(models.LearnerCapability, models.Competency)
+            .join(models.Competency, models.Competency.id == models.LearnerCapability.competency_id)
+            .filter(models.LearnerCapability.user_id == user_id).order_by(models.Competency.code).all())
+    return [schemas.LearnerCapabilityOut.model_validate(cap).model_copy(update={"competency_code": comp.code, "competency_name": comp.name})
+            for cap, comp in rows]
 
 @app.post("/api/interventions", response_model=schemas.InterventionOut)
 def create_intervention(intervention_in: schemas.InterventionCreate, db: Session = Depends(get_db), _admin: models.User = Depends(require_admin)):
@@ -570,6 +574,13 @@ def verify_intervention(id: str, verification_data: dict, db: Session = Depends(
     )
     
     # In a full implementation, we'd save Verification and ClosureEvent here
+    if intervention.competency_id is not None:
+        competency = db.get(models.Competency, intervention.competency_id)
+        finding = db.get(models.Finding, intervention.finding_id)
+        asset = db.get(models.Asset, finding.asset_id) if finding else None
+        if competency and asset and asset.owner_user_id:
+            from competency import capability
+            capability.refresh(db, asset.owner_user_id, {competency.code})
     return closure_result
 
 @app.get("/api/closures/{finding_id}")

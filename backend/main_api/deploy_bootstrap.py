@@ -59,6 +59,8 @@ def main() -> int:
                 print(create_demo_account(db, name, password, reset=True, profile=profile))
             else:
                 print(f"{env} not set (>= 12 characters): {name} not created")
+        from competency.capability import recompute_all
+        print("capabilities:", recompute_all(db))
         print("users:", [(u.name, u.role) for u in db.query(models.User).order_by(models.User.id)])
     return 0
 

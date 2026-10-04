@@ -149,11 +149,17 @@ class LearnerCapability(Base):
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
     competency_id = Column(Integer, ForeignKey("competencies.id"))
-    knowledge_score = Column(Float, default=0.0)
-    procedural_score = Column(Float, default=0.0)
-    operational_score = Column(Float, default=0.0)
-    confidence = Column(Float, default=0.0)
-    freshness = Column(Float, default=1.0)
+    # Filled by competency/capability.py from stored evidence. None means "no evidence of this kind", not zero.
+    knowledge_score = Column(Float, nullable=True)
+    procedural_score = Column(Float, nullable=True)
+    operational_score = Column(Float, nullable=True)
+    confidence = Column(Float, nullable=True)
+    freshness = Column(Float, nullable=True)
+    knowledge_by_depth = Column(JSON, nullable=True)  # {"aware_explain": {"correct", "total"}, "apply": ..., "analyse": ..., "reviewed_items": n}
+    evidence_count = Column(Integer, nullable=True)
+    last_evidence_at = Column(DateTime, nullable=True)
+    level = Column(String, nullable=True)  # Unknown | Beginner | Developing | Proficient | Advanced
+    model_version = Column(String, nullable=True)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 class Intervention(Base):

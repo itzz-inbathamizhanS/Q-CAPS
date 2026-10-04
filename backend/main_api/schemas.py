@@ -271,20 +271,23 @@ class CompetencyOut(CompetencyBase):
     class Config:
         from_attributes = True
 
-class LearnerCapabilityBase(BaseModel):
+class LearnerCapabilityOut(BaseModel):
+    """Estimated by competency/capability.py from stored evidence. None means no evidence of that kind."""
+    id: int
     user_id: int
     competency_id: int
-    knowledge_score: float = 0.0
-    procedural_score: float = 0.0
-    operational_score: float = 0.0
-    confidence: float = 0.0
-    freshness: float = 1.0
-
-class LearnerCapabilityCreate(LearnerCapabilityBase):
-    pass
-
-class LearnerCapabilityOut(LearnerCapabilityBase):
-    id: int
+    competency_code: Optional[str] = None
+    competency_name: Optional[str] = None
+    knowledge_score: Optional[float] = None
+    procedural_score: Optional[float] = None
+    operational_score: Optional[float] = None
+    confidence: Optional[float] = None
+    freshness: Optional[float] = None
+    knowledge_by_depth: Optional[dict] = None
+    evidence_count: Optional[int] = None
+    last_evidence_at: Optional[datetime] = None
+    level: Optional[str] = None
+    model_version: Optional[str] = None
     updated_at: datetime
     class Config:
         from_attributes = True

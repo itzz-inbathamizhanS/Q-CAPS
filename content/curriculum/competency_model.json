@@ -28,31 +28,37 @@
   "capability_levels": {
     "status": "pilot-hypothesis",
     "note": "Thresholds are starting hypotheses to calibrate against pilot data, not validated cut scores (Architecture 3.3, O3).",
+    "rule_note": "Each level's rule is the machine-readable form of its evidence text and is what the backend applies (competency/capability.py). depths: the item depths the share is computed over; min_share: the share of those items answered correctly (latest response per item); passed_practicals: tagged practicals at Apply depth or deeper that were passed; requires: the level that must already hold. A content test checks that the rule and the evidence text agree.",
     "levels": [
       {
         "id": "Unknown",
         "rank": 0,
-        "evidence": "Fewer than 3 scored items on this competency"
+        "evidence": "Fewer than 3 scored items on this competency",
+        "rule": { "below_min_items": true }
       },
       {
         "id": "Beginner",
         "rank": 1,
-        "evidence": "At least 3 items; below 60% on Aware/Explain items"
+        "evidence": "At least 3 items; below 60% on Aware/Explain items",
+        "rule": { "min_items": 3 }
       },
       {
         "id": "Developing",
         "rank": 2,
-        "evidence": "At least 60% on Aware/Explain items"
+        "evidence": "At least 60% on Aware/Explain items",
+        "rule": { "requires": "Beginner", "depths": ["Aware", "Explain"], "min_share": 0.6 }
       },
       {
         "id": "Proficient",
         "rank": 3,
-        "evidence": "Developing, plus at least 70% on Apply items and one passed practical"
+        "evidence": "Developing, plus at least 70% on Apply items and one passed practical",
+        "rule": { "requires": "Developing", "depths": ["Apply"], "min_share": 0.7, "passed_practicals": 1 }
       },
       {
         "id": "Advanced",
         "rank": 4,
-        "evidence": "Proficient, plus at least 70% on Analyse items or a passed capstone component"
+        "evidence": "Proficient, plus at least 70% on Analyse items or a passed capstone component",
+        "rule": { "requires": "Proficient", "depths": ["Analyse"], "min_share": 0.7, "or_passed_capstone": true }
       }
     ],
     "min_items_for_known": 3,

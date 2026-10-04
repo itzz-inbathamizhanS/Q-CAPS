@@ -60,6 +60,12 @@ def ensure_schema():
             cols = {c["name"] for c in insp.get_columns("competencies")}
             if "model_version" not in cols:
                 conn.execute(text("ALTER TABLE competencies ADD COLUMN model_version VARCHAR"))
+        if "learner_capabilities" in tables:
+            cols = {c["name"] for c in insp.get_columns("learner_capabilities")}
+            for name, sql_type in (("knowledge_by_depth", "JSON"), ("evidence_count", "INTEGER"),
+                                   ("last_evidence_at", "DATETIME"), ("level", "VARCHAR"), ("model_version", "VARCHAR")):
+                if name not in cols:
+                    conn.execute(text(f"ALTER TABLE learner_capabilities ADD COLUMN {name} {sql_type}"))
         if "quiz_items" in tables:
             cols = {c["name"] for c in insp.get_columns("quiz_items")}
             if "tag_status" not in cols:
