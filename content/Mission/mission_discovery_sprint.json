@@ -1,0 +1,241 @@
+{
+  "mission_id": "mission_discovery_sprint",
+  "title": "The Discovery Sprint",
+  "type": "decision_scenario",
+  "linked_module_id": "track_d_e2_cryptographic_discovery",
+  "section_id": "sec-2",
+  "role": "You lead the cryptographic discovery sprint for an enterprise.",
+  "objective": "Build a trustworthy asset picture within five weeks, inside your authorisation.",
+  "environment": "The asset register is incomplete. You have authority over the corporate network and your own cloud accounts. Partners and other tenants are not yours.",
+  "hud": [
+    {
+      "key": "coverage",
+      "label": "Coverage of the estate",
+      "start": 10,
+      "suffix": "%",
+      "max": 100
+    },
+    {
+      "key": "data_quality",
+      "label": "Quality of the data",
+      "start": 80,
+      "suffix": "%",
+      "max": 100,
+      "warn_below": 60
+    },
+    {
+      "key": "scope_compliance",
+      "label": "Scope compliance",
+      "start": 100,
+      "suffix": "%",
+      "max": 100,
+      "warn_below": 90
+    },
+    {
+      "key": "weeks_used",
+      "label": "Weeks used",
+      "start": 0,
+      "suffix": " wk",
+      "warn_above": 5
+    }
+  ],
+  "state_variables": {
+    "coverage": "Coverage of the estate, starts at 10",
+    "data_quality": "Quality of the data, starts at 80",
+    "scope_compliance": "Scope compliance, starts at 100",
+    "weeks_used": "Weeks used, starts at 0"
+  },
+  "stages": [
+    {
+      "stage_id": "s1",
+      "narrative": "You must define the scope.",
+      "decision_prompt": "What is in scope?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Define in-scope ranges with written authorisation from their owners, starting with networks and cloud accounts you own.",
+          "consequence": {
+            "coverage": 20,
+            "weeks_used": 1
+          },
+          "feedback": "Correct. Active scanning needs authorisation, and a written scope protects you and the owners."
+        },
+        {
+          "id": "b",
+          "text": "Scan every address you can reach, including partners and other tenants.",
+          "consequence": {
+            "coverage": 35,
+            "scope_compliance": -50
+          },
+          "feedback": "More coverage, but unauthorised scanning is an offence in many places and can disrupt other organisations' systems."
+        },
+        {
+          "id": "c",
+          "text": "Rely on interviews only.",
+          "consequence": {
+            "coverage": 5,
+            "data_quality": -10
+          },
+          "feedback": "People remember what they built, not what exists; interviews alone miss shadow assets."
+        }
+      ]
+    },
+    {
+      "stage_id": "s2",
+      "narrative": "You choose methods.",
+      "decision_prompt": "How do you collect the data?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Combine passive sources (flow logs, DNS, certificate transparency), active scans in agreed windows, and cloud inventory APIs.",
+          "consequence": {
+            "coverage": 25,
+            "data_quality": 10,
+            "weeks_used": 2
+          },
+          "feedback": "Correct. Independent sources reveal what any one method misses."
+        },
+        {
+          "id": "b",
+          "text": "Run one aggressive full-port scan on production in business hours.",
+          "consequence": {
+            "coverage": 10,
+            "scope_compliance": -15
+          },
+          "feedback": "An unplanned aggressive scan can disrupt production and breaks the agreed change windows."
+        },
+        {
+          "id": "c",
+          "text": "Run one scan once and treat it as complete.",
+          "consequence": {
+            "coverage": 10
+          },
+          "feedback": "A single snapshot is a lower bound and ages immediately."
+        }
+      ]
+    },
+    {
+      "stage_id": "s3",
+      "narrative": "You have findings and the register.",
+      "decision_prompt": "How do you reconcile them?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Compare both ways: list shadow assets (found, not registered) and stale records (registered, not found), and assign owners.",
+          "consequence": {
+            "coverage": 10,
+            "data_quality": 20,
+            "weeks_used": 1
+          },
+          "feedback": "Correct. The differences in both directions are the findings, and each needs an owner."
+        },
+        {
+          "id": "b",
+          "text": "Delete unknown assets from the report to keep it tidy.",
+          "consequence": {
+            "data_quality": -25
+          },
+          "feedback": "That hides precisely the assets most likely to be unmanaged."
+        },
+        {
+          "id": "c",
+          "text": "Add everything found to the register with no owner.",
+          "consequence": {
+            "data_quality": -10
+          },
+          "feedback": "An asset with no owner will not be fixed or classified."
+        }
+      ]
+    },
+    {
+      "stage_id": "s4",
+      "narrative": "The sprint ends.",
+      "decision_prompt": "How do you keep the picture current?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Schedule recurring discovery, alert on drift against the baseline, and keep the raw evidence.",
+          "consequence": {
+            "coverage": 10,
+            "data_quality": 15,
+            "weeks_used": 1
+          },
+          "feedback": "Correct. Estates change; a recurring process is what keeps the inventory true."
+        },
+        {
+          "id": "b",
+          "text": "Hand over a one-off report.",
+          "consequence": {
+            "data_quality": -5
+          },
+          "feedback": "It starts ageing the day it is delivered."
+        },
+        {
+          "id": "c",
+          "text": "Ask teams to self-report each quarter.",
+          "consequence": {
+            "data_quality": -5
+          },
+          "feedback": "Self-reporting misses what teams do not know they have."
+        }
+      ]
+    },
+    {
+      "stage_id": "s5",
+      "narrative": "The programme board reviews the sprint.",
+      "decision_prompt": "Review the outcome.",
+      "choices": []
+    }
+  ],
+  "outcome": {
+    "bands": [
+      {
+        "id": "success",
+        "title": "Trustworthy picture",
+        "text": "SUCCESS. The sprint produced a broad, reconciled, owner-assigned picture within authorisation and on time.",
+        "requires": {
+          "coverage": {
+            "min": 65
+          },
+          "data_quality": {
+            "min": 70
+          },
+          "scope_compliance": {
+            "min": 90
+          },
+          "weeks_used": {
+            "max": 5
+          }
+        }
+      },
+      {
+        "id": "partial",
+        "title": "Useful but incomplete",
+        "text": "PARTIAL. The picture is useful but narrower, noisier or slower than it could have been.",
+        "requires": {
+          "coverage": {
+            "min": 40
+          },
+          "scope_compliance": {
+            "min": 70
+          }
+        }
+      },
+      {
+        "id": "fail",
+        "title": "Not trustworthy",
+        "text": "AT RISK. The scope was breached or the result is too incomplete to rely on.",
+        "requires": {}
+      }
+    ],
+    "final_title": "Discovery Sprint Concluded"
+  },
+  "resolution": {
+    "concept_reveal": "Discovery is authorised, multi-source and repeated. Reconcile findings with the register in both directions, keep unowned items visible, and treat any single scan as a lower bound."
+  },
+  "rewards": {
+    "badge_awarded": "Sprint Scout",
+    "mission_xp_awarded": 80
+  },
+  "replayability_note": "Scoping choices change coverage and compliance differently."
+}

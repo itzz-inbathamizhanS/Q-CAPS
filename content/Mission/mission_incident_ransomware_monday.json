@@ -1,0 +1,240 @@
+{
+  "mission_id": "mission_incident_ransomware_monday",
+  "title": "Ransomware Monday",
+  "type": "decision_scenario",
+  "linked_module_id": "track_a_a4_cybersecurity_foundations",
+  "section_id": "sec-8",
+  "role": "You are the on-call security analyst at a mid-size company.",
+  "objective": "Contain a ransomware outbreak, keep the evidence, and restore service without letting the attacker back in.",
+  "environment": "A finance workstation shows a ransom note. File servers are busy. Offline backups from Friday night exist. There is a written incident plan with an incident manager, legal and communications contacts.",
+  "hud": [
+    {
+      "key": "systems_safe",
+      "label": "Systems unaffected",
+      "start": 100,
+      "suffix": "%",
+      "max": 100,
+      "warn_below": 60
+    },
+    {
+      "key": "evidence_preserved",
+      "label": "Evidence preserved",
+      "start": 100,
+      "suffix": "%",
+      "max": 100,
+      "warn_below": 50
+    },
+    {
+      "key": "hours_elapsed",
+      "label": "Hours elapsed",
+      "start": 0,
+      "suffix": "h",
+      "warn_above": 36
+    }
+  ],
+  "state_variables": {
+    "systems_safe": "Systems unaffected, starts at 100",
+    "evidence_preserved": "Evidence preserved, starts at 100",
+    "hours_elapsed": "Hours elapsed, starts at 0"
+  },
+  "stages": [
+    {
+      "stage_id": "s1",
+      "narrative": "08:10 Monday. A finance workstation displays a ransom note and its files carry a new extension. The file servers show rising activity.",
+      "decision_prompt": "What is your first action?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Isolate the host from the network with the endpoint tool, leave it powered on, and open the incident process.",
+          "consequence": {
+            "systems_safe": -5,
+            "hours_elapsed": 1
+          },
+          "feedback": "Correct. Isolation stops spread while the running machine keeps volatile evidence (memory, processes, connections) that you will need to find the entry point."
+        },
+        {
+          "id": "b",
+          "text": "Pull the power immediately.",
+          "consequence": {
+            "systems_safe": -5,
+            "evidence_preserved": -25,
+            "hours_elapsed": 1
+          },
+          "feedback": "It stops the host, but volatile evidence in memory is lost and encryption keys or malware artefacts that were only in RAM are gone. Network isolation contains just as well and keeps them."
+        },
+        {
+          "id": "c",
+          "text": "Wipe and reimage the machine so the user can work again.",
+          "consequence": {
+            "systems_safe": -20,
+            "evidence_preserved": -40,
+            "hours_elapsed": 2
+          },
+          "feedback": "Wiping destroys the evidence and does nothing about the other systems the attacker already touched. The entry point stays unknown and the attacker can return."
+        }
+      ]
+    },
+    {
+      "stage_id": "s2",
+      "narrative": "The host is isolated, but logs show the same account touching three file shares in the last hour.",
+      "decision_prompt": "What is the next move?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Disable the compromised account, block the lateral-movement paths, and use the logs to list which shares were touched.",
+          "consequence": {
+            "systems_safe": -10,
+            "hours_elapsed": 3
+          },
+          "feedback": "Correct. Cutting the attacker's credentials and paths is the containment step, and the logs tell you what must be restored or checked."
+        },
+        {
+          "id": "b",
+          "text": "Pay the ransom to get the decryption key quickly.",
+          "consequence": {
+            "systems_safe": -30,
+            "evidence_preserved": -10,
+            "hours_elapsed": 6
+          },
+          "feedback": "Payment does not remove the attacker's access, does not guarantee a working key, funds further attacks, and may raise legal issues. It is not a containment measure."
+        },
+        {
+          "id": "c",
+          "text": "Wait for more information before acting.",
+          "consequence": {
+            "systems_safe": -35,
+            "hours_elapsed": 8
+          },
+          "feedback": "Ransomware spreads in minutes. Waiting lets it reach more shares; containment should begin on strong indicators and be refined as you learn."
+        }
+      ]
+    },
+    {
+      "stage_id": "s3",
+      "narrative": "The business asks for status and legal asks whether personal data was involved.",
+      "decision_prompt": "How do you handle communication?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Follow the incident plan: the incident manager coordinates, legal and communications are engaged, and there is a single source of status.",
+          "consequence": {
+            "hours_elapsed": 1
+          },
+          "feedback": "Correct. A single coordinated channel avoids contradictory messages and gets legal advice on notification duties early."
+        },
+        {
+          "id": "b",
+          "text": "Let each team handle its own updates informally.",
+          "consequence": {
+            "evidence_preserved": -10,
+            "hours_elapsed": 4
+          },
+          "feedback": "Informal channels produce conflicting accounts and uncontrolled changes to affected systems, which damage evidence and slow the response."
+        },
+        {
+          "id": "c",
+          "text": "Post a public status before the facts are verified.",
+          "consequence": {
+            "systems_safe": -5,
+            "evidence_preserved": -5,
+            "hours_elapsed": 2
+          },
+          "feedback": "Unverified public statements can be wrong, may reveal your response to the attacker, and create legal exposure. Communicate externally through the plan, once facts are confirmed."
+        }
+      ]
+    },
+    {
+      "stage_id": "s4",
+      "narrative": "Verified offline backups exist from Friday night. It is not yet confirmed that the attacker's persistence is removed.",
+      "decision_prompt": "How do you recover?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Remove the attacker's access first (accounts, persistence, entry point), verify the backups are clean, then restore in priority order.",
+          "consequence": {
+            "systems_safe": 25,
+            "hours_elapsed": 10
+          },
+          "feedback": "Correct. Restoring before eradication hands the systems straight back to the attacker. Priority order brings the most important services back first."
+        },
+        {
+          "id": "b",
+          "text": "Restore everything from backup immediately.",
+          "consequence": {
+            "systems_safe": 5,
+            "evidence_preserved": -15,
+            "hours_elapsed": 4
+          },
+          "feedback": "Fast, but if the entry point and persistence remain the attacker can encrypt the restored systems again, and the restore overwrites artefacts the investigation still needs."
+        },
+        {
+          "id": "c",
+          "text": "Rebuild every system from scratch without analysis.",
+          "consequence": {
+            "systems_safe": 20,
+            "evidence_preserved": -20,
+            "hours_elapsed": 30
+          },
+          "feedback": "Safe in principle but very slow, and without analysis you still do not know how the attacker got in, so the same hole may be rebuilt."
+        }
+      ]
+    },
+    {
+      "stage_id": "s5",
+      "narrative": "The incident manager prepares the post-incident report.",
+      "decision_prompt": "Review the outcome.",
+      "choices": []
+    }
+  ],
+  "outcome": {
+    "bands": [
+      {
+        "id": "success",
+        "title": "Contained and recovered",
+        "text": "SUCCESS. The outbreak was contained quickly, the evidence supports a root-cause analysis, and service was restored without reinfection.",
+        "requires": {
+          "systems_safe": {
+            "min": 75
+          },
+          "evidence_preserved": {
+            "min": 70
+          },
+          "hours_elapsed": {
+            "max": 24
+          }
+        }
+      },
+      {
+        "id": "partial",
+        "title": "Recovered with gaps",
+        "text": "PARTIAL. Service came back, but evidence loss or delay will make the root cause harder to prove and a repeat more likely.",
+        "requires": {
+          "systems_safe": {
+            "min": 65
+          },
+          "evidence_preserved": {
+            "min": 50
+          },
+          "hours_elapsed": {
+            "max": 48
+          }
+        }
+      },
+      {
+        "id": "fail",
+        "title": "Outbreak not under control",
+        "text": "AT RISK. Delay, lost evidence or an unsafe restore left systems exposed.",
+        "requires": {}
+      }
+    ],
+    "final_title": "Ransomware Monday Concluded"
+  },
+  "resolution": {
+    "concept_reveal": "Incident response follows a lifecycle: preparation, detection and analysis, containment, eradication and recovery, and lessons learned (NIST SP 800-61). The order matters: contain without destroying evidence, remove the attacker before restoring, and communicate through one coordinated channel. Paying a ransom is not a containment step."
+  },
+  "rewards": {
+    "badge_awarded": "Incident Handler",
+    "mission_xp_awarded": 60
+  },
+  "replayability_note": "Choices change the sequence of consequences; replay to compare the paths."
+}

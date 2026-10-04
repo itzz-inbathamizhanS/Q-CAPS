@@ -1,0 +1,228 @@
+{
+  "mission_id": "mission_flat_network_breach",
+  "title": "Breach in the Flat Network",
+  "type": "decision_scenario",
+  "linked_module_id": "track_b_b6_network_security_engineering",
+  "section_id": "sec-9",
+  "role": "You are the network security engineer after a laptop compromise.",
+  "objective": "Contain the breach and design segmentation so that the next compromise cannot reach the crown jewels.",
+  "environment": "The internal network is flat: every internal address can reach every other, and the VPN trusts all internal addresses. Finance databases, domain controllers and backups share the network with laptops.",
+  "hud": [
+    {
+      "key": "blast_radius",
+      "label": "Systems reachable from a compromised host",
+      "start": 100,
+      "suffix": "%",
+      "max": 100,
+      "warn_above": 60
+    },
+    {
+      "key": "operations_ok",
+      "label": "Business operations",
+      "start": 100,
+      "suffix": "%",
+      "max": 100,
+      "warn_below": 70
+    },
+    {
+      "key": "weeks_elapsed",
+      "label": "Weeks elapsed",
+      "start": 0,
+      "suffix": " wk",
+      "warn_above": 10
+    }
+  ],
+  "state_variables": {
+    "blast_radius": "Systems reachable from a compromised host, starts at 100",
+    "operations_ok": "Business operations, starts at 100",
+    "weeks_elapsed": "Weeks elapsed, starts at 0"
+  },
+  "stages": [
+    {
+      "stage_id": "s1",
+      "narrative": "Logs show an attacker moving from a laptop towards the finance database.",
+      "decision_prompt": "How do you contain the live incident?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Isolate the laptop and its credentials, apply a temporary rule blocking east-west traffic from it, and keep business traffic running.",
+          "consequence": {
+            "blast_radius": -20,
+            "operations_ok": -3
+          },
+          "feedback": "Correct. Contain the specific foothold and its paths while the rest of the business continues."
+        },
+        {
+          "id": "b",
+          "text": "Shut the whole network down.",
+          "consequence": {
+            "blast_radius": -50,
+            "operations_ok": -40
+          },
+          "feedback": "It contains the breach but halts the business, and you lose live visibility of what the attacker is doing."
+        },
+        {
+          "id": "c",
+          "text": "Do nothing until the root cause is known.",
+          "consequence": {
+            "blast_radius": 10
+          },
+          "feedback": "The attacker keeps moving while you investigate. Contain first, then investigate."
+        }
+      ]
+    },
+    {
+      "stage_id": "s2",
+      "narrative": "Leadership wants segmentation. You have no map of who talks to whom.",
+      "decision_prompt": "How do you start?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Capture flow data for two weeks to see which systems actually communicate, then write allow-lists from the evidence.",
+          "consequence": {
+            "blast_radius": -10,
+            "weeks_elapsed": 2
+          },
+          "feedback": "Correct. Policies written from observed flows break less and stay accurate."
+        },
+        {
+          "id": "b",
+          "text": "Draw segments from the org chart and block everything else at once.",
+          "consequence": {
+            "blast_radius": -30,
+            "operations_ok": -30,
+            "weeks_elapsed": 1
+          },
+          "feedback": "It shrinks the blast radius, but undocumented dependencies fail at once and operations suffer."
+        },
+        {
+          "id": "c",
+          "text": "Buy a bigger perimeter firewall.",
+          "consequence": {
+            "weeks_elapsed": 2
+          },
+          "feedback": "The attacker was already inside the perimeter; a stronger edge does not stop lateral movement."
+        }
+      ]
+    },
+    {
+      "stage_id": "s3",
+      "narrative": "You have flow data and can segment in phases.",
+      "decision_prompt": "What do you segment first?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "The crown jewels: finance databases, domain controllers and backups, with default-deny and monitored allow-lists.",
+          "consequence": {
+            "blast_radius": -30,
+            "operations_ok": -5,
+            "weeks_elapsed": 3
+          },
+          "feedback": "Correct. Protecting the highest-value targets first removes the most risk per unit of effort."
+        },
+        {
+          "id": "b",
+          "text": "Segment building by building.",
+          "consequence": {
+            "blast_radius": -10,
+            "operations_ok": -5,
+            "weeks_elapsed": 4
+          },
+          "feedback": "Physical location rarely matches risk or data flows; it takes long and protects little."
+        },
+        {
+          "id": "c",
+          "text": "Start with the guest Wi-Fi only.",
+          "consequence": {
+            "blast_radius": -5,
+            "weeks_elapsed": 1
+          },
+          "feedback": "Guest Wi-Fi is easy and worthwhile, but it was not the attack path and leaves the crown jewels exposed."
+        }
+      ]
+    },
+    {
+      "stage_id": "s4",
+      "narrative": "Segments exist. Internal addresses are still implicitly trusted by the VPN and admin tools.",
+      "decision_prompt": "What do you do about identity?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Apply zero-trust controls for admin access: MFA, per-request authorisation, just-in-time admin rights and no shared accounts.",
+          "consequence": {
+            "blast_radius": -20,
+            "operations_ok": -3,
+            "weeks_elapsed": 2
+          },
+          "feedback": "Correct. A stolen laptop or password should not be enough to reach a crown jewel; each access is authenticated and authorised."
+        },
+        {
+          "id": "b",
+          "text": "Keep trusting every internal address on the VPN.",
+          "consequence": {},
+          "feedback": "Segmentation without identity checks still lets a compromised trusted address through allowed paths."
+        },
+        {
+          "id": "c",
+          "text": "Rename the hosts so they are harder to guess.",
+          "consequence": {},
+          "feedback": "Obscurity does not stop an attacker who can scan the network."
+        }
+      ]
+    },
+    {
+      "stage_id": "s5",
+      "narrative": "The CISO reviews the programme.",
+      "decision_prompt": "Review the outcome.",
+      "choices": []
+    }
+  ],
+  "outcome": {
+    "bands": [
+      {
+        "id": "success",
+        "title": "Contained and segmented",
+        "text": "SUCCESS. The breach was contained without an outage, and the crown jewels now sit behind segments and identity-aware access.",
+        "requires": {
+          "blast_radius": {
+            "max": 25
+          },
+          "operations_ok": {
+            "min": 70
+          },
+          "weeks_elapsed": {
+            "max": 10
+          }
+        }
+      },
+      {
+        "id": "partial",
+        "title": "Improved, not done",
+        "text": "PARTIAL. The blast radius is smaller, but either it is still large or the programme cost too much disruption or time.",
+        "requires": {
+          "blast_radius": {
+            "max": 60
+          },
+          "operations_ok": {
+            "min": 50
+          }
+        }
+      },
+      {
+        "id": "fail",
+        "title": "Still flat",
+        "text": "AT RISK. An attacker with one foothold can still reach most systems.",
+        "requires": {}
+      }
+    ],
+    "final_title": "Segmentation Programme Concluded"
+  },
+  "resolution": {
+    "concept_reveal": "Segmentation and zero trust limit lateral movement: contain the foothold, map real flows, protect high-value assets first with default-deny, and authenticate and authorise every access instead of trusting network location (NIST SP 800-207)."
+  },
+  "rewards": {
+    "badge_awarded": "Segmentation Architect",
+    "mission_xp_awarded": 80
+  },
+  "replayability_note": "Different orders of work lead to different disruption; replay to compare."
+}

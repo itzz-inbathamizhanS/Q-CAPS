@@ -1,0 +1,227 @@
+{
+  "mission_id": "mission_crypto_incident_commander",
+  "title": "The Cryptographic Incident",
+  "type": "decision_scenario",
+  "linked_module_id": "track_d_e6_governance",
+  "section_id": "sec-9",
+  "role": "You are the incident commander for a cryptographic weakness. HYPOTHETICAL: the algorithm ALG-X is invented; no vulnerability is claimed for any real algorithm.",
+  "objective": "Contain the exposure from a reported weakness in ALG-X without taking down the business.",
+  "environment": "You have a cryptographic inventory. Two services select their algorithm from a policy file; a meter firmware updater has it compiled in (about 90 days to change); and a legacy ERP has no owner and an unknown algorithm setting.",
+  "hud": [
+    {
+      "key": "exposure_contained",
+      "label": "Exposure contained",
+      "start": 0,
+      "suffix": "%",
+      "max": 100
+    },
+    {
+      "key": "operations",
+      "label": "Business operations",
+      "start": 100,
+      "suffix": "%",
+      "max": 100,
+      "warn_below": 70
+    },
+    {
+      "key": "hours_elapsed",
+      "label": "Hours elapsed",
+      "start": 0,
+      "suffix": " h",
+      "warn_above": 24
+    }
+  ],
+  "state_variables": {
+    "exposure_contained": "Exposure contained, starts at 0",
+    "operations": "Business operations, starts at 100",
+    "hours_elapsed": "Hours elapsed, starts at 0"
+  },
+  "stages": [
+    {
+      "stage_id": "s1",
+      "narrative": "A vendor advisory reports a weakness in ALG-X.",
+      "decision_prompt": "What do you do first?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Query the inventory for affected assets, owners and switch methods, and start the incident process.",
+          "consequence": {
+            "exposure_contained": 15,
+            "hours_elapsed": 1
+          },
+          "feedback": "Correct. The inventory turns 'where is it used?' into a query and gives you owners and switch methods at once."
+        },
+        {
+          "id": "b",
+          "text": "Email all teams asking whether they use it.",
+          "consequence": {
+            "exposure_contained": 3,
+            "hours_elapsed": 6
+          },
+          "feedback": "Slow and incomplete: people do not know what libraries and firmware they depend on."
+        },
+        {
+          "id": "c",
+          "text": "Wait for the vendor to confirm exploitation.",
+          "consequence": {
+            "hours_elapsed": 12
+          },
+          "feedback": "Waiting leaves exposure open when you could already be preparing and switching the assets that are easy to change."
+        }
+      ]
+    },
+    {
+      "stage_id": "s2",
+      "narrative": "Two services select the algorithm from a policy file.",
+      "decision_prompt": "How do you switch them?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Change the policy to the approved fallback for those assets and verify the result with discovery.",
+          "consequence": {
+            "exposure_contained": 40,
+            "operations": -5,
+            "hours_elapsed": 3
+          },
+          "feedback": "Correct. A configuration-driven change is fast and its effect can be verified."
+        },
+        {
+          "id": "b",
+          "text": "Push an untested emergency change to everything, including the firmware.",
+          "consequence": {
+            "exposure_contained": 20,
+            "operations": -35,
+            "hours_elapsed": 2
+          },
+          "feedback": "An untested firmware push risks bricking devices; do not treat the compiled-in case like the configurable case."
+        },
+        {
+          "id": "c",
+          "text": "Disable ALG-X everywhere without checking who depends on it.",
+          "consequence": {
+            "exposure_contained": 45,
+            "operations": -40,
+            "hours_elapsed": 1
+          },
+          "feedback": "It contains the exposure but breaks every client that still needs it; check dependencies first (the inventory has them)."
+        }
+      ]
+    },
+    {
+      "stage_id": "s3",
+      "narrative": "The firmware updater cannot change for 90 days and the ERP has no owner and an unknown setting.",
+      "decision_prompt": "What do you do?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Apply compensating controls (isolate the ERP segment, restrict meter update traffic to a gateway), assign an owner and schedule the fix.",
+          "consequence": {
+            "exposure_contained": 20,
+            "operations": -3,
+            "hours_elapsed": 6
+          },
+          "feedback": "Correct. Reduce exposure with controls while the real fix is prepared, and fix the ownership gap."
+        },
+        {
+          "id": "b",
+          "text": "Accept the risk without an owner's approval.",
+          "consequence": {},
+          "feedback": "Risk acceptance needs a named, accountable owner; here there is none."
+        },
+        {
+          "id": "c",
+          "text": "Ignore the two assets.",
+          "consequence": {
+            "exposure_contained": -5
+          },
+          "feedback": "They are the ones that remain exposed."
+        }
+      ]
+    },
+    {
+      "stage_id": "s4",
+      "narrative": "The immediate exposure is handled.",
+      "decision_prompt": "How do you close the incident?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Hold a lessons-learned review: inventory gaps, ownership, configuration-driven change; update the playbook and schedule a drill.",
+          "consequence": {
+            "exposure_contained": 5,
+            "operations": 3,
+            "hours_elapsed": 2
+          },
+          "feedback": "Correct. The weaknesses the incident exposed are the programme's next tasks."
+        },
+        {
+          "id": "b",
+          "text": "Close the incident and move on.",
+          "consequence": {},
+          "feedback": "The same gaps remain for the next advisory."
+        },
+        {
+          "id": "c",
+          "text": "Blame the team that owned the ERP.",
+          "consequence": {
+            "operations": -5
+          },
+          "feedback": "Blame does not fix the missing ownership process."
+        }
+      ]
+    },
+    {
+      "stage_id": "s5",
+      "narrative": "The risk committee reviews the response.",
+      "decision_prompt": "Review the outcome.",
+      "choices": []
+    }
+  ],
+  "outcome": {
+    "bands": [
+      {
+        "id": "success",
+        "title": "Contained",
+        "text": "SUCCESS. The exposure was contained quickly, operations held, and the gaps were turned into actions.",
+        "requires": {
+          "exposure_contained": {
+            "min": 80
+          },
+          "operations": {
+            "min": 70
+          },
+          "hours_elapsed": {
+            "max": 24
+          }
+        }
+      },
+      {
+        "id": "partial",
+        "title": "Partly contained",
+        "text": "PARTIAL. Part of the exposure was contained, but at a cost or with gaps left open.",
+        "requires": {
+          "exposure_contained": {
+            "min": 50
+          },
+          "operations": {
+            "min": 50
+          }
+        }
+      },
+      {
+        "id": "fail",
+        "title": "Exposure remains",
+        "text": "AT RISK. Significant exposure remains or operations were badly harmed.",
+        "requires": {}
+      }
+    ],
+    "final_title": "Cryptographic Incident Concluded"
+  },
+  "resolution": {
+    "concept_reveal": "A cryptographic incident is answered from preparation: an inventory to find affected assets, configuration-driven algorithm selection to switch quickly, owners for every asset, and compensating controls for what cannot be switched. The playbook is the same for a classical algorithm broken early or a flaw in a post-quantum implementation."
+  },
+  "rewards": {
+    "badge_awarded": "Incident Commander",
+    "mission_xp_awarded": 100
+  },
+  "replayability_note": "Choices trade speed against operational damage."
+}

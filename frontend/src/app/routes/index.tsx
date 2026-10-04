@@ -15,7 +15,6 @@ import { AdminSectionEditor } from '@/pages/AdminSectionEditor';
 import { AdminAudit } from '@/pages/AdminAudit';
 import { QuizPage } from '@/pages/QuizPage';
 import { BadgesAndCerts } from '@/pages/BadgesAndCerts';
-import { MissionHub } from '@/pages/MissionHub';
 import { MissionPlay } from '@/pages/MissionPlay';
 import { ScannerPage } from '@/pages/ScannerPage';
 import { ErrorPage } from '@/pages/ErrorPage';
@@ -88,7 +87,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'missions',
-            element: <MissionHub />,
+            element: <Navigate to="/curriculum" replace />,
           },
           {
             path: 'missions/:missionId',

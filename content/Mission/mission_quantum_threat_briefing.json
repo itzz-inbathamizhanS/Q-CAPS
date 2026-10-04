@@ -1,0 +1,232 @@
+{
+  "mission_id": "mission_quantum_threat_briefing",
+  "title": "The Quantum Threat Briefing",
+  "type": "decision_scenario",
+  "linked_module_id": "track_b_b8_quantum_threats",
+  "section_id": "sec-8",
+  "role": "You are the security architect asked to brief the executive team.",
+  "objective": "Produce an accurate, credible threat model and a request the executives can act on.",
+  "environment": "The company holds customer records with a 25-year retention requirement, signs software updates, and uses TLS everywhere. The board has heard that 'quantum will break all encryption'.",
+  "hud": [
+    {
+      "key": "exposure_covered",
+      "label": "Share of at-risk data covered by the plan",
+      "start": 0,
+      "suffix": "%",
+      "max": 100
+    },
+    {
+      "key": "credibility",
+      "label": "Credibility with the board",
+      "start": 70,
+      "suffix": "%",
+      "max": 100,
+      "warn_below": 50
+    },
+    {
+      "key": "months_used",
+      "label": "Months used",
+      "start": 0,
+      "suffix": " mo",
+      "warn_above": 6
+    }
+  ],
+  "state_variables": {
+    "exposure_covered": "Share of at-risk data covered by the plan, starts at 0",
+    "credibility": "Credibility with the board, starts at 70",
+    "months_used": "Months used, starts at 0"
+  },
+  "stages": [
+    {
+      "stage_id": "s1",
+      "narrative": "You must decide what the threat model is about.",
+      "decision_prompt": "How do you scope it?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Classify data by sensitivity and by how long it must stay secret, and find what is captured in transit or stored under public-key protection.",
+          "consequence": {
+            "exposure_covered": 30,
+            "credibility": 5,
+            "months_used": 1
+          },
+          "feedback": "Correct. Exposure depends on data lifetime and on whether the ciphertext can be captured today (harvest now, decrypt later)."
+        },
+        {
+          "id": "b",
+          "text": "List every system alphabetically with equal priority.",
+          "consequence": {
+            "exposure_covered": 10,
+            "credibility": -5,
+            "months_used": 2
+          },
+          "feedback": "Equal priority hides what matters. A threat model ranks by consequence and lifetime."
+        },
+        {
+          "id": "c",
+          "text": "Focus only on the biggest systems.",
+          "consequence": {
+            "exposure_covered": 10,
+            "credibility": -5,
+            "months_used": 1
+          },
+          "feedback": "Size is not exposure: a small archive with 25-year data can matter more than a large short-lived system."
+        }
+      ]
+    },
+    {
+      "stage_id": "s2",
+      "narrative": "A director asks what exactly is broken and what is not.",
+      "decision_prompt": "What is the correct technical answer?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Shor's algorithm breaks RSA, Diffie-Hellman and elliptic-curve cryptography on a large fault-tolerant machine; Grover's algorithm only gives a quadratic speedup against symmetric keys, so AES-256 and SHA-2/3 remain adequate.",
+          "consequence": {
+            "exposure_covered": 25,
+            "credibility": 10
+          },
+          "feedback": "Correct. The threat is concentrated on public-key key establishment and signatures."
+        },
+        {
+          "id": "b",
+          "text": "Double all symmetric key lengths urgently and leave the public-key systems as they are.",
+          "consequence": {
+            "exposure_covered": -5,
+            "credibility": -10
+          },
+          "feedback": "That reverses the priority: public-key systems are the broken ones, and AES-256 already has margin against Grover."
+        },
+        {
+          "id": "c",
+          "text": "All cryptography is equally broken.",
+          "consequence": {
+            "credibility": -15
+          },
+          "feedback": "This is wrong, and a board member who knows it will stop trusting the rest of the briefing."
+        }
+      ]
+    },
+    {
+      "stage_id": "s3",
+      "narrative": "The board asks when this will happen.",
+      "decision_prompt": "How do you answer?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Present the planning inequality (is the time until a capable machine shorter than migration time plus data lifetime?) with scenarios, not a single predicted date.",
+          "consequence": {
+            "exposure_covered": 15,
+            "credibility": 10,
+            "months_used": 1
+          },
+          "feedback": "Correct. Nobody can give a reliable date, but the inequality lets you decide using your own migration time and data lifetime."
+        },
+        {
+          "id": "b",
+          "text": "State a firm date, say 2029, for when encryption breaks.",
+          "consequence": {
+            "credibility": -15
+          },
+          "feedback": "No such date can be defended. Any firm prediction will be challenged and costs you credibility."
+        },
+        {
+          "id": "c",
+          "text": "Say that no one can know, so no action is needed.",
+          "consequence": {
+            "exposure_covered": -5,
+            "credibility": -10
+          },
+          "feedback": "Uncertainty about the date does not remove the need to act on long-lived data that is captured now."
+        }
+      ]
+    },
+    {
+      "stage_id": "s4",
+      "narrative": "You must end with a request.",
+      "decision_prompt": "What do you ask for?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Tie it to long-lived data and the published policy deadlines, and ask for a cryptographic inventory, a pilot and ownership.",
+          "consequence": {
+            "exposure_covered": 20,
+            "credibility": 10,
+            "months_used": 1
+          },
+          "feedback": "Correct. A specific, bounded request with a reason the board can verify."
+        },
+        {
+          "id": "b",
+          "text": "Warn that all encryption will fail and ask for an open budget.",
+          "consequence": {
+            "credibility": -20
+          },
+          "feedback": "Alarmism and an unbounded ask reduce credibility and are easy to refuse."
+        },
+        {
+          "id": "c",
+          "text": "Send a technical paper with no recommendation.",
+          "consequence": {
+            "credibility": -5
+          },
+          "feedback": "Executives need a decision to make, not only information."
+        }
+      ]
+    },
+    {
+      "stage_id": "s5",
+      "narrative": "The board decides.",
+      "decision_prompt": "Review the outcome.",
+      "choices": []
+    }
+  ],
+  "outcome": {
+    "bands": [
+      {
+        "id": "success",
+        "title": "Plan approved",
+        "text": "SUCCESS. The board understands what is and is not at risk and approves an inventory and pilot.",
+        "requires": {
+          "exposure_covered": {
+            "min": 70
+          },
+          "credibility": {
+            "min": 70
+          },
+          "months_used": {
+            "max": 6
+          }
+        }
+      },
+      {
+        "id": "partial",
+        "title": "Partly persuaded",
+        "text": "PARTIAL. The board will act, but on a narrower scope or with less trust than a stronger briefing would have earned.",
+        "requires": {
+          "exposure_covered": {
+            "min": 40
+          },
+          "credibility": {
+            "min": 50
+          }
+        }
+      },
+      {
+        "id": "fail",
+        "title": "Briefing not accepted",
+        "text": "AT RISK. The briefing did not convince the board or did not cover the exposure.",
+        "requires": {}
+      }
+    ],
+    "final_title": "Threat Briefing Concluded"
+  },
+  "resolution": {
+    "concept_reveal": "A defensible quantum threat model separates what is broken (public-key key establishment and signatures, by Shor) from what loses margin (symmetric keys and hashes, by Grover), ranks data by sensitivity and secrecy lifetime, and frames timing as the inequality 'time until a capable machine < migration time + data lifetime' instead of a predicted date."
+  },
+  "rewards": {
+    "badge_awarded": "Briefing Officer",
+    "mission_xp_awarded": 70
+  },
+  "replayability_note": "Alternative framings change how far the board trusts the plan."
+}

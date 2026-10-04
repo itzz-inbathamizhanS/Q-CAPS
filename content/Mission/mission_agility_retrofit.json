@@ -1,0 +1,227 @@
+{
+  "mission_id": "mission_agility_retrofit",
+  "title": "The Agility Retrofit",
+  "type": "decision_scenario",
+  "linked_module_id": "track_d_e4_crypto_agility",
+  "section_id": "sec-7",
+  "role": "You are the software architect responsible for making a platform crypto-agile.",
+  "objective": "Retrofit a crypto boundary across 20 services without breaking production.",
+  "environment": "Twenty services call a cryptography library directly with algorithm names written in code. Stored hashes and ciphertexts exist in several databases.",
+  "hud": [
+    {
+      "key": "agility",
+      "label": "Cryptographic call sites behind the boundary",
+      "start": 0,
+      "suffix": "%",
+      "max": 100
+    },
+    {
+      "key": "stability",
+      "label": "Production stability",
+      "start": 100,
+      "suffix": "%",
+      "max": 100,
+      "warn_below": 80
+    },
+    {
+      "key": "months_used",
+      "label": "Months used",
+      "start": 0,
+      "suffix": " mo",
+      "warn_above": 8
+    }
+  ],
+  "state_variables": {
+    "agility": "Cryptographic call sites behind the boundary, starts at 0",
+    "stability": "Production stability, starts at 100",
+    "months_used": "Months used, starts at 0"
+  },
+  "stages": [
+    {
+      "stage_id": "s1",
+      "narrative": "You start the retrofit.",
+      "decision_prompt": "What is your first step?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Audit the call sites and library dependencies to establish a baseline and a metric.",
+          "consequence": {
+            "agility": 5,
+            "months_used": 1
+          },
+          "feedback": "Correct. You cannot manage what you have not measured; the audit gives you the metric you will track."
+        },
+        {
+          "id": "b",
+          "text": "Rewrite all 20 services at once.",
+          "consequence": {
+            "agility": 40,
+            "stability": -30,
+            "months_used": 3
+          },
+          "feedback": "Big-bang rewrites of working systems cause outages and hide regressions."
+        },
+        {
+          "id": "c",
+          "text": "Wrap one service and declare victory.",
+          "consequence": {
+            "agility": 5,
+            "months_used": 1
+          },
+          "feedback": "One wrapped service leaves 19 hard-coded ones and no pattern to follow."
+        }
+      ]
+    },
+    {
+      "stage_id": "s2",
+      "narrative": "You design the boundary.",
+      "decision_prompt": "What does its API look like?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "A purpose-level API (seal, open, sign, verify) with the algorithm identifier inside the data, selected by policy.",
+          "consequence": {
+            "agility": 25,
+            "stability": -3,
+            "months_used": 2
+          },
+          "feedback": "Correct. Callers never see algorithms, and old data stays readable because the algorithm travels with it."
+        },
+        {
+          "id": "b",
+          "text": "A thin wrapper that still takes algorithm names and key sizes.",
+          "consequence": {
+            "agility": 10
+          },
+          "feedback": "The algorithm leaks into every caller again."
+        },
+        {
+          "id": "c",
+          "text": "Let each team write its own helper functions.",
+          "consequence": {
+            "agility": 5,
+            "stability": -5
+          },
+          "feedback": "You get 20 different boundaries and no single place to change an algorithm."
+        }
+      ]
+    },
+    {
+      "stage_id": "s3",
+      "narrative": "Services store hashes and ciphertexts.",
+      "decision_prompt": "How do you handle stored data?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Version the stored values, keep the old algorithm readable, re-protect in the background, and verify before removing old keys.",
+          "consequence": {
+            "agility": 25,
+            "months_used": 2
+          },
+          "feedback": "Correct. Stored values are the hard part: the same input now gives a different output, so versions and a verified migration are required."
+        },
+        {
+          "id": "b",
+          "text": "Switch the algorithm and recompute stored hashes.",
+          "consequence": {
+            "stability": -30
+          },
+          "feedback": "Recomputation is impossible for values whose inputs you no longer have, and lookups fail."
+        },
+        {
+          "id": "c",
+          "text": "Leave stored data on the old algorithm forever.",
+          "consequence": {
+            "agility": -5
+          },
+          "feedback": "The old algorithm then remains your real exposure."
+        }
+      ]
+    },
+    {
+      "stage_id": "s4",
+      "narrative": "The boundary is in place.",
+      "decision_prompt": "How do you keep it that way?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Add a CI rule that forbids direct cryptographic calls outside the boundary, an architecture-review checklist, and a drill that changes an algorithm.",
+          "consequence": {
+            "agility": 20,
+            "stability": 5,
+            "months_used": 1
+          },
+          "feedback": "Correct. Enforcement and practice stop the boundary from rotting."
+        },
+        {
+          "id": "b",
+          "text": "Write documentation only.",
+          "consequence": {
+            "agility": 2
+          },
+          "feedback": "Documentation without enforcement is ignored under deadline pressure."
+        },
+        {
+          "id": "c",
+          "text": "Trust each team to remember.",
+          "consequence": {},
+          "feedback": "New code will bypass the boundary within a few releases."
+        }
+      ]
+    },
+    {
+      "stage_id": "s5",
+      "narrative": "The architecture board reviews the retrofit.",
+      "decision_prompt": "Review the outcome.",
+      "choices": []
+    }
+  ],
+  "outcome": {
+    "bands": [
+      {
+        "id": "success",
+        "title": "Agile platform",
+        "text": "SUCCESS. Most call sites are behind a boundary, production stayed stable, and the next algorithm change is a policy change.",
+        "requires": {
+          "agility": {
+            "min": 70
+          },
+          "stability": {
+            "min": 80
+          },
+          "months_used": {
+            "max": 8
+          }
+        }
+      },
+      {
+        "id": "partial",
+        "title": "Partly agile",
+        "text": "PARTIAL. Progress is real but incomplete, or it cost stability or time.",
+        "requires": {
+          "agility": {
+            "min": 40
+          },
+          "stability": {
+            "min": 60
+          }
+        }
+      },
+      {
+        "id": "fail",
+        "title": "Retrofit stalled",
+        "text": "AT RISK. The platform is still hard-coded or became unstable.",
+        "requires": {}
+      }
+    ],
+    "final_title": "Agility Retrofit Concluded"
+  },
+  "resolution": {
+    "concept_reveal": "Retrofit by measuring first, introducing a purpose-level boundary with the algorithm inside the data, migrating stored values with versions and a verified re-protection, and enforcing the boundary in CI. Rewriting everything at once or leaving stored data behind are the two classic failures."
+  },
+  "rewards": {
+    "badge_awarded": "Retrofit Engineer",
+    "mission_xp_awarded": 90
+  },
+  "replayability_note": "Alternative orders change stability and speed."
+}

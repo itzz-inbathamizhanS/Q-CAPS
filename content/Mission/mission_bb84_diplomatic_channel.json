@@ -6,7 +6,6 @@
   "role": "You are the on-site quantum communications officer for a diplomatic mission.",
   "objective": "Establish a shared secret key between Alice (your embassy) and Bob (the receiving embassy) that you can trust has not been intercepted.",
   "environment": "You have: a quantum channel (single-photon transmission), a classical channel (for comparing bases only — never the actual bit values), a photon source at Alice's end, polarization measurement equipment at Bob's end, and limited bandwidth (you can only send a few hundred photons before the diplomatic window closes).",
-
   "state_variables": {
     "alice_bits": "array of random 0/1 values generated per photon sent",
     "alice_bases": "array of randomly chosen '+' (rectilinear) or 'x' (diagonal) bases, one per photon",
@@ -19,7 +18,6 @@
     "observed_error_rate": "computed percentage mismatch in the compared sample",
     "key_accepted": "boolean, learner's final decision"
   },
-
   "stages": [
     {
       "stage_id": "stage_1_setup",
@@ -64,17 +62,15 @@
       }
     }
   ],
-
   "resolution": {
     "success_condition": "Learner correctly aborts when error rate exceeds the normal noise baseline, or correctly accepts when it's within baseline.",
     "failure_condition": "Learner accepts a key with an error rate indicating interception.",
     "concept_reveal": "Full explanation shown at mission end regardless of outcome: 'BB84's security comes from a physical fact, not a policy: an eavesdropper (Eve) intercepting photons must also guess a measurement basis, exactly like Bob does. When her guess is wrong (which happens roughly half the time), she disturbs the photon's state — and that disturbance shows up as extra errors when Alice and Bob compare a sample of their sifted key. No amount of computing power lets Eve avoid this — it's a consequence of quantum measurement itself, not classical cryptography's computational hardness assumptions.' This explicitly ties back to the QKD-vs-PQC distinction taught in Track B/C: this security guarantee is physics-based, which is exactly why QKD doesn't need the 'is the math still hard against future computers' hedge that PQC does — but also why it needs specialized hardware PQC doesn't."
   },
-
   "rewards": {
     "badge_awarded": "QKD Defender",
     "mission_xp_awarded": 85
   },
-
-  "replayability_note": "Each mission run should randomize eve_present and the specific error-rate variance, so replaying the mission doesn't always show the identical numbers — reinforces that the learner is reasoning about statistics, not memorizing a fixed scenario outcome."
+  "replayability_note": "Each mission run should randomize eve_present and the specific error-rate variance, so replaying the mission doesn't always show the identical numbers — reinforces that the learner is reasoning about statistics, not memorizing a fixed scenario outcome.",
+  "section_id": "sec-8"
 }

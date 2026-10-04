@@ -1,0 +1,232 @@
+{
+  "mission_id": "mission_hybrid_pilot_lab",
+  "title": "The Hybrid Pilot",
+  "type": "decision_scenario",
+  "linked_module_id": "track_b_b11_intermediate_pqc_labs",
+  "section_id": "sec-6",
+  "role": "You are the engineer piloting hybrid post-quantum key exchange on a TLS gateway.",
+  "objective": "Turn on the hybrid key exchange in stages, find why some clients fail, and verify that it is really being used.",
+  "environment": "A gateway serves partners and customers. In staging you enabled a hybrid X25519 plus ML-KEM-768 key exchange. A few client types fail to connect.",
+  "hud": [
+    {
+      "key": "handshake_success",
+      "label": "Successful handshakes",
+      "start": 100,
+      "suffix": "%",
+      "max": 100,
+      "warn_below": 95
+    },
+    {
+      "key": "hybrid_share",
+      "label": "Connections using the hybrid key exchange",
+      "start": 0,
+      "suffix": "%",
+      "max": 100
+    },
+    {
+      "key": "confidence",
+      "label": "Team confidence",
+      "start": 30,
+      "suffix": "%",
+      "max": 100,
+      "warn_below": 40
+    }
+  ],
+  "state_variables": {
+    "handshake_success": "Successful handshakes, starts at 100",
+    "hybrid_share": "Connections using the hybrid key exchange, starts at 0",
+    "confidence": "Team confidence, starts at 30"
+  },
+  "stages": [
+    {
+      "stage_id": "s1",
+      "narrative": "Some clients time out during the handshake after the change.",
+      "decision_prompt": "How do you diagnose it?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Capture packets, compare the ClientHello size before and after, and test with and without the hybrid group to isolate the cause.",
+          "consequence": {
+            "confidence": 20
+          },
+          "feedback": "Correct. The hybrid key share makes the ClientHello about a kilobyte larger; capturing and comparing isolates whether size or fragmentation is the problem."
+        },
+        {
+          "id": "b",
+          "text": "Assume the library is buggy and disable the hybrid group permanently.",
+          "consequence": {
+            "confidence": -10
+          },
+          "feedback": "That gives up the pilot without understanding the failure, and the same issue will reappear elsewhere."
+        },
+        {
+          "id": "c",
+          "text": "Blame the clients and publish a notice.",
+          "consequence": {
+            "handshake_success": -3,
+            "confidence": -10
+          },
+          "feedback": "Partners experience outages and you still do not know the cause."
+        }
+      ]
+    },
+    {
+      "stage_id": "s2",
+      "narrative": "The trace shows an older firewall mishandling the larger, multi-segment ClientHello.",
+      "decision_prompt": "What do you do?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Update or reconfigure the firewall to handle the larger message, test again with the hybrid group, and keep the classical fallback enabled.",
+          "consequence": {
+            "handshake_success": 3,
+            "confidence": 10
+          },
+          "feedback": "Correct. Fix the actual cause, keep the fallback, and re-test before widening."
+        },
+        {
+          "id": "b",
+          "text": "Ask the vendor to fix it and enable hybrid for everyone meanwhile.",
+          "consequence": {
+            "handshake_success": -10,
+            "hybrid_share": 30,
+            "confidence": -10
+          },
+          "feedback": "Enabling it for everyone with a known failing component breaks affected users."
+        },
+        {
+          "id": "c",
+          "text": "Shrink the key share by removing the post-quantum component.",
+          "consequence": {
+            "confidence": -5
+          },
+          "feedback": "That removes the thing you are piloting."
+        }
+      ]
+    },
+    {
+      "stage_id": "s3",
+      "narrative": "The fix works in staging. How do you start in production?",
+      "decision_prompt": "What is the rollout plan?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Start with a 5% canary, with a stop rule on handshake failures and a one-step rollback.",
+          "consequence": {
+            "hybrid_share": 15,
+            "confidence": 15
+          },
+          "feedback": "Correct. A small canary with a pre-agreed stop rule limits harm if a client type still fails."
+        },
+        {
+          "id": "b",
+          "text": "Enable it for all traffic at once.",
+          "consequence": {
+            "handshake_success": -15,
+            "hybrid_share": 60,
+            "confidence": -15
+          },
+          "feedback": "Any remaining incompatibility affects every user at once."
+        },
+        {
+          "id": "c",
+          "text": "Skip the canary because staging passed.",
+          "consequence": {
+            "handshake_success": -5,
+            "hybrid_share": 30,
+            "confidence": -10
+          },
+          "feedback": "Staging rarely contains every client and middlebox that production sees."
+        }
+      ]
+    },
+    {
+      "stage_id": "s4",
+      "narrative": "The canary is clean. You want to widen it.",
+      "decision_prompt": "How do you confirm the benefit?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Widen in steps and verify from handshakes that the hybrid group was actually negotiated, not just configured.",
+          "consequence": {
+            "hybrid_share": 35,
+            "confidence": 15
+          },
+          "feedback": "Correct. Configuration is intent; the negotiated group in the handshake is evidence that connections are protected."
+        },
+        {
+          "id": "b",
+          "text": "Assume that configured means negotiated.",
+          "consequence": {
+            "hybrid_share": 10,
+            "confidence": -5
+          },
+          "feedback": "Clients that do not offer the hybrid group silently use classical key exchange, so you may protect far less than you think."
+        },
+        {
+          "id": "c",
+          "text": "Make hybrid mandatory now.",
+          "consequence": {
+            "handshake_success": -20,
+            "hybrid_share": 30
+          },
+          "feedback": "Mandatory hybrid refuses every client that cannot offer it; that is an end state, not a pilot step."
+        }
+      ]
+    },
+    {
+      "stage_id": "s5",
+      "narrative": "The change board reviews the pilot results.",
+      "decision_prompt": "Review the outcome.",
+      "choices": []
+    }
+  ],
+  "outcome": {
+    "bands": [
+      {
+        "id": "success",
+        "title": "Pilot succeeded",
+        "text": "SUCCESS. The pilot found and fixed the cause of the failures and shows measured hybrid use without harming connections.",
+        "requires": {
+          "handshake_success": {
+            "min": 95
+          },
+          "hybrid_share": {
+            "min": 45
+          },
+          "confidence": {
+            "min": 70
+          }
+        }
+      },
+      {
+        "id": "partial",
+        "title": "Partly successful",
+        "text": "PARTIAL. Some hybrid traffic is flowing, but failures or low confidence mean the rollout should pause.",
+        "requires": {
+          "handshake_success": {
+            "min": 85
+          },
+          "hybrid_share": {
+            "min": 20
+          }
+        }
+      },
+      {
+        "id": "fail",
+        "title": "Pilot stopped",
+        "text": "AT RISK. The pilot caused failures or did not establish that the hybrid key exchange is in use.",
+        "requires": {}
+      }
+    ],
+    "final_title": "Hybrid Pilot Concluded"
+  },
+  "resolution": {
+    "concept_reveal": "A post-quantum key share makes the ClientHello much larger, which can break middleboxes. Diagnose with packet captures, fix the cause, keep a classical fallback, roll out through a canary with a stop rule, and verify the negotiated group in the handshake rather than the configuration."
+  },
+  "rewards": {
+    "badge_awarded": "Hybrid Pilot Lead",
+    "mission_xp_awarded": 90
+  },
+  "replayability_note": "Alternative rollouts give different failure patterns."
+}

@@ -1,0 +1,230 @@
+{
+  "mission_id": "mission_side_channel_report",
+  "title": "The Side-Channel Report",
+  "type": "decision_scenario",
+  "linked_module_id": "track_c_c11_pqc_defense_engineering",
+  "section_id": "sec-5",
+  "role": "You are the maintainer of an ML-KEM implementation used by customers.",
+  "objective": "Triage, fix and disclose a reported timing leak in decapsulation.",
+  "environment": "A researcher reports that decapsulation takes measurably different time for valid and invalid ciphertexts, measured over the network from outside.",
+  "hud": [
+    {
+      "key": "key_safety",
+      "label": "Protection of key material",
+      "start": 60,
+      "suffix": "%",
+      "max": 100,
+      "warn_below": 50
+    },
+    {
+      "key": "customer_trust",
+      "label": "Customer trust",
+      "start": 80,
+      "suffix": "%",
+      "max": 100,
+      "warn_below": 60
+    },
+    {
+      "key": "days_open",
+      "label": "Days open",
+      "start": 0,
+      "suffix": " d",
+      "warn_above": 14
+    }
+  ],
+  "state_variables": {
+    "key_safety": "Protection of key material, starts at 60",
+    "customer_trust": "Customer trust, starts at 80",
+    "days_open": "Days open, starts at 0"
+  },
+  "stages": [
+    {
+      "stage_id": "s1",
+      "narrative": "The report arrives with a measurement script.",
+      "decision_prompt": "How do you triage it?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Acknowledge it, reproduce locally with statistical timing tests, and treat it as exploitable until disproved.",
+          "consequence": {
+            "key_safety": 10,
+            "customer_trust": 5,
+            "days_open": 2
+          },
+          "feedback": "Correct. Timing differences can be averaged out over many samples, so network jitter does not make a leak safe."
+        },
+        {
+          "id": "b",
+          "text": "Dismiss it: network jitter hides any difference.",
+          "consequence": {
+            "key_safety": -10,
+            "customer_trust": -15,
+            "days_open": 1
+          },
+          "feedback": "Attackers repeat measurements and use statistics; remote timing attacks have been demonstrated against real systems."
+        },
+        {
+          "id": "c",
+          "text": "Patch immediately without reproducing.",
+          "consequence": {
+            "days_open": 1
+          },
+          "feedback": "A fix that is not tied to a reproduced cause may leave the leak in place and gives you no regression test."
+        }
+      ]
+    },
+    {
+      "stage_id": "s2",
+      "narrative": "You find that the check comparing the re-encrypted ciphertext with the received one exits at the first differing byte.",
+      "decision_prompt": "What is the right fix?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Use a constant-time comparison and a constant-time (mask-based) selection of the output secret, or move to a maintained constant-time implementation, and add tests.",
+          "consequence": {
+            "key_safety": 25,
+            "customer_trust": 5,
+            "days_open": 3
+          },
+          "feedback": "Correct. Both the comparison and the choice between the real and the fallback secret must not depend on secret data in time or memory access."
+        },
+        {
+          "id": "b",
+          "text": "Add a random delay to the function.",
+          "consequence": {
+            "key_safety": 3,
+            "customer_trust": -5
+          },
+          "feedback": "Random delay can be averaged away; the dependence on secret data remains."
+        },
+        {
+          "id": "c",
+          "text": "Allow the service only from the internal network.",
+          "consequence": {
+            "key_safety": 5
+          },
+          "feedback": "It reduces the number of attackers but not the flaw, and is not available to the customers who run your library."
+        }
+      ]
+    },
+    {
+      "stage_id": "s3",
+      "narrative": "A patch exists.",
+      "decision_prompt": "How do you verify it?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Run statistical timing tests in CI with many measurements, and check that compiler optimisations or CPU behaviour have not reintroduced a branch.",
+          "consequence": {
+            "key_safety": 10,
+            "customer_trust": 5
+          },
+          "feedback": "Correct. Constant-time is a property of the compiled code on real hardware, so it needs measurement."
+        },
+        {
+          "id": "b",
+          "text": "Run unit tests that check only that decapsulation is correct.",
+          "consequence": {},
+          "feedback": "Correctness tests do not detect timing differences."
+        },
+        {
+          "id": "c",
+          "text": "Rely on code review alone.",
+          "consequence": {
+            "key_safety": 2
+          },
+          "feedback": "Reviewers and compilers both miss secret-dependent branches; measure."
+        }
+      ]
+    },
+    {
+      "stage_id": "s4",
+      "narrative": "The fix is ready to ship.",
+      "decision_prompt": "How do you disclose it?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Publish a coordinated advisory with affected versions, the fix, mitigations and credit to the researcher, and advise key rotation where exposure is plausible.",
+          "consequence": {
+            "customer_trust": 15,
+            "key_safety": 5,
+            "days_open": 2
+          },
+          "feedback": "Correct. Users cannot protect themselves from a flaw they do not know about."
+        },
+        {
+          "id": "b",
+          "text": "Ship the fix quietly with no notice.",
+          "consequence": {
+            "customer_trust": -15,
+            "key_safety": -5
+          },
+          "feedback": "Customers on older versions stay vulnerable without knowing, and the silence erodes trust when the issue becomes public."
+        },
+        {
+          "id": "c",
+          "text": "Hold the disclosure until after a marketing event.",
+          "consequence": {
+            "customer_trust": -20,
+            "days_open": 14
+          },
+          "feedback": "Delaying disclosure for convenience prolongs customers' exposure."
+        }
+      ]
+    },
+    {
+      "stage_id": "s5",
+      "narrative": "The security team writes the post-mortem.",
+      "decision_prompt": "Review the outcome.",
+      "choices": []
+    }
+  ],
+  "outcome": {
+    "bands": [
+      {
+        "id": "success",
+        "title": "Fixed and disclosed",
+        "text": "SUCCESS. The leak was reproduced, fixed in constant time, verified, and disclosed responsibly.",
+        "requires": {
+          "key_safety": {
+            "min": 85
+          },
+          "customer_trust": {
+            "min": 80
+          },
+          "days_open": {
+            "max": 10
+          }
+        }
+      },
+      {
+        "id": "partial",
+        "title": "Partly resolved",
+        "text": "PARTIAL. The immediate risk is reduced, but verification, disclosure or timing could have been stronger.",
+        "requires": {
+          "key_safety": {
+            "min": 65
+          },
+          "customer_trust": {
+            "min": 60
+          }
+        }
+      },
+      {
+        "id": "fail",
+        "title": "Leak remains",
+        "text": "AT RISK. The flaw remains exploitable or customers lost trust in how it was handled.",
+        "requires": {}
+      }
+    ],
+    "final_title": "Side-Channel Response Concluded"
+  },
+  "resolution": {
+    "concept_reveal": "Timing side channels leak secrets through the duration of operations that depend on them. The cure is constant-time code (comparison and selection included), verified by statistical timing tests, plus responsible disclosure. Random delays and network restrictions are not fixes."
+  },
+  "rewards": {
+    "badge_awarded": "Side-Channel Responder",
+    "mission_xp_awarded": 100
+  },
+  "replayability_note": "Different triage and disclosure choices change trust and exposure."
+}

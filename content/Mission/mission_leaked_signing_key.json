@@ -1,0 +1,234 @@
+{
+  "mission_id": "mission_leaked_signing_key",
+  "title": "The Leaked Signing Key",
+  "type": "decision_scenario",
+  "linked_module_id": "track_a_a5_cryptography_foundations",
+  "section_id": "sec-11",
+  "role": "You are the engineer responsible for your company's software signing.",
+  "objective": "Recover from a leaked code-signing key without breaking customer trust.",
+  "environment": "A private signing key was committed to a public repository six days ago. Customers verify your software updates against the matching public key.",
+  "hud": [
+    {
+      "key": "trust_intact",
+      "label": "Customer trust in updates",
+      "start": 100,
+      "suffix": "%",
+      "max": 100,
+      "warn_below": 60
+    },
+    {
+      "key": "forgery_risk",
+      "label": "Forgery risk",
+      "start": 80,
+      "suffix": "%",
+      "max": 100,
+      "warn_above": 50
+    },
+    {
+      "key": "days_elapsed",
+      "label": "Days elapsed",
+      "start": 0,
+      "suffix": " d",
+      "warn_above": 5
+    }
+  ],
+  "state_variables": {
+    "trust_intact": "Customer trust in updates, starts at 100",
+    "forgery_risk": "Forgery risk, starts at 80",
+    "days_elapsed": "Days elapsed, starts at 0"
+  },
+  "stages": [
+    {
+      "stage_id": "s1",
+      "narrative": "A scanner flags the key in a public repository. It has been there six days.",
+      "decision_prompt": "What do you do first?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Treat the key as compromised: start revoking and rotating it, and record when it was exposed.",
+          "consequence": {
+            "forgery_risk": -30,
+            "trust_intact": -5,
+            "days_elapsed": 1
+          },
+          "feedback": "Correct. A key that has been public must be assumed copied. Rotation and revocation start immediately, and the exposure window defines which signatures need review."
+        },
+        {
+          "id": "b",
+          "text": "Delete the file in a new commit and force-push.",
+          "consequence": {
+            "trust_intact": -10,
+            "days_elapsed": 1
+          },
+          "feedback": "The key is already in clones, forks, caches and the history others have seen. Deleting it removes nothing from an attacker's copy."
+        },
+        {
+          "id": "c",
+          "text": "Wait for the next scheduled release to rotate the key.",
+          "consequence": {
+            "forgery_risk": 10,
+            "trust_intact": -10,
+            "days_elapsed": 5
+          },
+          "feedback": "Every day of delay is a day an attacker can sign malicious updates that customers will accept."
+        }
+      ]
+    },
+    {
+      "stage_id": "s2",
+      "narrative": "Rotation is under way. You need to know which signatures are suspect.",
+      "decision_prompt": "How do you handle existing signed artefacts?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Compare all artefacts signed since the exposure against your build records; re-sign genuine ones with the new key and flag any that have no record.",
+          "consequence": {
+            "forgery_risk": -20,
+            "trust_intact": 5,
+            "days_elapsed": 1
+          },
+          "feedback": "Correct. Build records tell you what you really signed. Anything signed in the window without a record is suspicious."
+        },
+        {
+          "id": "b",
+          "text": "Assume only the most recent release is affected.",
+          "consequence": {
+            "forgery_risk": -5,
+            "trust_intact": -5
+          },
+          "feedback": "The attacker could have signed anything during the whole exposure window. Without the comparison you cannot know."
+        },
+        {
+          "id": "c",
+          "text": "Invalidate everything ever signed, including years of releases, without review.",
+          "consequence": {
+            "forgery_risk": -25,
+            "trust_intact": -25,
+            "days_elapsed": 2
+          },
+          "feedback": "It removes the risk but breaks every customer's installed software and update path for no reason; scope the action to the exposure window."
+        }
+      ]
+    },
+    {
+      "stage_id": "s3",
+      "narrative": "Customers' tools trust the old public key.",
+      "decision_prompt": "How do you move customers to the new key safely?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Publish a signed advisory and the new key fingerprint through an independent channel, revoke the old key, and run a defined transition period.",
+          "consequence": {
+            "trust_intact": 15,
+            "forgery_risk": -10,
+            "days_elapsed": 1
+          },
+          "feedback": "Correct. Customers need a way to verify the new key that does not depend on the compromised one; an independent channel and a clear timetable give them that."
+        },
+        {
+          "id": "b",
+          "text": "Silently ship the new key in the next update.",
+          "consequence": {
+            "trust_intact": -20,
+            "forgery_risk": 5
+          },
+          "feedback": "An update signed with the old key could be the attacker's. Customers cannot tell a genuine key change from a malicious one."
+        },
+        {
+          "id": "c",
+          "text": "Email customers the new key as an attachment.",
+          "consequence": {
+            "trust_intact": -10
+          },
+          "feedback": "Email can be spoofed, which is exactly what an attacker would do. Use a channel the customer can authenticate."
+        }
+      ]
+    },
+    {
+      "stage_id": "s4",
+      "narrative": "The incident is contained. How do you prevent a repeat?",
+      "decision_prompt": "What do you change?",
+      "choices": [
+        {
+          "id": "a",
+          "text": "Add secret scanning to CI, move signing keys into an HSM or key-management service, use short-lived signing identities, and review who has access.",
+          "consequence": {
+            "forgery_risk": -15,
+            "trust_intact": 10
+          },
+          "feedback": "Correct. Keys that never leave an HSM cannot be committed, short lifetimes limit damage, and scanning catches mistakes early."
+        },
+        {
+          "id": "b",
+          "text": "Run a developer awareness session only.",
+          "consequence": {
+            "forgery_risk": -3
+          },
+          "feedback": "Training helps but a single slip still leaks a long-lived key. Controls should make the mistake impossible or harmless."
+        },
+        {
+          "id": "c",
+          "text": "Make the repository private and change nothing else.",
+          "consequence": {
+            "forgery_risk": -2
+          },
+          "feedback": "It hides the symptom. The key is still a long-lived file in source control and the old copies are still out there."
+        }
+      ]
+    },
+    {
+      "stage_id": "s5",
+      "narrative": "The release manager reviews the incident outcome.",
+      "decision_prompt": "Review the outcome.",
+      "choices": []
+    }
+  ],
+  "outcome": {
+    "bands": [
+      {
+        "id": "success",
+        "title": "Trust preserved",
+        "text": "SUCCESS. The key was revoked quickly, the exposure window audited, customers moved to the new key on an independent channel, and controls added.",
+        "requires": {
+          "trust_intact": {
+            "min": 70
+          },
+          "forgery_risk": {
+            "max": 30
+          },
+          "days_elapsed": {
+            "max": 5
+          }
+        }
+      },
+      {
+        "id": "partial",
+        "title": "Partly recovered",
+        "text": "PARTIAL. The immediate danger is reduced, but forgery risk or customer trust remains weaker than it should be.",
+        "requires": {
+          "trust_intact": {
+            "min": 50
+          },
+          "forgery_risk": {
+            "max": 60
+          }
+        }
+      },
+      {
+        "id": "fail",
+        "title": "Still exposed",
+        "text": "AT RISK. The key remains usable by an attacker or customers lost confidence in your updates.",
+        "requires": {}
+      }
+    ],
+    "final_title": "Key Compromise Concluded"
+  },
+  "resolution": {
+    "concept_reveal": "A leaked private key is compromised for good. The response is revoke, rotate, scope the damage by the exposure window, and tell relying parties through a channel they can authenticate. Prevention is structural: keys in HSMs or key-management services, short lifetimes, and automatic secret scanning (NIST SP 800-57 on key management)."
+  },
+  "rewards": {
+    "badge_awarded": "Key Custodian",
+    "mission_xp_awarded": 60
+  },
+  "replayability_note": "Try the other options to see why each fails."
+}

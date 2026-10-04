@@ -12,7 +12,7 @@ function fixture(over = {}) {
     manifest: { modules: Object.fromEntries(modules.map((m) => [m.id, {}])) },
     badges: [{ name: 'One', unlockTrigger: 'Pass track_a_a1_x quiz' }, { name: 'Lab', unlockTrigger: 'Solve lab' }],
     escapeRooms: [{ id: 'e1', module_id: 'track_a_a1_x', badge_awarded: 'Lab' }],
-    missions: [{ mission_id: 'm1', linked_module_id: 'track_b_b1_x' }],
+    missions: [{ mission_id: 'm1', linked_module_id: 'track_b_b1_x', section_id: 'sec-1', type: 'simulation', stages: [] }],
     quizModuleIds: modules.map((m) => m.id),
     ...over,
   };
@@ -59,4 +59,31 @@ test('badge trigger references unknown module', () => {
 test('module in two tracks', () => {
   const f = fixture(); f.tracks[1].moduleIds.push('track_a_a1_x');
   has(validate(f), 'appears in 2 tracks');
+});
+
+const decision = () => ({
+  mission_id: 'm2', linked_module_id: 'track_b_b1_x', section_id: 'sec-1', type: 'decision_scenario',
+  hud: [{ key: 'score', label: 'Score', start: 50 }],
+  stages: [{ stage_id: 's1', choices: [{ id: 'a', consequence: { score: 5, note_flag: true } }] }],
+  outcome: { bands: [{ id: 'fail', requires: {} }] },
+  rewards: { badge_awarded: 'Lab' },
+});
+test('a well-formed decision mission passes (non-numeric consequences are ignored)', () => {
+  assert.deepStrictEqual(validate(fixture({ missions: [decision()] })), []);
+});
+test('mission without a section is rejected', () => {
+  const m = decision(); delete m.section_id;
+  has(validate(fixture({ missions: [m] })), 'has no section_id');
+});
+test('decision mission that changes an unknown variable is rejected', () => {
+  const m = decision(); m.stages[0].choices[0].consequence.budget = -5;
+  has(validate(fixture({ missions: [m] })), 'unknown variable budget');
+});
+test('outcome band that tests an unknown variable is rejected', () => {
+  const m = decision(); m.outcome.bands[0].requires = { nope: { min: 1 } };
+  has(validate(fixture({ missions: [m] })), 'tests unknown variable nope');
+});
+test('mission badge that is not defined is rejected', () => {
+  const m = decision(); m.rewards.badge_awarded = 'Ghost';
+  has(validate(fixture({ missions: [m] })), 'not defined in badges');
 });

@@ -58,12 +58,28 @@ function validate({ modules, tracks, manifest, badges, escapeRooms, missions, qu
   for (const s of escapeRooms) if (!idSet.has(s.module_id)) err(`escape room ${s.id} links to unknown module ${s.module_id}`);
   for (const m of missions) if (!idSet.has(m.linked_module_id)) err(`mission ${m.mission_id} links to unknown module ${m.linked_module_id}`);
 
+  for (const m of missions) {
+    if (m.section_id === undefined) err(`mission ${m.mission_id} has no section_id`);
+    if (m.type === 'decision_scenario') {
+      if (!Array.isArray(m.hud) || !m.hud.length) err(`mission ${m.mission_id} has no hud`);
+      const keys = new Set((m.hud ?? []).map((h) => h.key));
+      for (const st of m.stages) for (const c of st.choices ?? []) for (const [k, val] of Object.entries(c.consequence ?? {})) {
+        if (typeof val === 'number' && !keys.has(k)) err(`mission ${m.mission_id} stage ${st.stage_id} choice ${c.id} changes unknown variable ${k}`);
+      }
+      for (const band of m.outcome?.bands ?? []) for (const k of Object.keys(band.requires ?? {})) {
+        if (!keys.has(k)) err(`mission ${m.mission_id} outcome band ${band.id} tests unknown variable ${k}`);
+      }
+      if (!m.outcome?.bands?.length) err(`mission ${m.mission_id} has no outcome bands`);
+    }
+  }
+
   const names = new Map();
   for (const b of badges) names.set(b.name, (names.get(b.name) ?? 0) + 1);
   for (const [n, c] of names) if (c > 1) err(`badge name "${n}" is used ${c} times`);
   for (const b of badges) for (const ref of b.unlockTrigger.match(MODULE_ID) ?? []) {
     if (!idSet.has(ref)) err(`badge "${b.name}" trigger references unknown module ${ref}`);
   }
+  for (const m of missions) if (m.rewards?.badge_awarded && !names.has(m.rewards.badge_awarded)) err(`mission ${m.mission_id} awards "${m.rewards.badge_awarded}", which is not defined in badges`);
   for (const s of escapeRooms) if (!names.has(s.badge_awarded)) err(`escape room ${s.id} awards "${s.badge_awarded}", which is not defined in badges`);
 
   return errors;

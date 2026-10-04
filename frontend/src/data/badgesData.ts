@@ -801,6 +801,106 @@ export const badgesData: BadgeItem[] = [
     "iconName": "Building2",
     "xpAward": 85,
     "isUnlocked": false
+  },
+  {
+    "id": "b_msn_1",
+    "name": "Retrofit Engineer",
+    "trackId": "lab",
+    "category": "lab",
+    "unlockTrigger": "Complete The Agility Retrofit Mission",
+    "iconName": "Rocket",
+    "xpAward": 90,
+    "isUnlocked": false
+  },
+  {
+    "id": "b_msn_2",
+    "name": "QKD Defender",
+    "trackId": "lab",
+    "category": "lab",
+    "unlockTrigger": "Complete Secure the Diplomatic Channel Mission",
+    "iconName": "Rocket",
+    "xpAward": 85,
+    "isUnlocked": false
+  },
+  {
+    "id": "b_msn_3",
+    "name": "Incident Commander",
+    "trackId": "lab",
+    "category": "lab",
+    "unlockTrigger": "Complete The Cryptographic Incident Mission",
+    "iconName": "Rocket",
+    "xpAward": 100,
+    "isUnlocked": false
+  },
+  {
+    "id": "b_msn_4",
+    "name": "Sprint Scout",
+    "trackId": "lab",
+    "category": "lab",
+    "unlockTrigger": "Complete The Discovery Sprint Mission",
+    "iconName": "Rocket",
+    "xpAward": 80,
+    "isUnlocked": false
+  },
+  {
+    "id": "b_msn_5",
+    "name": "Segmentation Architect",
+    "trackId": "lab",
+    "category": "lab",
+    "unlockTrigger": "Complete Breach in the Flat Network Mission",
+    "iconName": "Rocket",
+    "xpAward": 80,
+    "isUnlocked": false
+  },
+  {
+    "id": "b_msn_6",
+    "name": "Hybrid Pilot Lead",
+    "trackId": "lab",
+    "category": "lab",
+    "unlockTrigger": "Complete The Hybrid Pilot Mission",
+    "iconName": "Rocket",
+    "xpAward": 90,
+    "isUnlocked": false
+  },
+  {
+    "id": "b_msn_7",
+    "name": "Incident Handler",
+    "trackId": "lab",
+    "category": "lab",
+    "unlockTrigger": "Complete Ransomware Monday Mission",
+    "iconName": "Rocket",
+    "xpAward": 60,
+    "isUnlocked": false
+  },
+  {
+    "id": "b_msn_8",
+    "name": "Key Custodian",
+    "trackId": "lab",
+    "category": "lab",
+    "unlockTrigger": "Complete The Leaked Signing Key Mission",
+    "iconName": "Rocket",
+    "xpAward": 60,
+    "isUnlocked": false
+  },
+  {
+    "id": "b_msn_9",
+    "name": "Briefing Officer",
+    "trackId": "lab",
+    "category": "lab",
+    "unlockTrigger": "Complete The Quantum Threat Briefing Mission",
+    "iconName": "Rocket",
+    "xpAward": 70,
+    "isUnlocked": false
+  },
+  {
+    "id": "b_msn_10",
+    "name": "Side-Channel Responder",
+    "trackId": "lab",
+    "category": "lab",
+    "unlockTrigger": "Complete The Side-Channel Report Mission",
+    "iconName": "Rocket",
+    "xpAward": 100,
+    "isUnlocked": false
   }
 ];
 

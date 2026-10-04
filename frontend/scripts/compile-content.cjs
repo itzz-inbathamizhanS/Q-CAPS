@@ -404,6 +404,16 @@ const badges = [
   { id: 'b_lab_37', name: 'Agility Engineer', trackId: 'lab', category: 'lab', unlockTrigger: 'Solve The Compiled-In Algorithm Scenario', iconName: 'RefreshCw', xpAward: 80, isUnlocked: false },
   { id: 'b_lab_38', name: 'Rollout Gatekeeper', trackId: 'lab', category: 'lab', unlockTrigger: 'Solve The Big-Bang Weekend Scenario', iconName: 'Compass', xpAward: 85, isUnlocked: false },
   { id: 'b_lab_39', name: 'Accountability Lead', trackId: 'lab', category: 'lab', unlockTrigger: 'Solve The Ownerless Risk Scenario', iconName: 'Building2', xpAward: 85, isUnlocked: false },
+  { id: 'b_msn_1', name: 'Retrofit Engineer', trackId: 'lab', category: 'lab', unlockTrigger: 'Complete The Agility Retrofit Mission', iconName: 'Rocket', xpAward: 90, isUnlocked: false },
+  { id: 'b_msn_2', name: 'QKD Defender', trackId: 'lab', category: 'lab', unlockTrigger: 'Complete Secure the Diplomatic Channel Mission', iconName: 'Rocket', xpAward: 85, isUnlocked: false },
+  { id: 'b_msn_3', name: 'Incident Commander', trackId: 'lab', category: 'lab', unlockTrigger: 'Complete The Cryptographic Incident Mission', iconName: 'Rocket', xpAward: 100, isUnlocked: false },
+  { id: 'b_msn_4', name: 'Sprint Scout', trackId: 'lab', category: 'lab', unlockTrigger: 'Complete The Discovery Sprint Mission', iconName: 'Rocket', xpAward: 80, isUnlocked: false },
+  { id: 'b_msn_5', name: 'Segmentation Architect', trackId: 'lab', category: 'lab', unlockTrigger: 'Complete Breach in the Flat Network Mission', iconName: 'Rocket', xpAward: 80, isUnlocked: false },
+  { id: 'b_msn_6', name: 'Hybrid Pilot Lead', trackId: 'lab', category: 'lab', unlockTrigger: 'Complete The Hybrid Pilot Mission', iconName: 'Rocket', xpAward: 90, isUnlocked: false },
+  { id: 'b_msn_7', name: 'Incident Handler', trackId: 'lab', category: 'lab', unlockTrigger: 'Complete Ransomware Monday Mission', iconName: 'Rocket', xpAward: 60, isUnlocked: false },
+  { id: 'b_msn_8', name: 'Key Custodian', trackId: 'lab', category: 'lab', unlockTrigger: 'Complete The Leaked Signing Key Mission', iconName: 'Rocket', xpAward: 60, isUnlocked: false },
+  { id: 'b_msn_9', name: 'Briefing Officer', trackId: 'lab', category: 'lab', unlockTrigger: 'Complete The Quantum Threat Briefing Mission', iconName: 'Rocket', xpAward: 70, isUnlocked: false },
+  { id: 'b_msn_10', name: 'Side-Channel Responder', trackId: 'lab', category: 'lab', unlockTrigger: 'Complete The Side-Channel Report Mission', iconName: 'Rocket', xpAward: 100, isUnlocked: false },
 ];
 
 const certificates = [
@@ -463,7 +473,7 @@ console.log(`Saved ${badges.length} badges and ${certificates.length} certificat
 // -------------------------------------------------------------
 // 4. COMPILE MISSIONS
 // -------------------------------------------------------------
-const missionFiles = ['mission_bb84_diplomatic_channel.json', 'mission_pqc_migration_enterprise.json'];
+const missionFiles = fs.readdirSync(path.join(CS_ROOT, 'Mission')).filter((f) => /^mission_.*\.json$/.test(f)).sort();
 const missions = [];
 
 for (const mFile of missionFiles) {
@@ -480,7 +490,32 @@ for (const mFile of missionFiles) {
 
 writeOut(
   path.join(FRONTEND_DATA, 'missionsData.ts'),
-  `// Generated from content/Mission\nexport interface MissionData {\n  mission_id: string;\n  title: string;\n  type: 'simulation' | 'decision_scenario';\n  linked_module_id: string;\n  role: string;\n  objective: string;\n  environment: string;\n  state_variables: Record<string, unknown>;\n  stages: Record<string, unknown>[];\n  resolution?: Record<string, unknown>;\n  replayability_note?: string;\n  rewards?: Record<string, unknown>;\n  [key: string]: unknown;\n}\n\nexport const missionsData: MissionData[] = ${JSON.stringify(missions, null, 2)};\n`
+  `// Generated from content/Mission\nexport interface MissionHud {
+  key: string;
+  label: string;
+  start: number;
+  suffix?: string;
+  max?: number;
+  warn_below?: number;
+  warn_above?: number;
+}
+
+export interface MissionBand {
+  id: string;
+  title: string;
+  text: string;
+  requires: Record<string, { min?: number; max?: number }>;
+}
+
+export interface MissionOutcome {
+  final_title: string;
+  bands: MissionBand[];
+}
+
+export interface MissionData {\n  mission_id: string;\n  title: string;\n  type: 'simulation' | 'decision_scenario';\n  linked_module_id: string;
+  section_id?: string;
+  hud?: MissionHud[];
+  outcome?: MissionOutcome;\n  role: string;\n  objective: string;\n  environment: string;\n  state_variables: Record<string, unknown>;\n  stages: Record<string, unknown>[];\n  resolution?: Record<string, unknown>;\n  replayability_note?: string;\n  rewards?: Record<string, unknown>;\n  [key: string]: unknown;\n}\n\nexport const missionsData: MissionData[] = ${JSON.stringify(missions, null, 2)};\n`
 );
 console.log(`Saved ${missions.length} missions.`);
 

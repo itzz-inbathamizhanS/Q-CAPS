@@ -7,14 +7,12 @@ import {
   CheckCircle2,
   XCircle,
   Award,
-  ShieldCheck,
-  ArrowRight,
-  RotateCcw,
-  Check
+  RotateCcw
 } from 'lucide-react';
 import { missionsData, MissionData } from '@/data/missionsData';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 import { Button } from '@/components/ui/Button';
+import { DecisionMissionEngine } from '@/features/missions/DecisionMissionEngine';
 
 export const MissionPlay: React.FC = () => {
   const { missionId } = useParams<{ missionId: string }>();
@@ -26,8 +24,10 @@ export const MissionPlay: React.FC = () => {
   // Exit dialog state
   const [showExitConfirm, setShowExitConfirm] = useState(false);
 
+  // Missions belong to a lesson section: leaving returns the learner there.
+  const backTo = mission.section_id ? `/learning/${mission.linked_module_id}/${mission.section_id}` : '/curriculum';
   const handleExit = () => {
-    navigate('/missions');
+    navigate(backTo);
   };
 
   return (
@@ -155,9 +155,9 @@ export const MissionPlay: React.FC = () => {
       {/* Mission Content Router: Simulation (BB84) vs Decision Scenario */}
       <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '32px 20px 80px' }}>
         {mission.type === 'simulation' ? (
-          <BB84SimulationEngine mission={mission} onFinished={completeMission} />
+          <BB84SimulationEngine mission={mission} onFinished={completeMission} backTo={backTo} />
         ) : (
-          <EnterpriseMigrationEngine mission={mission} onFinished={completeMission} />
+          <DecisionMissionEngine mission={mission} onFinished={completeMission} onBack={handleExit} backLabel="Back to the lesson" />
         )}
       </div>
     </div>
@@ -169,10 +169,11 @@ export const MissionPlay: React.FC = () => {
 // -------------------------------------------------------------
 interface SimulationProps {
   mission: MissionData;
+  backTo: string;
   onFinished: (id: string, badgeName?: string, xp?: number) => void;
 }
 
-const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }) => {
+const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished, backTo }) => {
   const navigate = useNavigate();
   const [stage, setStage] = useState<number>(1);
   const [photonCount, setPhotonCount] = useState<number>(30);
@@ -531,8 +532,8 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
           )}
 
           <div style={{ display: 'flex', justifyContent: 'center', gap: '14px' }}>
-            <Button variant="primary" onClick={() => navigate('/missions')}>
-              Return to Mission Hub
+            <Button variant="primary" onClick={() => navigate(backTo)}>
+              Back to the lesson
             </Button>
             <Button
               variant="outline"
@@ -551,394 +552,6 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished }
             >
               <RotateCcw size={14} />
               <span>Retry Mission</span>
-            </Button>
-          </div>
-        </div>
-      )}
-    </div>
-  );
-};
-
-// -------------------------------------------------------------
-// ENGINE B: ENTERPRISE PQC MIGRATION DECISION SCENARIO
-// -------------------------------------------------------------
-interface MigrationSimulationProps {
-  mission: MissionData;
-  onFinished: (id: string, badgeName?: string, xp?: number) => void;
-}
-
-interface MissionChoice {
-  id: string;
-  text?: string;
-  feedback?: string;
-  consequence?: Record<string, number>;
-  [key: string]: unknown;
-}
-
-const EnterpriseMigrationEngine: React.FC<MigrationSimulationProps> = ({ mission, onFinished }) => {
-  const navigate = useNavigate();
-  // eslint-disable-next-line @typescript-eslint/no-explicit-any
-  const stages = (mission.stages as any[]) || [];
-  const [currentStageIdx, setCurrentStageIdx] = useState(0);
-  const [readiness, setReadiness] = useState(12);
-  const [continuity, setContinuity] = useState(100);
-  const [budget, setBudget] = useState(100);
-  const [timeMonths, setTimeMonths] = useState(18);
-
-  // Two-step decision state:
-  const [selectedChoice, setSelectedChoice] = useState<MissionChoice | null>(null);
-  const [isCommitted, setIsCommitted] = useState(false);
-  const [isFinished, setIsFinished] = useState(false);
-
-  const stage = stages[currentStageIdx];
-  const hasChoices = Boolean(stage?.choices && stage.choices.length > 0);
-
-  // STEP 1: Select / Preview (freely changeable, does not alter scores or lock cards)
-  const handleSelectChoice = (choice: MissionChoice) => {
-    if (isCommitted) return; // locked once committed
-    setSelectedChoice(choice);
-  };
-
-  // STEP 2: Commit Decision (applies score deltas, locks cards, reveals consequence feedback)
-  const handleCommitDecision = () => {
-    if (!selectedChoice || isCommitted) return;
-    setIsCommitted(true);
-
-    // Apply score deltas
-    const cons = selectedChoice.consequence || {};
-    if (typeof cons.readiness_score === 'number') {
-      setReadiness((prev) => Math.min(100, Math.max(0, prev + cons.readiness_score)));
-    }
-    if (typeof cons.business_continuity_score === 'number') {
-      setContinuity((prev) => Math.min(100, Math.max(0, prev + cons.business_continuity_score)));
-    }
-    if (typeof cons.budget_remaining === 'number') {
-      setBudget((prev) => Math.min(100, Math.max(0, prev + cons.budget_remaining)));
-    }
-    if (typeof cons.time_remaining_months === 'number') {
-      setTimeMonths((prev) => Math.max(0, prev + cons.time_remaining_months));
-    }
-  };
-
-  const handleNextStage = () => {
-    if (currentStageIdx < stages.length - 1) {
-      setCurrentStageIdx((prev) => prev + 1);
-      setSelectedChoice(null);
-      setIsCommitted(false);
-    } else {
-      setIsFinished(true);
-      const badge = (mission.rewards?.badge_awarded as string) || 'Migration Commander';
-      const xp = (mission.rewards?.mission_xp_awarded as number) || 100;
-      onFinished(mission.mission_id, badge, xp);
-    }
-  };
-
-  // Compute final outcome evaluation
-  const isSuccess = readiness >= 75 && continuity >= 60;
-  const isPartial = !isSuccess && readiness >= 50;
-
-  return (
-    <div>
-      {/* Persistent Enterprise HUD */}
-      <div
-        style={{
-          display: 'grid',
-          gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))',
-          gap: '12px',
-          backgroundColor: 'var(--cyber-surface, #121827)',
-          borderRadius: '12px',
-          padding: '16px',
-          marginBottom: '28px',
-          border: '1px solid #334155'
-        }}
-      >
-        <div>
-          <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Quantum Readiness</div>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: 'var(--cyber-primary-violet, #7C5CFF)' }}>{readiness}%</div>
-        </div>
-        <div>
-          <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Business Continuity</div>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: continuity > 70 ? 'var(--color-emerald)' : 'var(--color-amber)' }}>
-            {continuity}%
-          </div>
-        </div>
-        <div>
-          <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Budget Remaining</div>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: '#f8fafc' }}>{budget}%</div>
-        </div>
-        <div>
-          <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>Timeline Left</div>
-          <div style={{ fontSize: '20px', fontWeight: 700, color: timeMonths > 6 ? 'var(--color-emerald)' : 'var(--color-error)' }}>
-            {timeMonths} Months
-          </div>
-        </div>
-      </div>
-
-      {!isFinished && stage ? (
-        <div style={{ backgroundColor: 'var(--cyber-surface, #121827)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' }}>
-          <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '4px', backgroundColor: 'var(--color-amber)', color: '#ffffff', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '14px' }}>
-            Stage {currentStageIdx + 1} of {stages.length}
-          </div>
-          <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#f8fafc', marginBottom: '12px' }}>
-            {stage.narrative}
-          </h2>
-          <p style={{ color: 'var(--cyber-primary-violet, #7C5CFF)', fontSize: '15px', fontWeight: 600, marginBottom: '20px' }}>
-            {stage.decision_prompt}
-          </p>
-
-          {/* Decision Stage with Choice Cards */}
-          {hasChoices ? (
-            <>
-              {/* Choice Cards Container */}
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '12px', marginBottom: '24px' }}>
-                {stage.choices.map((choice: MissionChoice) => {
-                  const isSelected = selectedChoice?.id === choice.id;
-
-                  // Dynamic styles depending on selection & commit state
-                  let border = '1px solid #334155';
-                  let bg = 'var(--cyber-card, #1A1C1F)';
-                  let opacity = 1;
-                  let cursor = isCommitted ? 'default' : 'pointer';
-
-                  if (isSelected) {
-                    border = '2px solid var(--cyber-primary-violet, #7C5CFF)';
-                    bg = isCommitted ? 'rgba(124, 92, 255, 0.22)' : 'rgba(124, 92, 255, 0.14)';
-                  } else if (isCommitted) {
-                    opacity = 0.45;
-                    cursor = 'not-allowed';
-                    border = '1px solid #1e293b';
-                  }
-
-                  return (
-                    <div
-                      key={choice.id}
-                      onClick={() => handleSelectChoice(choice)}
-                      style={{
-                        padding: '16px 20px',
-                        borderRadius: '10px',
-                        backgroundColor: bg,
-                        border,
-                        opacity,
-                        cursor,
-                        fontSize: '14px',
-                        color: '#f8fafc',
-                        lineHeight: 1.5,
-                        transition: 'all 0.15s ease',
-                        boxShadow: isSelected ? '0 0 16px rgba(124, 92, 255, 0.2)' : 'none',
-                        position: 'relative'
-                      }}
-                    >
-                      <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: '12px' }}>
-                        <span style={{ flex: 1 }}>{choice.text}</span>
-                        {isSelected && !isCommitted && (
-                          <span
-                            style={{
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              textTransform: 'uppercase',
-                              padding: '2px 8px',
-                              borderRadius: '4px',
-                              backgroundColor: 'rgba(124, 92, 255, 0.25)',
-                              color: 'var(--cyber-primary-violet, #7C5CFF)',
-                              whiteSpace: 'nowrap'
-                            }}
-                          >
-                            Selected
-                          </span>
-                        )}
-                        {isSelected && isCommitted && (
-                          <span
-                            style={{
-                              fontSize: '11px',
-                              fontWeight: 700,
-                              textTransform: 'uppercase',
-                              padding: '2px 8px',
-                              borderRadius: '4px',
-                              backgroundColor: 'rgba(16, 185, 129, 0.2)',
-                              color: '#10b981',
-                              display: 'flex',
-                              alignItems: 'center',
-                              gap: '4px',
-                              whiteSpace: 'nowrap'
-                            }}
-                          >
-                            <Check size={12} /> Committed
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
-              </div>
-
-              {/* STEP 1 PREVIEW & COMMIT ACTION BAR (Before Commit) */}
-              {!isCommitted && (
-                <div
-                  style={{
-                    padding: '16px 20px',
-                    borderRadius: '10px',
-                    backgroundColor: selectedChoice ? 'rgba(124, 92, 255, 0.08)' : 'rgba(0,0,0,0.2)',
-                    border: `1px dashed ${selectedChoice ? 'var(--cyber-primary-violet, #7C5CFF)' : '#334155'}`,
-                    display: 'flex',
-                    alignItems: 'center',
-                    justifyContent: 'space-between',
-                    flexWrap: 'wrap',
-                    gap: '14px',
-                    marginBottom: '20px'
-                  }}
-                >
-                  <div style={{ flex: 1, minWidth: '240px' }}>
-                    <div style={{ fontSize: '13px', fontWeight: 600, color: selectedChoice ? '#f8fafc' : '#94a3b8' }}>
-                      {selectedChoice
-                        ? 'Strategic approach selected. You can switch options above, or commit this decision.'
-                        : 'Select an architectural option above to preview and commit your decision.'}
-                    </div>
-                    {selectedChoice && (
-                      <div style={{ fontSize: '12px', color: '#94a3b8', marginTop: '2px' }}>
-                        Commit to apply readiness, continuity, budget, and timeline impacts.
-                      </div>
-                    )}
-                  </div>
-
-                  <Button
-                    variant="primary"
-                    disabled={!selectedChoice}
-                    onClick={handleCommitDecision}
-                    style={{
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: '8px',
-                      padding: '0 24px',
-                      opacity: selectedChoice ? 1 : 0.5,
-                      cursor: selectedChoice ? 'pointer' : 'not-allowed'
-                    }}
-                  >
-                    <ShieldCheck size={16} />
-                    <span>Commit Decision</span>
-                  </Button>
-                </div>
-              )}
-
-              {/* STEP 2 CONSEQUENCE FEEDBACK & ADVANCEMENT (After Commit) */}
-              {isCommitted && selectedChoice && (
-                <div>
-                  <div
-                    style={{
-                      padding: '18px 20px',
-                      borderRadius: '10px',
-                      backgroundColor: 'rgba(56, 189, 248, 0.08)',
-                      border: '1px solid #0284c7',
-                      marginBottom: '24px'
-                    }}
-                  >
-                    <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                      <CheckCircle2 size={16} color="#38bdf8" />
-                      <strong style={{ fontSize: '13px', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>
-                        Consequence Analysis & Executive Impact:
-                      </strong>
-                    </div>
-                    <p style={{ fontSize: '14px', color: '#e2e8f0', lineHeight: 1.6, margin: 0 }}>
-                      {selectedChoice.feedback}
-                    </p>
-                  </div>
-
-                  <Button
-                    variant="primary"
-                    onClick={handleNextStage}
-                    style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-                  >
-                    <span>{currentStageIdx < stages.length - 1 ? 'Advance to Next Stage' : 'View Final Report'}</span>
-                    <ArrowRight size={16} />
-                  </Button>
-                </div>
-              )}
-            </>
-          ) : (
-            /* Auto-Evaluation Stage (e.g. Stage 5 Board Report) */
-            <div>
-              <div
-                style={{
-                  padding: '20px',
-                  borderRadius: '12px',
-                  backgroundColor: isSuccess
-                    ? 'rgba(16, 185, 129, 0.1)'
-                    : isPartial
-                    ? 'rgba(245, 158, 11, 0.1)'
-                    : 'rgba(239, 68, 68, 0.1)',
-                  border: `1px solid ${isSuccess ? '#10b981' : isPartial ? '#f59e0b' : '#ef4444'}`,
-                  marginBottom: '24px'
-                }}
-              >
-                <div style={{ fontSize: '12px', textTransform: 'uppercase', fontWeight: 700, color: isSuccess ? '#10b981' : isPartial ? '#f59e0b' : '#ef4444', marginBottom: '6px' }}>
-                  {isSuccess ? 'Full Migration Approved' : isPartial ? 'Partial Success — On Track' : 'Migration At Risk'}
-                </div>
-                <p style={{ fontSize: '15px', color: '#f8fafc', lineHeight: 1.6, margin: 0 }}>
-                  {isSuccess
-                    ? 'SUCCESS — Full Migration Complete. Your board approves the final report; the organization is genuinely quantum-ready and didn\'t sacrifice operational stability to get there.'
-                    : isPartial
-                    ? 'PARTIAL SUCCESS — Migration In Progress, On Track. You\'ve made real, defensible progress but haven\'t finished — a realistic and common outcome for a first migration cycle.'
-                    : 'AT RISK — The board is not satisfied. Rushed or improperly sequenced decisions compromised either cryptographic readiness or business continuity.'}
-                </p>
-              </div>
-
-              <Button
-                variant="primary"
-                onClick={handleNextStage}
-                style={{ display: 'flex', alignItems: 'center', gap: '8px' }}
-              >
-                <span>View Migration Debrief & Credentials</span>
-                <ArrowRight size={16} />
-              </Button>
-            </div>
-          )}
-        </div>
-      ) : (
-        /* Debrief & Completion */
-        <div style={{ backgroundColor: 'var(--cyber-surface, #121827)', border: '1px solid #25334d', borderRadius: '14px', padding: '36px 28px', textAlign: 'center' }}>
-          <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#10b981' }}>
-            <Award size={36} />
-          </div>
-          <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#f8fafc', marginBottom: '8px' }}>
-            Enterprise Migration Mandate Concluded
-          </h2>
-          <p style={{ color: '#94a3b8', maxWidth: '640px', margin: '0 auto 24px', lineHeight: 1.6 }}>
-            Final Readiness: <strong>{readiness}%</strong> · Business Continuity: <strong>{continuity}%</strong> · Budget Remaining: <strong>{budget}%</strong> · Timeline: <strong>{timeMonths} Months</strong>. You navigated the multi-phase sequence from discovery through hybrid rollout.
-          </p>
-
-          {/* Badge Banner */}
-          <div style={{ maxWidth: '420px', margin: '0 auto 32px', padding: '16px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left' }}>
-            <Award size={32} color="#10b981" />
-            <div>
-              <div style={{ fontSize: '11px', color: 'var(--color-emerald)', fontWeight: 700, textTransform: 'uppercase' }}>
-                Mission Badge Awarded
-              </div>
-              <div style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc' }}>
-                Migration Commander
-              </div>
-              <div style={{ fontSize: '12px', color: '#94a3b8' }}>+100 XP added to User Profile</div>
-            </div>
-          </div>
-
-          <div style={{ display: 'flex', justifyContent: 'center', flexWrap: 'wrap', gap: '14px' }}>
-            <Button variant="primary" onClick={() => navigate('/missions')}>
-              Return to Mission Hub
-            </Button>
-            <Button
-              variant="outline"
-              onClick={() => {
-                setCurrentStageIdx(0);
-                setSelectedChoice(null);
-                setIsCommitted(false);
-                setReadiness(12);
-                setContinuity(100);
-                setBudget(100);
-                setTimeMonths(18);
-                setIsFinished(false);
-              }}
-              style={{ color: '#f8fafc', borderColor: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}
-            >
-              <RotateCcw size={14} />
-              <span>Replay Migration Scenario</span>
             </Button>
           </div>
         </div>

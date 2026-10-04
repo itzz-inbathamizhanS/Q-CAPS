@@ -10,6 +10,8 @@ import { BlockRenderer } from '@/features/lesson/blocks/BlockRenderer';
 import { SectionReferences } from '@/features/lesson/SectionReferences';
 import { ScenarioLab } from '@/features/lesson/ScenarioLab';
 import { escapeRoomScenarios } from '@/data/escapeRoomData';
+import { MissionCard } from '@/features/lesson/MissionCard';
+import { missionsData } from '@/data/missionsData';
 import '@/styles/lesson.css';
 
 export const SectionLesson: React.FC = () => {
@@ -147,6 +149,12 @@ export const SectionLesson: React.FC = () => {
             .filter((sc) => sc.module_id === module.slug && sc.section_id === section.slug)
             .map((sc) => (
               <ScenarioLab key={sc.id} scenario={sc} />
+            ))}
+
+          {missionsData
+            .filter((m) => m.linked_module_id === module.slug && m.section_id === section.slug)
+            .map((m) => (
+              <MissionCard key={m.mission_id} mission={m} />
             ))}
 
           <SectionReferences sources={section.sources} needsVerification={section.needs_verification} />
