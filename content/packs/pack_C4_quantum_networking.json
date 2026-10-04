@@ -1,0 +1,973 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B113",
+      "title": "From Classical to Quantum Shannon Theory (Quantum Information Theory, 2nd edition draft, arXiv:1106.1445v8)",
+      "authors": "Mark M. Wilde",
+      "edition": "arXiv v8, 14 July 2019",
+      "year": 2019,
+      "publisher": "Cambridge University Press (draft on arXiv, CC BY-NC-SA 3.0)"
+    },
+    {
+      "id": "B110",
+      "title": "Qiskit Textbook (GitHub repository Qiskit/textbook, notebooks), accessed 2026-10-04",
+      "authors": "Qiskit community",
+      "edition": "accessed 2026-10-04",
+      "year": 2023,
+      "publisher": "IBM and the Qiskit community"
+    },
+    {
+      "id": "B111",
+      "title": "Qiskit SDK documentation and guides (quantum.cloud.ibm.com/docs), accessed 2026-10-04",
+      "authors": "IBM Quantum",
+      "edition": "accessed 2026-10-04",
+      "year": 2026,
+      "publisher": "IBM"
+    },
+    {
+      "id": "B115",
+      "title": "Quantum cloning (Rev. Mod. Phys. 77, 1225; arXiv:quant-ph/0511088)",
+      "authors": "Valerio Scarani, Sofyan Iblisdir, Nicolas Gisin",
+      "edition": "2005",
+      "year": 2005
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_c_c4_quantum_networking",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "4.1 Quantum Channels (Networking Context)",
+          "summary": "Photon loss in fibre as an erasure channel, the exponential loss with distance, the PLOB bound, and the difference between loss (rate) and dephasing (fidelity).",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A quantum network moves quantum states, usually single photons, through optical fibre or free space. The dominant impairment in fibre is **loss**: with attenuation α (about 0.2 dB/km for telecom fibre) the transmission over a length L is η = 10^(−αL/10), so the loss grows **exponentially** with distance: −20 dB, a factor 100, every 100 km. For a photon that encodes a qubit in two modes (a *dual-rail* encoding such as polarisation or time bin), a lost photon is detected as an absence and the channel is an **erasure channel**: the state either arrives intact, with probability η, or is lost, with a flag. Loss therefore lowers the *rate*; it does not by itself lower the fidelity of the pairs that arrive, which is lowered instead by **dephasing and depolarizing noise**.\n\nThere is a fundamental limit on what any scheme **without repeaters** can do over a pure-loss channel: the PLOB bound (Pirandola, Laurenza, Ottaviani, Banchi) says the secret-key or quantum-communication capacity is −log₂(1 − η) bits per channel use, about 1.44·η for small η, so the rate falls like η. The listing tabulates η and the bound against distance, shows the difference between loss and dephasing for a Bell pair sent over the fibre, and converts the transmission into a pair rate for a 1 GHz source. The labs are exact density-matrix simulations of up to 7 qubits and small classical models (graphs, Markov-type waiting times) written for the lesson, using the Werner state as the standard noisy entangled pair. Where a table uses invented link rates or qualities it is labelled DEMO DATA, and illustrative platform numbers are labelled illustrative; nothing here is a measurement of a real network."
+            },
+            {
+              "type": "code",
+              "id": "c-loss-channel",
+              "language": "python",
+              "code": "import math, itertools\nimport numpy as np\n\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]], dtype=complex); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]], dtype=complex)\nH = np.array([[1, 1], [1, -1]], dtype=complex) / math.sqrt(2)\ndef kron(*ms):\n    out = np.array([[1.0 + 0j]])\n    for m in ms: out = np.kron(out, m)\n    return out\ndef ket(bits):\n    v = np.zeros(2 ** len(bits), dtype=complex); v[int(\"\".join(map(str, bits)), 2)] = 1; return v\ndef proj(v):\n    return np.outer(v, v.conj())\nPHI_PLUS = (ket([0, 0]) + ket([1, 1])) / math.sqrt(2)\nBELL = {\"phi+\": PHI_PLUS, \"phi-\": (ket([0, 0]) - ket([1, 1])) / math.sqrt(2), \"psi+\": (ket([0, 1]) + ket([1, 0])) / math.sqrt(2), \"psi-\": (ket([0, 1]) - ket([1, 0])) / math.sqrt(2)}\ndef werner(w, target=PHI_PLUS):\n    # w * |target><target| + (1 - w) * I / 4: the noisy entangled pair used throughout; w is the Werner parameter, the fidelity with the target is (1 + 3 w) / 4\n    return w * proj(target) + (1 - w) * np.eye(4) / 4\ndef fidelity_pure(rho, v):\n    return float((v.conj() @ rho @ v).real)\ndef ptrace(rho, dims, keep):\n    n = len(dims); t = rho.reshape(dims + dims)\n    for i in sorted([i for i in range(n) if i not in keep], reverse=True):\n        t = np.trace(t, axis1=i, axis2=i + t.ndim // 2)\n    d = int(np.prod([dims[i] for i in keep])); return t.reshape(d, d)\ndef apply_unitary(rho, U):\n    return U @ rho @ U.conj().T\ndef op_on(n, gate, qubits):\n    # a gate (given as a matrix on len(qubits) qubits) acting on the listed qubits of an n-qubit system, identity elsewhere\n    k = len(qubits); dim = 2 ** n\n    U = np.zeros((dim, dim), dtype=complex)\n    for col in range(dim):\n        bits = [(col >> (n - 1 - i)) & 1 for i in range(n)]\n        sub = int(\"\".join(str(bits[q]) for q in qubits), 2)\n        for row_sub in range(2 ** k):\n            amp = gate[row_sub, sub]\n            if abs(amp) < 1e-15: continue\n            nb = bits.copy()\n            for j, q in enumerate(qubits): nb[q] = (row_sub >> (k - 1 - j)) & 1\n            U[int(\"\".join(map(str, nb)), 2), col] += amp\n    return U\n# --- the photon-loss channel: a photon travels through a fibre with attenuation alpha (dB/km); it arrives with probability eta = 10^(-alpha L / 10)\ndef eta(length_km, alpha=0.2):\n    return 10 ** (-alpha * length_km / 10)\n# loss on a dual-rail (polarisation or time-bin) qubit: with probability 1 - eta the photon is lost and a flag says so (an ERASURE), with probability eta the state arrives intact\nprint(f\"{'distance L (km)':>16} {'transmission eta = 10^(-0.2 L/10)':>34} {'one-photon-per-pulse rate limit eta':>38} {'PLOB bound -log2(1 - eta) (bits per use)':>42}\")\nfor L in (10, 50, 100, 200, 300, 500, 1000):\n    e = eta(L)\n    print(f\"{L:>16} {e:>34.3e} {e:>38.3e} {-math.log1p(-e) / math.log(2):>42.3e}\")\nprint(\"fibre loss is exponential in distance: 0.2 dB/km means -20 dB (a factor 100) every 100 km; the PLOB bound (Pirandola, Laurenza, Ottaviani, Banchi) says that no repeaterless protocol can send more than about 1.44 eta secret or quantum bits per use of a lossy channel\")\n\n# --- a lossy channel is an ERASURE channel for a dual-rail qubit: simulate the state that arrives, conditioned on arrival, for a Bell pair half sent through it\ndef send_half_through_fibre(rho_pair, transmission, dephase=0.0):\n    # the second qubit of the pair travels; with probability (1 - transmission) the photon is lost (the output is flagged and discarded), otherwise it arrives, possibly dephased\n    p_arrive = transmission\n    arrived = rho_pair\n    if dephase > 0:\n        Zb = kron(I2, Z)\n        arrived = (1 - dephase) * arrived + dephase * (Zb @ arrived @ Zb)\n    return p_arrive, arrived\nrho = proj(PHI_PLUS)\nprint()\nprint(f\"{'L (km)':>8} {'P(photon arrives)':>19} {'fidelity of the delivered pair (dephasing 0.5% per 10 km)':>60}\")\nfor L in (10, 50, 100, 200):\n    p_arrive, state = send_half_through_fibre(rho, eta(L), dephase=0.005 * L / 10)\n    print(f\"{L:>8} {p_arrive:>19.4f} {fidelity_pure(state, PHI_PLUS):>60.4f}\")\nprint(\"loss reduces the RATE (the pair is simply not delivered, and the sender can tell); dephasing reduces the FIDELITY of the pairs that are delivered: the two have different remedies (repeaters and memories for loss, purification for noise)\")\n\n# --- direct transmission rate for a source emitting pairs at 1 GHz, per second, against distance\nprint()\nprint(f\"{'L (km)':>8} {'delivered pairs per second at 1 GHz':>38} {'seconds per pair':>18}\")\nfor L in (50, 100, 200, 400, 600, 1000):\n    rate = 1e9 * eta(L)\n    print(f\"{L:>8} {rate:>38.3e} {1 / rate:>18.3e}\")\nprint(\"at 1000 km a direct link would deliver one pair per 10^11 seconds (about 3,000 years): the reason satellites (loss grows slowly with distance in free space) and quantum repeaters are needed for long distances\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-loss-channel",
+              "language": "text",
+              "code": " distance L (km)  transmission eta = 10^(-0.2 L/10)    one-photon-per-pulse rate limit eta   PLOB bound -log2(1 - eta) (bits per use)\n              10                          6.310e-01                              6.310e-01                                  1.438e+00\n              50                          1.000e-01                              1.000e-01                                  1.520e-01\n             100                          1.000e-02                              1.000e-02                                  1.450e-02\n             200                          1.000e-04                              1.000e-04                                  1.443e-04\n             300                          1.000e-06                              1.000e-06                                  1.443e-06\n             500                          1.000e-10                              1.000e-10                                  1.443e-10\n            1000                          1.000e-20                              1.000e-20                                  1.443e-20\nfibre loss is exponential in distance: 0.2 dB/km means -20 dB (a factor 100) every 100 km; the PLOB bound (Pirandola, Laurenza, Ottaviani, Banchi) says that no repeaterless protocol can send more than about 1.44 eta secret or quantum bits per use of a lossy channel\n\n  L (km)   P(photon arrives)    fidelity of the delivered pair (dephasing 0.5% per 10 km)\n      10              0.6310                                                       0.9950\n      50              0.1000                                                       0.9750\n     100              0.0100                                                       0.9500\n     200              0.0001                                                       0.9000\nloss reduces the RATE (the pair is simply not delivered, and the sender can tell); dephasing reduces the FIDELITY of the pairs that are delivered: the two have different remedies (repeaters and memories for loss, purification for noise)\n\n  L (km)    delivered pairs per second at 1 GHz   seconds per pair\n      50                              1.000e+08          1.000e-08\n     100                              1.000e+07          1.000e-07\n     200                              1.000e+05          1.000e-05\n     400                              1.000e+01          1.000e-01\n     600                              1.000e-03          1.000e+03\n    1000                              1.000e-11          1.000e+11\nat 1000 km a direct link would deliver one pair per 10^11 seconds (about 3,000 years): the reason satellites (loss grows slowly with distance in free space) and quantum repeaters are needed for long distances",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The transmission is 0.631 at 10 km, 0.1 at 50 km, 10⁻² at 100 km, 10⁻⁴ at 200 km, 10⁻⁶ at 300 km, 10⁻¹⁰ at 500 km and 10⁻²⁰ at 1,000 km, and the PLOB bound follows 1.443·η (1.443×10⁻²⁰ bits per use at 1,000 km). A 1 GHz pair source delivers 10⁸ pairs per second at 50 km, 10⁷ at 100 km, 10⁵ at 200 km, 10 per second at 400 km, one per 1,000 seconds at 600 km and one per 10¹¹ seconds (about 3,000 years) at 1,000 km. In the second table the two impairments appear separately: the arrival probability falls (0.631, 0.100, 0.010, 0.0001) while the fidelity of the delivered pair falls slowly (0.995, 0.975, 0.950, 0.900) under the assumed 0.5% dephasing per 10 km, which is a model parameter and not a measurement. Different remedies belong to different impairments: loss needs repeaters or shorter hops, noise needs error correction or purification.\n\n**Consequences for planning.** Point-to-point fibre links beyond a few hundred kilometres are impractical at any realistic source rate; satellites (where loss grows slowly with distance because most of the path is in vacuum) and quantum repeaters are the two routes to long distances (4.5, 5.7). The bound is a theorem for repeater-less schemes and does not limit repeater networks."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How does the fibre transmission of a photon scale with distance?",
+              "options": [
+                "Exponentially: 10^(-0.2 L / 10) for 0.2 dB/km",
+                "Linearly",
+                "As the square root"
+              ],
+              "correct_index": 0,
+              "explanation": "A factor 100 every 100 km."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does loss reduce and what does dephasing reduce for a delivered pair?",
+              "options": [
+                "Loss reduces the rate; dephasing reduces the fidelity",
+                "Loss reduces the fidelity; dephasing reduces the rate",
+                "Both reduce only the rate"
+              ],
+              "correct_index": 0,
+              "explanation": "A lost photon is flagged and discarded."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does the PLOB bound state?",
+              "options": [
+                "No repeater-less scheme exceeds -log2(1 - eta) bits per use of a pure-loss channel",
+                "No scheme at all can exceed eta",
+                "Repeaters cannot help"
+              ],
+              "correct_index": 0,
+              "explanation": "About 1.44 eta for small eta; repeaters circumvent it."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde, From Classical to Quantum Shannon Theory: Section 4.7 (examples of quantum channels, including erasure and loss channels)"
+            },
+            {
+              "book": "B110",
+              "locator": "Qiskit Textbook: Bell states and teleportation chapters for the entangled pair used here"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The PLOB bound and the value of 0.2 dB/km for telecom fibre are stated from the literature and are not among the cited sources; the dephasing of 0.5% per 10 km is a model assumption of the lesson and not a measured value."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "4.2 Entanglement Distribution",
+          "summary": "Werner pairs: fidelity, the CHSH test (violated only above w = 0.7071), depolarizing one half of a pair, and heralded generation with a geometric waiting time.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The resource a quantum network supplies is **shared entanglement**, usually a pair of qubits that should be in the Bell state |Φ⁺⟩. In practice a delivered pair is a mixed state, and a convenient one-parameter model is the **Werner state** ρ_w = w|Φ⁺⟩⟨Φ⁺| + (1 − w)·I/4, with fidelity F = (1 + 3w)/4 with the Bell state. It is entangled exactly for w > 1/3 (lesson 1.8). Noise on the link enters as a channel on one half: a **depolarizing** channel with parameter λ on one qubit of a Bell pair gives a Werner state with w = 1 − λ. The pair can be **certified** with the CHSH inequality: for the optimal settings the Werner state gives S = 2√2·w, and a violation (S > 2) shows entanglement without trusting the measurement devices, but it needs w > 1/√2 = 0.7071, a stricter condition than entanglement itself.\n\nIn many platforms pair generation is **heralded**: the hardware signals that a pair was created, so the network can use only successful attempts. With success probability p per attempt the waiting time is geometric with mean 1/p. The listing computes fidelity and CHSH value for a range of w, shows how a depolarizing channel on one half produces a Werner state, and simulates the waiting times. The labs are exact density-matrix simulations of up to 7 qubits and small classical models (graphs, Markov-type waiting times) written for the lesson, using the Werner state as the standard noisy entangled pair. Where a table uses invented link rates or qualities it is labelled DEMO DATA, and illustrative platform numbers are labelled illustrative; nothing here is a measurement of a real network."
+            },
+            {
+              "type": "code",
+              "id": "c-entanglement-distribution",
+              "language": "python",
+              "code": "import math, itertools\nimport numpy as np\n\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]], dtype=complex); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]], dtype=complex)\nH = np.array([[1, 1], [1, -1]], dtype=complex) / math.sqrt(2)\ndef kron(*ms):\n    out = np.array([[1.0 + 0j]])\n    for m in ms: out = np.kron(out, m)\n    return out\ndef ket(bits):\n    v = np.zeros(2 ** len(bits), dtype=complex); v[int(\"\".join(map(str, bits)), 2)] = 1; return v\ndef proj(v):\n    return np.outer(v, v.conj())\nPHI_PLUS = (ket([0, 0]) + ket([1, 1])) / math.sqrt(2)\nBELL = {\"phi+\": PHI_PLUS, \"phi-\": (ket([0, 0]) - ket([1, 1])) / math.sqrt(2), \"psi+\": (ket([0, 1]) + ket([1, 0])) / math.sqrt(2), \"psi-\": (ket([0, 1]) - ket([1, 0])) / math.sqrt(2)}\ndef werner(w, target=PHI_PLUS):\n    # w * |target><target| + (1 - w) * I / 4: the noisy entangled pair used throughout; w is the Werner parameter, the fidelity with the target is (1 + 3 w) / 4\n    return w * proj(target) + (1 - w) * np.eye(4) / 4\ndef fidelity_pure(rho, v):\n    return float((v.conj() @ rho @ v).real)\ndef ptrace(rho, dims, keep):\n    n = len(dims); t = rho.reshape(dims + dims)\n    for i in sorted([i for i in range(n) if i not in keep], reverse=True):\n        t = np.trace(t, axis1=i, axis2=i + t.ndim // 2)\n    d = int(np.prod([dims[i] for i in keep])); return t.reshape(d, d)\ndef apply_unitary(rho, U):\n    return U @ rho @ U.conj().T\ndef op_on(n, gate, qubits):\n    # a gate (given as a matrix on len(qubits) qubits) acting on the listed qubits of an n-qubit system, identity elsewhere\n    k = len(qubits); dim = 2 ** n\n    U = np.zeros((dim, dim), dtype=complex)\n    for col in range(dim):\n        bits = [(col >> (n - 1 - i)) & 1 for i in range(n)]\n        sub = int(\"\".join(str(bits[q]) for q in qubits), 2)\n        for row_sub in range(2 ** k):\n            amp = gate[row_sub, sub]\n            if abs(amp) < 1e-15: continue\n            nb = bits.copy()\n            for j, q in enumerate(qubits): nb[q] = (row_sub >> (k - 1 - j)) & 1\n            U[int(\"\".join(map(str, nb)), 2), col] += amp\n    return U\n# --- distributing entanglement: a Werner pair p |Phi+><Phi+| + (1-p) I/4, its fidelity, and the CHSH value that certifies it\ndef chsh_value(rho):\n    # Alice measures Z and X, Bob measures (Z + X)/sqrt2 and (Z - X)/sqrt2: the optimal settings for a Bell state\n    A0, A1 = Z, X\n    B0, B1 = (Z + X) / math.sqrt(2), (Z - X) / math.sqrt(2)\n    E = lambda A, B: float(np.trace(rho @ np.kron(A, B)).real)\n    return E(A0, B0) + E(A0, B1) + E(A1, B0) - E(A1, B1)\nprint(f\"{'Werner parameter w':>19} {'fidelity (1+3w)/4':>19} {'CHSH value 2 sqrt2 w':>22} {'violates the classical bound 2':>32} {'entangled (w > 1/3)':>20}\")\nfor w in (1.0, 0.9, 0.8, 0.7071, 0.6, 0.4, 0.34, 0.3):\n    rho = werner(w)\n    S = chsh_value(rho)\n    print(f\"{w:>19.4f} {fidelity_pure(rho, PHI_PLUS):>19.4f} {S:>22.4f} {str(S > 2 + 1e-9):>32} {str(w > 1 / 3):>20}\")\nprint(\"a Werner state violates CHSH only for w > 1/sqrt(2) = 0.7071 (fidelity above 0.78), although it is entangled for w > 1/3: CHSH certifies entanglement without trusting the devices, but it is a stricter test\")\n\n# --- how the pair gets degraded on the way: one half goes through a depolarizing channel with parameter lambda\ndef depolarize_second_half(rho, lam):\n    # (1 - lam) rho + lam * (trace out qubit 2, replace it with the maximally mixed state)\n    reduced = ptrace(rho, [2, 2], [0])\n    return (1 - lam) * rho + lam * np.kron(reduced, np.eye(2) / 2)\nprint()\nprint(f\"{'lambda':>8} {'fidelity with Phi+':>20} {'Werner parameter 1 - lambda':>29} {'CHSH':>8}\")\nfor lam in (0.0, 0.1, 0.2, 0.3, 0.5, 0.7):\n    out = depolarize_second_half(proj(PHI_PLUS), lam)\n    print(f\"{lam:>8} {fidelity_pure(out, PHI_PLUS):>20.4f} {1 - lam:>29.4f} {chsh_value(out):>8.4f}\")\nprint(\"a depolarizing channel on one half turns a maximally entangled pair into a Werner state with w = 1 - lambda; every later step is then a question of what can be done with Werner pairs\")\n\n# --- heralded entanglement: a probabilistic source emits a pair with probability p_gen per attempt; the waiting time is geometric\nrng = np.random.default_rng(42)\nfor p_gen in (0.5, 0.05, 0.005):\n    waits = rng.geometric(p_gen, 20000)\n    print(f\"generation probability per attempt {p_gen}: mean attempts until a pair is delivered {waits.mean():.1f} (theory {1 / p_gen:.1f}), 95th percentile {np.percentile(waits, 95):.0f}\")\nprint(\"heralding (a signal that says a pair was created) lets the network use only successful attempts; the price is the waiting time, and the pair ages in its memory while the neighbouring link is still waiting (4.6)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-entanglement-distribution",
+              "language": "text",
+              "code": " Werner parameter w   fidelity (1+3w)/4   CHSH value 2 sqrt2 w   violates the classical bound 2  entangled (w > 1/3)\n             1.0000              1.0000                 2.8284                             True                 True\n             0.9000              0.9250                 2.5456                             True                 True\n             0.8000              0.8500                 2.2627                             True                 True\n             0.7071              0.7803                 2.0000                            False                 True\n             0.6000              0.7000                 1.6971                            False                 True\n             0.4000              0.5500                 1.1314                            False                 True\n             0.3400              0.5050                 0.9617                            False                 True\n             0.3000              0.4750                 0.8485                            False                False\na Werner state violates CHSH only for w > 1/sqrt(2) = 0.7071 (fidelity above 0.78), although it is entangled for w > 1/3: CHSH certifies entanglement without trusting the devices, but it is a stricter test\n\n  lambda   fidelity with Phi+   Werner parameter 1 - lambda     CHSH\n     0.0               1.0000                        1.0000   2.8284\n     0.1               0.9250                        0.9000   2.5456\n     0.2               0.8500                        0.8000   2.2627\n     0.3               0.7750                        0.7000   1.9799\n     0.5               0.6250                        0.5000   1.4142\n     0.7               0.4750                        0.3000   0.8485\na depolarizing channel on one half turns a maximally entangled pair into a Werner state with w = 1 - lambda; every later step is then a question of what can be done with Werner pairs\ngeneration probability per attempt 0.5: mean attempts until a pair is delivered 2.0 (theory 2.0), 95th percentile 5\ngeneration probability per attempt 0.05: mean attempts until a pair is delivered 20.1 (theory 20.0), 95th percentile 59\ngeneration probability per attempt 0.005: mean attempts until a pair is delivered 200.1 (theory 200.0), 95th percentile 598\nheralding (a signal that says a pair was created) lets the network use only successful attempts; the price is the waiting time, and the pair ages in its memory while the neighbouring link is still waiting (4.6)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The CHSH value follows 2√2·w exactly: 2.8284 for w = 1, 2.5456 for 0.9, 2.2627 for 0.8, exactly 2.0000 at w = 0.7071 (fidelity 0.7803) and below the classical bound for smaller w, even though the state is still entangled down to w > 1/3 (fidelity above 0.5). Depolarizing one half with λ = 0.1, 0.2, 0.3, 0.5 and 0.7 gives w = 0.9, 0.8, 0.7, 0.5 and 0.3 (fidelities 0.925, 0.850, 0.775, 0.625, 0.475) and CHSH values 2.5456, 2.2627, 1.9799, 1.4142 and 0.8485: a link whose noise exceeds λ ≈ 0.29 can no longer violate CHSH. The simulated waiting times match theory (mean 2.0, 20.1 and 200.1 attempts for p = 0.5, 0.05, 0.005, with a 95th percentile of 5, 59 and 598 attempts).\n\n**Why the distinction matters.** \"Entangled\", \"violates CHSH\", \"good enough for teleportation\" and \"good enough for key distribution\" are four different thresholds on the same state. A network specification must say which one it guarantees, together with the fidelity and the rate. **Common mistake:** quoting a pair fidelity of 0.7 as entanglement of quality for applications: it is entangled, but fails CHSH and falls below the usual quality needs."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the CHSH value of a Werner state with parameter w?",
+              "options": [
+                "2 sqrt(2) w",
+                "2 w",
+                "4 w"
+              ],
+              "correct_index": 0,
+              "explanation": "It exceeds 2 only for w > 1/sqrt(2)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "For which w is a Werner state entangled?",
+              "options": [
+                "w > 1/3",
+                "w > 1/sqrt(2)",
+                "w > 0"
+              ],
+              "correct_index": 0,
+              "explanation": "Fidelity above 0.5."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the mean waiting time for a heralded source with success probability p per attempt?",
+              "options": [
+                "1/p attempts",
+                "p attempts",
+                "log(1/p) attempts"
+              ],
+              "correct_index": 0,
+              "explanation": "The waiting time is geometric."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Section 3.6 (Entanglement, Bell states) and Section 4.1 (noisy states)"
+            },
+            {
+              "book": "B110",
+              "locator": "Qiskit Textbook: the CHSH chapter (Bell inequality and the settings used)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The Werner-state CHSH value 2 sqrt(2) w and the threshold 1/sqrt(2) are standard results checked numerically in the listing; the chapters cited define the Bell states and CHSH but do not state the Werner formula."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "4.3 Quantum Teleportation",
+          "summary": "Teleportation simulated exactly with a noisy pair: the average fidelity (2F + 1)/3, the classical limit 2/3 at the entanglement threshold, and the classical-latency cost.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Quantum teleportation** transfers an unknown qubit state from Alice to Bob using a shared Bell pair and **two classical bits**: Alice performs a Bell measurement on the data qubit and her half of the pair, sends the two outcome bits, and Bob applies the corresponding Pauli correction (Z^m₀ X^m₁) to his half. The state itself never travels through the channel, and the original is destroyed by the measurement (consistent with no-cloning). With a perfect pair the output equals the input exactly. With a noisy pair of fidelity F with |Φ⁺⟩ the **average teleportation fidelity** over all input states is **(2F + 1)/3**, and the best any purely classical measure-and-prepare strategy can reach is **2/3**. Teleportation therefore beats classical transmission exactly when F > 1/2, which for a Werner pair is the entanglement threshold w > 1/3.\n\nThe listing simulates teleportation exactly on three qubits (a density matrix, including the average over Alice's four measurement outcomes with Bob's correction) for 60 random input states, and compares the average fidelity with the formula for a range of Werner parameters. It also computes the latency imposed by the classical channel. The labs are exact density-matrix simulations of up to 7 qubits and small classical models (graphs, Markov-type waiting times) written for the lesson, using the Werner state as the standard noisy entangled pair. Where a table uses invented link rates or qualities it is labelled DEMO DATA, and illustrative platform numbers are labelled illustrative; nothing here is a measurement of a real network."
+            },
+            {
+              "type": "code",
+              "id": "c-teleportation",
+              "language": "python",
+              "code": "import math, itertools\nimport numpy as np\n\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]], dtype=complex); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]], dtype=complex)\nH = np.array([[1, 1], [1, -1]], dtype=complex) / math.sqrt(2)\ndef kron(*ms):\n    out = np.array([[1.0 + 0j]])\n    for m in ms: out = np.kron(out, m)\n    return out\ndef ket(bits):\n    v = np.zeros(2 ** len(bits), dtype=complex); v[int(\"\".join(map(str, bits)), 2)] = 1; return v\ndef proj(v):\n    return np.outer(v, v.conj())\nPHI_PLUS = (ket([0, 0]) + ket([1, 1])) / math.sqrt(2)\nBELL = {\"phi+\": PHI_PLUS, \"phi-\": (ket([0, 0]) - ket([1, 1])) / math.sqrt(2), \"psi+\": (ket([0, 1]) + ket([1, 0])) / math.sqrt(2), \"psi-\": (ket([0, 1]) - ket([1, 0])) / math.sqrt(2)}\ndef werner(w, target=PHI_PLUS):\n    # w * |target><target| + (1 - w) * I / 4: the noisy entangled pair used throughout; w is the Werner parameter, the fidelity with the target is (1 + 3 w) / 4\n    return w * proj(target) + (1 - w) * np.eye(4) / 4\ndef fidelity_pure(rho, v):\n    return float((v.conj() @ rho @ v).real)\ndef ptrace(rho, dims, keep):\n    n = len(dims); t = rho.reshape(dims + dims)\n    for i in sorted([i for i in range(n) if i not in keep], reverse=True):\n        t = np.trace(t, axis1=i, axis2=i + t.ndim // 2)\n    d = int(np.prod([dims[i] for i in keep])); return t.reshape(d, d)\ndef apply_unitary(rho, U):\n    return U @ rho @ U.conj().T\ndef op_on(n, gate, qubits):\n    # a gate (given as a matrix on len(qubits) qubits) acting on the listed qubits of an n-qubit system, identity elsewhere\n    k = len(qubits); dim = 2 ** n\n    U = np.zeros((dim, dim), dtype=complex)\n    for col in range(dim):\n        bits = [(col >> (n - 1 - i)) & 1 for i in range(n)]\n        sub = int(\"\".join(str(bits[q]) for q in qubits), 2)\n        for row_sub in range(2 ** k):\n            amp = gate[row_sub, sub]\n            if abs(amp) < 1e-15: continue\n            nb = bits.copy()\n            for j, q in enumerate(qubits): nb[q] = (row_sub >> (k - 1 - j)) & 1\n            U[int(\"\".join(map(str, nb)), 2), col] += amp\n    return U\n# --- quantum teleportation with a noisy shared pair, simulated exactly on three qubits (data = 0, Alice's half = 1, Bob's half = 2)\nCNOT = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]], dtype=complex)\ndef teleport(psi, shared_pair):\n    rho_in = proj(psi)\n    state = np.kron(rho_in, shared_pair)                                      # qubit order: data, A, B\n    state = apply_unitary(state, op_on(3, CNOT, [0, 1]))                     # Alice: CNOT data -> A, then H on the data qubit (a Bell measurement in disguise)\n    state = apply_unitary(state, op_on(3, H, [0]))\n    out = np.zeros((2, 2), dtype=complex)\n    for m0, m1 in itertools.product((0, 1), repeat=2):                       # Alice's two classical bits\n        P = kron(np.diag([1 - m0, m0]), np.diag([1 - m1, m1]), I2)\n        branch = P @ state @ P\n        rho_b = ptrace(branch, [2, 2, 2], [2])                               # Bob's qubit given the outcome (unnormalised: includes the probability)\n        corr = np.linalg.matrix_power(Z, m0) @ np.linalg.matrix_power(X, m1)  # Bob's correction from the two classical bits\n        out += corr @ rho_b @ corr.conj().T\n    return out\nrng = np.random.default_rng(43)\ndef random_pure():\n    v = rng.normal(size=2) + 1j * rng.normal(size=2); return v / np.linalg.norm(v)\ndef avg_fidelity(shared_pair, samples=60):\n    return float(np.mean([(lambda p: (p.conj() @ teleport(p, shared_pair) @ p).real)(random_pure()) for _ in range(samples)]))\nprint(\"teleportation with a perfect pair reproduces the input exactly:\", np.isclose(avg_fidelity(proj(PHI_PLUS)), 1.0))\nprint()\nprint(f\"{'Werner parameter w':>19} {'pair fidelity F = (1+3w)/4':>28} {'teleportation fidelity (simulated)':>36} {'formula (2F + 1)/3':>20} {'above classical limit 2/3':>26}\")\nfor w in (1.0, 0.9, 0.7, 0.5, 1 / 3, 0.2, 0.0):\n    pair = werner(w); F = fidelity_pure(pair, PHI_PLUS)\n    avg = avg_fidelity(pair)\n    print(f\"{w:>19.4f} {F:>28.4f} {avg:>36.4f} {(2 * F + 1) / 3:>20.4f} {str(avg > 2 / 3 + 1e-9):>26}\")\nprint(\"the average teleportation fidelity is (2F + 1)/3 for a pair of fidelity F with the Bell state; the best a purely classical measure-and-prepare strategy can reach is 2/3, which corresponds to w = 1/3: exactly the threshold of entanglement of the Werner state\")\nprint(\"teleportation needs 2 classical bits per qubit, so the classical channel speed (light in fibre, about 200,000 km/s) limits the rate: for 1000 km the bits take\", round(1000 / 200000 * 1000, 1), \"ms\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-teleportation",
+              "language": "text",
+              "code": "teleportation with a perfect pair reproduces the input exactly: True\n\n Werner parameter w   pair fidelity F = (1+3w)/4   teleportation fidelity (simulated)   formula (2F + 1)/3  above classical limit 2/3\n             1.0000                       1.0000                               1.0000               1.0000                       True\n             0.9000                       0.9250                               0.9500               0.9500                       True\n             0.7000                       0.7750                               0.8500               0.8500                       True\n             0.5000                       0.6250                               0.7500               0.7500                       True\n             0.3333                       0.5000                               0.6667               0.6667                      False\n             0.2000                       0.4000                               0.6000               0.6000                      False\n             0.0000                       0.2500                               0.5000               0.5000                      False\nthe average teleportation fidelity is (2F + 1)/3 for a pair of fidelity F with the Bell state; the best a purely classical measure-and-prepare strategy can reach is 2/3, which corresponds to w = 1/3: exactly the threshold of entanglement of the Werner state\nteleportation needs 2 classical bits per qubit, so the classical channel speed (light in fibre, about 200,000 km/s) limits the rate: for 1000 km the bits take 5.0 ms",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "A perfect pair reproduces the input with fidelity 1. For Werner pairs the simulated average fidelity equals (2F + 1)/3 at every w tested: 0.9500 for w = 0.9 (F = 0.925), 0.8500 for w = 0.7, 0.7500 for w = 0.5, 0.6667 for w = 1/3 (the classical limit, no advantage), 0.6000 for w = 0.2 and 0.5000 for the maximally mixed pair. So noise in the pair maps directly into a teleportation error, and an imperfect pair at w = 1/3 is no better than measuring and resending a classical description. The classical bits travel at most at the speed of light in fibre (about 200,000 km/s): 5 ms over 1,000 km, so a teleportation link has a rate limited by the round trip as well as by the pair supply.\n\n**Two points often misunderstood.** Teleportation does not send information faster than light (Bob's state is uncorrected, a maximally mixed state, until the bits arrive), and it does not copy the state. Its role in a network is to carry qubits using only entanglement and a classical channel, so that the quantum channel needs to supply pairs rather than carry the data. **Common mistake:** reporting a teleportation fidelity for a fixed input; the figure of merit is the average over all inputs, as computed here."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does teleportation need besides a shared Bell pair?",
+              "options": [
+                "Two classical bits per qubit",
+                "A quantum channel for the data",
+                "A copy of the state"
+              ],
+              "correct_index": 0,
+              "explanation": "Bob's correction depends on Alice's two outcomes."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the average teleportation fidelity with a pair of fidelity F?",
+              "options": [
+                "(2F + 1)/3",
+                "F",
+                "F squared"
+              ],
+              "correct_index": 0,
+              "explanation": "At F = 1/2 it equals the classical limit 2/3."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why can teleportation not carry information faster than light?",
+              "options": [
+                "Bob's state is useless until the classical bits arrive",
+                "It is slower than light by design",
+                "The pair must be recreated"
+              ],
+              "correct_index": 0,
+              "explanation": "The classical communication travels at most at the speed of light."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B110",
+              "locator": "Qiskit Textbook: Quantum Teleportation chapter"
+            },
+            {
+              "book": "B113",
+              "locator": "Wilde: Chapter 6 (the three unit protocols: teleportation, superdense coding, entanglement distribution)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The formula (2F + 1)/3 for the average teleportation fidelity and the classical limit 2/3 are standard results verified numerically in the listing; they are not stated in the cited chapters in this form."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "4.4 Entanglement Swapping",
+          "summary": "Swapping two Werner pairs gives a Werner pair with parameter w1 w2 (exact simulation), the multiplicative decay along a chain, and the longest chain that still delivers a useful pair.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Entanglement swapping** creates entanglement between two qubits that never interacted: given a pair (A, R₁) and a pair (R₂, B), a **Bell measurement** on R₁ and R₂ projects A and B onto a Bell state, up to a Pauli correction determined by the two classical outcome bits. It is teleportation applied to half of a pair, and it is the operation a **repeater** performs to join two links. When the two input pairs are Werner states with parameters w₁ and w₂, the swapped pair is a Werner state with **w = w₁·w₂**: the Bell measurement is perfect in this model, and the noise **multiplies**. For n equal links the end-to-end parameter is wⁿ, so the fidelity (1 + 3wⁿ)/4 decays exponentially with the number of links.\n\nThe listing simulates swapping exactly on four qubits, for several pairs of Werner parameters, including the average over the four measurement outcomes with the corrections, and then tabulates the end-to-end fidelity of chains of up to 64 links and the longest chains that still give an entangled output or a fidelity above 0.9. The labs are exact density-matrix simulations of up to 7 qubits and small classical models (graphs, Markov-type waiting times) written for the lesson, using the Werner state as the standard noisy entangled pair. Where a table uses invented link rates or qualities it is labelled DEMO DATA, and illustrative platform numbers are labelled illustrative; nothing here is a measurement of a real network."
+            },
+            {
+              "type": "code",
+              "id": "c-swapping",
+              "language": "python",
+              "code": "import math, itertools\nimport numpy as np\n\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]], dtype=complex); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]], dtype=complex)\nH = np.array([[1, 1], [1, -1]], dtype=complex) / math.sqrt(2)\ndef kron(*ms):\n    out = np.array([[1.0 + 0j]])\n    for m in ms: out = np.kron(out, m)\n    return out\ndef ket(bits):\n    v = np.zeros(2 ** len(bits), dtype=complex); v[int(\"\".join(map(str, bits)), 2)] = 1; return v\ndef proj(v):\n    return np.outer(v, v.conj())\nPHI_PLUS = (ket([0, 0]) + ket([1, 1])) / math.sqrt(2)\nBELL = {\"phi+\": PHI_PLUS, \"phi-\": (ket([0, 0]) - ket([1, 1])) / math.sqrt(2), \"psi+\": (ket([0, 1]) + ket([1, 0])) / math.sqrt(2), \"psi-\": (ket([0, 1]) - ket([1, 0])) / math.sqrt(2)}\ndef werner(w, target=PHI_PLUS):\n    # w * |target><target| + (1 - w) * I / 4: the noisy entangled pair used throughout; w is the Werner parameter, the fidelity with the target is (1 + 3 w) / 4\n    return w * proj(target) + (1 - w) * np.eye(4) / 4\ndef fidelity_pure(rho, v):\n    return float((v.conj() @ rho @ v).real)\ndef ptrace(rho, dims, keep):\n    n = len(dims); t = rho.reshape(dims + dims)\n    for i in sorted([i for i in range(n) if i not in keep], reverse=True):\n        t = np.trace(t, axis1=i, axis2=i + t.ndim // 2)\n    d = int(np.prod([dims[i] for i in keep])); return t.reshape(d, d)\ndef apply_unitary(rho, U):\n    return U @ rho @ U.conj().T\ndef op_on(n, gate, qubits):\n    # a gate (given as a matrix on len(qubits) qubits) acting on the listed qubits of an n-qubit system, identity elsewhere\n    k = len(qubits); dim = 2 ** n\n    U = np.zeros((dim, dim), dtype=complex)\n    for col in range(dim):\n        bits = [(col >> (n - 1 - i)) & 1 for i in range(n)]\n        sub = int(\"\".join(str(bits[q]) for q in qubits), 2)\n        for row_sub in range(2 ** k):\n            amp = gate[row_sub, sub]\n            if abs(amp) < 1e-15: continue\n            nb = bits.copy()\n            for j, q in enumerate(qubits): nb[q] = (row_sub >> (k - 1 - j)) & 1\n            U[int(\"\".join(map(str, nb)), 2), col] += amp\n    return U\n# --- entanglement swapping on four qubits: pairs (0,1) and (2,3) are prepared; a Bell measurement on qubits 1 and 2 leaves qubits 0 and 3 entangled\nCNOT = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]], dtype=complex)\ndef swap(rho_a, rho_b):\n    state = np.kron(rho_a, rho_b)                                             # qubit order 0, 1, 2, 3\n    state = apply_unitary(state, op_on(4, CNOT, [1, 2]))                      # Bell measurement on qubits 1, 2 (CNOT, Hadamard, Z measurements)\n    state = apply_unitary(state, op_on(4, H, [1]))\n    result = np.zeros((4, 4), dtype=complex); probs = {}\n    for m1, m2 in itertools.product((0, 1), repeat=2):\n        P = kron(I2, np.diag([1 - m1, m1]), np.diag([1 - m2, m2]), I2)\n        branch = P @ state @ P\n        rho_03 = ptrace(branch, [2, 2, 2, 2], [0, 3]); p = float(np.trace(rho_03).real); probs[(m1, m2)] = p\n        corr = np.linalg.matrix_power(Z, m1) @ np.linalg.matrix_power(X, m2)  # Pauli correction on qubit 3 (the standard teleportation-type correction)\n        U = np.kron(I2, corr)\n        result += U @ rho_03 @ U.conj().T\n    return result, probs\nfor w1, w2 in ((1.0, 1.0), (0.9, 0.9), (0.8, 0.6), (0.5, 0.5)):\n    out, probs = swap(werner(w1), werner(w2))\n    F = fidelity_pure(out, PHI_PLUS)\n    # the output is a Werner state with w = w1 * w2\n    expected = (1 + 3 * w1 * w2) / 4\n    print(f\"w1 = {w1}, w2 = {w2}: outcome probabilities {[round(p, 3) for p in probs.values()]}, fidelity of the swapped pair {F:.4f}; Werner prediction (1 + 3 w1 w2)/4 = {expected:.4f}: {np.isclose(F, expected)}\")\nprint(\"swapping two Werner pairs gives a Werner pair whose parameter is the PRODUCT w1 w2: noise accumulates multiplicatively along a chain, so n equal links of parameter w give w^n\")\n\n# --- a chain of n links: fidelity of the end-to-end pair, against the threshold of usefulness\nprint()\nprint(f\"{'links n':>8} \" + \" \".join(f\"{'w = ' + str(w):>12}\" for w in (0.99, 0.95, 0.90)) + \"   (end-to-end fidelity (1 + 3 w^n) / 4)\")\nfor n in (1, 2, 4, 8, 16, 32, 64):\n    print(f\"{n:>8} \" + \" \".join(f\"{(1 + 3 * w ** n) / 4:>12.4f}\" for w in (0.99, 0.95, 0.90)))\nprint(\"with w = 0.99 per link, 64 links give fidelity 0.644: still entangled (fidelity above 0.5) but below the quality that teleportation or QKD needs. Longer chains need purification (4.5) or better links\")\nfor w in (0.99, 0.95, 0.90):\n    print(f\"longest chain with entangled output (w^n > 1/3), w = {w}: n = {int(math.log(1 / 3) / math.log(w))} links;  with fidelity above 0.9 (w^n > 0.8667): n = {int(math.log(0.8667) / math.log(w))} links\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-swapping",
+              "language": "text",
+              "code": "w1 = 1.0, w2 = 1.0: outcome probabilities [0.25, 0.25, 0.25, 0.25], fidelity of the swapped pair 1.0000; Werner prediction (1 + 3 w1 w2)/4 = 1.0000: True\nw1 = 0.9, w2 = 0.9: outcome probabilities [0.25, 0.25, 0.25, 0.25], fidelity of the swapped pair 0.8575; Werner prediction (1 + 3 w1 w2)/4 = 0.8575: True\nw1 = 0.8, w2 = 0.6: outcome probabilities [0.25, 0.25, 0.25, 0.25], fidelity of the swapped pair 0.6100; Werner prediction (1 + 3 w1 w2)/4 = 0.6100: True\nw1 = 0.5, w2 = 0.5: outcome probabilities [0.25, 0.25, 0.25, 0.25], fidelity of the swapped pair 0.4375; Werner prediction (1 + 3 w1 w2)/4 = 0.4375: True\nswapping two Werner pairs gives a Werner pair whose parameter is the PRODUCT w1 w2: noise accumulates multiplicatively along a chain, so n equal links of parameter w give w^n\n\n links n     w = 0.99     w = 0.95      w = 0.9   (end-to-end fidelity (1 + 3 w^n) / 4)\n       1       0.9925       0.9625       0.9250\n       2       0.9851       0.9269       0.8575\n       4       0.9704       0.8609       0.7421\n       8       0.9421       0.7476       0.5729\n      16       0.8886       0.5801       0.3890\n      32       0.7937       0.3953       0.2758\n      64       0.6442       0.2781       0.2509\nwith w = 0.99 per link, 64 links give fidelity 0.644: still entangled (fidelity above 0.5) but below the quality that teleportation or QKD needs. Longer chains need purification (4.5) or better links\nlongest chain with entangled output (w^n > 1/3), w = 0.99: n = 109 links;  with fidelity above 0.9 (w^n > 0.8667): n = 14 links\nlongest chain with entangled output (w^n > 1/3), w = 0.95: n = 21 links;  with fidelity above 0.9 (w^n > 0.8667): n = 2 links\nlongest chain with entangled output (w^n > 1/3), w = 0.9: n = 10 links;  with fidelity above 0.9 (w^n > 0.8667): n = 1 links",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "All four measurement outcomes occur with probability 1/4, and the swapped pair has exactly the predicted fidelity: 0.8575 for w₁ = w₂ = 0.9 (so w = 0.81), 0.6100 for w₁ = 0.8 and w₂ = 0.6 (w = 0.48) and 0.4375 for w₁ = w₂ = 0.5 (w = 0.25, no longer entangled). In a chain, the end-to-end fidelity for links with w = 0.99 is 0.9925, 0.9851, 0.9704, 0.9421 and 0.8886 for 1, 2, 4, 8 and 16 links and 0.644 for 64 links; for w = 0.95 it falls below the entanglement threshold of 0.5 between 16 and 32 links, and for w = 0.90 between 8 links (0.573) and 16 links (0.389). The longest chain that still gives an entangled output (wⁿ > 1/3) is 109 links for w = 0.99, 21 for w = 0.95 and 10 for w = 0.90; for a fidelity above 0.9 the numbers are 14, 2 and 1 links.\n\n**Takeaway.** Swapping extends the *distance* but degrades the *quality*, and the degradation compounds, so a long chain of ordinary links cannot work without help: either higher-quality links, or **purification** (4.5) to restore the fidelity between swaps. A real Bell measurement also fails with probability (with linear optics at most 1/2), which this model idealises."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the Werner parameter after swapping pairs with parameters w1 and w2?",
+              "options": [
+                "w1 times w2",
+                "The smaller of the two",
+                "(w1 + w2)/2"
+              ],
+              "correct_index": 0,
+              "explanation": "The noise multiplies: n links give w^n."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does a Bell measurement on the two inner qubits do?",
+              "options": [
+                "It entangles the two outer qubits (up to a Pauli correction known from the outcomes)",
+                "It copies the state",
+                "It destroys all entanglement"
+              ],
+              "correct_index": 0,
+              "explanation": "It is teleportation of half a pair."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why can long chains of equal links not work without purification?",
+              "options": [
+                "The fidelity decays exponentially with the number of swaps",
+                "Swapping is impossible",
+                "Links cannot be made equal"
+              ],
+              "correct_index": 0,
+              "explanation": "w = 0.99 gives fidelity 0.644 after 64 links."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Chapter 6 (unit protocols) and Section 3.6 (Bell states)"
+            },
+            {
+              "book": "B110",
+              "locator": "Qiskit Textbook: teleportation chapter (the Bell measurement circuit used for the swap)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The product rule for swapping Werner states is derived by the exact simulation in the listing; the statement that a linear-optics Bell measurement succeeds with probability at most 1/2 is stated from the literature and was not checked here."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "4.5 Quantum Repeaters",
+          "summary": "Entanglement purification (BBPSSW) simulated exactly against its recurrence, the cost in raw pairs, and a waiting-time model showing why dividing a span into segments with memories and swaps beats direct transmission.",
+          "estimated_minutes": 70,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **quantum repeater** overcomes the two limits of 4.1 and 4.4: exponential loss and multiplicative noise. It divides a long span into short **segments**, generates a pair in each segment (heralded, so only successes are used), **stores** the halves in quantum memories, **purifies** the pairs to restore fidelity, and **swaps** them to join segments. **Entanglement purification** takes two noisy pairs and, with local operations and classical communication, produces one pair of higher fidelity with some probability; the BBPSSW protocol applies a bilateral CNOT from the first pair to the second, measures the second pair in the Z basis, and keeps the first pair if the two results agree. For Werner pairs of fidelity F the result is a pair of fidelity (F² + ((1−F)/3)²)/(F² + 2F(1−F)/3 + 5((1−F)/3)²) with the success probability equal to the denominator of that expression. It only works for F > 1/2: pairs at or below the entanglement threshold cannot be purified.\n\nThe first listing simulates a purification round exactly on four qubits and compares fidelity and success probability with the recurrence, then iterates the recurrence to count the raw pairs per output pair. The second models a repeater chain in discrete time slots: each segment link succeeds with the fibre transmission probability per slot, stored links older than a memory cutoff are discarded, and swaps succeed with probability q. It compares a direct 400 km link with 2, 4 and 8 segments. The labs are exact density-matrix simulations of up to 7 qubits and small classical models (graphs, Markov-type waiting times) written for the lesson, using the Werner state as the standard noisy entangled pair. Where a table uses invented link rates or qualities it is labelled DEMO DATA, and illustrative platform numbers are labelled illustrative; nothing here is a measurement of a real network."
+            },
+            {
+              "type": "code",
+              "id": "c-repeaters",
+              "language": "python",
+              "code": "import math, itertools\nimport numpy as np\n\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]], dtype=complex); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]], dtype=complex)\nH = np.array([[1, 1], [1, -1]], dtype=complex) / math.sqrt(2)\ndef kron(*ms):\n    out = np.array([[1.0 + 0j]])\n    for m in ms: out = np.kron(out, m)\n    return out\ndef ket(bits):\n    v = np.zeros(2 ** len(bits), dtype=complex); v[int(\"\".join(map(str, bits)), 2)] = 1; return v\ndef proj(v):\n    return np.outer(v, v.conj())\nPHI_PLUS = (ket([0, 0]) + ket([1, 1])) / math.sqrt(2)\nBELL = {\"phi+\": PHI_PLUS, \"phi-\": (ket([0, 0]) - ket([1, 1])) / math.sqrt(2), \"psi+\": (ket([0, 1]) + ket([1, 0])) / math.sqrt(2), \"psi-\": (ket([0, 1]) - ket([1, 0])) / math.sqrt(2)}\ndef werner(w, target=PHI_PLUS):\n    # w * |target><target| + (1 - w) * I / 4: the noisy entangled pair used throughout; w is the Werner parameter, the fidelity with the target is (1 + 3 w) / 4\n    return w * proj(target) + (1 - w) * np.eye(4) / 4\ndef fidelity_pure(rho, v):\n    return float((v.conj() @ rho @ v).real)\ndef ptrace(rho, dims, keep):\n    n = len(dims); t = rho.reshape(dims + dims)\n    for i in sorted([i for i in range(n) if i not in keep], reverse=True):\n        t = np.trace(t, axis1=i, axis2=i + t.ndim // 2)\n    d = int(np.prod([dims[i] for i in keep])); return t.reshape(d, d)\ndef apply_unitary(rho, U):\n    return U @ rho @ U.conj().T\ndef op_on(n, gate, qubits):\n    # a gate (given as a matrix on len(qubits) qubits) acting on the listed qubits of an n-qubit system, identity elsewhere\n    k = len(qubits); dim = 2 ** n\n    U = np.zeros((dim, dim), dtype=complex)\n    for col in range(dim):\n        bits = [(col >> (n - 1 - i)) & 1 for i in range(n)]\n        sub = int(\"\".join(str(bits[q]) for q in qubits), 2)\n        for row_sub in range(2 ** k):\n            amp = gate[row_sub, sub]\n            if abs(amp) < 1e-15: continue\n            nb = bits.copy()\n            for j, q in enumerate(qubits): nb[q] = (row_sub >> (k - 1 - j)) & 1\n            U[int(\"\".join(map(str, nb)), 2), col] += amp\n    return U\nrng = np.random.default_rng(45)\n\n# --- 1. entanglement purification (BBPSSW) on Werner pairs: two pairs in, one better pair out with some probability. Exact density-matrix simulation.\nCNOT = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]], dtype=complex)\ndef bbpssw_round(rho_pair):\n    # qubit order: A1, B1 (first pair), A2, B2 (second pair); bilateral CNOTs from pair 1 (control) to pair 2 (target), then measure pair 2 in the Z basis and keep pair 1 if the results agree\n    state = np.kron(rho_pair, rho_pair)\n    state = apply_unitary(state, op_on(4, CNOT, [0, 2]))\n    state = apply_unitary(state, op_on(4, CNOT, [1, 3]))\n    out = np.zeros((4, 4), dtype=complex); p_success = 0.0\n    for a, b in itertools.product((0, 1), repeat=2):\n        if a != b: continue                                                    # equal measurement results: success\n        P = kron(I2, I2, np.diag([1 - a, a]), np.diag([1 - b, b]))\n        branch = P @ state @ P\n        part = ptrace(branch, [2, 2, 2, 2], [0, 1])\n        out += part\n    p_success = float(np.trace(out).real)\n    return out / p_success, p_success\ndef formula(F):\n    # BBPSSW recurrence for Werner pairs of fidelity F\n    num = F ** 2 + ((1 - F) / 3) ** 2\n    den = F ** 2 + 2 * F * (1 - F) / 3 + 5 * ((1 - F) / 3) ** 2\n    return num / den, den\nprint(f\"{'initial fidelity F':>19} {'purified fidelity (simulated)':>31} {'recurrence formula':>20} {'success probability (simulated)':>33} {'(formula)':>10}\")\nfor F in (0.95, 0.85, 0.75, 0.65, 0.55, 0.5):\n    w = (4 * F - 1) / 3\n    out, p = bbpssw_round(werner(w))\n    Fn, pn = formula(F)\n    print(f\"{F:>19.2f} {fidelity_pure(out, PHI_PLUS):>31.4f} {Fn:>20.4f} {p:>33.4f} {pn:>10.4f}\")\nprint(\"above F = 0.5 one round of purification increases the fidelity at the cost of two pairs and a success probability below 1; at F = 0.5 it does nothing: below that the pairs are not entangled at all and cannot be purified\")\n\n# --- 2. iterating the protocol: how many rounds and how many raw pairs does a target fidelity cost? (simple recurrence on the Werner fidelity, discarding failed attempts)\nprint()\nprint(f\"{'start F':>8} {'round':>6} {'fidelity':>9} {'success prob':>13} {'expected raw pairs per output pair':>36}\")\nfor F0 in (0.75, 0.9):\n    F, pairs = F0, 1.0\n    for r in range(1, 6):\n        Fn, p = formula(F)\n        pairs = 2 * pairs / p\n        F = Fn\n        print(f\"{F0:>8} {r:>6} {F:>9.4f} {p:>13.4f} {pairs:>36.1f}\")\nprint(\"for these Werner pairs each round reduces the infidelity by a factor of only about 1.4, while the cost in raw pairs grows by a factor of 2 / p per round (stronger protocols such as DEJMPS, on suitably twirled states, converge faster); a pipeline needs memories to hold the pairs while others are produced\")\n\n# --- 3. the effect of repeaters on the rate: waiting time for a chain of N segments with elementary success probability p per attempt, swap success probability q, memory cutoff\ndef chain_time(N, p, q, cutoff, trials=300):\n    # discrete time slots; each segment link is attempted every slot until it succeeds, a link older than `cutoff` slots is discarded; when all links exist, swaps succeed with q each (all or nothing)\n    times = []\n    for _ in range(trials):\n        t = 0; age = [None] * N\n        while True:\n            t += 1\n            for i in range(N):\n                if age[i] is None:\n                    if rng.random() < p: age[i] = 0\n                else:\n                    age[i] += 1\n                    if age[i] > cutoff: age[i] = None                          # the stored half decohered: discard it\n            if all(a is not None for a in age):\n                if rng.random() < q ** (N - 1):\n                    times.append(t); break\n                age = [None] * N                                              # a failed swap consumes the links\n    return float(np.mean(times))\nprint()\nprint(\"expected waiting time (time slots) for one end-to-end pair; segment link success probability per slot decays with segment length like transmission eta = 10^(-0.2 L / 10)\")\ntotal = 400.0                                                                  # km\nprint(f\"{'segments N':>11} {'segment length (km)':>20} {'link success p':>15} {'mean time (swap q = 0.5, memory cutoff 1000 slots)':>52}\")\nfor N in (1, 2, 4, 8):\n    L = total / N\n    p = 10 ** (-0.2 * L / 10)\n    t = 1 / p if N == 1 else chain_time(N, p, 0.5, 1000, trials=150)            # a single segment needs no swap and no memory: the mean waiting time is 1 / p\n    print(f\"{N:>11} {L:>20.1f} {p:>15.2e} {t:>52.3e}\")\nprint(\"direct transmission over 400 km needs 1e8 attempts on average; splitting the span lets each segment succeed independently, and with memories and a cutoff the total time falls by orders of magnitude, until swap losses and the cutoff dominate (8 segments are slower than 4 here because seven swaps with q = 0.5 almost always fail). The exact numbers depend on the assumptions; the qualitative picture (exponential cost for direct links, far smaller with repeaters, with an optimum number of segments) is the point\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-repeaters",
+              "language": "text",
+              "code": " initial fidelity F   purified fidelity (simulated)   recurrence formula   success probability (simulated)  (formula)\n               0.95                          0.9650               0.9650                            0.9356     0.9356\n               0.85                          0.8841               0.8841                            0.8200     0.8200\n               0.75                          0.7885               0.7885                            0.7222     0.7222\n               0.65                          0.6791               0.6791                            0.6422     0.6422\n               0.55                          0.5603               0.5603                            0.5800     0.5800\n               0.50                          0.5000               0.5000                            0.5556     0.5556\nabove F = 0.5 one round of purification increases the fidelity at the cost of two pairs and a success probability below 1; at F = 0.5 it does nothing: below that the pairs are not entangled at all and cannot be purified\n\n start F  round  fidelity  success prob   expected raw pairs per output pair\n    0.75      1    0.7885        0.7222                                  2.8\n    0.75      2    0.8270        0.7577                                  7.3\n    0.75      3    0.8635        0.7959                                 18.4\n    0.75      4    0.8959        0.8345                                 44.0\n    0.75      5    0.9231        0.8708                                101.1\n     0.9      1    0.9264        0.8756                                  2.3\n     0.9      2    0.9472        0.9067                                  5.0\n     0.9      3    0.9629        0.9321                                 10.8\n     0.9      4    0.9743        0.9518                                 22.7\n     0.9      5    0.9824        0.9664                                 47.0\nfor these Werner pairs each round reduces the infidelity by a factor of only about 1.4, while the cost in raw pairs grows by a factor of 2 / p per round (stronger protocols such as DEJMPS, on suitably twirled states, converge faster); a pipeline needs memories to hold the pairs while others are produced\n\nexpected waiting time (time slots) for one end-to-end pair; segment link success probability per slot decays with segment length like transmission eta = 10^(-0.2 L / 10)\n segments N  segment length (km)  link success p   mean time (swap q = 0.5, memory cutoff 1000 slots)\n          1                400.0        1.00e-08                                            1.000e+08\n          2                200.0        1.00e-04                                            1.334e+05\n          4                100.0        1.00e-02                                            1.654e+03\n          8                 50.0        1.00e-01                                            3.441e+03\ndirect transmission over 400 km needs 1e8 attempts on average; splitting the span lets each segment succeed independently, and with memories and a cutoff the total time falls by orders of magnitude, until swap losses and the cutoff dominate (8 segments are slower than 4 here because seven swaps with q = 0.5 almost always fail). The exact numbers depend on the assumptions; the qualitative picture (exponential cost for direct links, far smaller with repeaters, with an optimum number of segments) is the point",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The simulation matches the recurrence exactly. At F = 0.95, 0.85, 0.75, 0.65, 0.55 and 0.50 one round gives 0.9650, 0.8841, 0.7885, 0.6791, 0.5603 and 0.5000 with success probabilities 0.9356, 0.8200, 0.7222, 0.6422, 0.5800 and 0.5556: purification improves fidelity above 0.5 and does nothing at 0.5. Iterating costs pairs: starting at F = 0.9, five rounds reach 0.9824 and cost 47 raw pairs per output pair; starting at 0.75, five rounds reach only 0.9231 and cost 101 raw pairs. For these Werner pairs a round reduces the infidelity by a factor of only about 1.4 (stronger protocols such as DEJMPS on suitably twirled states converge faster).\n\nIn the waiting-time model a direct 400 km link has success probability 10⁻⁸ per slot (mean time 10⁸ slots), whereas 2 segments of 200 km need 1.3×10⁵ slots, 4 segments of 100 km 1.65×10³ slots and 8 segments of 50 km 3.4×10³ slots: the time falls by orders of magnitude, with an **optimum number of segments** (8 is slower than 4 here because seven swaps at q = 0.5 almost always fail). **These numbers come from the lesson's simple model and its assumptions** (slot-based attempts, a memory cutoff of 1,000 slots, perfect swaps apart from the success probability); real repeater designs differ, but the qualitative picture is the established one: exponential cost for direct links, far smaller with repeaters, limited by memories and operation fidelity."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does one round of BBPSSW purification do to Werner pairs above F = 0.5?",
+              "options": [
+                "Raises the fidelity at the cost of two pairs and a success probability below 1",
+                "Lowers the fidelity",
+                "Doubles the number of pairs"
+              ],
+              "correct_index": 0,
+              "explanation": "F = 0.75 became 0.7885 with success probability 0.7222."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why can pairs at F = 0.5 not be purified?",
+              "options": [
+                "They are at the entanglement threshold; the round leaves the fidelity unchanged",
+                "They are too noisy for any operation",
+                "Purification needs F = 1"
+              ],
+              "correct_index": 0,
+              "explanation": "The simulated output fidelity stayed 0.5000."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why does adding more repeater segments not always help in the waiting-time model?",
+              "options": [
+                "Each extra swap can fail, so the total success probability falls: there is an optimum number of segments",
+                "Segments are always slower",
+                "The memories get longer"
+              ],
+              "correct_index": 0,
+              "explanation": "8 segments were slower than 4 with swap success 0.5."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Section 6.2 and the entanglement-manipulation material of Chapter 19 (distillation as a use of LOCC)"
+            },
+            {
+              "book": "B110",
+              "locator": "Qiskit Textbook: teleportation and entanglement chapters for the circuit elements used"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The BBPSSW protocol and its recurrence (Bennett et al. 1996) and the repeater architecture (Briegel, Dur, Cirac, Zoller 1998) are stated from the literature, which is not among the cited sources and was not read; the lesson verifies the recurrence by exact simulation. The waiting-time model is the lesson's own simplification."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "4.6 Quantum Memories",
+          "summary": "The memory time a segment needs (the heralding round trip), the fidelity-versus-waiting trade-off of a memory cutoff, and illustrative T2-to-cycle ratios.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **quantum memory** holds a qubit (in a repeater, one half of an entangled pair) while the rest of the protocol catches up. Its quality is measured by its **coherence time** T2 (for the stored phase) and T1, its **efficiency** (the probability that the stored state is retrieved) and its fidelity. The time it must hold the state is set by the **heralding**: a segment that has produced a pair has to wait for the neighbouring segments, and learning that they succeeded takes at least the classical signalling time L/c, with c ≈ 200,000 km/s in fibre, so a segment of 100 km requires a wait of at least 0.5 ms and a round trip of 1 ms. Dephasing of the stored half reduces the pair's fidelity with |Φ⁺⟩ to (1 + e^(−t/T2))/2.\n\nBecause stored pairs age, repeaters use a **cutoff**: a pair older than a chosen time is discarded and regenerated. The first listing tabulates the signalling time and the fidelity of a stored pair after one round trip for T2 = 1 ms and 100 ms. The second simulates two links with a cutoff, showing the trade-off between the fidelity of the swapped pair and the waiting time. The last block states illustrative T2-to-cycle ratios for three kinds of platform. The labs are exact density-matrix simulations of up to 7 qubits and small classical models (graphs, Markov-type waiting times) written for the lesson, using the Werner state as the standard noisy entangled pair. Where a table uses invented link rates or qualities it is labelled DEMO DATA, and illustrative platform numbers are labelled illustrative; nothing here is a measurement of a real network."
+            },
+            {
+              "type": "code",
+              "id": "c-memories",
+              "language": "python",
+              "code": "import math, itertools\nimport numpy as np\n\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]], dtype=complex); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]], dtype=complex)\nH = np.array([[1, 1], [1, -1]], dtype=complex) / math.sqrt(2)\ndef kron(*ms):\n    out = np.array([[1.0 + 0j]])\n    for m in ms: out = np.kron(out, m)\n    return out\ndef ket(bits):\n    v = np.zeros(2 ** len(bits), dtype=complex); v[int(\"\".join(map(str, bits)), 2)] = 1; return v\ndef proj(v):\n    return np.outer(v, v.conj())\nPHI_PLUS = (ket([0, 0]) + ket([1, 1])) / math.sqrt(2)\nBELL = {\"phi+\": PHI_PLUS, \"phi-\": (ket([0, 0]) - ket([1, 1])) / math.sqrt(2), \"psi+\": (ket([0, 1]) + ket([1, 0])) / math.sqrt(2), \"psi-\": (ket([0, 1]) - ket([1, 0])) / math.sqrt(2)}\ndef werner(w, target=PHI_PLUS):\n    # w * |target><target| + (1 - w) * I / 4: the noisy entangled pair used throughout; w is the Werner parameter, the fidelity with the target is (1 + 3 w) / 4\n    return w * proj(target) + (1 - w) * np.eye(4) / 4\ndef fidelity_pure(rho, v):\n    return float((v.conj() @ rho @ v).real)\ndef ptrace(rho, dims, keep):\n    n = len(dims); t = rho.reshape(dims + dims)\n    for i in sorted([i for i in range(n) if i not in keep], reverse=True):\n        t = np.trace(t, axis1=i, axis2=i + t.ndim // 2)\n    d = int(np.prod([dims[i] for i in keep])); return t.reshape(d, d)\ndef apply_unitary(rho, U):\n    return U @ rho @ U.conj().T\ndef op_on(n, gate, qubits):\n    # a gate (given as a matrix on len(qubits) qubits) acting on the listed qubits of an n-qubit system, identity elsewhere\n    k = len(qubits); dim = 2 ** n\n    U = np.zeros((dim, dim), dtype=complex)\n    for col in range(dim):\n        bits = [(col >> (n - 1 - i)) & 1 for i in range(n)]\n        sub = int(\"\".join(str(bits[q]) for q in qubits), 2)\n        for row_sub in range(2 ** k):\n            amp = gate[row_sub, sub]\n            if abs(amp) < 1e-15: continue\n            nb = bits.copy()\n            for j, q in enumerate(qubits): nb[q] = (row_sub >> (k - 1 - j)) & 1\n            U[int(\"\".join(map(str, nb)), 2), col] += amp\n    return U\n# --- a quantum memory stores one half of a Bell pair; dephasing with time constant T2 degrades it: Werner-like decay of the pair fidelity\ndef stored_pair_fidelity(wait, T2, T1=None):\n    # dephasing on one stored qubit: the coherence between |00> and |11> decays as exp(-t/T2); the fidelity with Phi+ is (1 + exp(-t/T2)) / 2\n    return 0.5 * (1 + math.exp(-wait / T2))\nc_fibre = 2e5                                                                  # km/s, the speed of light in fibre\nprint(\"memory time needed: a segment of length L must wait for the neighbouring segment's herald, which takes at least L / c to arrive\")\nprint(f\"{'segment length (km)':>20} {'classical signalling time L/c (ms)':>36} {'round trip (ms)':>16} {'pair fidelity after the round trip, T2 = 1 ms':>46} {'T2 = 100 ms':>13}\")\nfor L in (10, 50, 100, 200, 500):\n    t = L / c_fibre\n    print(f\"{L:>20} {t * 1000:>36.3f} {2 * t * 1000:>16.3f} {stored_pair_fidelity(2 * t, 1e-3):>46.4f} {stored_pair_fidelity(2 * t, 0.1):>13.4f}\")\nprint(\"a memory must keep the stored half coherent for at least the round trip of the heralding signal: milliseconds for 100 km segments, so memory times of tens of milliseconds to seconds are needed for useful repeater chains\")\n\n# --- the effect of a memory cutoff: discard pairs older than the cutoff. Trade-off between the fidelity of the delivered pair and the waiting time.\nrng = np.random.default_rng(46)\ndef two_link_experiment(p, T2_slots, cutoff, trials=20000):\n    # two links, each succeeds with probability p per slot; once both exist they are swapped immediately; a stored link older than `cutoff` slots is discarded\n    fidelities, times = [], []\n    for _ in range(trials):\n        ages = [None, None]; t = 0\n        while True:\n            t += 1\n            for i in range(2):\n                if ages[i] is None:\n                    if rng.random() < p: ages[i] = 0\n                else:\n                    ages[i] += 1\n                    if ages[i] > cutoff: ages[i] = None\n            if ages[0] is not None and ages[1] is not None:\n                w = math.exp(-ages[0] / T2_slots) * math.exp(-ages[1] / T2_slots)           # each stored half dephases while it waits\n                fidelities.append((1 + 3 * w) / 4); times.append(t); break\n    return float(np.mean(fidelities)), float(np.mean(times))\nprint()\nprint(f\"{'cutoff (slots)':>15} {'mean fidelity of the swapped pair':>35} {'mean waiting time (slots)':>27}   (p = 0.02 per slot, T2 = 200 slots)\")\nfor cutoff in (2, 5, 10, 30, 100, 1000):\n    f, t = two_link_experiment(0.02, 200, cutoff, trials=3000)\n    print(f\"{cutoff:>15} {f:>35.4f} {t:>27.1f}\")\nprint(\"a short cutoff keeps the pairs fresh (high fidelity) but throws many away (long waiting time); a long cutoff delivers sooner with older, noisier pairs. The cutoff is a design parameter chosen from the fidelity the application needs\")\n\n# --- why memory quality is a ratio, not an absolute: the number of attempts that fit into the coherence time\nprint()\nprint(\"the figure of merit is T2 divided by the time of one attempt cycle (the communication round trip): coherence time / cycle time\")\nfor name, T2, cycle in ((\"ion trap memory (illustrative T2 = 1 s, cycle 1 ms)\", 1.0, 1e-3), (\"NV-centre memory (illustrative T2 = 10 ms, cycle 1 ms)\", 1e-2, 1e-3), (\"superconducting qubit (illustrative T2 = 100 us, cycle 1 ms)\", 1e-4, 1e-3)):\n    print(f\"{name:<62} T2 / cycle = {T2 / cycle:>8.2f}\")\nprint(\"these three values are ILLUSTRATIVE round numbers, not measurements of a specific device; they show why a platform with fast gates but short coherence cannot wait for a 1 ms herald\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-memories",
+              "language": "text",
+              "code": "memory time needed: a segment of length L must wait for the neighbouring segment's herald, which takes at least L / c to arrive\n segment length (km)   classical signalling time L/c (ms)  round trip (ms)  pair fidelity after the round trip, T2 = 1 ms   T2 = 100 ms\n                  10                                0.050            0.100                                         0.9524        0.9995\n                  50                                0.250            0.500                                         0.8033        0.9975\n                 100                                0.500            1.000                                         0.6839        0.9950\n                 200                                1.000            2.000                                         0.5677        0.9901\n                 500                                2.500            5.000                                         0.5034        0.9756\na memory must keep the stored half coherent for at least the round trip of the heralding signal: milliseconds for 100 km segments, so memory times of tens of milliseconds to seconds are needed for useful repeater chains\n\n cutoff (slots)   mean fidelity of the swapped pair   mean waiting time (slots)   (p = 0.02 per slot, T2 = 200 slots)\n              2                              0.9955                       582.1\n              5                              0.9898                       280.5\n             10                              0.9813                       186.2\n             30                              0.9512                       108.1\n            100                              0.8844                        78.7\n           1000                              0.8535                        72.7\na short cutoff keeps the pairs fresh (high fidelity) but throws many away (long waiting time); a long cutoff delivers sooner with older, noisier pairs. The cutoff is a design parameter chosen from the fidelity the application needs\n\nthe figure of merit is T2 divided by the time of one attempt cycle (the communication round trip): coherence time / cycle time\nion trap memory (illustrative T2 = 1 s, cycle 1 ms)            T2 / cycle =  1000.00\nNV-centre memory (illustrative T2 = 10 ms, cycle 1 ms)         T2 / cycle =    10.00\nsuperconducting qubit (illustrative T2 = 100 us, cycle 1 ms)   T2 / cycle =     0.10\nthese three values are ILLUSTRATIVE round numbers, not measurements of a specific device; they show why a platform with fast gates but short coherence cannot wait for a 1 ms herald",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "A 100 km segment has a signalling time of 0.5 ms and a round trip of 1 ms; a stored half with T2 = 1 ms has fidelity 0.684 after that round trip, whereas with T2 = 100 ms it keeps 0.995. For 500 km the round trip is 5 ms and T2 = 1 ms leaves 0.503 (almost nothing), T2 = 100 ms leaves 0.976. The cutoff experiment (success probability 0.02 per slot, T2 = 200 slots) shows the trade-off: with a cutoff of 2 slots the swapped pair has fidelity 0.9955 but the mean wait is 582 slots; with a cutoff of 30 it is 0.9512 and 108 slots; with 100 it is 0.8844 and 78.7 slots; with 1,000 it is 0.8535 and 72.7 slots. A tight cutoff buys fidelity with time, a loose one buys time with fidelity.\n\nThe figure of merit is the ratio of coherence time to the attempt cycle (illustrative round numbers, not measurements: 1,000 for a long-lived memory, 10 for a mid-range one, 0.1 for a short-lived one): only platforms with a ratio well above 1 can wait for heralds, which is why fast but short-lived qubits are paired with, or replaced by, long-lived memories in repeater designs. **Common mistake:** quoting a coherence time without the cycle time of the protocol that must fit inside it."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What sets the minimum time a repeater memory must hold a pair?",
+              "options": [
+                "The classical signalling (heralding) time between neighbouring segments, at least L/c",
+                "The gate speed",
+                "The fibre attenuation"
+              ],
+              "correct_index": 0,
+              "explanation": "0.5 ms for a 100 km segment in fibre."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does a memory cutoff trade?",
+              "options": [
+                "Fidelity of the delivered pair against waiting time",
+                "Rate against distance",
+                "Loss against dephasing"
+              ],
+              "correct_index": 0,
+              "explanation": "Cutoff 2: fidelity 0.9955, 582 slots; cutoff 1,000: 0.8535, 72.7 slots."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What figure of merit matters for a repeater memory?",
+              "options": [
+                "Coherence time relative to the protocol's cycle time",
+                "The number of qubits only",
+                "The wavelength"
+              ],
+              "correct_index": 0,
+              "explanation": "A memory must outlast the heralding round trip."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Section 4.7 (dephasing and amplitude-damping channels as models of memory decay)"
+            },
+            {
+              "book": "B111",
+              "locator": "Qiskit Aer documentation: thermal_relaxation_error (T1 and T2 model of a decaying qubit), see also module C3"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The platform T2-to-cycle ratios are illustrative round numbers and are labelled as such; no measured values for any specific device are quoted. The speed of light in fibre is approximated as 200,000 km/s."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "4.7 Quantum Network Architectures",
+          "summary": "A small network as a flow problem: best single route against maximum-flow multipath routing certified by the minimum cut, and how topology scales (DEMO DATA).",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A quantum network connects **end nodes** (users with qubits), **repeater or switch nodes** (memories plus Bell-measurement hardware) and **links** (fibre or free-space). Several architectural choices decide how it performs: the **topology** (chain, ring, star, tree, mesh), the **link layer** (heralded pair generation and its rate), the **network layer** (routing and swapping decisions) and the **control plane** (classical signalling that coordinates everything, since every swap needs its outcome sent onwards). A star centralises switching and creates a single point of failure and loss; a chain is the simplest repeater line; a mesh offers multiple routes at a high cost in links.\n\nA useful first model treats each link as a **capacity**, the number of pairs per second it can produce, and each end-to-end pair as a unit of flow that consumes one pair on every link of its path (one swap at each intermediate node). The maximum number of end-to-end pairs per second between two nodes is then the **maximum flow**, equal by the max-flow min-cut theorem to the capacity of the narrowest cut. The listing computes the best single route and the max-flow (augmenting paths) for an invented nine-link network (DEMO DATA), verifies the result against the minimum cut by enumeration, and tabulates how many links different topologies need for n users. The labs are exact density-matrix simulations of up to 7 qubits and small classical models (graphs, Markov-type waiting times) written for the lesson, using the Werner state as the standard noisy entangled pair. Where a table uses invented link rates or qualities it is labelled DEMO DATA, and illustrative platform numbers are labelled illustrative; nothing here is a measurement of a real network."
+            },
+            {
+              "type": "code",
+              "id": "c-network-architecture",
+              "language": "python",
+              "code": "from collections import deque\n\n# --- a small quantum network as a graph: nodes are repeater stations and users, edges are fibre links with a heralded pair generation rate (pairs per second) -- DEMO DATA\nlinks = {(\"A\", \"R1\"): 40, (\"A\", \"R2\"): 25, (\"R1\", \"R2\"): 15, (\"R1\", \"R3\"): 30, (\"R2\", \"R3\"): 20, (\"R2\", \"R4\"): 20, (\"R3\", \"B\"): 35, (\"R4\", \"B\"): 25, (\"R3\", \"R4\"): 10}\nprint(\"DEMO DATA: invented link rates in pairs per second, for illustrating the algorithms (not measurements)\")\nnodes = sorted({n for e in links for n in e})\ncapacity = {}\nfor (u, v), r in links.items():\n    capacity[(u, v)] = capacity.get((u, v), 0) + r\n    capacity[(v, u)] = capacity.get((v, u), 0) + r                              # a link produces pairs for both directions of use\n\n# the entanglement flow between A and B: each end-to-end pair uses one pair on every link of its path (one swap at each intermediate node), so the maximum number of pairs per second is a max-flow\ndef max_flow(cap, s, t):\n    residual = dict(cap); flow = 0; paths = []\n    while True:\n        parent = {s: None}; queue = deque([s])\n        while queue and t not in parent:\n            u = queue.popleft()\n            for (a, b), c in residual.items():\n                if a == u and c > 1e-12 and b not in parent:\n                    parent[b] = u; queue.append(b)\n        if t not in parent: break\n        path = []; v = t\n        while parent[v] is not None:\n            path.append((parent[v], v)); v = parent[v]\n        path.reverse()\n        bottleneck = min(residual[e] for e in path)\n        for (a, b) in path:\n            residual[(a, b)] -= bottleneck; residual[(b, a)] = residual.get((b, a), 0) + bottleneck\n        flow += bottleneck; paths.append((bottleneck, [path[0][0]] + [e[1] for e in path]))\n    return flow, paths\nsingle_path_rate = 0\ndef best_single_path(cap, s, t):\n    best = (0, None)\n    def dfs(u, visited, rate, route):\n        nonlocal best\n        if u == t:\n            if rate > best[0]: best = (rate, route)\n            return\n        for (a, b), c in cap.items():\n            if a == u and b not in visited:\n                dfs(b, visited | {b}, min(rate, c), route + [b])\n    dfs(s, {s}, float(\"inf\"), [s])\n    return best\nsingle_rate, single_route = best_single_path(capacity, \"A\", \"B\")\ntotal_flow, used = max_flow(capacity, \"A\", \"B\")\nprint()\nprint(f\"best single route from A to B: {'-'.join(single_route)} with a bottleneck rate of {single_rate} pairs per second\")\nprint(f\"maximum rate with multipath routing: {total_flow} pairs per second ({total_flow / single_rate:.2f} times the best single route), using these augmenting paths:\")\nfor rate, path in used:\n    print(f\"   {rate:>4} pairs/s along {'-'.join(path)}\")\n# the min cut certifies the maximum: the cut separating A from B with the smallest total capacity\ndef min_cut_value(cap, s, t):\n    best = float(\"inf\")\n    others = [n for n in nodes if n not in (s, t)]\n    for mask in range(2 ** len(others)):\n        S = {s} | {others[i] for i in range(len(others)) if mask >> i & 1}\n        value = sum(c for (a, b), c in cap.items() if a in S and b not in S)\n        best = min(best, value)\n    return best\nprint(\"the max-flow equals the minimum cut capacity (the narrowest bottleneck between A and B):\", min_cut_value(capacity, \"A\", \"B\"), \"pairs per second\")\nprint(\"this treats the pairs as a CLASSICAL flow of resources; the quantum no-cloning constraint appears as the rule that each pair is consumed by exactly one swap, so flows cannot be copied or multicast without butterfly-type tricks\")\n\n# --- architectures: how the topology shapes the cost of connecting n users\nprint()\nprint(f\"{'users n':>8} {'full mesh links n(n-1)/2':>26} {'star (one central switch) links':>33} {'chain/ring links':>18} {'tree with branching 3: links':>30}\")\nfor n in (4, 10, 50, 200):\n    print(f\"{n:>8} {n * (n - 1) // 2:>26} {n:>33} {n:>18} {n - 1:>30}\")\nprint(\"a full mesh does not scale; stars concentrate failure and loss in one node; trees and rings trade path length (more swaps, lower fidelity) for fewer links: the architecture is a balance of rate, fidelity and cost\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-network-architecture",
+              "language": "text",
+              "code": "DEMO DATA: invented link rates in pairs per second, for illustrating the algorithms (not measurements)\n\nbest single route from A to B: A-R1-R3-B with a bottleneck rate of 30 pairs per second\nmaximum rate with multipath routing: 60 pairs per second (2.00 times the best single route), using these augmenting paths:\n     30 pairs/s along A-R1-R3-B\n      5 pairs/s along A-R2-R3-B\n     20 pairs/s along A-R2-R4-B\n      5 pairs/s along A-R1-R2-R3-R4-B\nthe max-flow equals the minimum cut capacity (the narrowest bottleneck between A and B): 60 pairs per second\nthis treats the pairs as a CLASSICAL flow of resources; the quantum no-cloning constraint appears as the rule that each pair is consumed by exactly one swap, so flows cannot be copied or multicast without butterfly-type tricks\n\n users n   full mesh links n(n-1)/2   star (one central switch) links   chain/ring links   tree with branching 3: links\n       4                          6                                 4                  4                              3\n      10                         45                                10                 10                              9\n      50                       1225                                50                 50                             49\n     200                      19900                               200                200                            199\na full mesh does not scale; stars concentrate failure and loss in one node; trees and rings trade path length (more swaps, lower fidelity) for fewer links: the architecture is a balance of rate, fidelity and cost",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "On the demonstration network the best single route A-R1-R3-B has a bottleneck of 30 pairs per second; multipath routing reaches 60 pairs per second, **twice** as much, by adding the routes A-R2-R3-B (5), A-R2-R4-B (20) and A-R1-R2-R3-R4-B (5), and the minimum cut also equals 60, which certifies that no routing can do better under this model. The topology table shows the cost of structure: a full mesh of n users needs n(n−1)/2 links (19,900 for 200 users) whereas a star, a chain or a tree need about n.\n\n**Limits of the flow model.** Pairs are not interchangeable bits: each path also accumulates noise (4.4), so a route that maximises rate may fail the fidelity requirement (4.8); swap success probabilities and memory cutoffs reduce the effective rate; and a quantum network cannot copy or multicast a state, so some classical network-coding ideas do not transfer directly (butterfly-type constructions exist for quantum networks but are research topics). The flow number is therefore an upper bound under idealised assumptions."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the maximum flow between two nodes represent in the lesson's model?",
+              "options": [
+                "The maximum number of end-to-end pairs per second, each consuming one pair on every link of its path",
+                "The fidelity of the best route",
+                "The number of nodes"
+              ],
+              "correct_index": 0,
+              "explanation": "Equal to the capacity of the minimum cut."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why did multipath routing double the rate on the demo network?",
+              "options": [
+                "Several routes with spare capacity could be used in parallel",
+                "It reduced the noise",
+                "It removed the swaps"
+              ],
+              "correct_index": 0,
+              "explanation": "60 pairs per second against 30 on the best single route."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is a full mesh not a scalable quantum network architecture?",
+              "options": [
+                "It needs n(n-1)/2 links",
+                "It cannot carry entanglement",
+                "It has no routes"
+              ],
+              "correct_index": 0,
+              "explanation": "19,900 links for 200 users."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Chapter 6 (unit protocols as the elementary operations a network composes)"
+            },
+            {
+              "book": "B110",
+              "locator": "Qiskit Textbook: teleportation and entanglement chapters"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The flow model is a simplification; the lesson's network and rates are invented (DEMO DATA). The max-flow min-cut theorem is a standard result of graph theory used without proof, and the remark on quantum network coding is stated from general knowledge."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "4.8 Quantum Routing Concepts",
+          "summary": "Fidelity-aware routing on DEMO DATA: the shortest path is the worst in fidelity, feasibility under a fidelity requirement, and Dijkstra with edge cost -log w.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Routing** in a quantum network chooses the path along which entanglement is distributed by swapping. Classical routing minimises hops or delay; quantum routing has more at stake because the **quality of the end-to-end pair depends on the path**. With Werner links the end-to-end parameter is the **product** of the link parameters (4.4), so maximising the fidelity of a path is a shortest-path problem with edge weights −log w (a product becomes a sum), which Dijkstra's algorithm solves exactly. But fidelity is not the only criterion: the path's **rate** is limited by its slowest link and reduced by the swap success probability for each intermediate node, and all links on the path must be available at about the same time, within the memory cutoff.\n\nThe listing defines a small network with link qualities and rates (DEMO DATA, invented for the demonstration), evaluates every path from A to B for fidelity and rate with a swap success probability of 0.5, identifies the routes with the fewest hops, the best fidelity and the best rate, finds the routes that satisfy a fidelity requirement of 0.9 and the fastest among them, and confirms that Dijkstra with the −log w cost gives the same optimum as exhaustive search. The labs are exact density-matrix simulations of up to 7 qubits and small classical models (graphs, Markov-type waiting times) written for the lesson, using the Werner state as the standard noisy entangled pair. Where a table uses invented link rates or qualities it is labelled DEMO DATA, and illustrative platform numbers are labelled illustrative; nothing here is a measurement of a real network."
+            },
+            {
+              "type": "code",
+              "id": "c-routing",
+              "language": "python",
+              "code": "import heapq, math\n\n# --- fidelity-aware routing. Each link carries Werner pairs with parameter w (so fidelity (1 + 3 w) / 4); swapping multiplies the parameters, so the end-to-end w is the PRODUCT along the path.\n# DEMO DATA: invented link qualities and rates for illustrating the algorithm.\nlinks = {\n    (\"A\", \"B\"): (0.80, 4.0),   # (Werner parameter w, pairs per second): a short direct link of poor quality\n    (\"A\", \"C\"): (0.97, 2.0), (\"C\", \"D\"): (0.97, 2.0), (\"D\", \"B\"): (0.97, 2.0),\n    (\"A\", \"E\"): (0.92, 6.0), (\"E\", \"B\"): (0.92, 6.0),\n    (\"C\", \"B\"): (0.90, 5.0),\n}\ngraph = {}\nfor (u, v), (w, r) in links.items():\n    graph.setdefault(u, []).append((v, w, r)); graph.setdefault(v, []).append((u, w, r))\ndef all_paths(s, t):\n    out = []\n    def dfs(u, visited, route):\n        if u == t: out.append(route); return\n        for v, w, r in graph[u]:\n            if v not in visited: dfs(v, visited | {v}, route + [v])\n    dfs(s, {s}, [s]); return out\ndef path_metrics(route, swap_success=1.0):\n    w = 1.0; rate = float(\"inf\")\n    for a, b in zip(route, route[1:]):\n        lw, lr = next((lw, lr) for v, lw, lr in graph[a] if v == b)\n        w *= lw; rate = min(rate, lr)\n    rate *= swap_success ** (len(route) - 2)                               # each swap succeeds with probability swap_success\n    return w, (1 + 3 * w) / 4, rate\nprint(\"DEMO DATA: link (Werner parameter, pairs per second):\", {f\"{u}-{v}\": (w, r) for (u, v), (w, r) in links.items()})\nprint()\nprint(f\"{'route':<14} {'hops':>5} {'end-to-end w':>13} {'fidelity':>9} {'bottleneck rate (swap success 0.5)':>36}\")\nrows = []\nfor route in all_paths(\"A\", \"B\"):\n    w, F, rate = path_metrics(route, swap_success=0.5)\n    rows.append((route, w, F, rate))\n    print(f\"{'-'.join(route):<14} {len(route) - 1:>5} {w:>13.4f} {F:>9.4f} {rate:>36.3f}\")\nprint()\nshortest = min(rows, key=lambda r: len(r[0]))\nbest_fid = max(rows, key=lambda r: r[2])\nbest_rate = max(rows, key=lambda r: r[3])\nprint(\"fewest hops:\", \"-\".join(shortest[0]), f\"(fidelity {shortest[2]:.3f}); best fidelity:\", \"-\".join(best_fid[0]), f\"({best_fid[2]:.3f}); best rate:\", \"-\".join(best_rate[0]), f\"({best_rate[3]:.3f} pairs/s)\")\nrequired_F = 0.9\nfeasible = [r for r in rows if r[2] >= required_F]\nprint(f\"for an application that needs fidelity >= {required_F} the feasible routes are:\", [\"-\".join(r[0]) for r in feasible] or \"none\", \"; the fastest among them:\", \"-\".join(max(feasible, key=lambda r: r[3])[0]) if feasible else \"n/a\")\n\n# --- Dijkstra on the logarithm of w: maximising a product of w becomes minimising a sum of -log w\ndef best_fidelity_path(s, t):\n    dist = {s: 0.0}; prev = {}; heap = [(0.0, s)]\n    while heap:\n        d, u = heapq.heappop(heap)\n        if d > dist.get(u, float(\"inf\")): continue\n        for v, w, r in graph[u]:\n            nd = d - math.log(w)\n            if nd < dist.get(v, float(\"inf\")):\n                dist[v] = nd; prev[v] = u; heapq.heappush(heap, (nd, v))\n    route = [t]\n    while route[-1] != s: route.append(prev[route[-1]])\n    return route[::-1], math.exp(-dist[t])\nroute, w = best_fidelity_path(\"A\", \"B\")\nprint()\nprint(\"Dijkstra with edge cost -log(w) finds the highest-fidelity route\", \"-\".join(route), f\"with end-to-end w = {w:.4f} (fidelity {(1 + 3 * w) / 4:.4f}); equals the exhaustive optimum:\", route == best_fid[0])\nprint(\"hop count is a poor routing metric for quantum networks: the shortest path (A-B) is the worst in fidelity; routing must weigh fidelity, rate, swap success and memory time together, and a path needs all its links ready at about the same time\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-routing",
+              "language": "text",
+              "code": "DEMO DATA: link (Werner parameter, pairs per second): {'A-B': (0.8, 4.0), 'A-C': (0.97, 2.0), 'C-D': (0.97, 2.0), 'D-B': (0.97, 2.0), 'A-E': (0.92, 6.0), 'E-B': (0.92, 6.0), 'C-B': (0.9, 5.0)}\n\nroute           hops  end-to-end w  fidelity   bottleneck rate (swap success 0.5)\nA-B                1        0.8000    0.8500                                4.000\nA-C-D-B            3        0.9127    0.9345                                0.500\nA-C-B              2        0.8730    0.9047                                1.000\nA-E-B              2        0.8464    0.8848                                3.000\n\nfewest hops: A-B (fidelity 0.850); best fidelity: A-C-D-B (0.935); best rate: A-B (4.000 pairs/s)\nfor an application that needs fidelity >= 0.9 the feasible routes are: ['A-C-D-B', 'A-C-B'] ; the fastest among them: A-C-B\n\nDijkstra with edge cost -log(w) finds the highest-fidelity route A-C-D-B with end-to-end w = 0.9127 (fidelity 0.9345); equals the exhaustive optimum: True\nhop count is a poor routing metric for quantum networks: the shortest path (A-B) is the worst in fidelity; routing must weigh fidelity, rate, swap success and memory time together, and a path needs all its links ready at about the same time",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The one-hop route A-B has w = 0.8000 (fidelity 0.850) and the best rate (4 pairs per second); the three-hop route A-C-D-B has the best fidelity (w = 0.9127, fidelity 0.9345) and the lowest rate (0.5 pairs per second after three swap factors); A-C-B (fidelity 0.9047, 1.0 pairs/s) and A-E-B (0.8848, 3.0 pairs/s) lie between. **The path with the fewest hops is the worst in fidelity.** For an application that needs fidelity of at least 0.9 only A-C-D-B and A-C-B qualify, and the fastest of them is A-C-B. Dijkstra with −log w picks A-C-D-B, the same as the exhaustive search.\n\n**What this shows.** A quantum router needs a multi-criteria objective (maximise rate subject to a fidelity floor, or maximise fidelity subject to a rate floor), up-to-date link state (qualities change, links fail) and a signalling protocol that reserves all links of a path together. The Werner assumption makes fidelity composable; real noise is not always of that form, so practical systems track measured fidelities per link. **Common mistake:** importing hop-count or latency routing from classical networks."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is Dijkstra with edge cost -log(w) the right algorithm for the best-fidelity path with Werner links?",
+              "options": [
+                "The end-to-end parameter is the product of the link parameters, and the logarithm turns it into a sum",
+                "Fidelity is additive",
+                "Dijkstra maximises rates"
+              ],
+              "correct_index": 0,
+              "explanation": "The result equalled the exhaustive optimum."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which route had the fewest hops in the demo?",
+              "options": [
+                "A-B, which also had the lowest fidelity",
+                "A-C-D-B",
+                "A-E-B"
+              ],
+              "correct_index": 0,
+              "explanation": "Its fidelity was 0.850 against 0.9345 for A-C-D-B."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does a route's rate depend on besides its slowest link?",
+              "options": [
+                "The swap success probability at each intermediate node",
+                "The wavelength",
+                "The number of users"
+              ],
+              "correct_index": 0,
+              "explanation": "Each swap with success 0.5 halves the rate."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Section 3.6 (Bell states) and the discussion of mixed entangled states in Chapter 4"
+            },
+            {
+              "book": "B110",
+              "locator": "Qiskit Textbook: teleportation chapter for the swap operation underlying a route"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The network, link qualities and rates are invented DEMO DATA. The Werner-product rule is established by exact simulation in 4.4; routing algorithms for quantum networks in the literature are not cited here."
+          },
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "4.9 Quantum Internet Concepts",
+          "summary": "An end-to-end protocol on a three-link chain simulated exactly on 7 qubits (two swaps and a teleportation), its latency budget, and what a quantum internet can and cannot do.",
+          "estimated_minutes": 65,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **quantum internet** is a network that can distribute entanglement between any two of its nodes and so enable tasks that classical networks cannot, such as **quantum key distribution** over repeater chains, **distributed or blind quantum computation**, and **networked sensors**. It does not replace the classical internet: every protocol in this module needs a **classical channel** for heralds, swap outcomes and teleportation bits. A common way to organise the development is by **stages** defined by the capabilities of the nodes: a prepare-and-measure network (trusted nodes, QKD), an entanglement-distribution network, a quantum-memory network, a few-qubit fault-tolerant network and finally a quantum-computing network (the staged roadmap of Wehner, Elkouss and Hanson, which I cite from memory).\n\nThe listing assembles the previous lessons into one **end-to-end protocol** and simulates it exactly: three Werner links, swaps at the two repeaters with their Pauli corrections, and teleportation of a data qubit over the resulting pair, on a 7-qubit density matrix. It compares the simulation with the arithmetic of 4.3 and 4.4 and computes the **latency budget** from the speed of light in fibre. A closing table lists tasks and what they need. The labs are exact density-matrix simulations of up to 7 qubits and small classical models (graphs, Markov-type waiting times) written for the lesson, using the Werner state as the standard noisy entangled pair. Where a table uses invented link rates or qualities it is labelled DEMO DATA, and illustrative platform numbers are labelled illustrative; nothing here is a measurement of a real network."
+            },
+            {
+              "type": "code",
+              "id": "c-quantum-internet",
+              "language": "python",
+              "code": "import math, itertools\nimport numpy as np\n\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]], dtype=complex); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]], dtype=complex)\nH = np.array([[1, 1], [1, -1]], dtype=complex) / math.sqrt(2)\ndef kron(*ms):\n    out = np.array([[1.0 + 0j]])\n    for m in ms: out = np.kron(out, m)\n    return out\ndef ket(bits):\n    v = np.zeros(2 ** len(bits), dtype=complex); v[int(\"\".join(map(str, bits)), 2)] = 1; return v\ndef proj(v):\n    return np.outer(v, v.conj())\nPHI_PLUS = (ket([0, 0]) + ket([1, 1])) / math.sqrt(2)\nBELL = {\"phi+\": PHI_PLUS, \"phi-\": (ket([0, 0]) - ket([1, 1])) / math.sqrt(2), \"psi+\": (ket([0, 1]) + ket([1, 0])) / math.sqrt(2), \"psi-\": (ket([0, 1]) - ket([1, 0])) / math.sqrt(2)}\ndef werner(w, target=PHI_PLUS):\n    # w * |target><target| + (1 - w) * I / 4: the noisy entangled pair used throughout; w is the Werner parameter, the fidelity with the target is (1 + 3 w) / 4\n    return w * proj(target) + (1 - w) * np.eye(4) / 4\ndef fidelity_pure(rho, v):\n    return float((v.conj() @ rho @ v).real)\ndef ptrace(rho, dims, keep):\n    n = len(dims); t = rho.reshape(dims + dims)\n    for i in sorted([i for i in range(n) if i not in keep], reverse=True):\n        t = np.trace(t, axis1=i, axis2=i + t.ndim // 2)\n    d = int(np.prod([dims[i] for i in keep])); return t.reshape(d, d)\ndef apply_unitary(rho, U):\n    return U @ rho @ U.conj().T\ndef op_on(n, gate, qubits):\n    # a gate (given as a matrix on len(qubits) qubits) acting on the listed qubits of an n-qubit system, identity elsewhere\n    k = len(qubits); dim = 2 ** n\n    U = np.zeros((dim, dim), dtype=complex)\n    for col in range(dim):\n        bits = [(col >> (n - 1 - i)) & 1 for i in range(n)]\n        sub = int(\"\".join(str(bits[q]) for q in qubits), 2)\n        for row_sub in range(2 ** k):\n            amp = gate[row_sub, sub]\n            if abs(amp) < 1e-15: continue\n            nb = bits.copy()\n            for j, q in enumerate(qubits): nb[q] = (row_sub >> (k - 1 - j)) & 1\n            U[int(\"\".join(map(str, nb)), 2), col] += amp\n    return U\n# --- an end-to-end protocol on a three-link chain, simulated exactly on 7 qubits (a 128 x 128 density matrix):\n# links (0,1), (2,3), (4,5) hold Werner pairs; repeaters swap at (1,2) and (3,4); the data qubit 6 is teleported from the user at qubit 0 to the user at qubit 5.\nCNOT = np.array([[1, 0, 0, 0], [0, 1, 0, 0], [0, 0, 0, 1], [0, 0, 1, 0]], dtype=complex)\nN = 7\ndef bell_measure_and_correct(state, a, b, target):\n    # CNOT a -> b, H on a, then measure both in Z; correct qubit `target` with Z^(m_a) X^(m_b) averaged over outcomes (outcomes are classical and sent forward)\n    state = apply_unitary(state, op_on(N, CNOT, [a, b]))\n    state = apply_unitary(state, op_on(N, H, [a]))\n    out = np.zeros_like(state)\n    for ma, mb in itertools.product((0, 1), repeat=2):\n        P = op_on(N, np.diag([1 - ma, ma]).astype(complex), [a]) @ op_on(N, np.diag([1 - mb, mb]).astype(complex), [b])\n        branch = P @ state @ P\n        C = op_on(N, np.linalg.matrix_power(Z, ma) @ np.linalg.matrix_power(X, mb), [target])\n        out += C @ branch @ C.conj().T\n    return out\nrng = np.random.default_rng(49)\ndef random_pure():\n    v = rng.normal(size=2) + 1j * rng.normal(size=2); return v / np.linalg.norm(v)\ndef run(w, samples=4):\n    fids, pair_F = [], []\n    for _ in range(samples):\n        psi = random_pure()\n        pairs = np.kron(np.kron(werner(w), werner(w)), werner(w))             # qubits 0..5\n        state = np.kron(pairs, proj(psi))                                     # qubit 6 holds the data\n        state = bell_measure_and_correct(state, 1, 2, 3)                      # swap at the first repeater: afterwards (0, 3) are entangled\n        state = bell_measure_and_correct(state, 3, 4, 5)                      # swap at the second repeater: afterwards (0, 5) are entangled\n        pair = ptrace(state, [2] * N, [0, 5])\n        pair_F.append(fidelity_pure(pair, PHI_PLUS))\n        state = bell_measure_and_correct(state, 6, 0, 5)                      # teleport: Bell measurement on (data, qubit 0), correction on qubit 5\n        out = ptrace(state, [2] * N, [5])\n        fids.append(float((psi.conj() @ out @ psi).real))\n    return float(np.mean(pair_F)), float(np.mean(fids))\nprint(f\"{'link Werner parameter w':>24} {'end-to-end pair fidelity (simulated)':>38} {'(1 + 3 w^3) / 4':>17} {'teleportation fidelity (simulated)':>36} {'(2F + 1) / 3':>14}\")\nfor w in (1.0, 0.95, 0.9, 0.8):\n    F, tel = run(w)\n    expected = (1 + 3 * w ** 3) / 4\n    print(f\"{w:>24} {F:>38.4f} {expected:>17.4f} {tel:>36.4f} {(2 * expected + 1) / 3:>14.4f}\")\nprint(\"the full simulation of the protocol agrees with the Werner arithmetic of 4.4: three links give w^3, and teleportation over the swapped pair has fidelity (2F + 1)/3\")\n\n# --- the latency budget of the same protocol: classical messages travel at the speed of light in fibre\nc = 2e5                                                                       # km/s\nlink_km = 50\nprint()\nprint(f\"three links of {link_km} km, user to user {3 * link_km} km; timeline of one teleported qubit (after all three links hold a pair):\")\nt_swap1 = link_km / c                                                         # the outcome of the swap at repeater 1 travels to the next node that needs it\nt_end_to_end = 3 * link_km / c\nprint(f\"  swap outcomes of both repeaters reach the receiving user after at most {t_end_to_end * 1000:.2f} ms\")\nprint(f\"  the teleportation measurement is done at the sender; its two classical bits need {t_end_to_end * 1000:.2f} ms to reach the receiver\")\nprint(f\"  total classical latency of the teleportation: about {2 * t_end_to_end * 1000:.2f} ms; in that time a memory with T2 = 1 ms keeps fidelity exp(-t/T2) = {math.exp(-2 * t_end_to_end / 1e-3):.3f} of its coherence\")\nprint(\"so the Bell-pair generation, the swaps, the corrections and the classical delay all fit a protocol whose total time is set by the speed of light in the fibre and by the memory coherence time\")\n\n# --- what a quantum network can and cannot do\nprint()\nfor task, status in ((\"send an unknown qubit state over a lossy link\", \"needs entanglement distribution plus teleportation (this lesson), never a copy (no-cloning)\"),\n                     (\"distribute a secret key between two nodes\", \"QKD, with or without repeaters (module C6); no quantum memory is needed for point-to-point QKD\"),\n                     (\"link quantum computers for distributed computation\", \"needs high-fidelity, high-rate entanglement between memories; research stage\"),\n                     (\"replace the classical internet\", \"no: classical channels are required for teleportation and for every protocol above\"),\n                     (\"break the speed-of-light limit\", \"no: the classical bits needed to complete teleportation travel at or below c\")):\n    print(f\"{task:<55} {status}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-quantum-internet",
+              "language": "text",
+              "code": " link Werner parameter w   end-to-end pair fidelity (simulated)   (1 + 3 w^3) / 4   teleportation fidelity (simulated)   (2F + 1) / 3\n                     1.0                                 1.0000            1.0000                               1.0000         1.0000\n                    0.95                                 0.8930            0.8930                               0.9287         0.9287\n                     0.9                                 0.7967            0.7968                               0.8645         0.8645\n                     0.8                                 0.6340            0.6340                               0.7560         0.7560\nthe full simulation of the protocol agrees with the Werner arithmetic of 4.4: three links give w^3, and teleportation over the swapped pair has fidelity (2F + 1)/3\n\nthree links of 50 km, user to user 150 km; timeline of one teleported qubit (after all three links hold a pair):\n  swap outcomes of both repeaters reach the receiving user after at most 0.75 ms\n  the teleportation measurement is done at the sender; its two classical bits need 0.75 ms to reach the receiver\n  total classical latency of the teleportation: about 1.50 ms; in that time a memory with T2 = 1 ms keeps fidelity exp(-t/T2) = 0.223 of its coherence\nso the Bell-pair generation, the swaps, the corrections and the classical delay all fit a protocol whose total time is set by the speed of light in the fibre and by the memory coherence time\n\nsend an unknown qubit state over a lossy link           needs entanglement distribution plus teleportation (this lesson), never a copy (no-cloning)\ndistribute a secret key between two nodes               QKD, with or without repeaters (module C6); no quantum memory is needed for point-to-point QKD\nlink quantum computers for distributed computation      needs high-fidelity, high-rate entanglement between memories; research stage\nreplace the classical internet                          no: classical channels are required for teleportation and for every protocol above\nbreak the speed-of-light limit                          no: the classical bits needed to complete teleportation travel at or below c",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The simulated end-to-end pair fidelity matches (1 + 3w³)/4: 1.0000, 0.8930, 0.7967 and 0.6340 for link parameters 1.0, 0.95, 0.9 and 0.8, and the teleportation fidelity matches (2F + 1)/3: 1.0000, 0.9287, 0.8645 and 0.7560, which means that the Werner arithmetic of 4.3 and 4.4 composes correctly in a full simulation of the protocol, including the averages over the four measurement outcomes at each of the three Bell measurements. For three links of 50 km the swap outcomes need up to 0.75 ms to reach the receiving user and the two teleportation bits another 0.75 ms, about 1.5 ms in total, during which a memory with T2 = 1 ms keeps only a factor 0.223 of its coherence (an assumed value): the speed of light in fibre and the memory time set the pace.\n\n**Honest scope.** A network that connects many users with long-lived memories, purification and fault-tolerant nodes is a long-term goal; today's networks are small, with few nodes and demonstration-scale rates. The security-relevant message is the one the course states throughout: a quantum internet is not needed for post-quantum security, which is achieved by migrating the cryptography on the classical internet (modules B9 to B11 and E5); quantum networks add capabilities and, for key distribution, a different set of assumptions and limitations (module C6)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does a quantum internet still need a classical channel?",
+              "options": [
+                "Heralds, swap outcomes and teleportation bits are classical",
+                "It does not",
+                "To store the qubits"
+              ],
+              "correct_index": 0,
+              "explanation": "Two classical bits per teleported qubit."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the end-to-end Werner parameter of three equal links with parameter w?",
+              "options": [
+                "w^3",
+                "3w",
+                "w/3"
+              ],
+              "correct_index": 0,
+              "explanation": "The full simulation matched (1 + 3 w^3)/4."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Is a quantum internet needed to protect data against quantum attacks?",
+              "options": [
+                "No, migrating cryptography to post-quantum algorithms on the classical internet achieves that",
+                "Yes, it is the only way",
+                "Yes, for symmetric keys only"
+              ],
+              "correct_index": 0,
+              "explanation": "Quantum networks add capabilities; they are not a prerequisite for PQC migration."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B110",
+              "locator": "Qiskit Textbook: teleportation chapter (the protocol simulated end to end)"
+            },
+            {
+              "book": "B113",
+              "locator": "Wilde: Chapter 6 (unit protocols), Section 3.6 and the discussion of quantum communication tasks"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The staged roadmap of Wehner, Elkouss and Hanson (Science, 2018) is cited from memory and was not read here. The statements about the current state of quantum networks are general knowledge as of the lesson's date. The T2 = 1 ms value used in the latency example is an assumption."
+          },
+          "after": "sec-8"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "c4-n01",
+          "prompt": "How does fibre transmission scale with length for 0.2 dB/km?",
+          "options": [
+            "Exponentially, 10^(-0.2 L/10)",
+            "Linearly",
+            "As 1/L"
+          ],
+          "correct_index": 0,
+          "explanation": "A factor 100 every 100 km.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 4.7"
+          }
+        },
+        {
+          "id": "c4-n02",
+          "prompt": "What does the PLOB bound limit?",
+          "options": [
+            "Repeater-less schemes over a pure-loss channel",
+            "Repeater networks",
+            "Classical channels"
+          ],
+          "correct_index": 0,
+          "explanation": "-log2(1 - eta) bits per use.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 4.7"
+          }
+        },
+        {
+          "id": "c4-n03",
+          "prompt": "A Werner state is entangled when:",
+          "options": [
+            "w > 1/3",
+            "w > 1/2",
+            "w > 0.9"
+          ],
+          "correct_index": 0,
+          "explanation": "Fidelity above 0.5.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 3.6"
+          }
+        },
+        {
+          "id": "c4-n04",
+          "prompt": "What is the CHSH value of a Werner state with parameter w?",
+          "options": [
+            "2 sqrt(2) w",
+            "2 w",
+            "sqrt(2) w"
+          ],
+          "correct_index": 0,
+          "explanation": "Violation needs w > 1/sqrt(2).",
+          "source": {
+            "book": "B110",
+            "locator": "CHSH chapter"
+          }
+        },
+        {
+          "id": "c4-n05",
+          "prompt": "What is the average teleportation fidelity for a pair of fidelity F?",
+          "options": [
+            "(2F + 1)/3",
+            "F",
+            "2F/3"
+          ],
+          "correct_index": 0,
+          "explanation": "The classical limit is 2/3.",
+          "source": {
+            "book": "B110",
+            "locator": "Teleportation chapter"
+          }
+        },
+        {
+          "id": "c4-n06",
+          "prompt": "How many classical bits does teleporting one qubit need?",
+          "options": [
+            "Two",
+            "One",
+            "Zero"
+          ],
+          "correct_index": 0,
+          "explanation": "Alice's Bell-measurement outcomes.",
+          "source": {
+            "book": "B110",
+            "locator": "Teleportation chapter"
+          }
+        },
+        {
+          "id": "c4-n07",
+          "prompt": "What is the Werner parameter after swapping pairs w1 and w2?",
+          "options": [
+            "w1 w2",
+            "w1 + w2",
+            "max(w1, w2)"
+          ],
+          "correct_index": 0,
+          "explanation": "Noise multiplies along a chain.",
+          "source": {
+            "book": "B113",
+            "locator": "Chapter 6"
+          }
+        },
+        {
+          "id": "c4-n08",
+          "prompt": "What does entanglement purification require of the input pairs?",
+          "options": [
+            "Fidelity above 1/2",
+            "Fidelity 1",
+            "Any fidelity"
+          ],
+          "correct_index": 0,
+          "explanation": "At 0.5 a round leaves the fidelity unchanged.",
+          "source": {
+            "book": "B113",
+            "locator": "Chapter 19"
+          }
+        },
+        {
+          "id": "c4-n09",
+          "prompt": "What sets the minimum memory time of a repeater segment?",
+          "options": [
+            "The heralding round trip, at least L/c",
+            "The gate time",
+            "The fibre colour"
+          ],
+          "correct_index": 0,
+          "explanation": "0.5 ms for 100 km one way.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 4.7"
+          }
+        },
+        {
+          "id": "c4-n10",
+          "prompt": "What does the max-flow of a quantum network model give?",
+          "options": [
+            "The maximum end-to-end pair rate (equal to the minimum cut)",
+            "The fidelity of the best path",
+            "The number of repeaters"
+          ],
+          "correct_index": 0,
+          "explanation": "Each end-to-end pair consumes one pair per link of its path.",
+          "source": {
+            "book": "B113",
+            "locator": "Chapter 6"
+          }
+        },
+        {
+          "id": "c4-n11",
+          "prompt": "Why is hop count a poor routing metric for quantum networks?",
+          "options": [
+            "End-to-end fidelity depends on the product of the link parameters, not on the number of hops alone",
+            "Hops are always equal",
+            "Quantum links have no length"
+          ],
+          "correct_index": 0,
+          "explanation": "The one-hop route was the worst in fidelity.",
+          "source": {
+            "book": "B113",
+            "locator": "Section 4.1"
+          }
+        },
+        {
+          "id": "c4-n12",
+          "prompt": "Does a quantum internet replace the classical internet?",
+          "options": [
+            "No, every protocol needs classical communication",
+            "Yes",
+            "Only for key distribution"
+          ],
+          "correct_index": 0,
+          "explanation": "Heralds, swap outcomes and teleportation bits are classical.",
+          "source": {
+            "book": "B110",
+            "locator": "Teleportation chapter"
+          }
+        }
+      ],
+      "estimated_minutes": 505,
+      "notes": "Rewrites nine outline sections as lessons with exact density-matrix simulations and small network models: fibre loss and the PLOB bound, Werner pairs with CHSH and heralded waiting times, teleportation fidelity (2F + 1)/3, entanglement swapping with the product rule, BBPSSW purification and a repeater waiting-time model, memory cutoffs, max-flow routing and fidelity-aware routing on DEMO DATA, and a full 7-qubit end-to-end protocol with its latency budget.",
+      "learning_objectives": [
+        "Model loss and noise on quantum links and compute the rate and fidelity of delivered pairs.",
+        "Use Werner states, CHSH and teleportation fidelity to state what quality of entanglement an application needs.",
+        "Simulate entanglement swapping and purification exactly and explain the multiplicative decay of fidelity along a chain.",
+        "Explain how repeaters, memories and cutoffs trade rate against fidelity, and read the memory time requirement from the heralding delay.",
+        "Treat a small network as a flow problem and route by fidelity, rate and swap success.",
+        "Describe an end-to-end quantum network protocol with its latency budget and state what a quantum internet can and cannot do."
+      ]
+    }
+  ]
+}
