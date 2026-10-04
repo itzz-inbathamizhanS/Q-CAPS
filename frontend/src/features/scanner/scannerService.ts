@@ -6,7 +6,9 @@ import { useAuthStore } from '../auth/authStore';
 import { handleUnauthorized, SESSION_EXPIRED_MESSAGE } from '../auth/session';
 import type { SaveOutcome, ScanMode, ScanResultV2, VerificationInfo } from './types';
 
-const SCANNER_API_BASE: string = import.meta.env.VITE_SCANNER_API_URL || 'http://127.0.0.1:5000';
+// A production build never falls back to localhost: a visitor's own machine is not the scanner. Without a configured
+// address the scanner is simply unavailable in that deployment.
+const SCANNER_API_BASE: string = import.meta.env.VITE_SCANNER_API_URL || (import.meta.env.PROD ? '' : 'http://127.0.0.1:5000');
 
 export class ScannerApiError extends Error {
   status: number;
@@ -21,6 +23,7 @@ export class ScannerApiError extends Error {
 
 async function scannerRequest<T>(path: string, body: unknown, signal?: AbortSignal): Promise<T> {
   const { token } = useAuthStore.getState();
+  if (!SCANNER_API_BASE) throw new ScannerApiError(0, 'The scanner is not available in this deployment.');
   let response: Response;
   try {
     response = await fetch(`${SCANNER_API_BASE}${path}`, {

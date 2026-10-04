@@ -1,0 +1,26 @@
+# Render blueprint for the API (free plan). The frontend is deployed on Vercel from the frontend/ folder.
+# Set QCAPS_CORS_ORIGINS to the Vercel URL and the three passwords in the Render dashboard (they are not in git).
+services:
+  - type: web
+    name: qcaps-api
+    runtime: python
+    plan: free
+    rootDir: backend/main_api
+    buildCommand: pip install -r requirements.txt && python deploy_bootstrap.py
+    startCommand: uvicorn main:app --host 0.0.0.0 --port $PORT
+    healthCheckPath: /api/health
+    envVars:
+      - key: QCAPS_ENV
+        value: production
+      - key: QCAPS_DATABASE_URL
+        value: sqlite:///./qcaps.db
+      - key: QCAPS_JWT_SECRET
+        generateValue: true
+      - key: QCAPS_CORS_ORIGINS
+        sync: false
+      - key: QCAPS_ADMIN_PASSWORD
+        sync: false
+      - key: QCAPS_DEMO_LEARNER_PASSWORD
+        sync: false
+      - key: QCAPS_DEMO_COMPLETE_PASSWORD
+        sync: false
