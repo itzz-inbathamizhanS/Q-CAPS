@@ -2,8 +2,6 @@
 export interface EscapeScenarioChoice {
   id: string;
   text: string;
-  correct: boolean;
-  feedback: string;
 }
 
 export interface EscapeRoomScenario {
@@ -31,21 +29,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Do nothing — RSA-2048 hasn't been broken yet, so there's no current risk.",
-        "correct": false,
-        "feedback": "Incorrect. This ignores 'Harvest Now, Decrypt Later.' Data with a 25-year confidentiality requirement is at risk today because it's already being captured."
+        "text": "Do nothing — RSA-2048 hasn't been broken yet, so there's no current risk."
       },
       {
         "id": "b",
-        "text": "Begin migrating long-lifetime data flows to hybrid classical+PQC encryption (e.g., ECDHE + ML-KEM) immediately, prioritized by data sensitivity and lifetime.",
-        "correct": true,
-        "feedback": "Correct. This directly addresses HNDL risk and hedges against any early flaws in newer PQC algorithms."
+        "text": "Begin migrating long-lifetime data flows to hybrid classical+PQC encryption (e.g., ECDHE + ML-KEM) immediately, prioritized by data sensitivity and lifetime."
       },
       {
         "id": "c",
-        "text": "Switch immediately to pure ML-KEM with no classical fallback, since PQC is 'quantum-safe.'",
-        "correct": false,
-        "feedback": "Risky. Dropping classical crypto entirely removes the safety net if a bug is later found in a newly standardized algorithm — hybrid is the recommended transition strategy."
+        "text": "Switch immediately to pure ML-KEM with no classical fallback, since PQC is 'quantum-safe.'"
       }
     ],
     "badge_awarded": "HNDL Responder",
@@ -62,21 +54,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Re-issue all 40 downstream certificates individually with ML-DSA signatures, leaving the root CA unchanged.",
-        "correct": false,
-        "feedback": "Inefficient and inconsistent. If the root CA stays RSA-based, the whole chain still depends on it — you'd need to redo this work later."
+        "text": "Re-issue all 40 downstream certificates individually with ML-DSA signatures, leaving the root CA unchanged."
       },
       {
         "id": "b",
-        "text": "Pilot a hybrid root CA (RSA + ML-DSA signatures) first, then cascade migration down the chain in priority order of asset criticality.",
-        "correct": true,
-        "feedback": "Correct. Migrating the root first, in hybrid mode, protects the entire chain and follows crypto-agility best practice."
+        "text": "Pilot a hybrid root CA (RSA + ML-DSA signatures) first, then cascade migration down the chain in priority order of asset criticality."
       },
       {
         "id": "c",
-        "text": "Ignore the root CA and only patch the 5 lowest-criticality systems first, since they're 'easiest.'",
-        "correct": false,
-        "feedback": "This misprioritizes effort — migration should follow risk and criticality, not ease of implementation."
+        "text": "Ignore the root CA and only patch the 5 lowest-criticality systems first, since they're 'easiest.'"
       }
     ],
     "badge_awarded": "Crypto-Agility Architect",
@@ -93,21 +79,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Leave it as-is — AES-128 is still considered 'strong' classically.",
-        "correct": false,
-        "feedback": "Incomplete. Its effective strength against a future quantum attacker (~64-bit equivalent) is inadequate for a 10-year retention requirement."
+        "text": "Leave it as-is — AES-128 is still considered 'strong' classically."
       },
       {
         "id": "b",
-        "text": "Upgrade to AES-256 for all newly stored data with long retention, and prioritize re-encrypting the most sensitive existing archives.",
-        "correct": true,
-        "feedback": "Correct. Doubling key length is a well-understood mitigation for Grover's algorithm's quadratic speedup."
+        "text": "Upgrade to AES-256 for all newly stored data with long retention, and prioritize re-encrypting the most sensitive existing archives."
       },
       {
         "id": "c",
-        "text": "Switch to ML-KEM for the archived files instead of AES.",
-        "correct": false,
-        "feedback": "Mismatched tool. ML-KEM is a key-exchange mechanism, not a symmetric encryption algorithm."
+        "text": "Switch to ML-KEM for the archived files instead of AES."
       }
     ],
     "badge_awarded": "Symmetric Defender",
@@ -124,21 +104,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "\"A qubit can be 0 and 1 at the same time, so quantum computers can try every answer simultaneously for free.\"",
-        "correct": false,
-        "feedback": "Overclaims. Measurement collapses superposition to one classical outcome — you don't get 'every answer for free'; algorithms must be engineered so the correct answer becomes more likely to be observed."
+        "text": "\"A qubit can be 0 and 1 at the same time, so quantum computers can try every answer simultaneously for free.\""
       },
       {
         "id": "b",
-        "text": "\"A qubit holds a combination of 0 and 1 until measured, like a spinning coin — that's what lets certain carefully designed algorithms explore possibilities far more efficiently than a classical computer.\"",
-        "correct": true,
-        "feedback": "Correct. This captures superposition accurately without the common 'free parallel computation' overclaim."
+        "text": "\"A qubit holds a combination of 0 and 1 until measured, like a spinning coin — that's what lets certain carefully designed algorithms explore possibilities far more efficiently than a classical computer.\""
       },
       {
         "id": "c",
-        "text": "\"A qubit is just a bit that runs at a higher clock speed.\"",
-        "correct": false,
-        "feedback": "Incorrect. This describes classical hardware speed, not the fundamentally different quantum mechanical behavior of superposition."
+        "text": "\"A qubit is just a bit that runs at a higher clock speed.\""
       }
     ],
     "badge_awarded": "Quantum Beginner",
@@ -155,21 +129,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "\"They're equally urgent — Shor's and Grover's algorithms pose the same level of threat to both.\"",
-        "correct": false,
-        "feedback": "Incorrect. Shor's algorithm gives an exponential speedup against RSA/ECC (full break), while Grover's gives only a quadratic speedup against AES (halved effective strength) — these are very different severity levels."
+        "text": "\"They're equally urgent — Shor's and Grover's algorithms pose the same level of threat to both.\""
       },
       {
         "id": "b",
-        "text": "\"RSA/ECC face a full break via Shor's algorithm (exponential speedup), while AES only faces a weakening via Grover's algorithm (quadratic speedup, fixed by simply doubling key length) — so RSA/ECC migration to entirely new algorithms is the harder, more urgent problem.\"",
-        "correct": true,
-        "feedback": "Correct. This distinguishes the severity and remediation complexity correctly, which is exactly the reasoning that should drive budget prioritization."
+        "text": "\"RSA/ECC face a full break via Shor's algorithm (exponential speedup), while AES only faces a weakening via Grover's algorithm (quadratic speedup, fixed by simply doubling key length) — so RSA/ECC migration to entirely new algorithms is the harder, more urgent problem.\""
       },
       {
         "id": "c",
-        "text": "\"Neither is a real concern until a quantum computer capable of breaking RSA-2048 actually exists.\"",
-        "correct": false,
-        "feedback": "Incorrect. This ignores Harvest-Now-Decrypt-Later risk — migration must start well before the threat fully materializes, given how long enterprise migration takes."
+        "text": "\"Neither is a real concern until a quantum computer capable of breaking RSA-2048 actually exists.\""
       }
     ],
     "badge_awarded": "Risk Prioritizer",
@@ -186,21 +154,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "\"That's impossible — if both ECDHE and ML-KEM are individually secure, the combination must automatically be secure too.\"",
-        "correct": false,
-        "feedback": "Incorrect. This is exactly the hybrid-mode weakness category covered in PQC Attack Surface training — an insecure combiner construction can undermine security even when both individual algorithms remain secure."
+        "text": "\"That's impossible — if both ECDHE and ML-KEM are individually secure, the combination must automatically be secure too.\""
       },
       {
         "id": "b",
-        "text": "\"Treat this seriously — hybrid combiner constructions require their own dedicated security analysis, separate from validating each individual algorithm.\"",
-        "correct": true,
-        "feedback": "Correct. Hybrid-mode weaknesses are a real, distinct attack surface category — combining two secure algorithms incorrectly can still introduce a new vulnerability."
+        "text": "\"Treat this seriously — hybrid combiner constructions require their own dedicated security analysis, separate from validating each individual algorithm.\""
       },
       {
         "id": "c",
-        "text": "\"Immediately drop ML-KEM and revert to classical-only ECDHE to eliminate the risk.\"",
-        "correct": false,
-        "feedback": "Overcorrection. This abandons crypto-agility and PQC readiness rather than fixing the actual combiner issue — the correct move is analyzing and fixing the combiner, not abandoning the migration."
+        "text": "\"Immediately drop ML-KEM and revert to classical-only ECDHE to eliminate the risk.\""
       }
     ],
     "badge_awarded": "Hybrid Mode Auditor",
@@ -217,21 +179,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "\"You're right, let's revisit this in a few years once quantum computers are more advanced.\"",
-        "correct": false,
-        "feedback": "Incorrect. This ignores Harvest-Now-Decrypt-Later risk and the multi-year timeline real migrations require — waiting until the threat is imminent is too late."
+        "text": "\"You're right, let's revisit this in a few years once quantum computers are more advanced.\""
       },
       {
         "id": "b",
-        "text": "\"The attack window opened the day our sensitive data was recorded, not the day the quantum computer arrives — and given how long enterprise migration takes, waiting means we're already behind.\"",
-        "correct": true,
-        "feedback": "Correct. This is the exact framing from the program's risk management training — translating the technical HNDL concept into a business-urgency argument."
+        "text": "\"The attack window opened the day our sensitive data was recorded, not the day the quantum computer arrives — and given how long enterprise migration takes, waiting means we're already behind.\""
       },
       {
         "id": "c",
-        "text": "\"Every one of our systems is critically at risk right now and could be breached today.\"",
-        "correct": false,
-        "feedback": "Overstates the case in a way that undermines credibility — the accurate claim is about future decryption risk on already-harvested data, not an active breach today."
+        "text": "\"Every one of our systems is critically at risk right now and could be breached today.\""
       }
     ],
     "badge_awarded": "Executive Communicator",
@@ -248,21 +204,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Buy a CPU with twice the clock speed.",
-        "correct": false,
-        "feedback": "Incorrect. The CPU is idle, waiting for storage. A faster CPU would wait just as long. Storage is thousands of times slower than memory, so the bottleneck is where the data lives, not the processor."
+        "text": "Buy a CPU with twice the clock speed."
       },
       {
         "id": "b",
-        "text": "Load the lookup file into memory once at the start and read it from there.",
-        "correct": true,
-        "feedback": "Correct. 200 MB fits easily in RAM, and memory access is thousands of times faster than storage access. The repeated reads disappear."
+        "text": "Load the lookup file into memory once at the start and read it from there."
       },
       {
         "id": "c",
-        "text": "Compress the lookup file so it is smaller on disk.",
-        "correct": false,
-        "feedback": "Not the main fix. A smaller file may read slightly faster, but the program still goes to storage 2 million times and now also pays to decompress it each time."
+        "text": "Compress the lookup file so it is smaller on disk."
       }
     ],
     "badge_awarded": "Performance Detective",
@@ -279,21 +229,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "The ids are random, so the overload is bad luck; add more shards.",
-        "correct": false,
-        "feedback": "Incorrect. The ids are not random: every multiple of 10 leaves remainder 0 when divided by 10, so every record lands in shard 0. More shards with a modulus that still shares a factor with the ids would not help."
+        "text": "The ids are random, so the overload is bad luck; add more shards."
       },
       {
         "id": "b",
-        "text": "Every id shares the factor 10 with the modulus, so the remainder is always 0; use a modulus that shares no factor with the ids, such as a prime like 11 or 97, or hash the id first.",
-        "correct": true,
-        "feedback": "Correct. In modular arithmetic a modulus that shares a factor with the inputs collapses the residues. A prime modulus (or hashing first) spreads the ids evenly."
+        "text": "Every id shares the factor 10 with the modulus, so the remainder is always 0; use a modulus that shares no factor with the ids, such as a prime like 11 or 97, or hash the id first."
       },
       {
         "id": "c",
-        "text": "Switch to `customer_id // 10`.",
-        "correct": false,
-        "feedback": "Not a fix. Integer division by 10 turns 1000, 1010, 1020 into 100, 101, 102, but this just changes the number and the same modulus problem returns for any later id pattern."
+        "text": "Switch to `customer_id // 10`."
       }
     ],
     "badge_awarded": "Modulus Mechanic",
@@ -310,21 +254,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "The network ACL is stateless: the replies go from port 443 to the client's ephemeral port (1024 to 65535), and the outbound rule blocks them. Allow outbound ephemeral ports.",
-        "correct": true,
-        "feedback": "Correct. A stateless filter judges each packet on its own. The server's reply goes to the client's random high port, so outbound must allow that range (a stateful security group does this automatically for replies)."
+        "text": "The network ACL is stateless: the replies go from port 443 to the client's ephemeral port (1024 to 65535), and the outbound rule blocks them. Allow outbound ephemeral ports."
       },
       {
         "id": "b",
-        "text": "Open every inbound port so nothing can be blocked.",
-        "correct": false,
-        "feedback": "Dangerous and not the cause. The inbound rule already lets requests in; the replies are what is blocked. Opening all inbound ports widens the attack surface without fixing it."
+        "text": "Open every inbound port so nothing can be blocked."
       },
       {
         "id": "c",
-        "text": "Disable the security group, because only the ACL matters.",
-        "correct": false,
-        "feedback": "Incorrect. The security group is not blocking anything here, and removing a stateful control makes the network less safe."
+        "text": "Disable the security group, because only the ACL matters."
       }
     ],
     "badge_awarded": "Packet Pathfinder",
@@ -341,21 +279,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Use a slow, salted password hash such as Argon2id, scrypt, bcrypt or PBKDF2 with a per-user salt.",
-        "correct": true,
-        "feedback": "Correct. A salt defeats precomputed tables and identical-password matching, and a deliberately slow, memory- or CPU-hard function makes each guess expensive."
+        "text": "Use a slow, salted password hash such as Argon2id, scrypt, bcrypt or PBKDF2 with a per-user salt."
       },
       {
         "id": "b",
-        "text": "Switch to SHA-512, which is longer and therefore stronger.",
-        "correct": false,
-        "feedback": "Incorrect. SHA-2 hashes are designed to be fast, which is exactly what a password cracker wants. A longer output does not slow guessing."
+        "text": "Switch to SHA-512, which is longer and therefore stronger."
       },
       {
         "id": "c",
-        "text": "Encrypt the passwords with AES and keep the key in the same database.",
-        "correct": false,
-        "feedback": "Incorrect. Whoever steals the table steals the key too, and encryption is reversible, so every password becomes readable."
+        "text": "Encrypt the passwords with AES and keep the key in the same database."
       }
     ],
     "badge_awarded": "Credential Guardian",
@@ -372,21 +304,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "It is fine: the key is secret, so the nonce does not matter.",
-        "correct": false,
-        "feedback": "Incorrect. With GCM, reusing a nonce under the same key leaks the XOR of the plaintexts and allows forgery of authentication tags. The key being secret does not protect against this."
+        "text": "It is fine: the key is secret, so the nonce does not matter."
       },
       {
         "id": "b",
-        "text": "Hash the zero nonce first so it looks random.",
-        "correct": false,
-        "feedback": "Incorrect. A hash of a constant is still a constant. The requirement is that no (key, nonce) pair is ever used twice."
+        "text": "Hash the zero nonce first so it looks random."
       },
       {
         "id": "c",
-        "text": "It is a critical flaw: use a fresh unique nonce for every message (a counter or 96 random bits with a bounded message count) and rotate the key.",
-        "correct": true,
-        "feedback": "Correct. Nonce uniqueness per key is a hard requirement of GCM. Production code must generate it per message, and tests should inject nonces only in a test mode."
+        "text": "It is a critical flaw: use a fresh unique nonce for every message (a counter or 96 random bits with a bounded message count) and rotate the key."
       }
     ],
     "badge_awarded": "Nonce Keeper",
@@ -403,21 +329,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Raise the shots to 100,000.",
-        "correct": false,
-        "feedback": "Incorrect. More shots do not help if nothing is measured: counts only exist for measured classical bits."
+        "text": "Raise the shots to 100,000."
       },
       {
         "id": "b",
-        "text": "Add more Hadamard gates until the output appears.",
-        "correct": false,
-        "feedback": "Incorrect. Extra gates change the state, and a second Hadamard on qubit 0 would undo the first. The circuit is missing a different step."
+        "text": "Add more Hadamard gates until the output appears."
       },
       {
         "id": "c",
-        "text": "Add measurement of both qubits into classical bits, then run it again; expect roughly 50% 00 and 50% 11.",
-        "correct": true,
-        "feedback": "Correct. Counts are produced by measurement into classical bits. With measurements the Bell state gives only 00 or 11, each about half the time."
+        "text": "Add measurement of both qubits into classical bits, then run it again; expect roughly 50% 00 and 50% 11."
       }
     ],
     "badge_awarded": "Circuit Debugger",
@@ -434,21 +354,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Yes: any real matrix is a valid gate.",
-        "correct": false,
-        "feedback": "Incorrect. Reality of the entries is neither required nor sufficient. A quantum gate must preserve the length of the state vector."
+        "text": "Yes: any real matrix is a valid gate."
       },
       {
         "id": "b",
-        "text": "No: a gate must be unitary (U-dagger times U equals the identity), and this matrix stretches the vector (1, 1), so it is not.",
-        "correct": true,
-        "feedback": "Correct. Unitary matrices preserve norm and therefore probabilities. This shear maps (0, 1) to (1, 1), which has a larger norm."
+        "text": "No: a gate must be unitary (U-dagger times U equals the identity), and this matrix stretches the vector (1, 1), so it is not."
       },
       {
         "id": "c",
-        "text": "Yes, as long as its determinant is 1.",
-        "correct": false,
-        "feedback": "Incorrect. Determinant 1 does not imply unitarity. This matrix has determinant 1 and is still not unitary."
+        "text": "Yes, as long as its determinant is 1."
       }
     ],
     "badge_awarded": "Unitary Inspector",
@@ -465,21 +379,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Reject the claim: the no-cloning theorem forbids copying an unknown quantum state; error correction instead spreads one logical qubit across many physical qubits without copying it.",
-        "correct": true,
-        "feedback": "Correct. No unitary can copy an arbitrary unknown state. Quantum error correction encodes the state into an entangled code, which is a different thing from making copies."
+        "text": "Reject the claim: the no-cloning theorem forbids copying an unknown quantum state; error correction instead spreads one logical qubit across many physical qubits without copying it."
       },
       {
         "id": "b",
-        "text": "Accept it: the copies are possible but only for entangled qubits.",
-        "correct": false,
-        "feedback": "Incorrect. Entanglement does not make cloning possible; the theorem applies to arbitrary unknown states."
+        "text": "Accept it: the copies are possible but only for entangled qubits."
       },
       {
         "id": "c",
-        "text": "Accept it if the appliance uses many copies to average out the noise.",
-        "correct": false,
-        "feedback": "Incorrect. Averaging needs several identical copies of the unknown state, which is exactly what cannot be produced from one."
+        "text": "Accept it if the appliance uses many copies to average out the noise."
       }
     ],
     "badge_awarded": "No-Cloning Skeptic",
@@ -496,21 +404,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "An exponential speedup: the search takes a number of steps proportional to log of the size.",
-        "correct": false,
-        "feedback": "Incorrect. Grover's algorithm is not exponential."
+        "text": "An exponential speedup: the search takes a number of steps proportional to log of the size."
       },
       {
         "id": "b",
-        "text": "A quadratic speedup: about the square root of N queries, roughly 31,600 for a billion records, plus overhead for error correction, which is a large gain but not an instant one.",
-        "correct": true,
-        "feedback": "Correct. Unstructured search needs on the order of sqrt(N) queries, and that is optimal. The gain is real but needs a large fault-tolerant machine."
+        "text": "A quadratic speedup: about the square root of N queries, roughly 31,600 for a billion records, plus overhead for error correction, which is a large gain but not an instant one."
       },
       {
         "id": "c",
-        "text": "No speedup, because a database is classical data.",
-        "correct": false,
-        "feedback": "Incorrect. Grover gives a provable quadratic reduction in oracle queries for unstructured search, though loading classical data into a quantum memory is a practical obstacle."
+        "text": "No speedup, because a database is classical data."
       }
     ],
     "badge_awarded": "Speedup Auditor",
@@ -527,21 +429,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Reduce the number of shots until 01 and 10 disappear.",
-        "correct": false,
-        "feedback": "Incorrect. Fewer shots only makes the statistics noisier."
+        "text": "Reduce the number of shots until 01 and 10 disappear."
       },
       {
         "id": "b",
-        "text": "Treat it as a bug and rebuild the circuit.",
-        "correct": false,
-        "feedback": "Not supported. The ideal circuit gives only 00 and 11. Rebuilding changes nothing if the noise model is the cause."
+        "text": "Treat it as a bug and rebuild the circuit."
       },
       {
         "id": "c",
-        "text": "Run the same circuit on a noise-free simulator, which should show only 00 and 11; the small 01 and 10 counts are the expected effect of the noise model, and mitigation or a better backend is the response.",
-        "correct": true,
-        "feedback": "Correct. Compare against the ideal result to separate logic errors from noise. Stray outcomes of a few percent are typical of readout and gate errors."
+        "text": "Run the same circuit on a noise-free simulator, which should show only 00 and 11; the small 01 and 10 counts are the expected effect of the noise model, and mitigation or a better backend is the response."
       }
     ],
     "badge_awarded": "Noise Reader",
@@ -558,21 +454,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Superconducting qubits, because their gates are the slowest and therefore most precise.",
-        "correct": false,
-        "feedback": "Incorrect. Superconducting gates are fast, coherence is comparatively short, and connectivity is usually limited to nearest neighbours."
+        "text": "Superconducting qubits, because their gates are the slowest and therefore most precise."
       },
       {
         "id": "b",
-        "text": "Trapped ions: long coherence times and effective all-to-all connectivity in a single chain, at the price of slower gates.",
-        "correct": true,
-        "feedback": "Correct. Ions in a chain couple through shared motional modes, so any pair can interact, and coherence is long. Gate speed is slower than superconducting qubits."
+        "text": "Trapped ions: long coherence times and effective all-to-all connectivity in a single chain, at the price of slower gates."
       },
       {
         "id": "c",
-        "text": "Photonic qubits, because they interact strongly with each other.",
-        "correct": false,
-        "feedback": "Incorrect. Photons interact weakly, which is why two-qubit gates on photons are hard and need measurement-based or probabilistic schemes."
+        "text": "Photonic qubits, because they interact strongly with each other."
       }
     ],
     "badge_awarded": "Platform Strategist",
@@ -589,21 +479,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Buy a bigger perimeter firewall.",
-        "correct": false,
-        "feedback": "Insufficient. The attacker was already inside the perimeter; a stronger edge does nothing for lateral movement."
+        "text": "Buy a bigger perimeter firewall."
       },
       {
         "id": "b",
-        "text": "Segment the network and apply zero trust: least-privilege access per workload, authentication and authorisation on every request, no trust based on network location.",
-        "correct": true,
-        "feedback": "Correct. Segmentation limits what a compromised host can reach, and zero trust removes implicit trust in internal addresses."
+        "text": "Segment the network and apply zero trust: least-privilege access per workload, authentication and authorisation on every request, no trust based on network location."
       },
       {
         "id": "c",
-        "text": "Hide the finance database by changing its port number.",
-        "correct": false,
-        "feedback": "Incorrect. Obscurity does not stop an attacker who can scan the network."
+        "text": "Hide the finance database by changing its port number."
       }
     ],
     "badge_awarded": "Segmentation Lead",
@@ -620,21 +504,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Nothing: only those two documents are affected.",
-        "correct": false,
-        "feedback": "Incorrect. Two signatures with the same k let anyone solve for k and then for the private key."
+        "text": "Nothing: only those two documents are affected."
       },
       {
         "id": "b",
-        "text": "The private key can be computed from the two signatures; treat it as compromised, revoke and rotate it, and generate nonces deterministically (RFC 6979 style) or from a verified random source.",
-        "correct": true,
-        "feedback": "Correct. With the same k, subtracting the two signature equations gives k, and then the private key follows. Rotation is mandatory and the nonce generator must be fixed."
+        "text": "The private key can be computed from the two signatures; treat it as compromised, revoke and rotate it, and generate nonces deterministically (RFC 6979 style) or from a verified random source."
       },
       {
         "id": "c",
-        "text": "Switch to a longer hash and keep the same key.",
-        "correct": false,
-        "feedback": "Incorrect. The weakness is in the nonce, not the hash length, and the key is already exposed."
+        "text": "Switch to a longer hash and keep the same key."
       }
     ],
     "badge_awarded": "Signature Auditor",
@@ -651,21 +529,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "ML-KEM is a key-encapsulation mechanism, not a signature scheme; code signing needs a post-quantum signature such as ML-DSA (or SLH-DSA).",
-        "correct": true,
-        "feedback": "Correct. KEMs agree on shared secrets; signatures prove origin and integrity. The standards are FIPS 203 (ML-KEM), FIPS 204 (ML-DSA) and FIPS 205 (SLH-DSA)."
+        "text": "ML-KEM is a key-encapsulation mechanism, not a signature scheme; code signing needs a post-quantum signature such as ML-DSA (or SLH-DSA)."
       },
       {
         "id": "b",
-        "text": "Fine as written: ML-KEM can sign by encrypting a hash of the file.",
-        "correct": false,
-        "feedback": "Incorrect. Encrypting a hash with a public key does not give a signature; anyone can do it."
+        "text": "Fine as written: ML-KEM can sign by encrypting a hash of the file."
       },
       {
         "id": "c",
-        "text": "Use ML-KEM for signing and ML-DSA for key exchange.",
-        "correct": false,
-        "feedback": "Reversed. ML-DSA is the signature algorithm and ML-KEM the key-establishment one."
+        "text": "Use ML-KEM for signing and ML-DSA for key exchange."
       }
     ],
     "badge_awarded": "Algorithm Matchmaker",
@@ -682,21 +554,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Accept it: Kyber and ML-KEM are the same thing.",
-        "correct": false,
-        "feedback": "Incorrect. ML-KEM in FIPS 203 differs from the round 3 Kyber specification, and implementations of the two are not interoperable."
+        "text": "Accept it: Kyber and ML-KEM are the same thing."
       },
       {
         "id": "b",
-        "text": "Require ML-KEM as specified in FIPS 203, ask for algorithm and module validation evidence from NIST's lists, and a statement of how pre-standard versions are handled.",
-        "correct": true,
-        "feedback": "Correct. The final standard is the target; pre-standard variants do not interoperate and are not covered by validation of the final algorithm."
+        "text": "Require ML-KEM as specified in FIPS 203, ask for algorithm and module validation evidence from NIST's lists, and a statement of how pre-standard versions are handled."
       },
       {
         "id": "c",
-        "text": "Ask only for the key size.",
-        "correct": false,
-        "feedback": "Incorrect. Key size does not distinguish a conforming implementation from a non-conforming one."
+        "text": "Ask only for the key size."
       }
     ],
     "badge_awarded": "Standards Scholar II",
@@ -713,21 +579,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "The library is broken and should have raised an exception.",
-        "correct": false,
-        "feedback": "Incorrect. Raising an error would create a decryption oracle for attackers."
+        "text": "The library is broken and should have raised an exception."
       },
       {
         "id": "b",
-        "text": "ML-KEM uses implicit rejection: a bad ciphertext yields a different, pseudorandom secret instead of an error, so the failure shows up later, for example as an authentication failure of the data channel.",
-        "correct": true,
-        "feedback": "Correct. This is designed behaviour. Applications must authenticate what they encrypt with the shared secret."
+        "text": "ML-KEM uses implicit rejection: a bad ciphertext yields a different, pseudorandom secret instead of an error, so the failure shows up later, for example as an authentication failure of the data channel."
       },
       {
         "id": "c",
-        "text": "The flipped bit was in an unused part of the ciphertext, so nothing changed.",
-        "correct": false,
-        "feedback": "Incorrect. Every part of an ML-KEM ciphertext matters. The secret derived from the modified ciphertext differs from the original."
+        "text": "The flipped bit was in an unused part of the ciphertext, so nothing changed."
       }
     ],
     "badge_awarded": "Lab Debugger",
@@ -744,21 +604,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Yes: the Z-basis mixture has a diagonal density matrix and the X-basis one has off-diagonal terms.",
-        "correct": false,
-        "feedback": "Incorrect. Both mixtures average to the same operator."
+        "text": "Yes: the Z-basis mixture has a diagonal density matrix and the X-basis one has off-diagonal terms."
       },
       {
         "id": "b",
-        "text": "No: both ensembles have the density matrix I/2 (the maximally mixed state), so no measurement can distinguish them.",
-        "correct": true,
-        "feedback": "Correct. The density matrix contains everything measurable, and different ensembles can give the same density matrix. This is why a mixed state does not remember its preparation."
+        "text": "No: both ensembles have the density matrix I/2 (the maximally mixed state), so no measurement can distinguish them."
       },
       {
         "id": "c",
-        "text": "Yes, because their purities differ.",
-        "correct": false,
-        "feedback": "Incorrect. Both have purity 1/2."
+        "text": "Yes, because their purities differ."
       }
     ],
     "badge_awarded": "Density Theorist",
@@ -775,21 +629,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Agree: 100 qubits is enough for Shor's algorithm.",
-        "correct": false,
-        "feedback": "Incorrect. Resource estimates are of a different order of magnitude."
+        "text": "Agree: 100 qubits is enough for Shor's algorithm."
       },
       {
         "id": "b",
-        "text": "Correct the claim without dismissing the risk: published estimates (Gidney, 2025) put RSA-2048 at under about a million noisy physical qubits with error correction, far beyond 100 qubits, but the trend and harvest-now-decrypt-later risk justify planning now.",
-        "correct": true,
-        "feedback": "Correct. The qubit number is wrong by orders of magnitude, but the conclusion that preparation must start early stands for data with a long secrecy lifetime."
+        "text": "Correct the claim without dismissing the risk: published estimates (Gidney, 2025) put RSA-2048 at under about a million noisy physical qubits with error correction, far beyond 100 qubits, but the trend and harvest-now-decrypt-later risk justify planning now."
       },
       {
         "id": "c",
-        "text": "Say it is impossible for any quantum computer ever, so no action is needed.",
-        "correct": false,
-        "feedback": "Incorrect. Shor's algorithm is proven; the obstacle is engineering scale, not principle."
+        "text": "Say it is impossible for any quantum computer ever, so no action is needed."
       }
     ],
     "badge_awarded": "Resource Estimator",
@@ -806,21 +654,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "The logical error rate will fall quickly with distance.",
-        "correct": false,
-        "feedback": "Incorrect. Below the threshold, larger distance suppresses errors; above it, the opposite holds."
+        "text": "The logical error rate will fall quickly with distance."
       },
       {
         "id": "b",
-        "text": "Larger distance will make the logical error rate worse, not better: first reduce the physical error rate below the threshold, then scale the distance.",
-        "correct": true,
-        "feedback": "Correct. Error correction only helps when physical errors are rarer than the threshold. Above it, more qubits add more places for errors to occur."
+        "text": "Larger distance will make the logical error rate worse, not better: first reduce the physical error rate below the threshold, then scale the distance."
       },
       {
         "id": "c",
-        "text": "Nothing will change, because distance does not affect logical errors.",
-        "correct": false,
-        "feedback": "Incorrect. Distance determines how many physical errors the code can tolerate."
+        "text": "Nothing will change, because distance does not affect logical errors."
       }
     ],
     "badge_awarded": "Threshold Keeper",
@@ -837,21 +679,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Yes: each link is high quality, so the chain is high quality.",
-        "correct": false,
-        "feedback": "Incorrect. Swapping multiplies the Werner parameters, so quality decays geometrically with the number of links."
+        "text": "Yes: each link is high quality, so the chain is high quality."
       },
       {
         "id": "b",
-        "text": "No: the end-to-end parameter is 0.9 to the power 12, about 0.28, below 1/3, so the state is separable; the chain needs purification between swaps or fewer, better links.",
-        "correct": true,
-        "feedback": "Correct. For Werner states entanglement requires w above 1/3, and swapping gives the product of the parameters. About 0.28 is below that."
+        "text": "No: the end-to-end parameter is 0.9 to the power 12, about 0.28, below 1/3, so the state is separable; the chain needs purification between swaps or fewer, better links."
       },
       {
         "id": "c",
-        "text": "Yes, as long as the classical channel is authenticated.",
-        "correct": false,
-        "feedback": "Incorrect. Authentication of the classical channel does not change the quantum state's quality."
+        "text": "Yes, as long as the classical channel is authenticated."
       }
     ],
     "badge_awarded": "Repeater Planner",
@@ -868,21 +704,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Run the one-way hashing protocol anyway; any fidelity above 0.5 works.",
-        "correct": false,
-        "feedback": "Incorrect. The hashing protocol has a higher threshold for Werner states; below it, it yields no entanglement."
+        "text": "Run the one-way hashing protocol anyway; any fidelity above 0.5 works."
       },
       {
         "id": "b",
-        "text": "Use a two-way recurrence protocol such as BBPSSW, which works for fidelity above 0.5, or improve the source, and accept the cost in pairs.",
-        "correct": true,
-        "feedback": "Correct. Two-way protocols can distil from lower-fidelity pairs, at the price of classical communication and many pairs consumed."
+        "text": "Use a two-way recurrence protocol such as BBPSSW, which works for fidelity above 0.5, or improve the source, and accept the cost in pairs."
       },
       {
         "id": "c",
-        "text": "Discard the link, because fidelity below 0.81 cannot be improved.",
-        "correct": false,
-        "feedback": "Incorrect. Two-way purification can raise fidelity above the one-way threshold when the source is better than 0.5."
+        "text": "Discard the link, because fidelity below 0.81 cannot be improved."
       }
     ],
     "badge_awarded": "Capacity Analyst",
@@ -899,21 +729,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "QKD provides no digital signatures, needs an authenticated classical channel and dedicated links, and does not scale to field devices; software signing still needs a post-quantum signature such as ML-DSA or SLH-DSA.",
-        "correct": true,
-        "feedback": "Correct. QKD only gives key material between two ends over a dedicated link and needs authentication, so it cannot replace signatures or serve internet-scale endpoints."
+        "text": "QKD provides no digital signatures, needs an authenticated classical channel and dedicated links, and does not scale to field devices; software signing still needs a post-quantum signature such as ML-DSA or SLH-DSA."
       },
       {
         "id": "b",
-        "text": "Correct: QKD replaces every cryptographic function.",
-        "correct": false,
-        "feedback": "Incorrect. It produces shared keys only."
+        "text": "Correct: QKD replaces every cryptographic function."
       },
       {
         "id": "c",
-        "text": "QKD can sign if combined with a one-time pad.",
-        "correct": false,
-        "feedback": "Incorrect. A one-time pad needs a pre-shared key per message pair and provides no public verifiability, which is what signatures offer."
+        "text": "QKD can sign if combined with a one-time pad."
       }
     ],
     "badge_awarded": "QKD Realist",
@@ -930,21 +754,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Because SHA-256 is broken; switch to MD5.",
-        "correct": false,
-        "feedback": "Incorrect. SHA-256 is not broken, and MD5 is weaker."
+        "text": "Because SHA-256 is broken; switch to MD5."
       },
       {
         "id": "b",
-        "text": "The Merkle-Damgard construction lets an attacker continue from the published digest (length extension); use HMAC (or a keyed construction designed for MACs) instead of hashing secret || message.",
-        "correct": true,
-        "feedback": "Correct. The digest is the internal state, so it can be extended. HMAC's nested keyed construction prevents this."
+        "text": "The Merkle-Damgard construction lets an attacker continue from the published digest (length extension); use HMAC (or a keyed construction designed for MACs) instead of hashing secret || message."
       },
       {
         "id": "c",
-        "text": "Make the secret longer so the attacker cannot guess it.",
-        "correct": false,
-        "feedback": "Incorrect. The attacker does not need to guess the secret; the attack extends the hash state."
+        "text": "Make the secret longer so the attacker cannot guess it."
       }
     ],
     "badge_awarded": "Hash Internals Expert",
@@ -961,21 +779,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Approve: correctness of decryption is all that matters.",
-        "correct": false,
-        "feedback": "Incorrect. Correct decryption does not imply security; the security level depends on how hard the underlying lattice problem is for the best known attacks."
+        "text": "Approve: correctness of decryption is all that matters."
       },
       {
         "id": "b",
-        "text": "Reject it: parameters are chosen from analyses of the best known attacks, so use a standardised parameter set (ML-KEM-512, 768 or 1024) and not a home-made one.",
-        "correct": true,
-        "feedback": "Correct. Changing the dimension, modulus or noise changes the estimated security in ways that need expert cryptanalysis. Use the standard sets."
+        "text": "Reject it: parameters are chosen from analyses of the best known attacks, so use a standardised parameter set (ML-KEM-512, 768 or 1024) and not a home-made one."
       },
       {
         "id": "c",
-        "text": "Approve if the noise is made larger to compensate.",
-        "correct": false,
-        "feedback": "Incorrect. More noise can break decryption correctness and does not restore a vetted security margin."
+        "text": "Approve if the noise is made larger to compensate."
       }
     ],
     "badge_awarded": "Parameter Skeptic",
@@ -992,21 +804,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Convert one team's keys to hexadecimal.",
-        "correct": false,
-        "feedback": "Incorrect. Hex is only a text rendering of the same bytes; the encodings still differ."
+        "text": "Convert one team's keys to hexadecimal."
       },
       {
         "id": "b",
-        "text": "Test both against the standard's known-answer test vectors and the byte encodings defined in FIPS 203, and add cross-implementation tests to continuous integration.",
-        "correct": true,
-        "feedback": "Correct. The standard fixes the encoding, so known-answer and cross-implementation tests expose deviations early."
+        "text": "Test both against the standard's known-answer test vectors and the byte encodings defined in FIPS 203, and add cross-implementation tests to continuous integration."
       },
       {
         "id": "c",
-        "text": "Let the receiving side guess the encoding from the length.",
-        "correct": false,
-        "feedback": "Incorrect. Guessing creates parsing ambiguity and security risk."
+        "text": "Let the receiving side guess the encoding from the length."
       }
     ],
     "badge_awarded": "Interop Engineer",
@@ -1023,21 +829,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "No issue: ciphertexts are public values.",
-        "correct": false,
-        "feedback": "Incorrect. The comparison decides whether decapsulation accepts or rejects, and its duration can leak information about the secret key."
+        "text": "No issue: ciphertexts are public values."
       },
       {
         "id": "b",
-        "text": "Add a random delay to hide the timing.",
-        "correct": false,
-        "feedback": "Insufficient. Random delay can be averaged out over many measurements."
+        "text": "Add a random delay to hide the timing."
       },
       {
         "id": "c",
-        "text": "A timing side channel: use a constant-time comparison and constant-time selection of the output secret, preferably by using a maintained library.",
-        "correct": true,
-        "feedback": "Correct. The comparison and the choice between the real and the pseudorandom secret must not depend on secret data in time or memory access."
+        "text": "A timing side channel: use a constant-time comparison and constant-time selection of the output secret, preferably by using a maintained library."
       }
     ],
     "badge_awarded": "Timing Defender",
@@ -1054,21 +854,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Ignore it: it is not in the register, so it is not your responsibility.",
-        "correct": false,
-        "feedback": "Incorrect. A service that exists is in scope whether or not it is registered; unregistered systems are where the worst findings tend to live."
+        "text": "Ignore it: it is not in the register, so it is not your responsibility."
       },
       {
         "id": "b",
-        "text": "Record it in the inventory as unowned, trace its owner, assess it (weak key, expired certificate), and decide whether to fix or retire it.",
-        "correct": true,
-        "feedback": "Correct. Keep the evidence, flag the asset as having no owner, and find the owner. The RSA-1024 key and expired certificate are findings even without quantum computers."
+        "text": "Record it in the inventory as unowned, trace its owner, assess it (weak key, expired certificate), and decide whether to fix or retire it."
       },
       {
         "id": "c",
-        "text": "Block the port immediately without telling anyone.",
-        "correct": false,
-        "feedback": "Risky. Blocking an unknown service without an owner can cause an outage and removes the chance to learn what it carries."
+        "text": "Block the port immediately without telling anyone."
       }
     ],
     "badge_awarded": "Shadow Hunter",
@@ -1085,21 +879,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Enter 50 for each so the total looks complete.",
-        "correct": false,
-        "feedback": "Incorrect. A default makes an unassessed asset look average and removes the pressure to assess it."
+        "text": "Enter 50 for each so the total looks complete."
       },
       {
         "id": "b",
-        "text": "Report the asset with a score range and the label insufficient evidence, and put it on an assess-first list with an owner and a date.",
-        "correct": true,
-        "feedback": "Correct. Unknown is different from average. An interval shows the asset could be anything from trivial to critical until evidence arrives."
+        "text": "Report the asset with a score range and the label insufficient evidence, and put it on an assess-first list with an owner and a date."
       },
       {
         "id": "c",
-        "text": "Leave the asset out of the report.",
-        "correct": false,
-        "feedback": "Incorrect. Dropping it makes the programme look healthier than it is and hides the biggest unknown."
+        "text": "Leave the asset out of the report."
       }
     ],
     "badge_awarded": "Evidence Assessor",
@@ -1116,21 +904,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Hire more developers for the next advisory.",
-        "correct": false,
-        "feedback": "Does not remove the cause. Every future change would again touch every service."
+        "text": "Hire more developers for the next advisory."
       },
       {
         "id": "b",
-        "text": "Introduce a crypto boundary and policy-driven algorithm selection so that the next change is a configuration change that is tested and deployed once.",
-        "correct": true,
-        "feedback": "Correct. Abstraction plus configuration turns an algorithm change into a policy update, with validation and an audit trail."
+        "text": "Introduce a crypto boundary and policy-driven algorithm selection so that the next change is a configuration change that is tested and deployed once."
       },
       {
         "id": "c",
-        "text": "Stockpile older library versions for quick rollback.",
-        "correct": false,
-        "feedback": "Incorrect. Rollback is useful, but it does not make a forward algorithm change cheap."
+        "text": "Stockpile older library versions for quick rollback."
       }
     ],
     "badge_awarded": "Agility Engineer",
@@ -1147,21 +929,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Add more staff on the night.",
-        "correct": false,
-        "feedback": "Does not address the structural risk of changing everything at once."
+        "text": "Add more staff on the night."
       },
       {
         "id": "b",
-        "text": "Stage the rollout through a canary and increasing shares of traffic with pre-agreed stop gates and a rehearsed one-step rollback, starting with the highest-risk services.",
-        "correct": true,
-        "feedback": "Correct. A canary exposes a regression to a small share of traffic, and the stop rule and rollback are decided before the change."
+        "text": "Stage the rollout through a canary and increasing shares of traffic with pre-agreed stop gates and a rehearsed one-step rollback, starting with the highest-risk services."
       },
       {
         "id": "c",
-        "text": "Switch off monitoring during the change to avoid false alarms.",
-        "correct": false,
-        "feedback": "Incorrect. Monitoring is how a regression is detected during the change."
+        "text": "Switch off monitoring during the change to avoid false alarms."
       }
     ],
     "badge_awarded": "Rollout Gatekeeper",
@@ -1178,21 +954,15 @@ export const escapeRoomScenarios: EscapeRoomScenario[] = [
     "choices": [
       {
         "id": "a",
-        "text": "Close the risk as inactive.",
-        "correct": false,
-        "feedback": "Incorrect. The risk still exists. Closing it because the owner left hides it."
+        "text": "Close the risk as inactive."
       },
       {
         "id": "b",
-        "text": "Escalate immediately, assign one named active person as accountable with a new due date, and link the register to the staff directory so leavers trigger a review.",
-        "correct": true,
-        "feedback": "Correct. A risk without an active accountable owner stalls. One named accountable person, an escalation and an automatic check prevent a repeat."
+        "text": "Escalate immediately, assign one named active person as accountable with a new due date, and link the register to the staff directory so leavers trigger a review."
       },
       {
         "id": "c",
-        "text": "Assign it to the whole team alias.",
-        "correct": false,
-        "feedback": "Incorrect. Shared accountability means nobody is accountable."
+        "text": "Assign it to the whole team alias."
       }
     ],
     "badge_awarded": "Accountability Lead",

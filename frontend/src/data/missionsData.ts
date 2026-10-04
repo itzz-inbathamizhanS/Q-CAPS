@@ -87,31 +87,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Audit the call sites and library dependencies to establish a baseline and a metric.",
-            "consequence": {
-              "agility": 5,
-              "months_used": 1
-            },
-            "feedback": "Correct. You cannot manage what you have not measured; the audit gives you the metric you will track."
+            "text": "Audit the call sites and library dependencies to establish a baseline and a metric."
           },
           {
             "id": "b",
-            "text": "Rewrite all 20 services at once.",
-            "consequence": {
-              "agility": 40,
-              "stability": -30,
-              "months_used": 3
-            },
-            "feedback": "Big-bang rewrites of working systems cause outages and hide regressions."
+            "text": "Rewrite all 20 services at once."
           },
           {
             "id": "c",
-            "text": "Wrap one service and declare victory.",
-            "consequence": {
-              "agility": 5,
-              "months_used": 1
-            },
-            "feedback": "One wrapped service leaves 19 hard-coded ones and no pattern to follow."
+            "text": "Wrap one service and declare victory."
           }
         ]
       },
@@ -122,30 +106,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "A purpose-level API (seal, open, sign, verify) with the algorithm identifier inside the data, selected by policy.",
-            "consequence": {
-              "agility": 25,
-              "stability": -3,
-              "months_used": 2
-            },
-            "feedback": "Correct. Callers never see algorithms, and old data stays readable because the algorithm travels with it."
+            "text": "A purpose-level API (seal, open, sign, verify) with the algorithm identifier inside the data, selected by policy."
           },
           {
             "id": "b",
-            "text": "A thin wrapper that still takes algorithm names and key sizes.",
-            "consequence": {
-              "agility": 10
-            },
-            "feedback": "The algorithm leaks into every caller again."
+            "text": "A thin wrapper that still takes algorithm names and key sizes."
           },
           {
             "id": "c",
-            "text": "Let each team write its own helper functions.",
-            "consequence": {
-              "agility": 5,
-              "stability": -5
-            },
-            "feedback": "You get 20 different boundaries and no single place to change an algorithm."
+            "text": "Let each team write its own helper functions."
           }
         ]
       },
@@ -156,28 +125,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Version the stored values, keep the old algorithm readable, re-protect in the background, and verify before removing old keys.",
-            "consequence": {
-              "agility": 25,
-              "months_used": 2
-            },
-            "feedback": "Correct. Stored values are the hard part: the same input now gives a different output, so versions and a verified migration are required."
+            "text": "Version the stored values, keep the old algorithm readable, re-protect in the background, and verify before removing old keys."
           },
           {
             "id": "b",
-            "text": "Switch the algorithm and recompute stored hashes.",
-            "consequence": {
-              "stability": -30
-            },
-            "feedback": "Recomputation is impossible for values whose inputs you no longer have, and lookups fail."
+            "text": "Switch the algorithm and recompute stored hashes."
           },
           {
             "id": "c",
-            "text": "Leave stored data on the old algorithm forever.",
-            "consequence": {
-              "agility": -5
-            },
-            "feedback": "The old algorithm then remains your real exposure."
+            "text": "Leave stored data on the old algorithm forever."
           }
         ]
       },
@@ -188,27 +144,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Add a CI rule that forbids direct cryptographic calls outside the boundary, an architecture-review checklist, and a drill that changes an algorithm.",
-            "consequence": {
-              "agility": 20,
-              "stability": 5,
-              "months_used": 1
-            },
-            "feedback": "Correct. Enforcement and practice stop the boundary from rotting."
+            "text": "Add a CI rule that forbids direct cryptographic calls outside the boundary, an architecture-review checklist, and a drill that changes an algorithm."
           },
           {
             "id": "b",
-            "text": "Write documentation only.",
-            "consequence": {
-              "agility": 2
-            },
-            "feedback": "Documentation without enforcement is ignored under deadline pressure."
+            "text": "Write documentation only."
           },
           {
             "id": "c",
-            "text": "Trust each team to remember.",
-            "consequence": {},
-            "feedback": "New code will bypass the boundary within a few releases."
+            "text": "Trust each team to remember."
           }
         ]
       },
@@ -390,29 +334,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Query the inventory for affected assets, owners and switch methods, and start the incident process.",
-            "consequence": {
-              "exposure_contained": 15,
-              "hours_elapsed": 1
-            },
-            "feedback": "Correct. The inventory turns 'where is it used?' into a query and gives you owners and switch methods at once."
+            "text": "Query the inventory for affected assets, owners and switch methods, and start the incident process."
           },
           {
             "id": "b",
-            "text": "Email all teams asking whether they use it.",
-            "consequence": {
-              "exposure_contained": 3,
-              "hours_elapsed": 6
-            },
-            "feedback": "Slow and incomplete: people do not know what libraries and firmware they depend on."
+            "text": "Email all teams asking whether they use it."
           },
           {
             "id": "c",
-            "text": "Wait for the vendor to confirm exploitation.",
-            "consequence": {
-              "hours_elapsed": 12
-            },
-            "feedback": "Waiting leaves exposure open when you could already be preparing and switching the assets that are easy to change."
+            "text": "Wait for the vendor to confirm exploitation."
           }
         ]
       },
@@ -423,33 +353,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Change the policy to the approved fallback for those assets and verify the result with discovery.",
-            "consequence": {
-              "exposure_contained": 40,
-              "operations": -5,
-              "hours_elapsed": 3
-            },
-            "feedback": "Correct. A configuration-driven change is fast and its effect can be verified."
+            "text": "Change the policy to the approved fallback for those assets and verify the result with discovery."
           },
           {
             "id": "b",
-            "text": "Push an untested emergency change to everything, including the firmware.",
-            "consequence": {
-              "exposure_contained": 20,
-              "operations": -35,
-              "hours_elapsed": 2
-            },
-            "feedback": "An untested firmware push risks bricking devices; do not treat the compiled-in case like the configurable case."
+            "text": "Push an untested emergency change to everything, including the firmware."
           },
           {
             "id": "c",
-            "text": "Disable ALG-X everywhere without checking who depends on it.",
-            "consequence": {
-              "exposure_contained": 45,
-              "operations": -40,
-              "hours_elapsed": 1
-            },
-            "feedback": "It contains the exposure but breaks every client that still needs it; check dependencies first (the inventory has them)."
+            "text": "Disable ALG-X everywhere without checking who depends on it."
           }
         ]
       },
@@ -460,27 +372,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Apply compensating controls (isolate the ERP segment, restrict meter update traffic to a gateway), assign an owner and schedule the fix.",
-            "consequence": {
-              "exposure_contained": 20,
-              "operations": -3,
-              "hours_elapsed": 6
-            },
-            "feedback": "Correct. Reduce exposure with controls while the real fix is prepared, and fix the ownership gap."
+            "text": "Apply compensating controls (isolate the ERP segment, restrict meter update traffic to a gateway), assign an owner and schedule the fix."
           },
           {
             "id": "b",
-            "text": "Accept the risk without an owner's approval.",
-            "consequence": {},
-            "feedback": "Risk acceptance needs a named, accountable owner; here there is none."
+            "text": "Accept the risk without an owner's approval."
           },
           {
             "id": "c",
-            "text": "Ignore the two assets.",
-            "consequence": {
-              "exposure_contained": -5
-            },
-            "feedback": "They are the ones that remain exposed."
+            "text": "Ignore the two assets."
           }
         ]
       },
@@ -491,27 +391,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Hold a lessons-learned review: inventory gaps, ownership, configuration-driven change; update the playbook and schedule a drill.",
-            "consequence": {
-              "exposure_contained": 5,
-              "operations": 3,
-              "hours_elapsed": 2
-            },
-            "feedback": "Correct. The weaknesses the incident exposed are the programme's next tasks."
+            "text": "Hold a lessons-learned review: inventory gaps, ownership, configuration-driven change; update the playbook and schedule a drill."
           },
           {
             "id": "b",
-            "text": "Close the incident and move on.",
-            "consequence": {},
-            "feedback": "The same gaps remain for the next advisory."
+            "text": "Close the incident and move on."
           },
           {
             "id": "c",
-            "text": "Blame the team that owned the ERP.",
-            "consequence": {
-              "operations": -5
-            },
-            "feedback": "Blame does not fix the missing ownership process."
+            "text": "Blame the team that owned the ERP."
           }
         ]
       },
@@ -626,30 +514,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Define in-scope ranges with written authorisation from their owners, starting with networks and cloud accounts you own.",
-            "consequence": {
-              "coverage": 20,
-              "weeks_used": 1
-            },
-            "feedback": "Correct. Active scanning needs authorisation, and a written scope protects you and the owners."
+            "text": "Define in-scope ranges with written authorisation from their owners, starting with networks and cloud accounts you own."
           },
           {
             "id": "b",
-            "text": "Scan every address you can reach, including partners and other tenants.",
-            "consequence": {
-              "coverage": 35,
-              "scope_compliance": -50
-            },
-            "feedback": "More coverage, but unauthorised scanning is an offence in many places and can disrupt other organisations' systems."
+            "text": "Scan every address you can reach, including partners and other tenants."
           },
           {
             "id": "c",
-            "text": "Rely on interviews only.",
-            "consequence": {
-              "coverage": 5,
-              "data_quality": -10
-            },
-            "feedback": "People remember what they built, not what exists; interviews alone miss shadow assets."
+            "text": "Rely on interviews only."
           }
         ]
       },
@@ -660,30 +533,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Combine passive sources (flow logs, DNS, certificate transparency), active scans in agreed windows, and cloud inventory APIs.",
-            "consequence": {
-              "coverage": 25,
-              "data_quality": 10,
-              "weeks_used": 2
-            },
-            "feedback": "Correct. Independent sources reveal what any one method misses."
+            "text": "Combine passive sources (flow logs, DNS, certificate transparency), active scans in agreed windows, and cloud inventory APIs."
           },
           {
             "id": "b",
-            "text": "Run one aggressive full-port scan on production in business hours.",
-            "consequence": {
-              "coverage": 10,
-              "scope_compliance": -15
-            },
-            "feedback": "An unplanned aggressive scan can disrupt production and breaks the agreed change windows."
+            "text": "Run one aggressive full-port scan on production in business hours."
           },
           {
             "id": "c",
-            "text": "Run one scan once and treat it as complete.",
-            "consequence": {
-              "coverage": 10
-            },
-            "feedback": "A single snapshot is a lower bound and ages immediately."
+            "text": "Run one scan once and treat it as complete."
           }
         ]
       },
@@ -694,29 +552,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Compare both ways: list shadow assets (found, not registered) and stale records (registered, not found), and assign owners.",
-            "consequence": {
-              "coverage": 10,
-              "data_quality": 20,
-              "weeks_used": 1
-            },
-            "feedback": "Correct. The differences in both directions are the findings, and each needs an owner."
+            "text": "Compare both ways: list shadow assets (found, not registered) and stale records (registered, not found), and assign owners."
           },
           {
             "id": "b",
-            "text": "Delete unknown assets from the report to keep it tidy.",
-            "consequence": {
-              "data_quality": -25
-            },
-            "feedback": "That hides precisely the assets most likely to be unmanaged."
+            "text": "Delete unknown assets from the report to keep it tidy."
           },
           {
             "id": "c",
-            "text": "Add everything found to the register with no owner.",
-            "consequence": {
-              "data_quality": -10
-            },
-            "feedback": "An asset with no owner will not be fixed or classified."
+            "text": "Add everything found to the register with no owner."
           }
         ]
       },
@@ -727,29 +571,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Schedule recurring discovery, alert on drift against the baseline, and keep the raw evidence.",
-            "consequence": {
-              "coverage": 10,
-              "data_quality": 15,
-              "weeks_used": 1
-            },
-            "feedback": "Correct. Estates change; a recurring process is what keeps the inventory true."
+            "text": "Schedule recurring discovery, alert on drift against the baseline, and keep the raw evidence."
           },
           {
             "id": "b",
-            "text": "Hand over a one-off report.",
-            "consequence": {
-              "data_quality": -5
-            },
-            "feedback": "It starts ageing the day it is delivered."
+            "text": "Hand over a one-off report."
           },
           {
             "id": "c",
-            "text": "Ask teams to self-report each quarter.",
-            "consequence": {
-              "data_quality": -5
-            },
-            "feedback": "Self-reporting misses what teams do not know they have."
+            "text": "Ask teams to self-report each quarter."
           }
         ]
       },
@@ -859,29 +689,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Isolate the laptop and its credentials, apply a temporary rule blocking east-west traffic from it, and keep business traffic running.",
-            "consequence": {
-              "blast_radius": -20,
-              "operations_ok": -3
-            },
-            "feedback": "Correct. Contain the specific foothold and its paths while the rest of the business continues."
+            "text": "Isolate the laptop and its credentials, apply a temporary rule blocking east-west traffic from it, and keep business traffic running."
           },
           {
             "id": "b",
-            "text": "Shut the whole network down.",
-            "consequence": {
-              "blast_radius": -50,
-              "operations_ok": -40
-            },
-            "feedback": "It contains the breach but halts the business, and you lose live visibility of what the attacker is doing."
+            "text": "Shut the whole network down."
           },
           {
             "id": "c",
-            "text": "Do nothing until the root cause is known.",
-            "consequence": {
-              "blast_radius": 10
-            },
-            "feedback": "The attacker keeps moving while you investigate. Contain first, then investigate."
+            "text": "Do nothing until the root cause is known."
           }
         ]
       },
@@ -892,30 +708,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Capture flow data for two weeks to see which systems actually communicate, then write allow-lists from the evidence.",
-            "consequence": {
-              "blast_radius": -10,
-              "weeks_elapsed": 2
-            },
-            "feedback": "Correct. Policies written from observed flows break less and stay accurate."
+            "text": "Capture flow data for two weeks to see which systems actually communicate, then write allow-lists from the evidence."
           },
           {
             "id": "b",
-            "text": "Draw segments from the org chart and block everything else at once.",
-            "consequence": {
-              "blast_radius": -30,
-              "operations_ok": -30,
-              "weeks_elapsed": 1
-            },
-            "feedback": "It shrinks the blast radius, but undocumented dependencies fail at once and operations suffer."
+            "text": "Draw segments from the org chart and block everything else at once."
           },
           {
             "id": "c",
-            "text": "Buy a bigger perimeter firewall.",
-            "consequence": {
-              "weeks_elapsed": 2
-            },
-            "feedback": "The attacker was already inside the perimeter; a stronger edge does not stop lateral movement."
+            "text": "Buy a bigger perimeter firewall."
           }
         ]
       },
@@ -926,32 +727,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "The crown jewels: finance databases, domain controllers and backups, with default-deny and monitored allow-lists.",
-            "consequence": {
-              "blast_radius": -30,
-              "operations_ok": -5,
-              "weeks_elapsed": 3
-            },
-            "feedback": "Correct. Protecting the highest-value targets first removes the most risk per unit of effort."
+            "text": "The crown jewels: finance databases, domain controllers and backups, with default-deny and monitored allow-lists."
           },
           {
             "id": "b",
-            "text": "Segment building by building.",
-            "consequence": {
-              "blast_radius": -10,
-              "operations_ok": -5,
-              "weeks_elapsed": 4
-            },
-            "feedback": "Physical location rarely matches risk or data flows; it takes long and protects little."
+            "text": "Segment building by building."
           },
           {
             "id": "c",
-            "text": "Start with the guest Wi-Fi only.",
-            "consequence": {
-              "blast_radius": -5,
-              "weeks_elapsed": 1
-            },
-            "feedback": "Guest Wi-Fi is easy and worthwhile, but it was not the attack path and leaves the crown jewels exposed."
+            "text": "Start with the guest Wi-Fi only."
           }
         ]
       },
@@ -962,25 +746,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Apply zero-trust controls for admin access: MFA, per-request authorisation, just-in-time admin rights and no shared accounts.",
-            "consequence": {
-              "blast_radius": -20,
-              "operations_ok": -3,
-              "weeks_elapsed": 2
-            },
-            "feedback": "Correct. A stolen laptop or password should not be enough to reach a crown jewel; each access is authenticated and authorised."
+            "text": "Apply zero-trust controls for admin access: MFA, per-request authorisation, just-in-time admin rights and no shared accounts."
           },
           {
             "id": "b",
-            "text": "Keep trusting every internal address on the VPN.",
-            "consequence": {},
-            "feedback": "Segmentation without identity checks still lets a compromised trusted address through allowed paths."
+            "text": "Keep trusting every internal address on the VPN."
           },
           {
             "id": "c",
-            "text": "Rename the hosts so they are harder to guess.",
-            "consequence": {},
-            "feedback": "Obscurity does not stop an attacker who can scan the network."
+            "text": "Rename the hosts so they are harder to guess."
           }
         ]
       },
@@ -1087,28 +861,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Capture packets, compare the ClientHello size before and after, and test with and without the hybrid group to isolate the cause.",
-            "consequence": {
-              "confidence": 20
-            },
-            "feedback": "Correct. The hybrid key share makes the ClientHello about a kilobyte larger; capturing and comparing isolates whether size or fragmentation is the problem."
+            "text": "Capture packets, compare the ClientHello size before and after, and test with and without the hybrid group to isolate the cause."
           },
           {
             "id": "b",
-            "text": "Assume the library is buggy and disable the hybrid group permanently.",
-            "consequence": {
-              "confidence": -10
-            },
-            "feedback": "That gives up the pilot without understanding the failure, and the same issue will reappear elsewhere."
+            "text": "Assume the library is buggy and disable the hybrid group permanently."
           },
           {
             "id": "c",
-            "text": "Blame the clients and publish a notice.",
-            "consequence": {
-              "handshake_success": -3,
-              "confidence": -10
-            },
-            "feedback": "Partners experience outages and you still do not know the cause."
+            "text": "Blame the clients and publish a notice."
           }
         ]
       },
@@ -1119,30 +880,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Update or reconfigure the firewall to handle the larger message, test again with the hybrid group, and keep the classical fallback enabled.",
-            "consequence": {
-              "handshake_success": 3,
-              "confidence": 10
-            },
-            "feedback": "Correct. Fix the actual cause, keep the fallback, and re-test before widening."
+            "text": "Update or reconfigure the firewall to handle the larger message, test again with the hybrid group, and keep the classical fallback enabled."
           },
           {
             "id": "b",
-            "text": "Ask the vendor to fix it and enable hybrid for everyone meanwhile.",
-            "consequence": {
-              "handshake_success": -10,
-              "hybrid_share": 30,
-              "confidence": -10
-            },
-            "feedback": "Enabling it for everyone with a known failing component breaks affected users."
+            "text": "Ask the vendor to fix it and enable hybrid for everyone meanwhile."
           },
           {
             "id": "c",
-            "text": "Shrink the key share by removing the post-quantum component.",
-            "consequence": {
-              "confidence": -5
-            },
-            "feedback": "That removes the thing you are piloting."
+            "text": "Shrink the key share by removing the post-quantum component."
           }
         ]
       },
@@ -1153,32 +899,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Start with a 5% canary, with a stop rule on handshake failures and a one-step rollback.",
-            "consequence": {
-              "hybrid_share": 15,
-              "confidence": 15
-            },
-            "feedback": "Correct. A small canary with a pre-agreed stop rule limits harm if a client type still fails."
+            "text": "Start with a 5% canary, with a stop rule on handshake failures and a one-step rollback."
           },
           {
             "id": "b",
-            "text": "Enable it for all traffic at once.",
-            "consequence": {
-              "handshake_success": -15,
-              "hybrid_share": 60,
-              "confidence": -15
-            },
-            "feedback": "Any remaining incompatibility affects every user at once."
+            "text": "Enable it for all traffic at once."
           },
           {
             "id": "c",
-            "text": "Skip the canary because staging passed.",
-            "consequence": {
-              "handshake_success": -5,
-              "hybrid_share": 30,
-              "confidence": -10
-            },
-            "feedback": "Staging rarely contains every client and middlebox that production sees."
+            "text": "Skip the canary because staging passed."
           }
         ]
       },
@@ -1189,30 +918,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Widen in steps and verify from handshakes that the hybrid group was actually negotiated, not just configured.",
-            "consequence": {
-              "hybrid_share": 35,
-              "confidence": 15
-            },
-            "feedback": "Correct. Configuration is intent; the negotiated group in the handshake is evidence that connections are protected."
+            "text": "Widen in steps and verify from handshakes that the hybrid group was actually negotiated, not just configured."
           },
           {
             "id": "b",
-            "text": "Assume that configured means negotiated.",
-            "consequence": {
-              "hybrid_share": 10,
-              "confidence": -5
-            },
-            "feedback": "Clients that do not offer the hybrid group silently use classical key exchange, so you may protect far less than you think."
+            "text": "Assume that configured means negotiated."
           },
           {
             "id": "c",
-            "text": "Make hybrid mandatory now.",
-            "consequence": {
-              "handshake_success": -20,
-              "hybrid_share": 30
-            },
-            "feedback": "Mandatory hybrid refuses every client that cannot offer it; that is an end state, not a pilot step."
+            "text": "Make hybrid mandatory now."
           }
         ]
       },
@@ -1319,32 +1033,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Isolate the host from the network with the endpoint tool, leave it powered on, and open the incident process.",
-            "consequence": {
-              "systems_safe": -5,
-              "hours_elapsed": 1
-            },
-            "feedback": "Correct. Isolation stops spread while the running machine keeps volatile evidence (memory, processes, connections) that you will need to find the entry point."
+            "text": "Isolate the host from the network with the endpoint tool, leave it powered on, and open the incident process."
           },
           {
             "id": "b",
-            "text": "Pull the power immediately.",
-            "consequence": {
-              "systems_safe": -5,
-              "evidence_preserved": -25,
-              "hours_elapsed": 1
-            },
-            "feedback": "It stops the host, but volatile evidence in memory is lost and encryption keys or malware artefacts that were only in RAM are gone. Network isolation contains just as well and keeps them."
+            "text": "Pull the power immediately."
           },
           {
             "id": "c",
-            "text": "Wipe and reimage the machine so the user can work again.",
-            "consequence": {
-              "systems_safe": -20,
-              "evidence_preserved": -40,
-              "hours_elapsed": 2
-            },
-            "feedback": "Wiping destroys the evidence and does nothing about the other systems the attacker already touched. The entry point stays unknown and the attacker can return."
+            "text": "Wipe and reimage the machine so the user can work again."
           }
         ]
       },
@@ -1355,31 +1052,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Disable the compromised account, block the lateral-movement paths, and use the logs to list which shares were touched.",
-            "consequence": {
-              "systems_safe": -10,
-              "hours_elapsed": 3
-            },
-            "feedback": "Correct. Cutting the attacker's credentials and paths is the containment step, and the logs tell you what must be restored or checked."
+            "text": "Disable the compromised account, block the lateral-movement paths, and use the logs to list which shares were touched."
           },
           {
             "id": "b",
-            "text": "Pay the ransom to get the decryption key quickly.",
-            "consequence": {
-              "systems_safe": -30,
-              "evidence_preserved": -10,
-              "hours_elapsed": 6
-            },
-            "feedback": "Payment does not remove the attacker's access, does not guarantee a working key, funds further attacks, and may raise legal issues. It is not a containment measure."
+            "text": "Pay the ransom to get the decryption key quickly."
           },
           {
             "id": "c",
-            "text": "Wait for more information before acting.",
-            "consequence": {
-              "systems_safe": -35,
-              "hours_elapsed": 8
-            },
-            "feedback": "Ransomware spreads in minutes. Waiting lets it reach more shares; containment should begin on strong indicators and be refined as you learn."
+            "text": "Wait for more information before acting."
           }
         ]
       },
@@ -1390,30 +1071,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Follow the incident plan: the incident manager coordinates, legal and communications are engaged, and there is a single source of status.",
-            "consequence": {
-              "hours_elapsed": 1
-            },
-            "feedback": "Correct. A single coordinated channel avoids contradictory messages and gets legal advice on notification duties early."
+            "text": "Follow the incident plan: the incident manager coordinates, legal and communications are engaged, and there is a single source of status."
           },
           {
             "id": "b",
-            "text": "Let each team handle its own updates informally.",
-            "consequence": {
-              "evidence_preserved": -10,
-              "hours_elapsed": 4
-            },
-            "feedback": "Informal channels produce conflicting accounts and uncontrolled changes to affected systems, which damage evidence and slow the response."
+            "text": "Let each team handle its own updates informally."
           },
           {
             "id": "c",
-            "text": "Post a public status before the facts are verified.",
-            "consequence": {
-              "systems_safe": -5,
-              "evidence_preserved": -5,
-              "hours_elapsed": 2
-            },
-            "feedback": "Unverified public statements can be wrong, may reveal your response to the attacker, and create legal exposure. Communicate externally through the plan, once facts are confirmed."
+            "text": "Post a public status before the facts are verified."
           }
         ]
       },
@@ -1424,32 +1090,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Remove the attacker's access first (accounts, persistence, entry point), verify the backups are clean, then restore in priority order.",
-            "consequence": {
-              "systems_safe": 25,
-              "hours_elapsed": 10
-            },
-            "feedback": "Correct. Restoring before eradication hands the systems straight back to the attacker. Priority order brings the most important services back first."
+            "text": "Remove the attacker's access first (accounts, persistence, entry point), verify the backups are clean, then restore in priority order."
           },
           {
             "id": "b",
-            "text": "Restore everything from backup immediately.",
-            "consequence": {
-              "systems_safe": 5,
-              "evidence_preserved": -15,
-              "hours_elapsed": 4
-            },
-            "feedback": "Fast, but if the entry point and persistence remain the attacker can encrypt the restored systems again, and the restore overwrites artefacts the investigation still needs."
+            "text": "Restore everything from backup immediately."
           },
           {
             "id": "c",
-            "text": "Rebuild every system from scratch without analysis.",
-            "consequence": {
-              "systems_safe": 20,
-              "evidence_preserved": -20,
-              "hours_elapsed": 30
-            },
-            "feedback": "Safe in principle but very slow, and without analysis you still do not know how the attacker got in, so the same hole may be rebuilt."
+            "text": "Rebuild every system from scratch without analysis."
           }
         ]
       },
@@ -1559,32 +1208,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Treat the key as compromised: start revoking and rotating it, and record when it was exposed.",
-            "consequence": {
-              "forgery_risk": -30,
-              "trust_intact": -5,
-              "days_elapsed": 1
-            },
-            "feedback": "Correct. A key that has been public must be assumed copied. Rotation and revocation start immediately, and the exposure window defines which signatures need review."
+            "text": "Treat the key as compromised: start revoking and rotating it, and record when it was exposed."
           },
           {
             "id": "b",
-            "text": "Delete the file in a new commit and force-push.",
-            "consequence": {
-              "trust_intact": -10,
-              "days_elapsed": 1
-            },
-            "feedback": "The key is already in clones, forks, caches and the history others have seen. Deleting it removes nothing from an attacker's copy."
+            "text": "Delete the file in a new commit and force-push."
           },
           {
             "id": "c",
-            "text": "Wait for the next scheduled release to rotate the key.",
-            "consequence": {
-              "forgery_risk": 10,
-              "trust_intact": -10,
-              "days_elapsed": 5
-            },
-            "feedback": "Every day of delay is a day an attacker can sign malicious updates that customers will accept."
+            "text": "Wait for the next scheduled release to rotate the key."
           }
         ]
       },
@@ -1595,32 +1227,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Compare all artefacts signed since the exposure against your build records; re-sign genuine ones with the new key and flag any that have no record.",
-            "consequence": {
-              "forgery_risk": -20,
-              "trust_intact": 5,
-              "days_elapsed": 1
-            },
-            "feedback": "Correct. Build records tell you what you really signed. Anything signed in the window without a record is suspicious."
+            "text": "Compare all artefacts signed since the exposure against your build records; re-sign genuine ones with the new key and flag any that have no record."
           },
           {
             "id": "b",
-            "text": "Assume only the most recent release is affected.",
-            "consequence": {
-              "forgery_risk": -5,
-              "trust_intact": -5
-            },
-            "feedback": "The attacker could have signed anything during the whole exposure window. Without the comparison you cannot know."
+            "text": "Assume only the most recent release is affected."
           },
           {
             "id": "c",
-            "text": "Invalidate everything ever signed, including years of releases, without review.",
-            "consequence": {
-              "forgery_risk": -25,
-              "trust_intact": -25,
-              "days_elapsed": 2
-            },
-            "feedback": "It removes the risk but breaks every customer's installed software and update path for no reason; scope the action to the exposure window."
+            "text": "Invalidate everything ever signed, including years of releases, without review."
           }
         ]
       },
@@ -1631,30 +1246,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Publish a signed advisory and the new key fingerprint through an independent channel, revoke the old key, and run a defined transition period.",
-            "consequence": {
-              "trust_intact": 15,
-              "forgery_risk": -10,
-              "days_elapsed": 1
-            },
-            "feedback": "Correct. Customers need a way to verify the new key that does not depend on the compromised one; an independent channel and a clear timetable give them that."
+            "text": "Publish a signed advisory and the new key fingerprint through an independent channel, revoke the old key, and run a defined transition period."
           },
           {
             "id": "b",
-            "text": "Silently ship the new key in the next update.",
-            "consequence": {
-              "trust_intact": -20,
-              "forgery_risk": 5
-            },
-            "feedback": "An update signed with the old key could be the attacker's. Customers cannot tell a genuine key change from a malicious one."
+            "text": "Silently ship the new key in the next update."
           },
           {
             "id": "c",
-            "text": "Email customers the new key as an attachment.",
-            "consequence": {
-              "trust_intact": -10
-            },
-            "feedback": "Email can be spoofed, which is exactly what an attacker would do. Use a channel the customer can authenticate."
+            "text": "Email customers the new key as an attachment."
           }
         ]
       },
@@ -1665,28 +1265,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Add secret scanning to CI, move signing keys into an HSM or key-management service, use short-lived signing identities, and review who has access.",
-            "consequence": {
-              "forgery_risk": -15,
-              "trust_intact": 10
-            },
-            "feedback": "Correct. Keys that never leave an HSM cannot be committed, short lifetimes limit damage, and scanning catches mistakes early."
+            "text": "Add secret scanning to CI, move signing keys into an HSM or key-management service, use short-lived signing identities, and review who has access."
           },
           {
             "id": "b",
-            "text": "Run a developer awareness session only.",
-            "consequence": {
-              "forgery_risk": -3
-            },
-            "feedback": "Training helps but a single slip still leaks a long-lived key. Controls should make the mistake impossible or harmless."
+            "text": "Run a developer awareness session only."
           },
           {
             "id": "c",
-            "text": "Make the repository private and change nothing else.",
-            "consequence": {
-              "forgery_risk": -2
-            },
-            "feedback": "It hides the symptom. The key is still a long-lived file in source control and the old copies are still out there."
+            "text": "Make the repository private and change nothing else."
           }
         ]
       },
@@ -1771,30 +1358,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Immediately start migrating the customer-facing TLS API, since it's the most visible system.",
-            "consequence": {
-              "readiness_score": -5,
-              "business_continuity_score": -10
-            },
-            "feedback": "Risky — migrating before discovery means you don't actually know your full exposure. You might miss higher-risk systems (like the 20-year-retention data) while working on a lower-priority one."
+            "text": "Immediately start migrating the customer-facing TLS API, since it's the most visible system."
           },
           {
             "id": "b",
-            "text": "Commission a full cryptographic discovery and inventory before touching anything.",
-            "consequence": {
-              "readiness_score": 15,
-              "time_remaining_months": -1
-            },
-            "feedback": "Correct instinct — this is the 'Discover → Inventory' foundation the whole migration process depends on. Costs a month, but every later decision will be evidence-based instead of guesswork."
+            "text": "Commission a full cryptographic discovery and inventory before touching anything."
           },
           {
             "id": "c",
-            "text": "Tell the board quantum computers don't exist yet, so there's no real urgency.",
-            "consequence": {
-              "readiness_score": -15,
-              "business_continuity_score": -5
-            },
-            "feedback": "This ignores Harvest-Now-Decrypt-Later risk — your 20-year data retention requirement means data captured today is already exposed to future decryption. This answer would not survive a real board Q&A."
+            "text": "Tell the board quantum computers don't exist yet, so there's no real urgency."
           }
         ]
       },
@@ -1805,30 +1377,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Migrate everything simultaneously to hit the deadline faster.",
-            "consequence": {
-              "business_continuity_score": -25,
-              "budget_remaining": -30
-            },
-            "feedback": "A 'big bang' migration across 10,000 devices with no piloting is exactly the scenario that causes real production outages — several documented real-world migration failures follow this pattern."
+            "text": "Migrate everything simultaneously to hit the deadline faster."
           },
           {
             "id": "b",
-            "text": "Prioritize by risk: the systems protecting the 20-year-retention financial data first, piloted on a small subset before wider rollout.",
-            "consequence": {
-              "readiness_score": 20,
-              "business_continuity_score": 10
-            },
-            "feedback": "Correct — this follows the Risk-Rank → Prototype → Pilot sequence. The long-lived sensitive data carries the highest HNDL exposure, so it should lead, and piloting protects business continuity."
+            "text": "Prioritize by risk: the systems protecting the 20-year-retention financial data first, piloted on a small subset before wider rollout."
           },
           {
             "id": "c",
-            "text": "Deprioritize everything and focus only on the 500 legacy embedded devices since they're the hardest problem.",
-            "consequence": {
-              "readiness_score": -5,
-              "time_remaining_months": -2
-            },
-            "feedback": "Tackling the hardest, lowest-volume problem first while leaving 9,500 higher-exposure devices unaddressed is a poor use of your limited timeline — sequencing should follow risk and feasibility together, not just difficulty."
+            "text": "Deprioritize everything and focus only on the 500 legacy embedded devices since they're the hardest problem."
           }
         ]
       },
@@ -1839,34 +1396,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "ML-KEM, deployed in hybrid mode alongside the existing classical exchange.",
-            "consequence": {
-              "readiness_score": 15,
-              "business_continuity_score": 5,
-              "chosen_algorithms": {
-                "tls_key_exchange": "ML-KEM (hybrid)"
-              },
-              "hybrid_mode_enabled": true
-            },
-            "feedback": "This is the current best-practice choice — hybrid deployment hedges against both a future quantum break of the classical component AND any early implementation flaw in the newer PQC component."
+            "text": "ML-KEM, deployed in hybrid mode alongside the existing classical exchange."
           },
           {
             "id": "b",
-            "text": "ML-KEM, pure PQC only, dropping the classical fallback immediately for maximum quantum-safety.",
-            "consequence": {
-              "readiness_score": 5,
-              "business_continuity_score": -15
-            },
-            "feedback": "Technically quantum-safe, but abandons crypto-agility's risk-hedging benefit during the period when ML-KEM implementations are still relatively new and less battle-tested than decades-old classical algorithms."
+            "text": "ML-KEM, pure PQC only, dropping the classical fallback immediately for maximum quantum-safety."
           },
           {
             "id": "c",
-            "text": "SLH-DSA for the key exchange, since it's the most conservative option.",
-            "consequence": {
-              "readiness_score": -10,
-              "budget_remaining": -20
-            },
-            "feedback": "Algorithm/purpose mismatch — SLH-DSA is a signature scheme, not a key exchange mechanism. This choice wouldn't even function correctly in a TLS handshake."
+            "text": "SLH-DSA for the key exchange, since it's the most conservative option."
           }
         ]
       },
@@ -1877,30 +1415,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Halt the entire migration until the performance issue is fully resolved for every device tier.",
-            "consequence": {
-              "time_remaining_months": -3,
-              "business_continuity_score": 5
-            },
-            "feedback": "Safe but slow — you have 18 months total and this consumes a lot of it. Reasonable if the impact is severe, but worth checking whether it actually affects user experience meaningfully first."
+            "text": "Halt the entire migration until the performance issue is fully resolved for every device tier."
           },
           {
             "id": "b",
-            "text": "Check whether the latency increase is actually noticeable to end users before deciding whether it's a real problem.",
-            "consequence": {
-              "readiness_score": 10,
-              "business_continuity_score": 10
-            },
-            "feedback": "The disciplined move — the Benchmark phase exists precisely to catch this kind of issue during piloting, on a small scale, before full rollout. Measuring actual user impact (not just raw latency numbers) is how real migration teams make this call."
+            "text": "Check whether the latency increase is actually noticeable to end users before deciding whether it's a real problem."
           },
           {
             "id": "c",
-            "text": "Ignore it and proceed straight to full production rollout across all 10,000 devices.",
-            "consequence": {
-              "business_continuity_score": -20,
-              "readiness_score": -5
-            },
-            "feedback": "Skipping the lesson the pilot was designed to teach — rolling out an unresolved performance issue to your full fleet risks a much larger-scale problem than the one you already detected at small scale."
+            "text": "Ignore it and proceed straight to full production rollout across all 10,000 devices."
           }
         ]
       },
@@ -2038,33 +1561,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Classify data by sensitivity and by how long it must stay secret, and find what is captured in transit or stored under public-key protection.",
-            "consequence": {
-              "exposure_covered": 30,
-              "credibility": 5,
-              "months_used": 1
-            },
-            "feedback": "Correct. Exposure depends on data lifetime and on whether the ciphertext can be captured today (harvest now, decrypt later)."
+            "text": "Classify data by sensitivity and by how long it must stay secret, and find what is captured in transit or stored under public-key protection."
           },
           {
             "id": "b",
-            "text": "List every system alphabetically with equal priority.",
-            "consequence": {
-              "exposure_covered": 10,
-              "credibility": -5,
-              "months_used": 2
-            },
-            "feedback": "Equal priority hides what matters. A threat model ranks by consequence and lifetime."
+            "text": "List every system alphabetically with equal priority."
           },
           {
             "id": "c",
-            "text": "Focus only on the biggest systems.",
-            "consequence": {
-              "exposure_covered": 10,
-              "credibility": -5,
-              "months_used": 1
-            },
-            "feedback": "Size is not exposure: a small archive with 25-year data can matter more than a large short-lived system."
+            "text": "Focus only on the biggest systems."
           }
         ]
       },
@@ -2075,29 +1580,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Shor's algorithm breaks RSA, Diffie-Hellman and elliptic-curve cryptography on a large fault-tolerant machine; Grover's algorithm only gives a quadratic speedup against symmetric keys, so AES-256 and SHA-2/3 remain adequate.",
-            "consequence": {
-              "exposure_covered": 25,
-              "credibility": 10
-            },
-            "feedback": "Correct. The threat is concentrated on public-key key establishment and signatures."
+            "text": "Shor's algorithm breaks RSA, Diffie-Hellman and elliptic-curve cryptography on a large fault-tolerant machine; Grover's algorithm only gives a quadratic speedup against symmetric keys, so AES-256 and SHA-2/3 remain adequate."
           },
           {
             "id": "b",
-            "text": "Double all symmetric key lengths urgently and leave the public-key systems as they are.",
-            "consequence": {
-              "exposure_covered": -5,
-              "credibility": -10
-            },
-            "feedback": "That reverses the priority: public-key systems are the broken ones, and AES-256 already has margin against Grover."
+            "text": "Double all symmetric key lengths urgently and leave the public-key systems as they are."
           },
           {
             "id": "c",
-            "text": "All cryptography is equally broken.",
-            "consequence": {
-              "credibility": -15
-            },
-            "feedback": "This is wrong, and a board member who knows it will stop trusting the rest of the briefing."
+            "text": "All cryptography is equally broken."
           }
         ]
       },
@@ -2108,30 +1599,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Present the planning inequality (is the time until a capable machine shorter than migration time plus data lifetime?) with scenarios, not a single predicted date.",
-            "consequence": {
-              "exposure_covered": 15,
-              "credibility": 10,
-              "months_used": 1
-            },
-            "feedback": "Correct. Nobody can give a reliable date, but the inequality lets you decide using your own migration time and data lifetime."
+            "text": "Present the planning inequality (is the time until a capable machine shorter than migration time plus data lifetime?) with scenarios, not a single predicted date."
           },
           {
             "id": "b",
-            "text": "State a firm date, say 2029, for when encryption breaks.",
-            "consequence": {
-              "credibility": -15
-            },
-            "feedback": "No such date can be defended. Any firm prediction will be challenged and costs you credibility."
+            "text": "State a firm date, say 2029, for when encryption breaks."
           },
           {
             "id": "c",
-            "text": "Say that no one can know, so no action is needed.",
-            "consequence": {
-              "exposure_covered": -5,
-              "credibility": -10
-            },
-            "feedback": "Uncertainty about the date does not remove the need to act on long-lived data that is captured now."
+            "text": "Say that no one can know, so no action is needed."
           }
         ]
       },
@@ -2142,29 +1618,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Tie it to long-lived data and the published policy deadlines, and ask for a cryptographic inventory, a pilot and ownership.",
-            "consequence": {
-              "exposure_covered": 20,
-              "credibility": 10,
-              "months_used": 1
-            },
-            "feedback": "Correct. A specific, bounded request with a reason the board can verify."
+            "text": "Tie it to long-lived data and the published policy deadlines, and ask for a cryptographic inventory, a pilot and ownership."
           },
           {
             "id": "b",
-            "text": "Warn that all encryption will fail and ask for an open budget.",
-            "consequence": {
-              "credibility": -20
-            },
-            "feedback": "Alarmism and an unbounded ask reduce credibility and are easy to refuse."
+            "text": "Warn that all encryption will fail and ask for an open budget."
           },
           {
             "id": "c",
-            "text": "Send a technical paper with no recommendation.",
-            "consequence": {
-              "credibility": -5
-            },
-            "feedback": "Executives need a decision to make, not only information."
+            "text": "Send a technical paper with no recommendation."
           }
         ]
       },
@@ -2271,31 +1733,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Acknowledge it, reproduce locally with statistical timing tests, and treat it as exploitable until disproved.",
-            "consequence": {
-              "key_safety": 10,
-              "customer_trust": 5,
-              "days_open": 2
-            },
-            "feedback": "Correct. Timing differences can be averaged out over many samples, so network jitter does not make a leak safe."
+            "text": "Acknowledge it, reproduce locally with statistical timing tests, and treat it as exploitable until disproved."
           },
           {
             "id": "b",
-            "text": "Dismiss it: network jitter hides any difference.",
-            "consequence": {
-              "key_safety": -10,
-              "customer_trust": -15,
-              "days_open": 1
-            },
-            "feedback": "Attackers repeat measurements and use statistics; remote timing attacks have been demonstrated against real systems."
+            "text": "Dismiss it: network jitter hides any difference."
           },
           {
             "id": "c",
-            "text": "Patch immediately without reproducing.",
-            "consequence": {
-              "days_open": 1
-            },
-            "feedback": "A fix that is not tied to a reproduced cause may leave the leak in place and gives you no regression test."
+            "text": "Patch immediately without reproducing."
           }
         ]
       },
@@ -2306,30 +1752,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Use a constant-time comparison and a constant-time (mask-based) selection of the output secret, or move to a maintained constant-time implementation, and add tests.",
-            "consequence": {
-              "key_safety": 25,
-              "customer_trust": 5,
-              "days_open": 3
-            },
-            "feedback": "Correct. Both the comparison and the choice between the real and the fallback secret must not depend on secret data in time or memory access."
+            "text": "Use a constant-time comparison and a constant-time (mask-based) selection of the output secret, or move to a maintained constant-time implementation, and add tests."
           },
           {
             "id": "b",
-            "text": "Add a random delay to the function.",
-            "consequence": {
-              "key_safety": 3,
-              "customer_trust": -5
-            },
-            "feedback": "Random delay can be averaged away; the dependence on secret data remains."
+            "text": "Add a random delay to the function."
           },
           {
             "id": "c",
-            "text": "Allow the service only from the internal network.",
-            "consequence": {
-              "key_safety": 5
-            },
-            "feedback": "It reduces the number of attackers but not the flaw, and is not available to the customers who run your library."
+            "text": "Allow the service only from the internal network."
           }
         ]
       },
@@ -2340,26 +1771,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Run statistical timing tests in CI with many measurements, and check that compiler optimisations or CPU behaviour have not reintroduced a branch.",
-            "consequence": {
-              "key_safety": 10,
-              "customer_trust": 5
-            },
-            "feedback": "Correct. Constant-time is a property of the compiled code on real hardware, so it needs measurement."
+            "text": "Run statistical timing tests in CI with many measurements, and check that compiler optimisations or CPU behaviour have not reintroduced a branch."
           },
           {
             "id": "b",
-            "text": "Run unit tests that check only that decapsulation is correct.",
-            "consequence": {},
-            "feedback": "Correctness tests do not detect timing differences."
+            "text": "Run unit tests that check only that decapsulation is correct."
           },
           {
             "id": "c",
-            "text": "Rely on code review alone.",
-            "consequence": {
-              "key_safety": 2
-            },
-            "feedback": "Reviewers and compilers both miss secret-dependent branches; measure."
+            "text": "Rely on code review alone."
           }
         ]
       },
@@ -2370,31 +1790,15 @@ export const missionsData: MissionData[] = [
         "choices": [
           {
             "id": "a",
-            "text": "Publish a coordinated advisory with affected versions, the fix, mitigations and credit to the researcher, and advise key rotation where exposure is plausible.",
-            "consequence": {
-              "customer_trust": 15,
-              "key_safety": 5,
-              "days_open": 2
-            },
-            "feedback": "Correct. Users cannot protect themselves from a flaw they do not know about."
+            "text": "Publish a coordinated advisory with affected versions, the fix, mitigations and credit to the researcher, and advise key rotation where exposure is plausible."
           },
           {
             "id": "b",
-            "text": "Ship the fix quietly with no notice.",
-            "consequence": {
-              "customer_trust": -15,
-              "key_safety": -5
-            },
-            "feedback": "Customers on older versions stay vulnerable without knowing, and the silence erodes trust when the issue becomes public."
+            "text": "Ship the fix quietly with no notice."
           },
           {
             "id": "c",
-            "text": "Hold the disclosure until after a marketing event.",
-            "consequence": {
-              "customer_trust": -20,
-              "days_open": 14
-            },
-            "feedback": "Delaying disclosure for convenience prolongs customers' exposure."
+            "text": "Hold the disclosure until after a marketing event."
           }
         ]
       },

@@ -470,6 +470,14 @@ writeOut(
 );
 console.log(`Saved ${badges.length} badges and ${certificates.length} certificates.`);
 
+// The browser never receives answer keys, feedback or consequences: the server grades labs and missions.
+function publicScenario(sc) {
+  return { ...sc, choices: sc.choices.map(({ id, text }) => ({ id, text })) };
+}
+function publicMission(m) {
+  return { ...m, stages: m.stages.map((st) => (st.choices ? { ...st, choices: st.choices.map(({ id, text }) => ({ id, text })) } : st)) };
+}
+
 // -------------------------------------------------------------
 // 4. COMPILE MISSIONS
 // -------------------------------------------------------------
@@ -515,7 +523,7 @@ export interface MissionOutcome {
 export interface MissionData {\n  mission_id: string;\n  title: string;\n  type: 'simulation' | 'decision_scenario';\n  linked_module_id: string;
   section_id?: string;
   hud?: MissionHud[];
-  outcome?: MissionOutcome;\n  role: string;\n  objective: string;\n  environment: string;\n  state_variables: Record<string, unknown>;\n  stages: Record<string, unknown>[];\n  resolution?: Record<string, unknown>;\n  replayability_note?: string;\n  rewards?: Record<string, unknown>;\n  [key: string]: unknown;\n}\n\nexport const missionsData: MissionData[] = ${JSON.stringify(missions, null, 2)};\n`
+  outcome?: MissionOutcome;\n  role: string;\n  objective: string;\n  environment: string;\n  state_variables: Record<string, unknown>;\n  stages: Record<string, unknown>[];\n  resolution?: Record<string, unknown>;\n  replayability_note?: string;\n  rewards?: Record<string, unknown>;\n  [key: string]: unknown;\n}\n\nexport const missionsData: MissionData[] = ${JSON.stringify(missions.map(publicMission), null, 2)};\n`
 );
 console.log(`Saved ${missions.length} missions.`);
 
@@ -535,8 +543,8 @@ if (fs.existsSync(labPath)) {
 
 writeOut(
   path.join(FRONTEND_DATA, 'escapeRoomData.ts'),
-  `// Generated from content/Labs/escape_room_scenarios.json\nexport interface EscapeScenarioChoice {\n  id: string;\n  text: string;\n  correct: boolean;\n  feedback: string;\n}\n\nexport interface EscapeRoomScenario {\n  id: string;\n  title: string;\n  module_id: string;
-  section_id: string;\n  difficulty: 'novice' | 'intermediate' | 'professional' | 'expert' | 'quantum_expert';\n  setup: string;\n  prompt: string;\n  choices: EscapeScenarioChoice[];\n  badge_awarded: string;\n  mission_xp_awarded: number;\n}\n\nexport const escapeRoomScenarios: EscapeRoomScenario[] = ${JSON.stringify(escapeRooms, null, 2)};\n`
+  `// Generated from content/Labs/escape_room_scenarios.json\nexport interface EscapeScenarioChoice {\n  id: string;\n  text: string;\n}\n\nexport interface EscapeRoomScenario {\n  id: string;\n  title: string;\n  module_id: string;
+  section_id: string;\n  difficulty: 'novice' | 'intermediate' | 'professional' | 'expert' | 'quantum_expert';\n  setup: string;\n  prompt: string;\n  choices: EscapeScenarioChoice[];\n  badge_awarded: string;\n  mission_xp_awarded: number;\n}\n\nexport const escapeRoomScenarios: EscapeRoomScenario[] = ${JSON.stringify(escapeRooms.map(publicScenario), null, 2)};\n`
 );
 console.log(`Saved ${escapeRooms.length} escape room scenarios.`);
 

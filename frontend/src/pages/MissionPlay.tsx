@@ -13,11 +13,11 @@ import { missionsData, MissionData } from '@/data/missionsData';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 import { Button } from '@/components/ui/Button';
 import { DecisionMissionEngine } from '@/features/missions/DecisionMissionEngine';
+import { decideBB84, startBB84Run, type BB84Decision } from '@/services/activityApi';
 
 export const MissionPlay: React.FC = () => {
   const { missionId } = useParams<{ missionId: string }>();
   const navigate = useNavigate();
-  const { completeMission } = useCurriculumStore();
 
   const mission = missionsData.find((m) => m.mission_id === missionId) || missionsData[0];
 
@@ -155,9 +155,9 @@ export const MissionPlay: React.FC = () => {
       {/* Mission Content Router: Simulation (BB84) vs Decision Scenario */}
       <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '32px 20px 80px' }}>
         {mission.type === 'simulation' ? (
-          <BB84SimulationEngine key={mission.mission_id} mission={mission} onFinished={completeMission} backTo={backTo} />
+          <BB84SimulationEngine key={mission.mission_id} mission={mission} backTo={backTo} />
         ) : (
-          <DecisionMissionEngine key={mission.mission_id} mission={mission} onFinished={completeMission} onBack={handleExit} backLabel="Back to the lesson" />
+          <DecisionMissionEngine key={mission.mission_id} mission={mission} onBack={handleExit} backLabel="Back to the lesson" />
         )}
       </div>
     </div>
@@ -170,11 +170,11 @@ export const MissionPlay: React.FC = () => {
 interface SimulationProps {
   mission: MissionData;
   backTo: string;
-  onFinished: (id: string, badgeName?: string, xp?: number) => void;
 }
 
-const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished, backTo }) => {
+const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, backTo }) => {
   const navigate = useNavigate();
+  const { recordActivityAward } = useCurriculumStore();
   const [stage, setStage] = useState<number>(1);
   const [photonCount, setPhotonCount] = useState<number>(30);
   const [aliceBits, setAliceBits] = useState<number[]>([]);
@@ -185,47 +185,32 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished, 
   const [sampleSize, setSampleSize] = useState<number>(8);
   const [errorRate, setErrorRate] = useState<number>(0);
   const [decision, setDecision] = useState<'accept' | 'abort' | null>(null);
-  const [evePresent, setEvePresent] = useState<boolean>(() => Math.random() < 0.5);
+  // The server generates the transmission and keeps the eavesdropper flag secret until the decision is made.
+  const [runId, setRunId] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
+  const [apiError, setApiError] = useState<string | null>(null);
+  const [outcome, setOutcome] = useState<BB84Decision | null>(null);
 
-  const badgeName = (mission.rewards?.badge_awarded as string) || 'QKD Defender';
-  const missionXp = (mission.rewards?.mission_xp_awarded as number) || 85;
 
   // Stage 1: Run transmission
-  const startTransmission = () => {
-    const bits: number[] = [];
-    const aBases: string[] = [];
-    const bBases: string[] = [];
-    const results: number[] = [];
-    const sifted: number[] = [];
-
-    for (let i = 0; i < photonCount; i++) {
-      const bit = Math.random() > 0.5 ? 1 : 0;
-      const aBase = Math.random() > 0.5 ? '+' : 'x';
-      const bBase = Math.random() > 0.5 ? '+' : 'x';
-
-      bits.push(bit);
-      aBases.push(aBase);
-      bBases.push(bBase);
-
-      // Quantum measurement behavior:
-      // If bases match, result = bit (with minor noise or eavesdropping disturbance)
-      // If bases mismatch, result = uniform random 50/50
-      if (aBase === bBase) {
-        // Eve present induces 25% error on matched bases
-        const hasEveDisturbed = evePresent && Math.random() < 0.25;
-        results.push(hasEveDisturbed ? 1 - bit : bit);
-        sifted.push(i);
-      } else {
-        results.push(Math.random() > 0.5 ? 1 : 0);
-      }
+  const startTransmission = async () => {
+    if (busy) return;
+    setBusy(true);
+    setApiError(null);
+    try {
+      const run = await startBB84Run(mission.mission_id, photonCount);
+      setRunId(run.run_id);
+      setAliceBits(run.alice_bits);
+      setAliceBases(run.alice_bases);
+      setBobBases(run.bob_bases);
+      setBobResults(run.bob_results);
+      setSiftedIndices(run.sifted);
+      setStage(2);
+    } catch {
+      setApiError('Could not start the transmission on the server. Check your connection and retry.');
+    } finally {
+      setBusy(false);
     }
-
-    setAliceBits(bits);
-    setAliceBases(aBases);
-    setBobBases(bBases);
-    setBobResults(results);
-    setSiftedIndices(sifted);
-    setStage(2);
   };
 
   // Stage 4: Estimate error rate
@@ -243,16 +228,25 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished, 
     setErrorRate(calculatedRate);
   };
 
-  const handleDecision = (choice: 'accept' | 'abort') => {
-    setDecision(choice);
-    setStage(5);
-    const isCorrect = (choice === 'abort' && errorRate > 10) || (choice === 'accept' && errorRate <= 10);
-    if (isCorrect) {
-      onFinished(mission.mission_id, badgeName, missionXp);
+  const handleDecision = async (choice: 'accept' | 'abort') => {
+    if (!runId || busy) return;
+    setBusy(true);
+    setApiError(null);
+    try {
+      const r = await decideBB84(runId, sampleSize, choice);
+      setDecision(choice);
+      setErrorRate(r.error_rate);
+      setOutcome(r);
+      if (r.awarded) recordActivityAward('mission', mission.mission_id, r.awarded);
+      setStage(5);
+    } catch {
+      setApiError('The server could not record your decision. Try again.');
+    } finally {
+      setBusy(false);
     }
   };
 
-  const isDecisionCorrect = decision !== null && ((decision === 'abort' && errorRate > 10) || (decision === 'accept' && errorRate <= 10));
+  const isDecisionCorrect = outcome?.correct === true;
 
   return (
     <div>
@@ -295,6 +289,12 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished, 
         </div>
       </div>
 
+      {apiError && (
+        <div role="alert" style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid #ef4444', color: '#fecaca', marginBottom: '16px' }}>
+          {apiError}
+        </div>
+      )}
+
       {/* STAGE 1: Briefing & Transmission Setup */}
       {stage === 1 && (
         <div style={{ backgroundColor: 'var(--cyber-surface, #121827)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' }}>
@@ -323,7 +323,7 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished, 
             />
           </div>
 
-          <Button variant="primary" onClick={startTransmission}>
+          <Button variant="primary" onClick={() => void startTransmission()} disabled={busy}>
             Begin Photon Transmission →
           </Button>
         </div>
@@ -451,7 +451,7 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished, 
 
           <div style={{ display: 'flex', gap: '14px' }}>
             <button
-              onClick={() => handleDecision('abort')}
+              onClick={() => void handleDecision('abort')}
               style={{
                 flex: 1,
                 padding: '14px',
@@ -466,7 +466,7 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished, 
               ABORT KEY (Eavesdropping Detected)
             </button>
             <button
-              onClick={() => handleDecision('accept')}
+              onClick={() => void handleDecision('accept')}
               style={{
                 flex: 1,
                 padding: '14px',
@@ -509,9 +509,11 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished, 
                     Lab Badge Awarded
                   </div>
                   <div style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc' }}>
-                    {badgeName}
+                    {outcome?.awarded?.badge ?? (mission.rewards?.badge_awarded as string)}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>+{missionXp} XP added to User Profile</div>
+                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                    {outcome?.awarded ? `+${outcome.awarded.xp} XP recorded by the server` : 'Already earned: awarded the first time'}
+                  </div>
                 </div>
               </div>
             </>
@@ -541,7 +543,8 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, onFinished, 
                 setStage(1);
                 setDecision(null);
                 setErrorRate(0);
-                setEvePresent(Math.random() < 0.5);
+                setRunId(null);
+                setOutcome(null);
                 setAliceBits([]);
                 setAliceBases([]);
                 setBobBases([]);

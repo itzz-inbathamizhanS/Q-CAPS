@@ -22,8 +22,10 @@ interface CurriculumState {
   completeQuiz: (moduleId: string, scorePercent: number, badgeName?: string, xpEarned?: number) => void;
   markModuleRead: (moduleId: string) => void;
   unlockBadge: (badgeName: string, xp?: number) => void;
-  completeEscape: (escapeId: string, badgeName?: string, xp?: number) => void;
-  completeMission: (missionId: string, badgeName?: string, xp?: number) => void;
+  /** Mirror the server's record of completed practice labs and missions (the server owns XP and badges for them). */
+  applyActivityProgress: (p: { completed_labs: string[]; completed_missions: string[]; badges: string[] }) => void;
+  /** Show an award the server has just granted. */
+  recordActivityAward: (kind: 'lab' | 'mission', id: string, award: { xp: number; badge: string | null }) => void;
   completeCapstone: (capstoneId: string, xp?: number) => void;
   isModuleUnlocked: (moduleId: string) => boolean;
   isModuleCompleted: (moduleId: string) => boolean;
@@ -196,42 +198,27 @@ export const useCurriculumStore = create<CurriculumState>()(
     });
   },
 
-  completeEscape: (escapeId, badgeName, xp = 0) => {
-    set((state) => {
-      if (state.completedEscapes.includes(escapeId)) return state;
-      const newBadges = badgeName && !state.unlockedBadges.includes(badgeName)
-        ? [...state.unlockedBadges, badgeName]
-        : state.unlockedBadges;
-        
-      const streakData = updateStreak(state.streakDays, state.lastActivityDate);
-        
-      const newState = {
-        ...state,
-        completedEscapes: [...state.completedEscapes, escapeId],
-        unlockedBadges: newBadges,
-        totalXp: state.totalXp + (xp ?? 0),
-        ...streakData
-      };
-      persistToBackend(newState);
-      return newState;
-    });
+  applyActivityProgress: (p) => {
+    set((state) => ({
+      ...state,
+      completedEscapes: p.completed_labs,
+      completedMissions: p.completed_missions,
+      unlockedBadges: Array.from(new Set([...state.unlockedBadges, ...p.badges])),
+    }));
   },
 
-  completeMission: (missionId, badgeName, xp = 0) => {
+  recordActivityAward: (kind, id, award) => {
     set((state) => {
-      if (state.completedMissions.includes(missionId)) return state;
-      const newBadges = badgeName && !state.unlockedBadges.includes(badgeName)
-        ? [...state.unlockedBadges, badgeName]
-        : state.unlockedBadges;
-        
+      const list = kind === 'lab' ? state.completedEscapes : state.completedMissions;
+      if (list.includes(id)) return state;
       const streakData = updateStreak(state.streakDays, state.lastActivityDate);
-        
       const newState = {
         ...state,
-        completedMissions: [...state.completedMissions, missionId],
-        unlockedBadges: newBadges,
-        totalXp: state.totalXp + (xp ?? 0),
-        ...streakData
+        completedEscapes: kind === 'lab' ? [...state.completedEscapes, id] : state.completedEscapes,
+        completedMissions: kind === 'mission' ? [...state.completedMissions, id] : state.completedMissions,
+        unlockedBadges: award.badge && !state.unlockedBadges.includes(award.badge) ? [...state.unlockedBadges, award.badge] : state.unlockedBadges,
+        totalXp: state.totalXp + award.xp,
+        ...streakData,
       };
       persistToBackend(newState);
       return newState;

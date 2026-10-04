@@ -416,3 +416,19 @@ These require evidence before any novelty claim can be made.
 8. **Performance work:** lazy-loaded routes, moving quiz data to the API, paginated leaderboard queries, and an async scanner.
 9. **UI/UX polish,** labeling Community as demo data until it's real.
 10. **Research instrumentation:** pre/post assessment and recommendation logs.
+
+## 24. Practice labs and missions (added 2026-10-04)
+
+Practice labs (branching scenarios) and missions are shown inside the lesson section they belong to (`section_id` in `content/Labs/escape_room_scenarios.json` and `content/Mission/mission_*.json`); there is no standalone list page.
+
+The **server is authoritative** (`backend/main_api/activities/`):
+
+| Endpoint | Purpose |
+|---|---|
+| `GET /api/activities/me` | completed labs and missions, badges, XP of the caller |
+| `POST /api/activities/labs/{id}/answer` | grades one answer, returns feedback, awards XP and the badge once per user |
+| `POST /api/activities/missions/{id}/runs` | starts a run; for the BB84 simulation the server generates the transmission and keeps the eavesdropper flag secret |
+| `POST /api/activities/missions/runs/{run_id}/choose` | applies a decision's consequences on the server; the final choice returns the outcome band and any award (success or partial only) |
+| `POST /api/activities/missions/runs/{run_id}/decide` | BB84: recomputes the error rate from the server-held data and grades accept or abort |
+
+Answer keys, feedback and consequences are removed from the data compiled into the browser bundle (`frontend/scripts/compile-content.cjs`), so they cannot be read client-side. XP goes into `users.xp` and each award is stored once in `activity_completions`. Limits: labs allow retries (rate limited), so an answer can be found by trying the options; the client's `totalXp` and badge list remain a display cache that also receives quiz XP from the older client-side flow (not yet moved to the server).
