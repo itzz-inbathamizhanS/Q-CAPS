@@ -1,0 +1,1268 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B04",
+      "title": "FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B92",
+      "title": "FIPS 204: Module-Lattice-Based Digital Signature Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B93",
+      "title": "FIPS 205: Stateless Hash-Based Digital Signature Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B95",
+      "title": "NIST SP 800-227: Recommendations for Key-Encapsulation Mechanisms",
+      "authors": "Alagic, Barker, Chen, Moody, Robinson, Silberg, Waller",
+      "edition": "September 2025",
+      "year": 2025,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B90",
+      "title": "kyber-py: a pure Python implementation of ML-KEM (FIPS 203), version 1.2.0 (PyPI package metadata)",
+      "authors": "Package authors",
+      "edition": "1.2.0",
+      "year": 2025
+    },
+    {
+      "id": "B91",
+      "title": "dilithium-py: a pure Python implementation of ML-DSA (FIPS 204), version 1.4.0 (PyPI package metadata)",
+      "authors": "Package authors",
+      "edition": "1.4.0",
+      "year": 2025
+    },
+    {
+      "id": "B100",
+      "title": "cryptography (Python package) version 50.0.1, with ML-KEM and ML-DSA backed by OpenSSL",
+      "authors": "Python Cryptographic Authority",
+      "edition": "50.0.1",
+      "year": 2026
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_c_c9_pqc_implementation_engineering",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "9.1 ML-KEM Implementation",
+          "summary": "How an ML-KEM key is laid out, why the 64-byte seed is the real private key, and how to check every field of a decapsulation key.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "FIPS 203 specifies ML-KEM as three algorithms (KeyGen, Encaps, Decaps) built on an internal public-key scheme K-PKE, and it is strict about how they may be used. K-PKE **must not** be used as a stand-alone encryption scheme; only the three ML-KEM algorithms are approved, and the internal deterministic functions (KeyGen_internal, Encaps_internal, Decaps_internal) **should not be exposed to applications** other than for testing, because the randomness has to be generated inside the cryptographic module (FIPS 203, section 3.3). A conforming implementation may replace the specified steps by any mathematically equivalent procedure, so the standard fixes *behaviour*, not code structure.\n\nThe key formats are fixed. The encapsulation key is ek = (k polynomials in 384·k bytes) ‖ ρ (32 bytes); the decapsulation key is dk = dk_PKE (384·k bytes) ‖ ek ‖ H(ek) (32 bytes) ‖ z (32 bytes), where ρ comes from G(d ‖ k), H is SHA3-256 and z is a secret value used for rejection (section 7.1). Key generation draws two 32-byte strings d and z, and the pair (d, z) determines every other byte. The listing checks all of this on the three parameter sets: the key derived from a seed is reproducible, ek ends with ρ = G(d ‖ k), dk has the stated four-part layout, H(ek) is the SHA3-256 of the embedded ek, and z is the second half of the seed. The labs use the pure-Python reference libraries kyber-py (ML-KEM) and dilithium-py (ML-DSA), and `cryptography` 50.0.1 (OpenSSL) as an independent implementation. Everything runs on your own machine on keys generated in the lesson. The code teaches how implementations are structured and tested; it is reference code, slow and not hardened against side channels, and must not protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-mlkem-layout",
+              "language": "python",
+              "code": "import hashlib\nfrom kyber_py.ml_kem import ML_KEM_512, ML_KEM_768, ML_KEM_1024\n\nprint(f\"{'parameter set':<12} {'deterministic':>14} {'ek ends with rho':>17} {'dk = dk_pke|ek|H(ek)|z':>24} {'H(ek) = SHA3-256':>17} {'z is the seed tail':>19} {'round trip':>11}\")\nfor name, kem in ((\"ML-KEM-512\", ML_KEM_512), (\"ML-KEM-768\", ML_KEM_768), (\"ML-KEM-1024\", ML_KEM_1024)):\n    k = kem.k\n    seed = bytes(range(64))                                                     # d (32 bytes) followed by z (32 bytes); a fixed value for the lesson only\n    d, z = seed[:32], seed[32:]\n    ek, dk = kem.key_derive(seed)\n    deterministic = (ek, dk) == kem.key_derive(seed) and (ek, dk) != kem.key_derive(bytes(reversed(seed)))\n    rho = hashlib.sha3_512(d + bytes([k])).digest()[:32]                        # (rho, sigma) = G(d || k): rho seeds the public matrix\n    layout = dk[384 * k:768 * k + 32] == ek and len(dk) == 768 * k + 96         # dk = dk_pke (384k) | ek (384k + 32) | H(ek) (32) | z (32)\n    key, ct = kem.encaps(ek)\n    print(f\"{name:<12} {str(deterministic):>14} {str(ek[-32:] == rho):>17} {str(layout):>24} {str(dk[768 * k + 32:768 * k + 64] == hashlib.sha3_256(ek).digest()):>17} {str(dk[-32:] == z):>19} {str(kem.decaps(dk, ct) == key):>11}\")\nprint(\"the 64-byte seed (d, z) is the complete private key: the whole dk can be regenerated from it, so storing the seed is the compact and auditable form\")\nprint(\"two fresh key pairs differ:\", ML_KEM_768.keygen()[0] != ML_KEM_768.keygen()[0])"
+            },
+            {
+              "type": "code",
+              "id": "o-c-mlkem-layout",
+              "language": "text",
+              "code": "parameter set  deterministic  ek ends with rho   dk = dk_pke|ek|H(ek)|z  H(ek) = SHA3-256  z is the seed tail  round trip\nML-KEM-512             True              True                     True              True                True        True\nML-KEM-768             True              True                     True              True                True        True\nML-KEM-1024            True              True                     True              True                True        True\nthe 64-byte seed (d, z) is the complete private key: the whole dk can be regenerated from it, so storing the seed is the compact and auditable form\ntwo fresh key pairs differ: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Every structural property holds for ML-KEM-512, -768 and -1024. The practical consequence is that a **64-byte seed is the complete private key**: the whole decapsulation key (1,632 to 3,168 bytes) can be regenerated from it, which makes backup, audit and recovery simpler, and storing only the seed is the format modern key-management interfaces prefer (the OpenSSL-based API used in 9.11 exposes keys exactly this way). The trade-off is that regenerating the key costs a key generation each time it is needed, and the seed must then be protected exactly like the key.\n\n**Common mistakes:** exposing a function that takes the randomness as a parameter (it makes the secret-dependent value controllable by a caller; keep it for known-answer tests only), reusing d or z across keys, and confusing the roles of the two seed halves: d determines the lattice keys, while z only affects what is returned for invalid ciphertexts (9.5)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the layout of an ML-KEM decapsulation key?",
+              "options": [
+                "dk_PKE | ek | H(ek) | z",
+                "ek | z only",
+                "seed | ciphertext"
+              ],
+              "correct_index": 0,
+              "explanation": "The listing verifies each part and its length for all three parameter sets."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is the 64-byte (d, z) seed the 'real' private key?",
+              "options": [
+                "Every other key byte is a deterministic function of it",
+                "It is used to encrypt the key",
+                "It is the only part that is secret in the key pair"
+              ],
+              "correct_index": 0,
+              "explanation": "key_derive regenerates the identical (ek, dk) from the seed."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why should the deterministic internal functions not be exposed to applications?",
+              "options": [
+                "The randomness must be generated inside the module; a caller-chosen value would compromise the scheme",
+                "They are slower",
+                "They are patented"
+              ],
+              "correct_index": 0,
+              "explanation": "FIPS 203 section 3.3 restricts them to testing."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 3.3 (requirements for implementations: K-PKE only as a component, controlled access to internal functions, equivalent implementations) and Section 7.1 (ML-KEM key generation and the key layout)"
+            },
+            {
+              "book": "B90",
+              "locator": "kyber-py: ML_KEM_512, ML_KEM_768, ML_KEM_1024 key_derive and keygen, used to check the layout"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement that seed-only private key storage is what modern key-management interfaces prefer is general practice and was not sourced; the layout facts are checked in the listing and match FIPS 203 section 7.1."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "9.2 ML-DSA Implementation",
+          "summary": "ML-DSA key and signature structure, deterministic versus hedged signing, context strings and signature rejection, all verified.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "ML-DSA (FIPS 204) is a lattice signature in the Fiat-Shamir-with-aborts style. A public key is ρ (32 bytes, the seed of the public matrix) followed by the packed high bits t1 of the key vector; a private key starts with ρ, a 32-byte secret K and tr = SHAKE256(pk, 64 bytes), followed by the packed secret vectors. Signing computes a message representative from tr, the context and the message, and then repeats a **rejection-sampling loop** until the candidate signature does not leak information about the secret; the number of rounds varies from one signature to the next, which affects timing but not security when done correctly (see C10). The standard offers a **deterministic** variant (all randomness derived from the key and message) and a **hedged** variant that mixes in 32 fresh random bytes, and the hedged one is the default because it also protects against some fault attacks (FIPS 204; the choice between them is part of the signing interface).\n\nSignatures can carry a **context string** of at most 255 bytes that is bound into the signed data, so a signature made for one purpose cannot be replayed for another. The listing verifies the key structure for all three sets and the relation tr = SHAKE256(pk, 64), shows that deterministic signing repeats while hedged signing does not, that every signature verifies, and tests context binding and single-bit corruption. The labs use the pure-Python reference libraries kyber-py (ML-KEM) and dilithium-py (ML-DSA), and `cryptography` 50.0.1 (OpenSSL) as an independent implementation. Everything runs on your own machine on keys generated in the lesson. The code teaches how implementations are structured and tested; it is reference code, slow and not hardened against side channels, and must not protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-mldsa-structure",
+              "language": "python",
+              "code": "import hashlib, inspect\nfrom dilithium_py.ml_dsa import ML_DSA_44, ML_DSA_65, ML_DSA_87\n\nprint(\"sign signature in this library:\", inspect.signature(ML_DSA_65.sign))\nprint(f\"{'parameter set':<10} {'pk starts with rho':>19} {'tr = SHAKE256(pk, 64)':>22} {'pk_from_sk':>11} {'deterministic repeats':>22} {'hedged differs':>15} {'all verify':>11}\")\nfor name, dsa in ((\"ML-DSA-44\", ML_DSA_44), (\"ML-DSA-65\", ML_DSA_65), (\"ML-DSA-87\", ML_DSA_87)):\n    pk, sk = dsa.key_derive(bytes(range(32)))\n    tr = hashlib.shake_256(pk).digest(64)\n    m = b\"firmware image 2026.10\"\n    d1, d2 = dsa.sign(sk, m, deterministic=True), dsa.sign(sk, m, deterministic=True)\n    h1, h2 = dsa.sign(sk, m), dsa.sign(sk, m)\n    print(f\"{name:<10} {str(pk[:32] == sk[:32]):>19} {str(sk[64:128] == tr):>22} {str(dsa.pk_from_sk(sk) == pk):>11} {str(d1 == d2):>22} {str(h1 != h2):>15} {str(all(dsa.verify(pk, m, s) for s in (d1, d2, h1, h2))):>11}\")\n\ndsa = ML_DSA_65\npk, sk = dsa.key_derive(bytes(range(32)))\nm = b\"release 7.2\"\nsig = dsa.sign(sk, m, ctx=b\"firmware-update\")\nprint()\nprint(\"context string binds a signature to its purpose: verifies with the right context\", dsa.verify(pk, m, sig, ctx=b\"firmware-update\"), \"| wrong context\", dsa.verify(pk, m, sig, ctx=b\"login\"), \"| no context\", dsa.verify(pk, m, sig))\ntry:\n    dsa.sign(sk, m, ctx=bytes(256))\n    print(\"context of 256 bytes accepted\")\nexcept Exception as exc:\n    print(\"context longer than 255 bytes rejected:\", type(exc).__name__)\npositions = range(0, len(sig), 11)\nrejected = sum(not dsa.verify(pk, m, sig[:i] + bytes([sig[i] ^ 1]) + sig[i + 1:], ctx=b\"firmware-update\") for i in positions)\nprint(f\"single-bit flips at {len(positions)} positions across the {len(sig):,}-byte signature: {rejected} rejected\")\nprint(\"a signature does not verify under another key or another message:\", not dsa.verify(dsa.key_derive(bytes(32))[0], m, sig, ctx=b\"firmware-update\"), not dsa.verify(pk, m + b\"!\", sig, ctx=b\"firmware-update\"))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-mldsa-structure",
+              "language": "text",
+              "code": "sign signature in this library: (sk: bytes, m: bytes, ctx: bytes = b'', deterministic: bool = False) -> bytes\nparameter set  pk starts with rho  tr = SHAKE256(pk, 64)  pk_from_sk  deterministic repeats  hedged differs  all verify\nML-DSA-44                 True                   True        True                   True            True        True\nML-DSA-65                 True                   True        True                   True            True        True\nML-DSA-87                 True                   True        True                   True            True        True\n\ncontext string binds a signature to its purpose: verifies with the right context True | wrong context False | no context False\ncontext longer than 255 bytes rejected: ValueError\nsingle-bit flips at 301 positions across the 3,309-byte signature: 301 rejected\na signature does not verify under another key or another message: True True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "For all three sets pk begins with ρ, the private key stores ρ in its first 32 bytes and tr = SHAKE256(pk) at offset 64, and the public key can be recomputed from the private key. Deterministic signing returns the identical signature each time, hedged signing never repeats, and all four verify. The context behaves as intended: a signature for the context \"firmware-update\" verifies only under that context; a context of 256 bytes is rejected at signing time; and corrupting any one of 301 sampled bit positions of the 3,309-byte signature makes verification fail.\n\n**Engineering points.** (1) Use a different context string for each protocol or purpose; that costs nothing and removes cross-protocol replay. (2) Prefer the hedged variant unless a deterministic signature is a requirement (for example for reproducible test vectors), and never mix the two in one deployment without a reason. (3) The rejection loop makes signing time variable by design; the variability must not depend on secret data beyond what the algorithm's proof allows."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the tr value in an ML-DSA private key equal?",
+              "options": [
+                "SHAKE256 of the public key (64 bytes)",
+                "A hash of the message",
+                "The secret key seed"
+              ],
+              "correct_index": 0,
+              "explanation": "The listing checks sk[64:128] == SHAKE256(pk, 64)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the purpose of the context string?",
+              "options": [
+                "To bind a signature to its purpose so it cannot be replayed elsewhere",
+                "To encrypt the message",
+                "To shorten the signature"
+              ],
+              "correct_index": 0,
+              "explanation": "A signature made for one context does not verify under another."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "How do deterministic and hedged signing differ?",
+              "options": [
+                "Deterministic repeats for the same input; hedged mixes in fresh randomness",
+                "Hedged signatures are shorter",
+                "Deterministic signatures cannot be verified"
+              ],
+              "correct_index": 0,
+              "explanation": "Both verify; only the hedged variant differs from run to run."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B92",
+              "locator": "FIPS 204: ML-DSA key generation, signing (hedged and deterministic variants, context string of at most 255 bytes, rejection sampling) and verification; Table 2 (sizes)"
+            },
+            {
+              "book": "B91",
+              "locator": "dilithium-py: ML_DSA_44/65/87 key_derive, sign (ctx, deterministic) and verify, used to check the structure"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The remark that the hedged variant also protects against some fault attacks is stated from general knowledge about the design and was not checked against FIPS 204 text. Details of the rejection loop are described, not demonstrated."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "9.3 SLH-DSA Implementation",
+          "summary": "A toy stateful hash-based signer showing the structure of such code (WOTS chains, Merkle tree, index state) and why state handling is the main engineering risk, plus estimated hash-call counts for the FIPS 205 sets.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "SLH-DSA (FIPS 205) is **stateless**: a signer does not have to remember which one-time keys it has used, because it signs with a pseudo-randomly chosen leaf of a very large hypertree and a few-time FORS signature at the bottom. Its implementation is dominated by **hash calls**: the signer recomputes whole XMSS subtrees (which makes signing slow, especially for the \"s\" parameter sets) while the verifier recomputes only the chain tails and authentication paths (which makes verification fast). There is no big-number or polynomial arithmetic at all, which makes the code small and the security argument simple, and implementations differ mostly in how they parallelise and batch the hash function.\n\nThere is no SLH-DSA implementation available in this lab, so the listing builds a **toy stateful** scheme (the structure of XMSS: WOTS chains with a checksum, a Merkle tree of 16 one-time keys, a counter that must be advanced before a signature is released) to show what the code looks like and what goes wrong when state is mishandled. It is not SLH-DSA and is not interoperable. It then estimates the hash-call cost per signature for four FIPS 205 sets from the structure; these estimates are my own derivation and not taken from the standard. The labs use the pure-Python reference libraries kyber-py (ML-KEM) and dilithium-py (ML-DSA), and `cryptography` 50.0.1 (OpenSSL) as an independent implementation. Everything runs on your own machine on keys generated in the lesson. The code teaches how implementations are structured and tested; it is reference code, slow and not hardened against side channels, and must not protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-toy-xmss",
+              "language": "python",
+              "code": "import hashlib, math\n\n# A toy stateful hash-based signature (WOTS chains plus a Merkle tree of 16 keys). It is NOT SLH-DSA: it only shows how such code is structured.\ncounter = {\"hash\": 0}\ndef H(data):\n    counter[\"hash\"] += 1\n    return hashlib.sha256(data).digest()\nW, LEN1, LEN2 = 16, 64, 3                                              # 4 bits per digit: 64 message digits and 3 checksum digits\ndef chain(x, start, steps, tag):\n    for i in range(start, start + steps):\n        x = H(tag + bytes([i]) + x)\n    return x\ndef digits(msg_digest):\n    ds = [v for byte in msg_digest for v in (byte >> 4, byte & 15)]\n    checksum = sum(W - 1 - d for d in ds)\n    return ds + [(checksum >> 8) & 15, (checksum >> 4) & 15, checksum & 15]\ndef wots_secret(seed, leaf, i):\n    return hashlib.sha256(seed + leaf.to_bytes(4, \"big\") + bytes([i])).digest()\ndef wots_public(seed, leaf):\n    tops = [chain(wots_secret(seed, leaf, i), 0, W - 1, bytes([i])) for i in range(LEN1 + LEN2)]\n    return H(b\"\".join(tops))\ndef wots_sign(seed, leaf, msg_digest):\n    return [chain(wots_secret(seed, leaf, i), 0, d, bytes([i])) for i, d in enumerate(digits(msg_digest))]\ndef wots_public_from_sig(sig, msg_digest):\n    tops = [chain(s, d, W - 1 - d, bytes([i])) for i, (s, d) in enumerate(zip(sig, digits(msg_digest)))]\n    return H(b\"\".join(tops))\n\nHEIGHT = 4\nclass StatefulSigner:\n    def __init__(self, seed):\n        self.seed, self.next_leaf = seed, 0\n        leaves = [wots_public(seed, i) for i in range(2 ** HEIGHT)]\n        self.levels = [leaves]\n        while len(self.levels[-1]) > 1:\n            lv = self.levels[-1]\n            self.levels.append([H(lv[i] + lv[i + 1]) for i in range(0, len(lv), 2)])\n        self.public_key = self.levels[-1][0]\n    def sign(self, message):\n        leaf = self.next_leaf\n        if leaf >= 2 ** HEIGHT:\n            raise RuntimeError(\"all one-time keys used\")\n        self.next_leaf += 1                                              # the state MUST be persisted before the signature is released\n        digest = hashlib.sha256(message).digest()\n        path, idx = [], leaf\n        for lv in self.levels[:-1]:\n            path.append(lv[idx ^ 1]); idx //= 2\n        return leaf, wots_sign(self.seed, leaf, digest), path\ndef verify(public_key, message, signature):\n    leaf, sig, path = signature\n    node = wots_public_from_sig(sig, hashlib.sha256(message).digest())\n    for sibling in path:\n        node = H(node + sibling) if leaf % 2 == 0 else H(sibling + node)\n        leaf //= 2\n    return node == public_key\n\nseed = b\"toy seed for the lesson\".ljust(32, b\"\\0\")\nsigner = StatefulSigner(seed)\nprint(\"signer built; one-time keys available:\", 2 ** HEIGHT)\nsig = signer.sign(b\"image-1\")\ncounter[\"hash\"] = 0\nok = verify(signer.public_key, b\"image-1\", sig)\nprint(\"signature verifies:\", ok, \"| hash calls to verify:\", counter[\"hash\"], \"| wrong message rejected:\", not verify(signer.public_key, b\"image-2\", sig))\nprint(\"signature content: leaf index + 67 chain values + 4 tree siblings =\", 67 + 4, \"hash-sized values of 32 bytes =\", (67 + 4) * 32, \"bytes\")\ns2, s3 = signer.sign(b\"image-2\"), signer.sign(b\"image-3\")\nprint(\"leaf indices handed out:\", sig[0], s2[0], s3[0], \"| all valid:\", all(verify(signer.public_key, m, s) for m, s in ((b\"image-1\", sig), (b\"image-2\", s2), (b\"image-3\", s3))))\nrestored = StatefulSigner(seed)                                          # a restored backup that forgot the counter\ndup = restored.sign(b\"transfer 1 coin\")\nda, db = digits(hashlib.sha256(b\"image-1\").digest()), digits(hashlib.sha256(b\"transfer 1 coin\").digest())\nprint(\"a restored backup reuses leaf\", dup[0], \"already used for image-1; the two digests differ in\", sum(x != y for x, y in zip(da, db)), \"of 67 digit positions, and at each the attacker now holds chain values at two depths (see 8.7)\")\n\nprint()\nprint(\"estimated hash calls per signature for four FIPS 205 sets (derived here from the structure, not read from the standard; w = 16):\")\nprint(f\"{'set':<6} {'sign':>12} {'verify (average)':>18}\")\nfor name, n, h, d, hp, a, k in ((\"128s\", 16, 63, 7, 9, 12, 14), (\"128f\", 16, 66, 22, 3, 6, 33), (\"192s\", 24, 63, 7, 9, 14, 17), (\"256s\", 32, 64, 8, 8, 14, 22)):\n    len1 = -(-8 * n // 4)\n    ln = len1 + int(math.log2(len1 * 15) / 4) + 1\n    sign = d * (2 ** hp) * (ln * 15 + 1) + k * (2 ** a) * 2              # rebuild the used XMSS trees and the FORS leaves\n    verify_calls = k * (a + 1) + d * (ln * 7.5 + hp + 1)\n    print(f\"{name:<6} {sign:>12,} {verify_calls:>18,.0f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-toy-xmss",
+              "language": "text",
+              "code": "signer built; one-time keys available: 16\nsignature verifies: True | hash calls to verify: 560 | wrong message rejected: True\nsignature content: leaf index + 67 chain values + 4 tree siblings = 71 hash-sized values of 32 bytes = 2272 bytes\nleaf indices handed out: 0 1 2 | all valid: True\na restored backup reuses leaf 0 already used for image-1; the two digests differ in 65 of 67 digit positions, and at each the attacker now holds chain values at two depths (see 8.7)\n\nestimated hash calls per signature for four FIPS 205 sets (derived here from the structure, not read from the standard; w = 16):\nset            sign   verify (average)\n128s      1,999,872              2,090\n128f         96,800              6,094\n192s      3,302,400              3,002\n256s      2,781,184              4,422",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The toy signature has 71 hash-sized values, 2,272 bytes (67 chain values plus 4 tree siblings), verifies after 560 hash calls, and detects a modified message. The state counter hands out leaf indices 0, 1, 2 and each signature verifies. The failure the code illustrates is the operational one: a **restored backup** that forgot the counter signs a new message with leaf 0 again, and because the two digests differ in 65 of 67 digit positions, an attacker holding both signatures has chain values at two depths at almost every position and can forge (lesson 8.7 showed the same effect for Lamport keys). Stateful standards (XMSS, LMS) therefore require the state to be persisted *before* a signature is released and forbid cloning the signer; SLH-DSA's design removes this requirement, at the price of far larger signatures.\n\nThe estimates show the cost shape of SLH-DSA: roughly 2 to 3.3 million hash calls to sign for the small \"s\" sets against about 100,000 for 128f, and only about 2,000 to 6,000 to verify. So signing is the bottleneck, and the \"f\" (fast) sets trade larger signatures (17,088 against 7,856 bytes for the 128-bit sets) for a much cheaper signature generation. **Common mistakes** in real code: copying or snapshotting the signer state, signing from two processes with the same key, and treating signing time as uniform when it is dominated by tree recomputation."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the main operational risk of a stateful hash-based signature?",
+              "options": [
+                "Reusing a one-time key after a restored backup or cloned signer, which lets an attacker forge",
+                "Signatures are too short",
+                "Verification is slow"
+              ],
+              "correct_index": 0,
+              "explanation": "The restored signer reused leaf 0 for a different message."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is SLH-DSA signing much slower than verification?",
+              "options": [
+                "The signer recomputes whole trees, the verifier only chain tails and authentication paths",
+                "The verifier does more work",
+                "Signing needs a network round trip"
+              ],
+              "correct_index": 0,
+              "explanation": "The estimates are millions of hash calls to sign against thousands to verify."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does the 'f' in SLH-DSA-128f stand for in this lesson's reading of the standard?",
+              "options": [
+                "Fast signing, at the cost of larger signatures",
+                "Fixed-length key",
+                "FIPS-only mode"
+              ],
+              "correct_index": 0,
+              "explanation": "128f signatures are 17,088 bytes against 7,856 for 128s."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B93",
+              "locator": "FIPS 205, the descriptions of WOTS+, the XMSS tree, the hypertree and FORS, and Section 11 (Table 2: parameter sets and sizes)"
+            },
+            {
+              "book": "B93",
+              "locator": "FIPS 205 statement that the 's' sets are designed for small signatures and the 'f' sets for fast signing"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The hash-call estimates are my own derivation from the parameter structure (recomputing the d used XMSS trees and the FORS leaves; average chain length for verification) and were not taken from the standard or measured on an implementation. The toy scheme is not WOTS+ (no per-chain randomisation) and not SLH-DSA."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "9.4 Key Generation (Engineering Depth)",
+          "summary": "Seed handling and per-purpose derivation with HKDF, the FIPS 203 key checks, and a measurement of which kinds of key corruption each check actually detects.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Key generation is where an implementation meets the quality of its randomness (see 7.10 and C10). FIPS 203 requires the two 32-byte random strings to come from an **approved random bit generator** (SP 800-90A/B/C), generated freshly for every call; a seed must never be reused or shared between algorithms. When one master secret is held (for example in a hardware module or a key-management service), distinct **labelled derivations** (HKDF with a purpose string) give independent seeds for each algorithm, version and use.\n\nThe standard also describes optional **checks on a key pair received from another source** (section 7.1): a seed-consistency check (regenerate from the seed), an encapsulation-key check, a decapsulation-key check, and a **pair-wise consistency test** that encapsulates and decapsulates and compares. The decapsulation-key check (section 7.3) is a type check and a hash check: H of the embedded ek must equal the stored hash. The standard itself notes that these checks do not guarantee that a key was properly generated. The listing derives seeds with HKDF, shows the library rejecting seeds of the wrong length, and then measures **what each check catches** by flipping one bit in each region of a decapsulation key. The labs use the pure-Python reference libraries kyber-py (ML-KEM) and dilithium-py (ML-DSA), and `cryptography` 50.0.1 (OpenSSL) as an independent implementation. Everything runs on your own machine on keys generated in the lesson. The code teaches how implementations are structured and tested; it is reference code, slow and not hardened against side channels, and must not protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-keygen-engineering",
+              "language": "python",
+              "code": "import hashlib, os\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.kdf.hkdf import HKDF\nfrom kyber_py.ml_kem import ML_KEM_768\nfrom dilithium_py.ml_dsa import ML_DSA_65\n\n# --- one master secret, independent per-purpose seeds (HKDF with distinct labels), so no seed is ever shared between algorithms\nmaster = bytes(range(32, 64))                                              # a fixed value for the lesson; in practice it comes from an approved random generator\ndef derive(label, length):\n    return HKDF(algorithm=hashes.SHA256(), length=length, salt=None, info=label).derive(master)\nkem_seed, dsa_seed = derive(b\"ml-kem-768 key seed v1\", 64), derive(b\"ml-dsa-65 key seed v1\", 32)\nprint(\"seeds differ and have the right lengths:\", kem_seed != dsa_seed[:32] + dsa_seed, len(kem_seed), len(dsa_seed))\nek, dk = ML_KEM_768.key_derive(kem_seed)\nprint(\"the same master secret and label always give the same key pair:\", (ek, dk) == ML_KEM_768.key_derive(derive(b\"ml-kem-768 key seed v1\", 64)), \"| a different label gives a different one:\", ek != ML_KEM_768.key_derive(derive(b\"ml-kem-768 key seed v2\", 64))[0])\nfor bad in (b\"\", bytes(32), bytes(63), bytes(65)):\n    try:\n        ML_KEM_768.key_derive(bad)\n        print(f\"seed of {len(bad)} bytes accepted\")\n    except Exception as exc:\n        print(f\"seed of {len(bad)} bytes rejected: {type(exc).__name__}\")\n\n# --- key checks of FIPS 203 section 7.3: type check and hash check of the decapsulation key, then pair-wise consistency\nk = ML_KEM_768.k\ndef dk_check(dk_bytes):\n    if len(dk_bytes) != 768 * k + 96:\n        return False                                                        # type check\n    ek_in = dk_bytes[384 * k:768 * k + 32]\n    return hashlib.sha3_256(ek_in).digest() == dk_bytes[768 * k + 32:768 * k + 64]       # hash check\ndef pairwise(ek_bytes, dk_bytes):\n    key, ct = ML_KEM_768.encaps(ek_bytes)\n    try:\n        return ML_KEM_768.decaps(dk_bytes, ct) == key                        # pair-wise consistency test\n    except ValueError:\n        return False                                                         # this library also runs the hash check inside decaps and raises\nprint()\nprint(\"honest key pair passes the hash check and the pair-wise test:\", dk_check(dk), pairwise(ek, dk))\nregions = {\"dk_pke (the secret vector)\": range(0, 384 * k), \"embedded ek\": range(384 * k, 768 * k + 32), \"H(ek)\": range(768 * k + 32, 768 * k + 64), \"z (rejection secret)\": range(768 * k + 64, 768 * k + 96)}\nprint(f\"{'corrupted region':<28} {'hash check detects':>19} {'pair-wise test detects':>23}\")\nfor name, region in regions.items():\n    sample = list(region)[::max(1, len(region) // 12)][:12]\n    det_hash = det_pair = 0\n    for pos in sample:\n        bad = bytearray(dk); bad[pos] ^= 0x01\n        det_hash += not dk_check(bytes(bad))\n        det_pair += not pairwise(ek, bytes(bad))\n    print(f\"{name:<28} {f'{det_hash} of {len(sample)}':>19} {f'{det_pair} of {len(sample)}':>23}\")\nprint(\"the standalone hash check covers only ek and H(ek); corruption of the secret vector is caught only by the pair-wise test; corruption of z is caught by neither check\")\nprint(\"(a corrupted z is dangerous in a different way: it silently changes the pseudo-random key returned for invalid ciphertexts)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-keygen-engineering",
+              "language": "text",
+              "code": "seeds differ and have the right lengths: True 64 32\nthe same master secret and label always give the same key pair: True | a different label gives a different one: True\nseed of 0 bytes rejected: ValueError\nseed of 32 bytes rejected: ValueError\nseed of 63 bytes rejected: ValueError\nseed of 65 bytes rejected: ValueError\n\nhonest key pair passes the hash check and the pair-wise test: True True\ncorrupted region              hash check detects  pair-wise test detects\ndk_pke (the secret vector)               0 of 12                12 of 12\nembedded ek                             12 of 12                12 of 12\nH(ek)                                   12 of 12                12 of 12\nz (rejection secret)                     0 of 12                 0 of 12\nthe standalone hash check covers only ek and H(ek); corruption of the secret vector is caught only by the pair-wise test; corruption of z is caught by neither check\n(a corrupted z is dangerous in a different way: it silently changes the pseudo-random key returned for invalid ciphertexts)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Seeds derived with different labels differ and the same label reproduces the same key pair; every seed that is not exactly 64 bytes is rejected. The measurement of the checks is the instructive part. Flipping a bit in the **embedded ek or in H(ek)** is detected by the hash check and by the pair-wise test (and by this library's own decapsulation). Flipping a bit in the **secret vector** dk_PKE is *not* detected by the hash check at all (0 of 12) and only the pair-wise test catches it (12 of 12). Flipping a bit in **z** is detected by neither check. A corrupted z is easy to overlook because everything still works for honest ciphertexts; the damage is that the pseudo-random key returned for invalid ciphertexts changes, which can break the interoperability of the rejection path and conceal a hardware or storage fault.\n\n**Engineering rules.** Generate keys only from an approved generator and verify the quality of its seeding at start-up; derive seeds per purpose; run a pair-wise consistency test after key generation and after loading a key from storage; protect the whole decapsulation key, including z, with an integrity mechanism of its own (a MAC or authenticated encryption of the stored blob), because the format's built-in hash covers only part of it."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which kind of dk corruption is caught by the hash check of FIPS 203 section 7.3?",
+              "options": [
+                "Corruption of the embedded ek or of H(ek)",
+                "Corruption of the secret vector dk_PKE",
+                "Corruption of z"
+              ],
+              "correct_index": 0,
+              "explanation": "The listing measured 12 of 12 for those regions and 0 of 12 for the secret vector and z."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why derive per-purpose seeds with distinct HKDF labels?",
+              "options": [
+                "So seeds for different algorithms and versions are independent",
+                "To shorten the seed",
+                "To make keys public"
+              ],
+              "correct_index": 0,
+              "explanation": "A different label gives a different, independent key pair."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why protect a stored dk with its own integrity mechanism?",
+              "options": [
+                "The built-in checks do not cover all of it, for example z and the secret vector",
+                "dk has no structure",
+                "Hashes are not allowed"
+              ],
+              "correct_index": 0,
+              "explanation": "A corrupted z passes both checks silently."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 3.3 (randomness generation from an approved RBG) and Section 7.1 (key pair check: seed consistency, ek check, dk check, pair-wise consistency) and Section 7.3 (decapsulation key check: type and hash check)"
+            },
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, requirements for implementing and using KEMs (key generation and checks)"
+            },
+            {
+              "book": "B100",
+              "locator": "cryptography: HKDF used for per-purpose seed derivation"
+            }
+          ],
+          "needs_verification": {
+            "reason": "SP 800-227 is cited for its general role and was not re-read for this lesson. The recommendation to add an integrity mechanism around stored keys is engineering advice, not a requirement quoted from a standard."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "9.5 Encapsulation/Decapsulation",
+          "summary": "The encapsulation-key modulus check implemented and tested, implicit rejection verified against SHAKE256(z || c), and input length checks.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Encapsulation must be run only on a **checked** encapsulation key (FIPS 203, section 7.2). The check has two parts: a **type check** (the key is a byte array of exactly 384·k + 32 bytes) and a **modulus check** (ByteEncode12(ByteDecode12(ek[0:384k])) must equal ek[0:384k]); because ByteDecode12 reduces each 12-bit value modulo q = 3329, the round trip changes the bytes whenever a coefficient is 3329 or larger. The check need not be performed on every call, but assurance that it has been done is required. Decapsulation has its own input checks (the ciphertext length and the dk hash check) and then the **implicit rejection** of the Fujisaki-Okamoto transform (7.6): it re-encrypts the decrypted message, and if the result differs from the received ciphertext it does **not** signal an error but returns the pseudo-random key K̄ = J(z ‖ c), with J = SHAKE256 and z the secret value stored in dk. An attacker who submits modified ciphertexts therefore gets no signal about validity.\n\nThe listing implements the modulus check from the standard and tests honest, truncated and out-of-range keys; it then tests implicit rejection: a tampered ciphertext does not raise an error, the returned key equals SHAKE256(z ‖ c) exactly as the standard specifies, and 136 sampled single-bit flips all changed the key. The labs use the pure-Python reference libraries kyber-py (ML-KEM) and dilithium-py (ML-DSA), and `cryptography` 50.0.1 (OpenSSL) as an independent implementation. Everything runs on your own machine on keys generated in the lesson. The code teaches how implementations are structured and tested; it is reference code, slow and not hardened against side channels, and must not protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-encaps-decaps",
+              "language": "python",
+              "code": "import hashlib\nfrom kyber_py.ml_kem import ML_KEM_768\n\nkem = ML_KEM_768\nk = kem.k\nseed = bytes(range(64))\nek, dk = kem.key_derive(seed)\nz = dk[-32:]\n\n# --- encapsulation key check of FIPS 203 section 7.2: type check, then modulus check ByteEncode12(ByteDecode12(ek[0:384k])) == ek[0:384k]\ndef byte_decode12(data):\n    bits = int.from_bytes(data, \"little\")\n    return [((bits >> (12 * i)) & 0xFFF) % 3329 for i in range(len(data) * 8 // 12)]          # ByteDecode12 reduces modulo q\ndef byte_encode12(values):\n    bits = 0\n    for i, v in enumerate(values):\n        bits |= (v & 0xFFF) << (12 * i)\n    return bits.to_bytes(len(values) * 12 // 8, \"little\")\ndef ek_check(candidate):\n    if len(candidate) != 384 * k + 32:\n        return \"type check failed\"\n    body = candidate[:384 * k]\n    if byte_encode12(byte_decode12(body)) != body:\n        return \"modulus check failed\"\n    return \"ok\"\nprint(\"honest ek:\", ek_check(ek))\ntoo_short = ek[:-1]\nprint(\"ek one byte short:\", ek_check(too_short))\nbad_coeff = bytearray(ek)\nbad_coeff[0:2] = (4000 | (int.from_bytes(bad_coeff[0:2], \"little\") & 0xF000)).to_bytes(2, \"little\")           # first coefficient 4000 >= q = 3329\nprint(\"ek whose first coefficient is 4000 (>= q):\", ek_check(bytes(bad_coeff)))\nprint(\"why the round trip catches it: decoding reduces 4000 modulo q to\", 4000 % 3329, \"and re-encoding therefore differs from the received bytes\")\ntry:\n    kem.encaps(bytes(bad_coeff))\n    print(\"this library's encaps accepted the out-of-range key (the caller must run the check)\")\nexcept Exception as exc:\n    print(\"this library's encaps rejects it itself:\", type(exc).__name__)\n\n# --- implicit rejection: a tampered ciphertext yields a pseudo-random key derived from the secret value z, never an error\nkey, ct = kem.encaps(ek)\nprint()\nprint(\"honest decapsulation matches:\", kem.decaps(dk, ct) == key)\ntampered = bytearray(ct); tampered[5] ^= 0x40\nrejected_key = kem.decaps(dk, bytes(tampered))\nexpected = hashlib.shake_256(z + bytes(tampered)).digest(32)               # K_bar = J(z || c)\nprint(\"tampered ciphertext: no exception, a different key:\", rejected_key != key, \"| equals SHAKE256(z || c) as in FIPS 203:\", rejected_key == expected)\nprint(\"the rejection key is deterministic:\", rejected_key == kem.decaps(dk, bytes(tampered)))\ntrials = 150\nchanged = sum(kem.decaps(dk, ct[:i] + bytes([ct[i] ^ 1]) + ct[i + 1:]) != key for i in range(0, len(ct), len(ct) // trials + 1))\nprint(f\"single-bit flips at {len(range(0, len(ct), len(ct) // trials + 1))} positions of the {len(ct)}-byte ciphertext: {changed} gave a key different from the honest one\")\nfor bad_ct in (ct[:-1], ct + b\"\\x00\", b\"\"):\n    try:\n        kem.decaps(dk, bad_ct)\n        print(f\"ciphertext of {len(bad_ct)} bytes accepted\")\n    except Exception as exc:\n        print(f\"ciphertext of {len(bad_ct)} bytes rejected before decryption (type check): {type(exc).__name__}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-encaps-decaps",
+              "language": "text",
+              "code": "honest ek: ok\nek one byte short: type check failed\nek whose first coefficient is 4000 (>= q): modulus check failed\nwhy the round trip catches it: decoding reduces 4000 modulo q to 671 and re-encoding therefore differs from the received bytes\nthis library's encaps rejects it itself: ValueError\n\nhonest decapsulation matches: True\ntampered ciphertext: no exception, a different key: True | equals SHAKE256(z || c) as in FIPS 203: True\nthe rejection key is deterministic: True\nsingle-bit flips at 136 positions of the 1088-byte ciphertext: 136 gave a key different from the honest one\nciphertext of 1087 bytes rejected before decryption (type check): ValueError\nciphertext of 1089 bytes rejected before decryption (type check): ValueError\nciphertext of 0 bytes rejected before decryption (type check): ValueError",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The honest key passes; a key one byte short fails the type check; a key whose first coefficient was set to 4000 fails the modulus check because decoding reduces 4000 to 671 and the re-encoded bytes differ. The library used here rejects that key by itself, but the standard puts the responsibility on the implementation, so a wrapper must not assume that the underlying code does it. For decapsulation, a tampered ciphertext returns **no error and a different key**, and the key is the standard's SHAKE256(z ‖ c): this is what a compliant implementation must do, and it is deterministic (the same tampered input gives the same output), which prevents an observer from distinguishing rejection from acceptance by repeating the request. Wrong-length ciphertexts are rejected *before* any decryption.\n\n**Common mistakes:** returning an error for a failed validity check (turns the implementation into a decryption oracle), taking a different code path or time for rejected ciphertexts (a timing side channel, C10), accepting keys without the modulus check from an untrusted peer, and logging decapsulation failures in a way that reveals which ciphertexts were rejected."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the modulus check of an ML-KEM encapsulation key verify?",
+              "options": [
+                "That every 12-bit coefficient is below q, by checking that decode then encode returns the same bytes",
+                "That the key is random",
+                "That the key has been signed"
+              ],
+              "correct_index": 0,
+              "explanation": "A coefficient of 4000 is reduced to 671 by decoding, so the round trip changes the bytes."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does ML-KEM decapsulation return for a ciphertext that fails the re-encryption check?",
+              "options": [
+                "A pseudo-random key SHAKE256(z || c), with no error",
+                "An error message",
+                "The all-zero key"
+              ],
+              "correct_index": 0,
+              "explanation": "The listing verified the exact equality with SHAKE256(z || c)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why must a failed validity check not produce a visible error?",
+              "options": [
+                "It would let an attacker use the implementation as a decryption oracle",
+                "Errors are slow",
+                "The standard has no errors"
+              ],
+              "correct_index": 0,
+              "explanation": "Implicit rejection hides whether the ciphertext was valid."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 7.2 (encapsulation key check: type check and modulus check, equation 7.1; Algorithm 20) and Section 7.3 (decapsulation: Algorithm 21, input checks and implicit rejection K-bar = J(z || c))"
+            },
+            {
+              "book": "B90",
+              "locator": "kyber-py: encaps and decaps behaviour on malformed input"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The statement that rejected ciphertexts must not take a different time or code path is a side-channel requirement discussed in C10, not quoted from FIPS 203 here."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "9.6 Signing/Verification",
+          "summary": "Which malformed signatures a verifier must reject and how: truncation, wrong length, hint abuse, corrupted components, tested one by one.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A signature verifier is a parser of attacker-controlled bytes, so its first job is **strict input validation**: the length must be exactly the fixed size for the parameter set, the components must decode, the hint vector must be well formed (at most ω non-zero entries, indices in strictly increasing order within each polynomial, padding bytes zero), and the response vector z must satisfy the norm bound. Only then is the algebraic check performed. Accepting any non-canonical encoding of a valid signature would also break **strong unforgeability**: an attacker could produce a second, different byte string that verifies for the same message.\n\nAn ML-DSA-44 signature is c̃ (32 bytes) ‖ z (4 polynomials × 32 × 18 bytes = 2,304) ‖ hint (ω + k = 84 bytes), 2,420 bytes in total (FIPS 204, Table 2). The listing builds nine malformed variants (truncation, extra byte, empty, all zero, flipped challenge bit, flipped z bit, hint region zeroed, hint counts larger than ω, indices out of order) and also corrupts a valid signature at random 300 times, and records what the verifier does. The labs use the pure-Python reference libraries kyber-py (ML-KEM) and dilithium-py (ML-DSA), and `cryptography` 50.0.1 (OpenSSL) as an independent implementation. Everything runs on your own machine on keys generated in the lesson. The code teaches how implementations are structured and tested; it is reference code, slow and not hardened against side channels, and must not protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-verify-malformed",
+              "language": "python",
+              "code": "import random\nfrom dilithium_py.ml_dsa import ML_DSA_44\n\ndsa = ML_DSA_44\npk, sk = dsa.key_derive(bytes(range(32)))\nm = b\"configuration bundle 42\"\nsig = dsa.sign(sk, m)\nprint(\"honest signature size\", len(sig), \"bytes (fixed for the parameter set: 2,420 for ML-DSA-44) and verifies:\", dsa.verify(pk, m, sig))\n\n# A verifier must reject malformed encodings and out-of-range components BEFORE trusting them.\n# Signature layout (FIPS 204): c_tilde (32 bytes) | z (4 * 32 * 18 bytes) | hint h (omega + k = 84 bytes).\nc_len, z_len, h_len = 32, 32 * dsa.l * 18, dsa.omega + dsa.k\nprint(\"layout: c_tilde\", c_len, \"| z\", z_len, \"| hint\", h_len, \"| total\", c_len + z_len + h_len, \"=\", len(sig))\n\ndef outcome(candidate):\n    try:\n        return \"accepted\" if dsa.verify(pk, m, candidate) else \"rejected\"\n    except Exception as exc:\n        return f\"raised {type(exc).__name__}\"\n\ncases = {\n    \"truncated by one byte\": sig[:-1],\n    \"one byte appended\": sig + b\"\\x00\",\n    \"empty\": b\"\",\n    \"all zero, correct length\": bytes(len(sig)),\n    \"c_tilde bit flipped\": bytes([sig[0] ^ 1]) + sig[1:],\n    \"z bit flipped\": sig[:c_len + 100] + bytes([sig[c_len + 100] ^ 1]) + sig[c_len + 101:],\n    \"hint region zeroed (no hints)\": sig[:c_len + z_len] + bytes(h_len),\n    \"hint counts all 255 (more hints than omega)\": sig[:c_len + z_len + dsa.omega] + bytes([255] * dsa.k),\n    \"hint indices out of order\": sig[:c_len + z_len] + bytes([5, 3] + [0] * (dsa.omega - 2)) + bytes([2] * dsa.k),\n}\nprint(f\"{'malformed signature':<46} {'result'}\")\nfor name, candidate in cases.items():\n    print(f\"{name:<46} {outcome(candidate)}\")\n\nrng = random.Random(1)\naccepted = 0\nfor _ in range(300):\n    candidate = bytearray(sig)\n    for _ in range(rng.randint(1, 4)):\n        candidate[rng.randrange(len(candidate))] ^= 1 << rng.randrange(8)\n    accepted += outcome(bytes(candidate)) == \"accepted\"\nprint(\"300 random multi-bit corruptions of a valid signature, accepted:\", accepted)\nprint(\"only the exact signature verifies; no signature of the same message under another honest signing run is rejected:\", all(dsa.verify(pk, m, dsa.sign(sk, m)) for _ in range(5)))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-verify-malformed",
+              "language": "text",
+              "code": "honest signature size 2420 bytes (fixed for the parameter set: 2,420 for ML-DSA-44) and verifies: True\nlayout: c_tilde 32 | z 2304 | hint 84 | total 2420 = 2420\nmalformed signature                            result\ntruncated by one byte                          rejected\none byte appended                              rejected\nempty                                          rejected\nall zero, correct length                       rejected\nc_tilde bit flipped                            rejected\nz bit flipped                                  rejected\nhint region zeroed (no hints)                  rejected\nhint counts all 255 (more hints than omega)    rejected\nhint indices out of order                      rejected\n300 random multi-bit corruptions of a valid signature, accepted: 0\nonly the exact signature verifies; no signature of the same message under another honest signing run is rejected: True",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "All nine malformed signatures were rejected without raising an exception, and none of the 300 random multi-bit corruptions was accepted, while genuine signatures from separate signing runs all verified. The verdict \"rejected\" is what a verifier must return for *every* invalid input: crashing, hanging or raising an unexpected exception on malformed input is a robustness bug and can be a denial-of-service vector. The case of the hint with counts larger than ω is the kind of input that a lenient decoder might read past the end of the buffer; in C or Rust code, such parsing paths are where memory-safety bugs hide (C10.8).\n\n**Rules.** Validate lengths and ranges before any computation; verify with a constant structure whether or not earlier checks failed where timing could reveal something about secrets (for verification, the inputs are public, so the stricter requirement is robustness rather than constant time); treat the signature encoding as canonical; and test the verifier with a fuzzer that mutates valid signatures, as the lesson does in miniature."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What must a verifier do with a signature of the wrong length?",
+              "options": [
+                "Reject it before any algebra",
+                "Pad it and try",
+                "Verify the first 2,420 bytes"
+              ],
+              "correct_index": 0,
+              "explanation": "Fixed sizes make this check trivial and necessary."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why must the encoding of a valid signature be canonical?",
+              "options": [
+                "Otherwise a second byte string could verify for the same message, breaking strong unforgeability",
+                "To save space",
+                "To speed up hashing"
+              ],
+              "correct_index": 0,
+              "explanation": "Non-canonical encodings enable malleability."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is crashing on a malformed signature a security issue?",
+              "options": [
+                "It enables denial of service and may signal memory-safety bugs in the parser",
+                "It makes signatures longer",
+                "It reveals the private key directly"
+              ],
+              "correct_index": 0,
+              "explanation": "A verifier handles untrusted input and must reject, not fail."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B92",
+              "locator": "FIPS 204, ML-DSA.Verify and the signature encoding (sigDecode, hint unpacking, norm check), and Table 2 (signature size 2,420 bytes for ML-DSA-44)"
+            },
+            {
+              "book": "B91",
+              "locator": "dilithium-py: verify behaviour on malformed signatures"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The hint-validation rules (index ordering, zero padding, at most omega entries) are summarised from the structure of the hint encoding in FIPS 204 and were observed through the library's behaviour, not read line by line. The memory-safety remark on hint parsing is a general warning."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "9.7 Serialization",
+          "summary": "ByteEncode and ByteDecode from FIPS 203 implemented, checked against kyber-py's key bytes, and the exact error of compression measured over all inputs.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Interoperability depends on **byte-exact encodings**. FIPS 203 packs a polynomial of 256 coefficients into 32·d bytes with ByteEncode_d (d bits per coefficient, little endian, section 4.2.1); keys use d = 12 (384 bytes per polynomial), and ciphertexts first **compress** coefficients to d_u or d_v bits, a lossy rounding that saves bandwidth. Compress_d(x) = ⌈(2^d/q)·x⌋ mod 2^d and Decompress_d(y) = ⌈(q/2^d)·y⌋, and decompressing a compressed value returns a number whose distance from the original is at most ⌈q/2^(d+1)⌋; that error is part of the noise budget and is included in the failure analysis of FIPS 203 Table 1.\n\nThe listing implements ByteEncode and ByteDecode (with the modular reduction of ByteDecode12), checks the round trip for six values of d, re-encodes the coefficients of a real kyber-py encapsulation key and compares the bytes, and then measures the compression error **exhaustively over all 3,329 inputs** for each d used by the standard. The labs use the pure-Python reference libraries kyber-py (ML-KEM) and dilithium-py (ML-DSA), and `cryptography` 50.0.1 (OpenSSL) as an independent implementation. Everything runs on your own machine on keys generated in the lesson. The code teaches how implementations are structured and tested; it is reference code, slow and not hardened against side channels, and must not protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-serialization",
+              "language": "python",
+              "code": "import random\nfrom kyber_py.ml_kem import ML_KEM_768\n\nq = 3329\ndef byte_encode(values, d):                                             # FIPS 203, Algorithm 5: d bits per coefficient, little endian\n    bits = 0\n    for i, v in enumerate(values):\n        bits |= v << (d * i)\n    return bits.to_bytes(len(values) * d // 8, \"little\")\ndef byte_decode(data, d):                                               # FIPS 203, Algorithm 6\n    bits = int.from_bytes(data, \"little\")\n    m = 2 ** d if d < 12 else q\n    return [((bits >> (d * i)) & (2 ** d - 1)) % m for i in range(len(data) * 8 // d)]\ndef compress(x, d):                                                     # round(2^d / q * x) mod 2^d, in exact integer arithmetic\n    return ((x << d) + q // 2) // q % (2 ** d)\ndef decompress(y, d):                                                   # round(q / 2^d * y)\n    return ((y * q) + (1 << (d - 1))) >> d\n\nrng = random.Random(3)\nfor d in (1, 4, 5, 10, 11, 12):\n    values = [rng.randrange(2 ** d if d < 12 else q) for _ in range(256)]\n    encoded = byte_encode(values, d)\n    assert len(encoded) == 32 * d and byte_decode(encoded, d) == values\nprint(\"ByteEncode_d / ByteDecode_d round trip for d in {1, 4, 5, 10, 11, 12}: 256 coefficients occupy 32 * d bytes (384 bytes for d = 12)\")\n\nek, dk = ML_KEM_768.key_derive(bytes(range(64)))\nbody = ek[:384 * ML_KEM_768.k]\ncoefficients = byte_decode(body, 12)\nprint(\"kyber-py's encapsulation key re-encodes to the same bytes with my encoder:\", byte_encode(coefficients, 12) == body, f\"| {len(coefficients)} coefficients, all below q: {all(c < q for c in coefficients)}\")\nprint(\"last 32 bytes of ek are the matrix seed rho; their share of the key is\", f\"{32 / len(ek):.1%}\")\n\nprint()\nprint(f\"{'d':>3} {'bound round(q / 2^(d+1))':>25} {'largest error over all 3329 inputs':>36} {'within bound':>13}\")\nfor d in (1, 4, 5, 10, 11):\n    bound = (q + (1 << d)) // (1 << (d + 1))\n    worst = max(min((x - decompress(compress(x, d), d)) % q, (decompress(compress(x, d), d) - x) % q) for x in range(q))\n    print(f\"{d:>3} {bound:>25} {worst:>36} {str(worst <= bound):>13}\")\nprint(\"compression to d bits is lossy: the error it adds is part of the noise budget (ciphertext uses d_u = 10 and d_v = 4 for ML-KEM-768)\")\nsizes = {\"ek\": 384 * 3 + 32, \"ciphertext\": 32 * (10 * 3 + 4)}\nprint(\"size from the encodings: ek =\", sizes[\"ek\"], \"bytes, ciphertext =\", sizes[\"ciphertext\"], \"bytes (FIPS 203 Table 3: 1184 and 1088)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-serialization",
+              "language": "text",
+              "code": "ByteEncode_d / ByteDecode_d round trip for d in {1, 4, 5, 10, 11, 12}: 256 coefficients occupy 32 * d bytes (384 bytes for d = 12)\nkyber-py's encapsulation key re-encodes to the same bytes with my encoder: True | 768 coefficients, all below q: True\nlast 32 bytes of ek are the matrix seed rho; their share of the key is 2.7%\n\n  d  bound round(q / 2^(d+1))   largest error over all 3329 inputs  within bound\n  1                       832                                  832          True\n  4                       104                                  104          True\n  5                        52                                   52          True\n 10                         2                                    2          True\n 11                         1                                    1          True\ncompression to d bits is lossy: the error it adds is part of the noise budget (ciphertext uses d_u = 10 and d_v = 4 for ML-KEM-768)\nsize from the encodings: ek = 1184 bytes, ciphertext = 1088 bytes (FIPS 203 Table 3: 1184 and 1088)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The encoder reproduces the library's key bytes exactly (768 coefficients for ML-KEM-768, all below q), so the encoding is understood well enough to implement independently. The measured worst-case compression error equals the bound ⌈q/2^(d+1)⌋ for every d (832, 104, 52, 2 and 1 for d = 1, 4, 5, 10, 11), so the bound is tight and no input exceeds it; the ciphertext of ML-KEM-768 uses d_u = 10 and d_v = 4, which is why it needs 1,088 bytes against the 1,184 of the key.\n\n**Common mistakes:** using floating-point arithmetic for compression (it can round differently on different platforms; use exact integer arithmetic, as above, or constant-time integer code), confusing the bit order or endianness of the packing, forgetting the modular reduction in ByteDecode12 (which the modulus check of 9.5 relies on), and serialising keys in the NTT domain with different ordering conventions in two components of the same system."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How many bytes does one polynomial occupy in an ML-KEM encapsulation key?",
+              "options": [
+                "384 (256 coefficients of 12 bits)",
+                "256",
+                "512"
+              ],
+              "correct_index": 0,
+              "explanation": "ByteEncode12 packs 256 * 12 bits = 3,072 bits."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why should compression be implemented with exact integer arithmetic?",
+              "options": [
+                "Floating-point rounding can differ between platforms and break interoperability",
+                "Integers are always faster",
+                "The standard forbids floating point in all code"
+              ],
+              "correct_index": 0,
+              "explanation": "Compress and Decompress are defined with exact rounding."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does the worst-case compression error depend on?",
+              "options": [
+                "The number of kept bits d (it is round(q / 2^(d+1)))",
+                "The message",
+                "The key"
+              ],
+              "correct_index": 0,
+              "explanation": "The listing found 832, 104, 52, 2, 1 for d = 1, 4, 5, 10, 11."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 4.2.1 (ByteEncode and ByteDecode, Algorithms 5 and 6; compression and decompression, equations 4.7 and 4.8) and Table 3"
+            },
+            {
+              "book": "B90",
+              "locator": "kyber-py: encapsulation key bytes, used as the reference for the encoder"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The formulas for Compress and Decompress are stated from the standard's section 4.2.1 as I read it; the listing verifies the error bound exhaustively but the equation numbers are cited from memory."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "9.8 API Design",
+          "summary": "A small API that is hard to misuse, built and attacked: bound algorithm names, size checks, a single error, wipeable secrets and no exposed internals.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Most cryptographic failures in deployed systems are **API misuse**, not broken algorithms. A good KEM or signature API makes the safe path the easy path: keys are **opaque objects** with the algorithm identifier built in, so a ciphertext for ML-KEM-512 cannot silently be fed to an ML-KEM-768 key; **randomness is generated inside** the module (FIPS 203 section 3.3); the deterministic internals are not exported; sizes and types are checked at the boundary; a failed decapsulation returns the **implicit-rejection key and no error detail**; secrets live in objects that can be wiped, have no readable representation, and are compared with constant-time functions; and a destroyed key cannot be used again.\n\nThe listing implements a tiny wrapper around kyber-py with these properties and then attacks it with the usual misuse cases: a ciphertext for another parameter set, a truncated ciphertext, an unknown algorithm name, a malformed public key, a tampered ciphertext and use after destroy. Every refusal uses a single error type with no information about the reason, except where the caller's own mistake is obvious (wrong algorithm name). The labs use the pure-Python reference libraries kyber-py (ML-KEM) and dilithium-py (ML-DSA), and `cryptography` 50.0.1 (OpenSSL) as an independent implementation. Everything runs on your own machine on keys generated in the lesson. The code teaches how implementations are structured and tested; it is reference code, slow and not hardened against side channels, and must not protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-api-design",
+              "language": "python",
+              "code": "import hmac, os\nfrom kyber_py.ml_kem import ML_KEM_512, ML_KEM_768, ML_KEM_1024\nfrom dilithium_py.ml_dsa import ML_DSA_65\n\nSETS = {\"ML-KEM-512\": ML_KEM_512, \"ML-KEM-768\": ML_KEM_768, \"ML-KEM-1024\": ML_KEM_1024}\n\nclass KemError(Exception):\n    \"\"\"One error type with no detail about WHY a decapsulation failed.\"\"\"\n\nclass SecretBytes:\n    \"\"\"Holds secret material in a mutable buffer that can be wiped; repr never prints the content.\"\"\"\n    def __init__(self, data):\n        self._buf = bytearray(data)\n    def reveal(self):\n        if self._buf is None:\n            raise KemError(\"key destroyed\")\n        return bytes(self._buf)\n    def destroy(self):\n        for i in range(len(self._buf)):\n            self._buf[i] = 0\n        self._buf = None\n    def __repr__(self):\n        return \"SecretBytes(<hidden>)\"\n\nclass KemKeyPair:\n    \"\"\"A small, hard-to-misuse API: the algorithm is named in the object, sizes are checked, internals are not exposed.\"\"\"\n    def __init__(self, algorithm):\n        if algorithm not in SETS:\n            raise KemError(\"unknown algorithm\")\n        self.algorithm = algorithm\n        self._kem = SETS[algorithm]\n        ek, dk = self._kem.keygen()                                     # randomness is generated inside the module, never supplied by the caller\n        self.public_key = (algorithm, ek)\n        self._dk = SecretBytes(dk)\n    def decapsulate(self, algorithm, ciphertext):\n        if algorithm != self.algorithm or len(ciphertext) != 32 * (self._kem.du * self._kem.k + self._kem.dv):\n            raise KemError(\"decapsulation failed\")                      # the same message for every kind of failure\n        return SecretBytes(self._kem.decaps(self._dk.reveal(), ciphertext))\n    def destroy(self):\n        self._dk.destroy()\n\ndef encapsulate(public_key):\n    algorithm, ek = public_key\n    kem = SETS[algorithm]\n    if len(ek) != 384 * kem.k + 32:\n        raise KemError(\"bad public key\")\n    key, ct = kem.encaps(ek)\n    return (algorithm, ct), SecretBytes(key)\n\nalice = KemKeyPair(\"ML-KEM-768\")\n(ct_alg, ct), key_b = encapsulate(alice.public_key)\nkey_a = alice.decapsulate(ct_alg, ct)\nprint(\"honest exchange:\", hmac.compare_digest(key_a.reveal(), key_b.reveal()), \"| repr hides content:\", repr(key_a))\n\ndef attempt(label, action):\n    try:\n        action()\n        print(f\"{label:<54} accepted\")\n    except KemError as exc:\n        print(f\"{label:<54} KemError: {exc}\")\n    except Exception as exc:\n        print(f\"{label:<54} {type(exc).__name__}\")\nattempt(\"ciphertext for a different parameter set\", lambda: alice.decapsulate(\"ML-KEM-512\", ct))\nattempt(\"truncated ciphertext\", lambda: alice.decapsulate(ct_alg, ct[:-1]))\nattempt(\"unknown algorithm name\", lambda: KemKeyPair(\"ML-KEM-999\"))\nattempt(\"public key of the wrong length\", lambda: encapsulate((\"ML-KEM-768\", alice.public_key[1][:-1])))\ntampered = bytearray(ct); tampered[0] ^= 1\nother = alice.decapsulate(ct_alg, bytes(tampered))\nprint(\"tampered ciphertext does not raise and gives a different key:\", other.reveal() != key_a.reveal())\nalice.destroy()\nattempt(\"use after destroy\", lambda: alice.decapsulate(ct_alg, ct))\nprint(\"design rules visible in the code: one opaque key type per algorithm, algorithm name bound to every key and ciphertext, internal (deterministic) functions not exported, a single undifferentiated error for failed decapsulation, secrets in wipeable buffers\")\nprint(\"constant-time comparison of secrets uses hmac.compare_digest instead of ==\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-api-design",
+              "language": "text",
+              "code": "honest exchange: True | repr hides content: SecretBytes(<hidden>)\nciphertext for a different parameter set               KemError: decapsulation failed\ntruncated ciphertext                                   KemError: decapsulation failed\nunknown algorithm name                                 KemError: unknown algorithm\npublic key of the wrong length                         KemError: bad public key\ntampered ciphertext does not raise and gives a different key: True\nuse after destroy                                      KemError: key destroyed\ndesign rules visible in the code: one opaque key type per algorithm, algorithm name bound to every key and ciphertext, internal (deterministic) functions not exported, a single undifferentiated error for failed decapsulation, secrets in wipeable buffers\nconstant-time comparison of secrets uses hmac.compare_digest instead of ==",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Each misuse case ended in the same controlled way: a `KemError` with a short message, and the tampered ciphertext produced a different key without any error, as implicit rejection requires. The design rules are visible in a few lines of code, and they are cheap compared with the cost of the failure they prevent. Two points deserve emphasis. First, **error handling is part of the protocol**: if the application returns different messages for \"wrong length\", \"bad padding-like check\" and \"key mismatch\", the differences become an oracle (the classic padding-oracle family of attacks). Second, **agility belongs in the API**: because the algorithm name travels with the key and ciphertext, adding a new parameter set or algorithm later (lesson 11.8) is a registration, not a rewrite.\n\n**Common mistakes:** accepting raw byte strings as keys with no type or algorithm tag, exposing a `seed` parameter in the public API, comparing secrets with `==`, printing keys in debug logs (the `repr` here hides content), and offering an `encrypt(public_key, plaintext)` function that is a hand-made KEM with no standard behind it."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why bind the algorithm name to every key and ciphertext object?",
+              "options": [
+                "So mismatched parameter sets are caught at the boundary and new algorithms can be added cleanly",
+                "To compress them",
+                "To make them public"
+              ],
+              "correct_index": 0,
+              "explanation": "A ciphertext for ML-KEM-512 is refused by an ML-KEM-768 key pair."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why use one undifferentiated error for failed decapsulation?",
+              "options": [
+                "Detailed errors can form an oracle for an attacker",
+                "Errors are expensive",
+                "Exceptions are not allowed in Python"
+              ],
+              "correct_index": 0,
+              "explanation": "Different messages for different failures leak information."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why should the API not accept caller-supplied randomness for key generation or encapsulation?",
+              "options": [
+                "A weak or reused value would compromise the keys; the module must generate it",
+                "It is slower",
+                "Callers cannot produce random bytes"
+              ],
+              "correct_index": 0,
+              "explanation": "FIPS 203 section 3.3 requires randomness to be generated by the cryptographic module."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 3.3 (controlled access to internal functions; randomness generation inside the module; approved usage of the shared secret)"
+            },
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, requirements for using KEMs, including that the shared secret is processed with an approved key-derivation method"
+            },
+            {
+              "book": "B90",
+              "locator": "kyber-py: keygen, encaps and decaps wrapped by the lesson's KemKeyPair"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The design rules are engineering practice, supported by FIPS 203 section 3.3 only where stated (internal functions, randomness); padding-oracle attacks are mentioned as a known family, not demonstrated here. SP 800-227 was not re-read."
+          },
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "9.9 Memory Considerations",
+          "summary": "Sizes of keys, ciphertexts and working objects computed from the parameters, the memory/time tradeoff for the public matrix, and what wiping secrets can and cannot do in Python.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Memory matters twice: **how much** an implementation needs (important on embedded devices and in protocol buffers) and **how long secrets stay** in it. The persistent objects are fixed by the standards: ML-KEM-768 has a 1,184-byte encapsulation key, a 2,400-byte decapsulation key and a 1,088-byte ciphertext; ML-DSA-65 has a 1,952-byte public key, a 4,032-byte private key and a 3,309-byte signature (FIPS 203 Table 3, FIPS 204 Table 2). During the computation the largest object is the public matrix: k × k polynomials, 512 bytes each when stored as 16-bit coefficients, so 2,048 bytes for k = 2 and 8,192 bytes for k = 4. Implementations on small devices avoid storing it by **regenerating each polynomial from the 32-byte seed ρ** every time it is needed, which saves memory and costs extra hashing: a classic time-versus-memory trade-off.\n\nThe second concern is **secret lifetime**. Secret material should be wiped as soon as it is no longer needed, kept out of logs, crash dumps, swap files and memory pages shared with other processes. In languages with managed memory, the language can undermine this: immutable objects cannot be wiped, copies are made freely, and the garbage collector decides when memory is reused. The listing computes the sizes from the parameters and then demonstrates concretely what Python allows. The labs use the pure-Python reference libraries kyber-py (ML-KEM) and dilithium-py (ML-DSA), and `cryptography` 50.0.1 (OpenSSL) as an independent implementation. Everything runs on your own machine on keys generated in the lesson. The code teaches how implementations are structured and tested; it is reference code, slow and not hardened against side channels, and must not protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-memory",
+              "language": "python",
+              "code": "q, n = 3329, 256\n\n# --- sizes of the objects that must be stored and transmitted (FIPS 203 Table 3, FIPS 204 Table 2), derived from the parameters\nprint(f\"{'parameter set':<12} {'ek':>6} {'dk':>6} {'ciphertext':>11} {'one polynomial (int16)':>23} {'vector of k':>12} {'matrix A of k*k':>16}\")\nfor name, k, du, dv in ((\"ML-KEM-512\", 2, 10, 4), (\"ML-KEM-768\", 3, 10, 4), (\"ML-KEM-1024\", 4, 11, 5)):\n    poly = n * 2                                                        # 256 coefficients of 16 bits each\n    print(f\"{name:<12} {384 * k + 32:>6} {768 * k + 96:>6} {32 * (du * k + dv):>11} {poly:>20} B {k * poly:>10} B {k * k * poly:>14} B\")\nprint(\"the matrix A is by far the largest working object; implementations expand it from the 32-byte seed rho one polynomial at a time instead of storing it (a time versus memory tradeoff)\")\n\nprint()\nprint(f\"{'parameter set':<10} {'pk':>6} {'sk':>6} {'signature':>10} {'vectors y, z, w (l+l+k int32 polys)':>38}\")\nfor name, k, l, sk, sig, pk in ((\"ML-DSA-44\", 4, 4, 2560, 2420, 1312), (\"ML-DSA-65\", 6, 5, 4032, 3309, 1952), (\"ML-DSA-87\", 8, 7, 4896, 4627, 2592)):\n    print(f\"{name:<10} {pk:>6} {sk:>6} {sig:>10} {(l + l + k) * n * 4:>34} B\")\nprint(\"ML-DSA works with 23-bit coefficients (int32), and signing keeps several vectors alive while it repeats the rejection-sampling loop\")\n\n# --- wiping secrets: what Python can and cannot guarantee\nsecret = bytearray(b\"top secret key material........\")\nview = memoryview(secret)\nsnapshot = bytes(secret)\nfor i in range(len(secret)):\n    secret[i] = 0\nprint()\nprint(\"a bytearray can be wiped in place:\", bytes(secret) == bytes(len(secret)), \"| the memoryview sees the wipe:\", bytes(view) == bytes(len(secret)))\nprint(\"but any copy made earlier is a separate immutable object that stays in memory until it is garbage collected:\", snapshot != bytes(len(snapshot)))\nimmutable = bytes(b\"top secret key material........\")\nprint(\"a bytes object cannot be wiped at all (it is immutable); keeping keys in bytes means they are copied freely by the interpreter and libraries\")\nprint(\"in C or Rust the same rule appears as: wipe with a function the compiler cannot optimise away (memset_s, explicit_bzero, zeroize), keep secrets off the stack and out of logs, and avoid swapping them to disk\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-memory",
+              "language": "text",
+              "code": "parameter set     ek     dk  ciphertext  one polynomial (int16)  vector of k  matrix A of k*k\nML-KEM-512      800   1632         768                  512 B       1024 B           2048 B\nML-KEM-768     1184   2400        1088                  512 B       1536 B           4608 B\nML-KEM-1024    1568   3168        1568                  512 B       2048 B           8192 B\nthe matrix A is by far the largest working object; implementations expand it from the 32-byte seed rho one polynomial at a time instead of storing it (a time versus memory tradeoff)\n\nparameter set     pk     sk  signature    vectors y, z, w (l+l+k int32 polys)\nML-DSA-44    1312   2560       2420                              12288 B\nML-DSA-65    1952   4032       3309                              16384 B\nML-DSA-87    2592   4896       4627                              22528 B\nML-DSA works with 23-bit coefficients (int32), and signing keeps several vectors alive while it repeats the rejection-sampling loop\n\na bytearray can be wiped in place: True | the memoryview sees the wipe: True\nbut any copy made earlier is a separate immutable object that stays in memory until it is garbage collected: True\na bytes object cannot be wiped at all (it is immutable); keeping keys in bytes means they are copied freely by the interpreter and libraries\nin C or Rust the same rule appears as: wipe with a function the compiler cannot optimise away (memset_s, explicit_bzero, zeroize), keep secrets off the stack and out of logs, and avoid swapping them to disk",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The tables reproduce the standard sizes and show the structure of the working memory: a single polynomial is 512 bytes, a vector of k polynomials 1 to 2 KB, and the matrix grows with k² to 8 KB for ML-KEM-1024. For ML-DSA the polynomials are wider (int32), and signing keeps several vectors alive (the table's column is a rough estimate of three such vectors, not a measured figure) while the rejection loop repeats. The wiping demonstration shows the limit in a managed language: a `bytearray` can be zeroed in place and every view of it sees the change, but any earlier `bytes(...)` copy is a separate immutable object that remains in memory, and a `bytes` object cannot be wiped at all. This is the reason serious implementations of key handling are written in languages that give explicit control (C with `explicit_bzero`/`memset_s`, Rust with the `zeroize` crate) and why Python code should keep keys in wipeable buffers, avoid converting them to `bytes`, and rely on the operating system or a hardware module for real protection.\n\n**Common mistakes:** assuming that `del key` or setting a variable to `None` erases anything, leaving keys in exception tracebacks and debug logs, and allowing secrets into core dumps or swap (lock the memory pages and disable dumps for key-holding processes)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why do small devices regenerate the public matrix instead of storing it?",
+              "options": [
+                "It is the largest working object; regenerating from the 32-byte seed trades time for memory",
+                "It is secret",
+                "It is not needed"
+              ],
+              "correct_index": 0,
+              "explanation": "k*k polynomials of 512 bytes grow to 8 KB for k = 4."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What can a Python program not do about a secret held in a bytes object?",
+              "options": [
+                "Wipe it, because bytes is immutable and copies are made freely",
+                "Hash it",
+                "Compare it"
+              ],
+              "correct_index": 0,
+              "explanation": "Use wipeable buffers, and rely on lower-level languages or hardware for real zeroization."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is `del key` not a way to erase a secret?",
+              "options": [
+                "It only removes a name; the memory is reused later and copies may exist",
+                "It encrypts the key",
+                "It deletes the file"
+              ],
+              "correct_index": 0,
+              "explanation": "Memory contents are not cleared by deleting a reference."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Table 3 (sizes of keys and ciphertexts)"
+            },
+            {
+              "book": "B92",
+              "locator": "FIPS 204, Table 2 (sizes of keys and signatures)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The working-memory figures are derived from the polynomial sizes (16-bit coefficients for ML-KEM, 32-bit for ML-DSA) and are estimates of data structures, not measurements of any implementation. The advice on locked pages, core dumps, explicit_bzero and zeroize is general secure-coding practice."
+          },
+          "after": "sec-8"
+        },
+        {
+          "slug": "sec-10",
+          "action": "replace",
+          "title": "9.10 Performance",
+          "summary": "Where the arithmetic goes in ML-KEM (operation counts from the NTT of lesson 8.3), and measured timings of pure Python against OpenSSL.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Performance claims need a method. The honest starting point is **operation counting**: in ML-KEM almost all arithmetic is polynomial multiplication done with the NTT, and the NTT costs a fixed number of modular multiplications (lesson 8.3: 896 for a forward transform, 1,152 for the inverse including the final scaling, 640 for a pointwise product of two transformed polynomials). Key generation transforms s and e and multiplies the matrix by s; encapsulation transforms y, multiplies by Aᵀ and by t, and applies inverse transforms; decapsulation decrypts and then **re-encrypts** to run the validity check. The first listing counts the multiplications for the three parameter sets. Hashing (SHA-3 for expanding the matrix and sampling noise) is not counted here, although in optimised code it often dominates.\n\nCounts do not tell the time. The second listing measures wall-clock time of the pure-Python reference code against OpenSSL, but it is **not run in the build check**, because timings depend on the machine and on what else is running; the output shown is a sample from one run on the author's computer. The labs use the pure-Python reference libraries kyber-py (ML-KEM) and dilithium-py (ML-DSA), and `cryptography` 50.0.1 (OpenSSL) as an independent implementation. Everything runs on your own machine on keys generated in the lesson. The code teaches how implementations are structured and tested; it is reference code, slow and not hardened against side channels, and must not protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-opcounts",
+              "language": "python",
+              "code": "NTT, INTT, POINTWISE = 896, 1152, 640        # modular multiplications for one forward NTT, one inverse NTT and one pointwise product (measured in lesson 8.3)\n\ndef keygen_muls(k):\n    return 2 * k * NTT + k * k * POINTWISE                                  # NTT of s and e, then A o s\n\ndef decrypt_muls(k):\n    return k * NTT + k * POINTWISE + INTT                                   # NTT of u, s o u, one inverse NTT\n\ndef encrypt_muls(k):\n    return k * NTT + k * k * POINTWISE + k * INTT + k * POINTWISE + INTT    # NTT of y, A^T o y, k inverse NTTs, t o y, one more inverse NTT\n\nprint(\"modular multiplications spent in the polynomial arithmetic of ML-KEM (hashing and sampling are not counted):\")\nprint(f\"{'parameter set':<12} {'KeyGen':>8} {'Encaps':>8} {'Decaps':>8} {'Decaps / Encaps':>16}\")\nfor name, k in ((\"ML-KEM-512\", 2), (\"ML-KEM-768\", 3), (\"ML-KEM-1024\", 4)):\n    kg, enc = keygen_muls(k), encrypt_muls(k)\n    dec = decrypt_muls(k) + enc                                             # decapsulation decrypts and then re-encrypts for the validity check\n    print(f\"{name:<12} {kg:>8,} {enc:>8,} {dec:>8,} {dec / enc:>16.2f}\")\nprint(\"decapsulation costs 1.3 to 1.5 times an encapsulation: it decrypts (cheap) and then re-encrypts to run the validity check\")\nprint(\"the cost grows faster than linearly in k (the k x k matrix products), while the key and ciphertext sizes grow linearly\")\n\nimport math\nprint()\nprint(\"what the transform buys: the same operation with schoolbook ring multiplication (256 * 256 = 65,536 multiplications per product)\")\nfor name, k in ((\"ML-KEM-768\", 3),):\n    products = k * k + k + 1                                                # A o y, t o y and the decryption product, roughly\n    print(f\"{name}: about {products} ring products per encryption -> schoolbook {products * 65536:,} against the NTT route {encrypt_muls(k):,} multiplications ({products * 65536 / encrypt_muls(k):.0f} times more)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-opcounts",
+              "language": "text",
+              "code": "modular multiplications spent in the polynomial arithmetic of ML-KEM (hashing and sampling are not counted):\nparameter set   KeyGen   Encaps   Decaps  Decaps / Encaps\nML-KEM-512      6,144    9,088   13,312             1.46\nML-KEM-768     11,136   14,976   20,736             1.38\nML-KEM-1024    17,408   22,144   29,440             1.33\ndecapsulation costs 1.3 to 1.5 times an encapsulation: it decrypts (cheap) and then re-encrypts to run the validity check\nthe cost grows faster than linearly in k (the k x k matrix products), while the key and ciphertext sizes grow linearly\n\nwhat the transform buys: the same operation with schoolbook ring multiplication (256 * 256 = 65,536 multiplications per product)\nML-KEM-768: about 13 ring products per encryption -> schoolbook 851,968 against the NTT route 14,976 multiplications (57 times more)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "code",
+              "id": "c-timing",
+              "language": "python",
+              "code": "import time\nfrom cryptography.hazmat.primitives.asymmetric import mlkem, mldsa\nfrom kyber_py.ml_kem import ML_KEM_768\nfrom dilithium_py.ml_dsa import ML_DSA_65\n\ndef best_of(fn, repeats):\n    times = []\n    for _ in range(repeats):\n        start = time.perf_counter(); fn(); times.append(time.perf_counter() - start)\n    return min(times) * 1000                                              # milliseconds, best of several runs\n\nek, dk = ML_KEM_768.keygen(); key, ct = ML_KEM_768.encaps(ek)\npk, sk = ML_DSA_65.keygen(); sig = ML_DSA_65.sign(sk, b\"m\")\nossl_priv = mlkem.MLKEM768PrivateKey.generate(); ossl_pub = ossl_priv.public_key(); _, ossl_ct = ossl_pub.encapsulate()\ndsa_priv = mldsa.MLDSA65PrivateKey.generate(); dsa_pub = dsa_priv.public_key(); dsa_sig = dsa_priv.sign(b\"m\")\n\nrows = [\n    (\"ML-KEM-768 keygen\", best_of(ML_KEM_768.keygen, 5), best_of(mlkem.MLKEM768PrivateKey.generate, 200)),\n    (\"ML-KEM-768 encaps\", best_of(lambda: ML_KEM_768.encaps(ek), 5), best_of(ossl_pub.encapsulate, 200)),\n    (\"ML-KEM-768 decaps\", best_of(lambda: ML_KEM_768.decaps(dk, ct), 5), best_of(lambda: ossl_priv.decapsulate(ossl_ct), 200)),\n    (\"ML-DSA-65 keygen\", best_of(ML_DSA_65.keygen, 5), best_of(mldsa.MLDSA65PrivateKey.generate, 200)),\n    (\"ML-DSA-65 sign\", best_of(lambda: ML_DSA_65.sign(sk, b\"m\"), 5), best_of(lambda: dsa_priv.sign(b\"m\"), 200)),\n    (\"ML-DSA-65 verify\", best_of(lambda: ML_DSA_65.verify(pk, b\"m\", sig), 5), best_of(lambda: dsa_pub.verify(dsa_sig, b\"m\"), 200)),\n]\nprint(f\"{'operation':<20} {'pure Python (ms)':>17} {'OpenSSL via cryptography (ms)':>31} {'ratio':>8}\")\nfor name, py, native in rows:\n    print(f\"{name:<20} {py:>17.2f} {native:>31.3f} {py / native:>7.0f}x\")",
+              "caption": "Not run in the build check (timings depend on the machine); a sample output follows."
+            },
+            {
+              "type": "code",
+              "id": "o-c-timing",
+              "language": "text",
+              "code": "operation             pure Python (ms)   OpenSSL via cryptography (ms)    ratio\nML-KEM-768 keygen                 3.92                           0.160      25x\nML-KEM-768 encaps                 4.68                           0.042     112x\nML-KEM-768 decaps                 6.70                           0.062     108x\nML-DSA-65 keygen                 10.88                           0.184      59x\nML-DSA-65 sign                   49.27                           0.320     154x\nML-DSA-65 verify                 10.85                           0.164      66x",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The counts show that decapsulation costs 1.33 to 1.46 times an encapsulation (it decrypts and then re-encrypts), that the work grows faster than linearly in k because of the k × k matrix products (6,144 to 17,408 multiplications for key generation across the three sets), and that the NTT route needs about 57 times fewer multiplications than schoolbook products for ML-KEM-768. In the sample timings on one machine, pure Python needed 3.9 ms for ML-KEM-768 key generation, 4.7 ms for encapsulation and 6.7 ms for decapsulation, against 0.16, 0.042 and 0.062 ms in OpenSSL (25 to 112 times faster), and ML-DSA-65 signing took 49 ms in Python against 0.32 ms (154 times). Signing is the slowest operation because of the rejection loop and the larger vectors. These numbers only show the ordering and the rough gap between reference code and optimised native code; they must not be used to compare algorithms on other platforms.\n\n**Method points.** Measure the best of several runs on an idle machine, report the hardware, fix the compiler and library versions, and measure **both** the cost of the operation and the effect on the protocol (a larger handshake message can cost more than the arithmetic). Beware of optimising for speed in a way that breaks constant-time behaviour: table lookups and early exits that are harmless in a benchmark leak secrets (C10)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is decapsulation more expensive than encapsulation in ML-KEM?",
+              "options": [
+                "It decrypts and then re-encrypts to perform the validity check",
+                "It uses a larger key",
+                "It hashes the public key twice"
+              ],
+              "correct_index": 0,
+              "explanation": "The counts show 1.33 to 1.46 times."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does the cost of ML-KEM rise faster than linearly with the module rank k?",
+              "options": [
+                "The matrix-vector product has k x k pointwise products",
+                "Keys get longer",
+                "The NTT gets slower"
+              ],
+              "correct_index": 0,
+              "explanation": "Key generation counts rise from 6,144 to 17,408 multiplications."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why was the timing listing not run during the build check?",
+              "options": [
+                "Timings depend on the machine and load, so the output is only a sample",
+                "It cannot run in Python",
+                "It needs a network"
+              ],
+              "correct_index": 0,
+              "explanation": "Reproducible checks use counts; timings are reported as samples with their conditions."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 4.3 (NTT and multiplication in T_q, Algorithms 9 to 12) and the K-PKE algorithms 13 to 15 for the operation structure"
+            },
+            {
+              "book": "B90",
+              "locator": "kyber-py and (B100) cryptography/OpenSSL as the two implementations timed"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The multiplication counts reuse the figures measured in lesson 8.3 and the structure of KeyGen, Encrypt and Decrypt as I read them from the standard; they ignore additions, hashing and sampling. The timing sample is one run on one machine and is not reproducible by the build check."
+          },
+          "after": "sec-9"
+        },
+        {
+          "slug": "sec-11",
+          "action": "replace",
+          "title": "9.11 Interoperability",
+          "summary": "Differential testing of two independent implementations (pure Python and OpenSSL): same keys from a seed, cross encapsulation and signing, identical rejection keys and identical verdicts on mutated signatures.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Two correct implementations of a standard must produce **byte-identical results** for the same inputs, and must agree on which inputs are invalid. The strongest practical test is **differential testing**: run independent implementations side by side on many inputs, including malformed ones, and compare. This lab has two: the pure-Python reference libraries and OpenSSL, accessed through the `cryptography` package. For ML-KEM the interoperability points are: the same seed gives the same public key; a ciphertext produced by one implementation is decapsulated to the same shared secret by the other; and, because implicit rejection is deterministic, even the **pseudo-random key returned for a tampered ciphertext is identical** in both. For ML-DSA the points are: the same seed gives the same public key; signatures from either implementation verify in the other; and, for mutated signatures, both implementations reach the same accept/reject verdict.\n\nKnown-answer tests from a standards body would add reference values, but none were available in the lab; independent implementations are the next best evidence. The listing runs the comparisons on ML-KEM-768 and -1024 (the parameter sets available in this version of the OpenSSL interface) and on all three ML-DSA sets. The labs use the pure-Python reference libraries kyber-py (ML-KEM) and dilithium-py (ML-DSA), and `cryptography` 50.0.1 (OpenSSL) as an independent implementation. Everything runs on your own machine on keys generated in the lesson. The code teaches how implementations are structured and tested; it is reference code, slow and not hardened against side channels, and must not protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-differential",
+              "language": "python",
+              "code": "import random\nfrom cryptography.exceptions import InvalidSignature\nfrom cryptography.hazmat.primitives.asymmetric import mlkem, mldsa\nfrom kyber_py.ml_kem import ML_KEM_768, ML_KEM_1024\nfrom dilithium_py.ml_dsa import ML_DSA_44, ML_DSA_65, ML_DSA_87\n\nrng = random.Random(21)\nKEM = {\"ML-KEM-768\": (ML_KEM_768, mlkem.MLKEM768PrivateKey, mlkem.MLKEM768PublicKey), \"ML-KEM-1024\": (ML_KEM_1024, mlkem.MLKEM1024PrivateKey, mlkem.MLKEM1024PublicKey)}\nprint(\"two independent implementations: kyber-py / dilithium-py (pure Python reference code) and OpenSSL through the cryptography package\")\nprint(\"(OpenSSL's ML-KEM offers parameter sets 768 and 1024 only in this package version)\")\nprint()\nprint(f\"{'ML-KEM set':<12} {'same keys from a seed':>22} {'py encaps -> SSL decaps':>24} {'SSL encaps -> py decaps':>24} {'tampered ct: same rejection key':>32}\")\nfor name, (py, priv_cls, pub_cls) in KEM.items():\n    agree = pe = ep = rej = 0\n    runs = 20\n    for _ in range(runs):\n        seed = bytes(rng.getrandbits(8) for _ in range(64))\n        ek, dk = py.key_derive(seed)\n        ssl_priv = priv_cls.from_seed_bytes(seed)\n        agree += ssl_priv.public_key().public_bytes_raw() == ek\n        key, ct = py.encaps(ek)\n        pe += ssl_priv.decapsulate(ct) == key\n        key2, ct2 = pub_cls.from_public_bytes(ek).encapsulate()\n        ep += py.decaps(dk, ct2) == key2\n        bad = bytearray(ct); bad[rng.randrange(len(bad))] ^= 1 << rng.randrange(8)\n        rej += py.decaps(dk, bytes(bad)) == ssl_priv.decapsulate(bytes(bad)) != key        # even the pseudo-random rejection key is identical\n    print(f\"{name:<12} {f'{agree} of {runs}':>22} {f'{pe} of {runs}':>24} {f'{ep} of {runs}':>24} {f'{rej} of {runs}':>32}\")\n\nDSA = {\"ML-DSA-44\": (ML_DSA_44, mldsa.MLDSA44PrivateKey, mldsa.MLDSA44PublicKey), \"ML-DSA-65\": (ML_DSA_65, mldsa.MLDSA65PrivateKey, mldsa.MLDSA65PublicKey), \"ML-DSA-87\": (ML_DSA_87, mldsa.MLDSA87PrivateKey, mldsa.MLDSA87PublicKey)}\nprint()\nprint(f\"{'ML-DSA set':<12} {'same keys from a seed':>22} {'py sign -> SSL verify':>22} {'SSL sign -> py verify':>22} {'200 mutated sigs: same verdict':>31}\")\nfor name, (py, priv_cls, pub_cls) in DSA.items():\n    agree = ps = sp = 0\n    runs = 5\n    mutated_same = mutated_total = 0\n    for _ in range(runs):\n        seed = bytes(rng.getrandbits(8) for _ in range(32))\n        pk, sk = py.key_derive(seed)\n        ssl_priv = priv_cls.from_seed_bytes(seed)\n        ssl_pub = ssl_priv.public_key()\n        agree += ssl_pub.public_bytes_raw() == pk\n        msg = bytes(rng.getrandbits(8) for _ in range(rng.randrange(0, 200)))\n        try:\n            ssl_pub.verify(py.sign(sk, msg), msg); ps += 1\n        except InvalidSignature:\n            pass\n        sp += py.verify(pk, msg, ssl_priv.sign(msg))\n        good = py.sign(sk, msg)\n        for _ in range(40):\n            bad = bytearray(good)\n            for _ in range(rng.randint(1, 3)):\n                bad[rng.randrange(len(bad))] ^= 1 << rng.randrange(8)\n            try:\n                ssl_pub.verify(bytes(bad), msg); verdict_ssl = True\n            except InvalidSignature:\n                verdict_ssl = False\n            mutated_same += py.verify(pk, msg, bytes(bad)) == verdict_ssl\n            mutated_total += 1\n    print(f\"{name:<12} {f'{agree} of {runs}':>22} {f'{ps} of {runs}':>22} {f'{sp} of {runs}':>22} {f'{mutated_same} of {mutated_total}':>31}\")\nprint(\"differential testing: when two independent implementations agree on hundreds of random and malformed inputs, a bug would have to be present in both in the same way\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-differential",
+              "language": "text",
+              "code": "two independent implementations: kyber-py / dilithium-py (pure Python reference code) and OpenSSL through the cryptography package\n(OpenSSL's ML-KEM offers parameter sets 768 and 1024 only in this package version)\n\nML-KEM set    same keys from a seed  py encaps -> SSL decaps  SSL encaps -> py decaps  tampered ct: same rejection key\nML-KEM-768                 20 of 20                 20 of 20                 20 of 20                         20 of 20\nML-KEM-1024                20 of 20                 20 of 20                 20 of 20                         20 of 20\n\nML-DSA set    same keys from a seed  py sign -> SSL verify  SSL sign -> py verify  200 mutated sigs: same verdict\nML-DSA-44                    5 of 5                 5 of 5                 5 of 5                      200 of 200\nML-DSA-65                    5 of 5                 5 of 5                 5 of 5                      200 of 200\nML-DSA-87                    5 of 5                 5 of 5                 5 of 5                      200 of 200\ndifferential testing: when two independent implementations agree on hundreds of random and malformed inputs, a bug would have to be present in both in the same way",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "All comparisons agree: the same keys result from a seed in every trial, ciphertexts and signatures cross-verify in both directions for all parameter sets tested, tampered ML-KEM ciphertexts give the same rejection key in both implementations (20 of 20 for each set), and of 600 randomly mutated ML-DSA signatures (200 per parameter set) both implementations returned the same verdict every time. That the rejection key matches is a strong signal: it depends on z and the whole ciphertext through SHAKE256 and is only identical if both implementations follow the same specification down to this corner of the decapsulation algorithm.\n\n**What this does and does not show.** It shows that two independent implementations interoperate on these inputs, which is exactly what protocol deployments need. It does not prove either implementation correct on all inputs (a bug present in both, or one on inputs not generated here, would remain), it does not test the ML-KEM-512 set (not offered by this OpenSSL interface), and it says nothing about side-channel behaviour. **Practice:** keep an independent implementation in the test suite, regenerate the comparisons in CI on every library update, add the official known-answer vectors when available, and include malformed inputs."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is differential testing?",
+              "options": [
+                "Running independent implementations on the same inputs and comparing their outputs",
+                "Testing one implementation twice",
+                "Testing with random keys only"
+              ],
+              "correct_index": 0,
+              "explanation": "Agreement on many inputs is strong evidence of correct interoperation."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is it significant that tampered ciphertexts give the same rejection key in both implementations?",
+              "options": [
+                "That key depends on z and the full ciphertext, so equality shows the implementations follow the specification in detail",
+                "It proves the key is secret",
+                "It shows the ciphertext was valid"
+              ],
+              "correct_index": 0,
+              "explanation": "K-bar = SHAKE256(z || c) is deterministic."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does agreement between two implementations not prove?",
+              "options": [
+                "That neither has a bug in the same place or on inputs that were not tested",
+                "That keys match",
+                "That signatures verify"
+              ],
+              "correct_index": 0,
+              "explanation": "Differential testing finds disagreements; it cannot prove correctness."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B100",
+              "locator": "cryptography 50.0.1: mlkem (MLKEM768/1024) and mldsa (MLDSA44/65/87) keys, used as the independent OpenSSL-based implementation"
+            },
+            {
+              "book": "B90",
+              "locator": "kyber-py and (B91) dilithium-py as the pure-Python reference implementations compared"
+            },
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Algorithm 21 (decapsulation and implicit rejection) which both implementations must follow"
+            }
+          ],
+          "needs_verification": {
+            "reason": "Official known-answer test vectors (NIST ACVP) were not available in the lab, so the evidence is cross-implementation agreement only. ML-KEM-512 could not be compared because the OpenSSL interface in this package version offers only the 768 and 1024 sets."
+          },
+          "after": "sec-10"
+        },
+        {
+          "slug": "sec-12",
+          "action": "replace",
+          "title": "9.12 Deployment Testing",
+          "summary": "A deployment gate that runs known-answer fingerprints, many random round trips with cross-checks, negative tests, a randomness smoke test and a fault test, and states what it does not prove.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Before a post-quantum component ships, it needs a **repeatable gate** that answers one question: does this build behave exactly like the one that passed review? A practical gate has five layers. (1) **Known-answer tests**: derive everything from fixed seeds and compare a fingerprint of the outputs with a value pinned in the repository, so any change in any byte is caught. (2) **Round trips on many random keys**, cross-checked with an independent implementation. (3) **Negative tests**: wrong lengths, tampered ciphertexts and corrupted keys must be rejected or handled by implicit rejection, and must never crash. (4) A **randomness smoke test** (bit balance, no repeated shared secrets). It cannot certify a generator, but it catches a stuck or broken one. (5) A **fault test**: a corrupted stored key must not silently produce plausible output.\n\nThe listing runs these layers against ML-KEM-768 and prints a PASS/FAIL line for each check, and a final decision. A gate like this is cheap enough to run on every commit. It verifies *behaviour*; it cannot establish constant-time execution, memory safety or resistance to side channels, which need different tools (C10 and C11). The labs use the pure-Python reference libraries kyber-py (ML-KEM) and dilithium-py (ML-DSA), and `cryptography` 50.0.1 (OpenSSL) as an independent implementation. Everything runs on your own machine on keys generated in the lesson. The code teaches how implementations are structured and tested; it is reference code, slow and not hardened against side channels, and must not protect real data."
+            },
+            {
+              "type": "code",
+              "id": "c-deployment-gate",
+              "language": "python",
+              "code": "import hashlib, json, random\nfrom cryptography.hazmat.primitives.asymmetric import mlkem\nfrom kyber_py.ml_kem import ML_KEM_768\n\nkem = ML_KEM_768\nrng = random.Random(2026)\nresults = []\ndef gate(name, ok, detail=\"\"):\n    results.append((name, bool(ok)))\n    print(f\"[{'PASS' if ok else 'FAIL'}] {name}\" + (f\"  ({detail})\" if detail else \"\"))\n\n# 1. known-answer regression: derive everything from fixed seeds and fingerprint the outputs; a change in any byte changes the fingerprint\ndef fingerprint():\n    h = hashlib.sha256()\n    for i in range(10):\n        seed = hashlib.shake_256(b\"kat-seed-%d\" % i).digest(64)\n        ek, dk = kem.key_derive(seed)\n        m = hashlib.shake_256(b\"kat-msg-%d\" % i).digest(32)\n        key, ct = kem._encaps_internal(ek, m)                           # the deterministic internal function exists for testing only\n        h.update(ek + dk + ct + key)\n    return h.hexdigest()\nfirst, second = fingerprint(), fingerprint()\ngate(\"known-answer fingerprint is reproducible\", first == second, f\"sha256 {first[:16]}...\")\npinned = first                                                          # in a real project this value is stored in the repository and compared in CI\n\n# 2. functional round trips on many random keys, cross-checked against the independent OpenSSL implementation\nok_rt = ok_x = 0\nfor _ in range(60):\n    seed = bytes(rng.getrandbits(8) for _ in range(64))\n    ek, dk = kem.key_derive(seed)\n    key, ct = kem.encaps(ek)\n    ok_rt += kem.decaps(dk, ct) == key\n    ok_x += mlkem.MLKEM768PrivateKey.from_seed_bytes(seed).decapsulate(ct) == key\ngate(\"60 random round trips\", ok_rt == 60)\ngate(\"60 round trips cross-checked with OpenSSL\", ok_x == 60)\n\n# 3. negative tests: malformed and tampered inputs must be rejected or handled by implicit rejection, and never crash\nek, dk = kem.keygen()\nkey, ct = kem.encaps(ek)\ndef raises(fn):\n    try:\n        fn(); return False\n    except ValueError:\n        return True\ngate(\"wrong-length ek rejected\", raises(lambda: kem.encaps(ek[:-1])))\ngate(\"wrong-length ciphertext rejected\", raises(lambda: kem.decaps(dk, ct[:-1])))\ngate(\"wrong-length dk rejected\", raises(lambda: kem.decaps(dk[:-1], ct)))\nflips = sum(kem.decaps(dk, ct[:i] + bytes([ct[i] ^ (1 << (i % 8))]) + ct[i + 1:]) != key for i in range(0, len(ct), 17))\ngate(\"every sampled single-bit ciphertext flip changes the key (implicit rejection)\", flips == len(range(0, len(ct), 17)), f\"{flips} of {len(range(0, len(ct), 17))}\")\n\n# 4. randomness sanity: shared secrets from independent runs look uniform (a smoke test, not a certification)\nsecrets_ = b\"\".join(kem.encaps(ek)[0] for _ in range(300))\nones = sum(bin(byte).count(\"1\") for byte in secrets_)\nfraction = ones / (8 * len(secrets_))\ngate(\"bit balance of 300 shared secrets within 1 percent of one half\", abs(fraction - 0.5) < 0.01)\ngate(\"no repeated shared secret in 300 runs\", len({kem.encaps(ek)[0] for _ in range(300)}) == 300)\n\n# 5. state and fault handling: a corrupted private key must not silently produce plausible output\nbad_dk = bytearray(dk); bad_dk[10] ^= 1\ngate(\"corrupted dk detected by a pair-wise test\", kem.decaps(bytes(bad_dk), ct) != key)\n\nfailed = [name for name, ok in results if not ok]\nprint()\nprint(f\"deployment gate: {len(results) - len(failed)} of {len(results)} checks passed\", \"-> release blocked: \" + \", \".join(failed) if failed else \"-> all checks passed\")\nprint(\"this gate verifies behaviour only; it does not establish constant-time execution, memory safety or side-channel resistance (see C10 and C11)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-deployment-gate",
+              "language": "text",
+              "code": "[PASS] known-answer fingerprint is reproducible  (sha256 1bf94dd397471c22...)\n[PASS] 60 random round trips\n[PASS] 60 round trips cross-checked with OpenSSL\n[PASS] wrong-length ek rejected\n[PASS] wrong-length ciphertext rejected\n[PASS] wrong-length dk rejected\n[PASS] every sampled single-bit ciphertext flip changes the key (implicit rejection)  (64 of 64)\n[PASS] bit balance of 300 shared secrets within 1 percent of one half\n[PASS] no repeated shared secret in 300 runs\n[PASS] corrupted dk detected by a pair-wise test\n\ndeployment gate: 10 of 10 checks passed -> all checks passed\nthis gate verifies behaviour only; it does not establish constant-time execution, memory safety or side-channel resistance (see C10 and C11)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "All ten checks pass; the fingerprint of the known-answer run is reproducible between runs, 60 random round trips agree with each other and with OpenSSL, malformed lengths are rejected, all 64 sampled ciphertext bit flips change the returned key (implicit rejection), and the corrupted private key does not produce the honest shared secret. The value of the gate is in what it blocks: a regression in encoding, a changed constant, an accidental change of the sampling function, or a library update that changes behaviour will change the fingerprint or fail a cross-check, and the release stops with a named failing check.\n\n**Limits, stated plainly.** A passing gate is not a security proof. The tests above do not detect timing or cache leaks, do not examine memory after use, do not show that the random generator is of cryptographic quality, and do not cover hardware faults beyond the single corruption tested. Production deployments add the official validation vectors, a code review of the constant-time properties, compiler and platform matrices, fuzzing of every parser, and, where required, certification of the module under the relevant validation programme."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does a pinned known-answer fingerprint detect?",
+              "options": [
+                "Any change in the outputs of a deterministic run, even in a single byte",
+                "Only timing changes",
+                "Only key length changes"
+              ],
+              "correct_index": 0,
+              "explanation": "The fingerprint hashes keys, ciphertexts and shared secrets from fixed seeds."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which of these can a behavioural test gate NOT establish?",
+              "options": [
+                "Constant-time execution and side-channel resistance",
+                "Round trips succeed",
+                "Malformed inputs are rejected"
+              ],
+              "correct_index": 0,
+              "explanation": "Those properties need timing analysis and code review (C10, C11)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why cross-check round trips with an independent implementation?",
+              "options": [
+                "A shared misunderstanding is unlikely to appear in two separate codebases",
+                "To make the test slower",
+                "To avoid using seeds"
+              ],
+              "correct_index": 0,
+              "explanation": "Agreement between independent implementations is stronger evidence than self-consistency."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203, Section 7 (input checks and key pair check) and Section 3.3 (requirements for implementations)"
+            },
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, requirements for KEM implementation and testing"
+            },
+            {
+              "book": "B100",
+              "locator": "cryptography/OpenSSL as the independent implementation in the gate"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The five-layer structure of the gate is engineering practice, not a procedure from a standard; validation programmes (known-answer vectors and module validation) are mentioned in general terms and were not studied here. SP 800-227 was not re-read."
+          },
+          "after": "sec-11"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "c9-n01",
+          "prompt": "What does an ML-KEM decapsulation key consist of?",
+          "options": [
+            "dk_PKE, the encapsulation key, H(ek) and the rejection value z",
+            "Only the secret vector",
+            "The seed and a signature"
+          ],
+          "correct_index": 0,
+          "explanation": "FIPS 203 section 7.1 defines dk = dk_PKE | ek | H(ek) | z.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 7.1"
+          }
+        },
+        {
+          "id": "c9-n02",
+          "prompt": "Why should the deterministic internal functions of ML-KEM not be exposed to applications?",
+          "options": [
+            "The randomness must be generated inside the module",
+            "They are slow",
+            "They are secret"
+          ],
+          "correct_index": 0,
+          "explanation": "Section 3.3 restricts them to testing.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 3.3"
+          }
+        },
+        {
+          "id": "c9-n03",
+          "prompt": "What is the purpose of the ML-DSA context string?",
+          "options": [
+            "To bind a signature to a purpose and prevent replay in another context",
+            "To encrypt the message",
+            "To select the parameter set"
+          ],
+          "correct_index": 0,
+          "explanation": "A signature for one context fails under another; the context is at most 255 bytes.",
+          "source": {
+            "book": "B92",
+            "locator": "ML-DSA.Sign and ML-DSA.Verify"
+          }
+        },
+        {
+          "id": "c9-n04",
+          "prompt": "What happens to a stateful hash-based signer whose backup is restored without its counter?",
+          "options": [
+            "It may reuse a one-time key, which allows forgery",
+            "Nothing",
+            "It signs faster"
+          ],
+          "correct_index": 0,
+          "explanation": "Reusing a leaf for two messages reveals chain values at two depths.",
+          "source": {
+            "book": "B93",
+            "locator": "XMSS and WOTS+ descriptions"
+          }
+        },
+        {
+          "id": "c9-n05",
+          "prompt": "Which checks of a stored ML-KEM dk detect corruption of the secret vector?",
+          "options": [
+            "The pair-wise consistency test, not the hash check",
+            "The hash check",
+            "Neither"
+          ],
+          "correct_index": 0,
+          "explanation": "The hash check covers only the embedded ek and H(ek).",
+          "source": {
+            "book": "B04",
+            "locator": "Sections 7.1 and 7.3"
+          }
+        },
+        {
+          "id": "c9-n06",
+          "prompt": "How does the modulus check of an encapsulation key detect an out-of-range coefficient?",
+          "options": [
+            "Decoding reduces it modulo q, so re-encoding gives different bytes",
+            "It compares with a hash",
+            "It checks the key length"
+          ],
+          "correct_index": 0,
+          "explanation": "ByteDecode12 reduces modulo 3329.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 7.2"
+          }
+        },
+        {
+          "id": "c9-n07",
+          "prompt": "What does ML-KEM decapsulation return for a ciphertext that fails the re-encryption check?",
+          "options": [
+            "SHAKE256(z || c), a pseudo-random key, without an error",
+            "An error",
+            "The zero key"
+          ],
+          "correct_index": 0,
+          "explanation": "Implicit rejection hides validity from an attacker.",
+          "source": {
+            "book": "B04",
+            "locator": "Algorithm 21"
+          }
+        },
+        {
+          "id": "c9-n08",
+          "prompt": "What must a verifier do first with a signature of the wrong length?",
+          "options": [
+            "Reject it before any computation",
+            "Truncate it",
+            "Pad it"
+          ],
+          "correct_index": 0,
+          "explanation": "Fixed sizes make this a trivial and necessary check.",
+          "source": {
+            "book": "B92",
+            "locator": "Table 2 and ML-DSA.Verify"
+          }
+        },
+        {
+          "id": "c9-n09",
+          "prompt": "How many bytes does one polynomial occupy in an ML-KEM encapsulation key?",
+          "options": [
+            "384",
+            "256",
+            "512"
+          ],
+          "correct_index": 0,
+          "explanation": "256 coefficients of 12 bits.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 4.2.1 and Table 3"
+          }
+        },
+        {
+          "id": "c9-n10",
+          "prompt": "Why is decapsulation more expensive than encapsulation in ML-KEM?",
+          "options": [
+            "It decrypts and then re-encrypts for the validity check",
+            "Its key is larger",
+            "It hashes more messages"
+          ],
+          "correct_index": 0,
+          "explanation": "The counts give a ratio of 1.33 to 1.46.",
+          "source": {
+            "book": "B04",
+            "locator": "Algorithms 14, 15 and 21"
+          }
+        },
+        {
+          "id": "c9-n11",
+          "prompt": "What is the strongest practical test of interoperability when official vectors are not available?",
+          "options": [
+            "Differential testing between independent implementations, including malformed inputs",
+            "Running the same code twice",
+            "Checking key lengths"
+          ],
+          "correct_index": 0,
+          "explanation": "Agreement on many inputs makes a shared bug unlikely, but not impossible.",
+          "source": {
+            "book": "B100",
+            "locator": "mlkem and mldsa interfaces"
+          }
+        },
+        {
+          "id": "c9-n12",
+          "prompt": "What can a behavioural deployment gate not prove?",
+          "options": [
+            "Constant-time execution and side-channel resistance",
+            "That round trips work",
+            "That malformed inputs are rejected"
+          ],
+          "correct_index": 0,
+          "explanation": "Those need timing analysis, code review and other tools.",
+          "source": {
+            "book": "B04",
+            "locator": "Section 3.3"
+          }
+        }
+      ],
+      "estimated_minutes": 645,
+      "notes": "Rewrites twelve outline sections as lessons with executed listings: key layouts of ML-KEM and ML-DSA verified on all parameter sets, a toy stateful hash-based signer, a measured comparison of which key checks detect which corruption, the FIPS 203 modulus check and implicit rejection, malformed-signature tests, ByteEncode/Compress with an exhaustive error check, a misuse-resistant API, size and operation counts, a sample timing comparison with OpenSSL, differential testing against OpenSSL, and a deployment gate.",
+      "learning_objectives": [
+        "Describe the key formats of ML-KEM and ML-DSA and verify their structure, including the role of the seed.",
+        "Explain stateful and stateless hash-based signature implementation and the operational risk of state reuse.",
+        "Implement and test the FIPS 203 input checks, implicit rejection and the serialization primitives.",
+        "Design a small API that resists misuse and explain secret handling in managed and unmanaged languages.",
+        "Count operations, measure performance with a stated method, and explain what the numbers do and do not show.",
+        "Run differential and deployment tests across independent implementations and state the limits of such tests."
+      ]
+    }
+  ]
+}
