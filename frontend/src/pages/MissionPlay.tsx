@@ -155,9 +155,9 @@ export const MissionPlay: React.FC = () => {
       {/* Mission Content Router: Simulation (BB84) vs Decision Scenario */}
       <div style={{ maxWidth: '1000px', margin: '0 auto', padding: '32px 20px 80px' }}>
         {mission.type === 'simulation' ? (
-          <BB84SimulationEngine mission={mission} onFinished={completeMission} backTo={backTo} />
+          <BB84SimulationEngine key={mission.mission_id} mission={mission} onFinished={completeMission} backTo={backTo} />
         ) : (
-          <DecisionMissionEngine mission={mission} onFinished={completeMission} onBack={handleExit} backLabel="Back to the lesson" />
+          <DecisionMissionEngine key={mission.mission_id} mission={mission} onFinished={completeMission} onBack={handleExit} backLabel="Back to the lesson" />
         )}
       </div>
     </div>
