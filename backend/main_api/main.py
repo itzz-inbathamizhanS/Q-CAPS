@@ -140,8 +140,10 @@ def seed_quiz_bank():
     """Populate the server-side item bank on first start (idempotent; CLI: python seed_quizzes.py)."""
     from database import SessionLocal
     from seed_quizzes import seed_if_empty
+    from competency.seed import seed_competencies
     with SessionLocal() as session:
         seed_if_empty(session)
+        seed_competencies(session)
 
 @app.get("/")
 def root():

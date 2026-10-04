@@ -126,6 +126,8 @@ class Competency(Base):
     description = Column(String, nullable=True)
     prerequisites = Column(JSON, nullable=True)
     evidence_requirements = Column(JSON, nullable=True)
+    # Version of content/curriculum/competency_model.json that last wrote this row (competency/seed.py).
+    model_version = Column(String, nullable=True)
 
 class LearnerCapability(Base):
     __tablename__ = "learner_capabilities"

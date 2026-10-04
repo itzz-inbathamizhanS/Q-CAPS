@@ -56,6 +56,10 @@ def ensure_schema():
             cols = {c["name"] for c in insp.get_columns("findings")}
             if "title" not in cols:
                 conn.execute(text("ALTER TABLE findings ADD COLUMN title VARCHAR"))
+        if "competencies" in tables:
+            cols = {c["name"] for c in insp.get_columns("competencies")}
+            if "model_version" not in cols:
+                conn.execute(text("ALTER TABLE competencies ADD COLUMN model_version VARCHAR"))
         if "sections" in tables:
             cols = {c["name"] for c in insp.get_columns("sections")}
             if "summary" not in cols:

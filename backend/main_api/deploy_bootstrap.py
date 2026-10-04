@@ -4,7 +4,7 @@
 
 What it does, in order (all idempotent):
   1. creates the tables;
-  2. imports the curriculum structure and the question banks;
+  2. imports the curriculum structure, the question banks and the competency model;
   3. creates the admin account (QCAPS_ADMIN_NAME, default "admin"; QCAPS_ADMIN_PASSWORD, at least 12 characters);
   4. imports every lesson pack in content/packs (validated first, audited as the admin);
   5. creates the two DEMO learner accounts when their passwords are set:
@@ -31,6 +31,7 @@ def main() -> int:
     from course_content.import_pack import import_pack
     from demo_account import create_demo_account
     import seed_quizzes
+    from competency.seed import seed_competencies
 
     Base.metadata.create_all(bind=engine)
     ensure_schema()
@@ -44,6 +45,7 @@ def main() -> int:
     with SessionLocal() as db:
         print("curriculum:", {k: v for k, v in import_curriculum(db, DEFAULT_SOURCE).items()})
         seed_quizzes.seed_if_empty(db)
+        print("competencies:", seed_competencies(db))
         user, how = create_admin(db, admin_name, admin_password)
         print(f"admin account {admin_name!r}: {how}")
         packs = sorted((Path(__file__).resolve().parents[2] / "content" / "packs").glob("pack_*.json"))

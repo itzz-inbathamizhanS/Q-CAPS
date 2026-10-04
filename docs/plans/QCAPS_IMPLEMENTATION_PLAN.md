@@ -84,7 +84,7 @@ Re-verify the ones your task depends on.
 
 | # | Fact |
 |---|---|
-| C1 | `content/curriculum/competency_model.json` (`status: proposed-v1`) defines 8 domains / 43 competencies (MATH, PROG, COMP, NET, SEC, CRYPTO, QNT, PQC), 4 depths (Aware, Explain, Apply, Analyse) and the levels Unknown/Beginner/Developing/Proficient/Advanced, each with an evidence rule. |
+| C1 | `content/curriculum/competency_model.json` (`status: proposed-v1`) defines 8 domains / 44 competencies (the plan first said 43; corrected at T1.1) (MATH, PROG, COMP, NET, SEC, CRYPTO, QNT, PQC), 4 depths (Aware, Explain, Apply, Analyse) and the levels Unknown/Beginner/Developing/Proficient/Advanced, each with an evidence rule. |
 | C2 | Of the 599 items in `content/Quizzes/**/*.json`, only **124 have a `competency_id`**. |
 | C4 | The level `evidence` rules in `competency_model.json` are **prose strings** (e.g. "At least 60% on Aware/Explain items"); only `min_items_for_known`, `stale_after_months` and `min_coverage_for_domain_score` are machine-readable. Code cannot read the thresholds until a structured field is added (T1.4). |
 | C3 | Scanner finding ids (`backend/scanner_api/scanner/findings.py`): `pqc.kex.classical_only`, `pqc.kex.hybrid`, `pqc.kex.hybrid_available`, `pqc.auth.classical_certificate`, `tls.kex.no_forward_secrecy`, `tls.version.obsolete`, `cert.expired`, `cert.expiring`, `cert.untrusted`, `exposure.port.<n>`, `http.*`, `dns.*`. |
