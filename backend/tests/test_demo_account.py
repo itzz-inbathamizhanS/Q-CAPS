@@ -35,3 +35,37 @@ def test_demo_accounts_need_a_demo_name_and_an_explicit_reset(seeded):
         create_demo_account(seeded, "demo-x", "a-demo-password-1")
     again = create_demo_account(seeded, "demo-x", "a-demo-password-1", reset=True)
     assert seeded.query(models.User).filter_by(name="demo-x").count() == 1 and again["xp"] > 0
+
+
+def test_unknown_profile_is_rejected(seeded):
+    with pytest.raises(ValueError, match="profile must be"):
+        create_demo_account(seeded, "demo-p", "a-demo-password-1", profile="other")
+
+
+def test_passed_modules_must_have_their_prerequisites_passed(db):
+    from demo_account import _check_prerequisites
+    track = models.CourseTrack(slug="t", code="T", title="T")
+    db.add(track)
+    db.flush()
+    db.add_all([models.CourseModule(slug="m1", track_id=track.id, code="M1", title="m1", prerequisites=[]),
+                models.CourseModule(slug="m2", track_id=track.id, code="M2", title="m2", prerequisites=["m1"])])
+    db.commit()
+    _check_prerequisites(db, {"m1", "m2"})
+    with pytest.raises(ValueError, match="prerequisites"):
+        _check_prerequisites(db, {"m2"})
+
+
+def test_make_admin_creates_then_resets_to_a_clean_slate(client, db):
+    from demo_account import ensure_admin
+    ensure_admin(db, "admin", "first-admin-password")
+    user = db.query(models.User).filter_by(name="admin").one()
+    user.xp = 500
+    db.add(models.ScannerLog(user_id=user.id, endpoint="x", status="ok", details="{}"))
+    db.commit()
+    ensure_admin(db, "admin", "second-admin-password")
+    db.expire_all()
+    user = db.query(models.User).filter_by(name="admin").one()
+    assert user.role == "admin" and user.xp == 0 and db.query(models.ScannerLog).filter_by(user_id=user.id).count() == 0
+    ok = client.post("/api/auth/login", json={"name": "admin", "password": "second-admin-password"})
+    bad = client.post("/api/auth/login", json={"name": "admin", "password": "first-admin-password"})
+    assert ok.status_code == 200 and bad.status_code == 401

@@ -436,3 +436,7 @@ Answer keys, feedback and consequences are removed from the data compiled into t
 Abuse limits: a lab is locked for 15 s (then 30, 45, at most 60) after a wrong answer, a correct answer pays 100%, 75%, 50% or 25% of the lab's XP depending on the wrong answers before it, and a mission can be started at most 10 times per hour. These make trial and error expensive; they do not make it impossible.
 
 Single source of XP: `users.xp` is the only XP. Quiz XP is 50 per first-time-correct question plus the module's `xp` once on the first pass, both awarded in `quiz_service.py`. `GET /api/activities/me` also returns passed modules and best quiz scores, from which the browser derives completion, readiness and module badges. `POST /api/users/{id}/progress` drops the server-owned keys (XP, completion, scores, badges) from the saved blob. The capstone cards have no submission flow yet, so no capstone XP exists.
+
+### Demo and admin accounts (development only)
+
+`backend/main_api/demo_account.py` creates accounts for demonstrations and makes sure an admin exists: `--profile complete` (every module, lab and mission done), `--profile partial` (all of Track A plus B1 and B2 passed in prerequisite order with realistic scores and retakes, their lessons, labs and missions done, B3 started) and `--make-admin NAME` (create or reset an admin to a clean slate). Records are written in the shape the server writes them, XP follows the server rules, demo names must start with `demo`, and passwords are random and printed once. Back up the database before running it.
