@@ -58,7 +58,8 @@
   /* Geometry & Layout */
   --radius-card: 12px;
   --radius-button: 8px;
-  --sidebar-width: 250px;
+  --sidebar-width: 0px; /* navigation is a drawer opened from the header, not a permanent column */
+  --drawer-width: 280px;
   --header-height: 64px;
   --container-padding-desktop: 32px;
   --container-padding-mobile: 16px;
@@ -204,7 +205,7 @@ button, input, select, textarea {
    SIDEBAR COMPONENT
    ========================================================== */
 .app-sidebar {
-  width: var(--sidebar-width);
+  width: var(--drawer-width);
   height: 100vh;
   position: fixed;
   left: 0;
@@ -296,6 +297,12 @@ button, input, select, textarea {
   gap: 4px;
 }
 
+/* The logo stays in the header whether the drawer is open or closed. */
+.header-brand { display: flex; align-items: center; flex-shrink: 0; }
+.header-logo { height: 38px; width: auto; display: block; object-fit: contain; }
+[data-theme="dark"] .header-logo { background: #ffffff; padding: 3px 6px; border-radius: 8px; box-sizing: border-box; }
+@media (max-width: 480px) { .header-logo { height: 30px; } }
+
 /* ==========================================================
    TOP HEADER COMPONENT
    ========================================================== */
@@ -322,7 +329,7 @@ button, input, select, textarea {
 }
 
 .mobile-menu-toggle {
-  display: none;
+  display: flex;
   background: transparent;
   border: none;
   padding: 8px;
@@ -528,10 +535,6 @@ button, input, select, textarea {
 }
 
 @media (max-width: 768px) {
-  .app-sidebar {
-    display: none;
-  }
-
   .app-main {
     margin-left: 0;
     width: 100%;

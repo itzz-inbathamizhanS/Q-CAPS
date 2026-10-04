@@ -1,6 +1,5 @@
 import React, { useState } from 'react';
 import { Outlet } from 'react-router-dom';
-import { Sidebar } from './Sidebar';
 import { Header } from './Header';
 import { MobileNavigation } from './MobileNavigation';
 
@@ -13,10 +12,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   return (
     <div className="app-shell">
-      {/* Desktop Sidebar */}
-      <Sidebar />
-
-      {/* Mobile Off-canvas Navigation */}
+      {/* Navigation drawer: hidden until the menu button in the header is used */}
       <MobileNavigation
         isOpen={isMobileNavOpen}
         onClose={() => setIsMobileNavOpen(false)}
@@ -24,7 +20,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
       {/* Main Content Area */}
       <div className="app-main">
-        <Header onToggleMobileMenu={() => setIsMobileNavOpen(true)} />
+        <Header onToggleMobileMenu={() => setIsMobileNavOpen((open) => !open)} menuOpen={isMobileNavOpen} />
 
         <main className="app-canvas">
           {children || <Outlet />}

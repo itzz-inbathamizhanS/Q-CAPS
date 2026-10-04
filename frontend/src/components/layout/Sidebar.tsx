@@ -14,7 +14,6 @@ import {
   Settings2,
   ScrollText
 } from 'lucide-react';
-import qcapsLogo from '@/assets/brand/qcaps-logo.png';
 import { useAuthStore } from '@/features/auth/authStore';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 import { useAdminStatus } from '@/features/admin/adminStatus';
@@ -57,13 +56,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onCloseMobil
       style={isMobile ? { position: 'relative', width: '100%', height: '100%' } : {}}
     >
       {/* Brand Header */}
-      <div className="brand-header">
-        <img
-          src={qcapsLogo}
-          alt="Q-CAPS Logo"
-          className="brand-logo"
-        />
-      </div>
+      {/* The Q-CAPS logo lives in the header so it stays visible while this drawer is open or closed. */}
 
       {/* Main Navigation */}
       <nav className="sidebar-nav">

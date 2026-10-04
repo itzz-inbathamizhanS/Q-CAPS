@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Sidebar } from './Sidebar';
 import { X } from 'lucide-react';
 
@@ -8,15 +8,27 @@ interface MobileNavigationProps {
 }
 
 export const MobileNavigation: React.FC<MobileNavigationProps> = ({ isOpen, onClose }) => {
+  useEffect(() => {
+    if (!isOpen) return;
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') onClose();
+    };
+    window.addEventListener('keydown', onKey);
+    return () => window.removeEventListener('keydown', onKey);
+  }, [isOpen, onClose]);
+
   if (!isOpen) return null;
 
   return (
-    <div style={{ position: 'fixed', inset: 0, zIndex: 50, display: 'flex' }}>
+    <div style={{ position: 'fixed', top: 'var(--header-height)', right: 0, bottom: 0, left: 0, zIndex: 50, display: 'flex' }}>
       {/* Backdrop */}
       <div
         style={{
           position: 'fixed',
-          inset: 0,
+          top: 'var(--header-height)',
+          right: 0,
+          bottom: 0,
+          left: 0,
           backgroundColor: 'rgba(0, 0, 0, 0.4)',
           backdropFilter: 'blur(4px)',
           WebkitBackdropFilter: 'blur(4px)',

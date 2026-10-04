@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Bell, HelpCircle, Menu, Search, Moon, Sun } from 'lucide-react';
+import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/authStore';
+import qcapsLogo from '@/assets/brand/qcaps-logo.png';
 
 interface HeaderProps {
   onToggleMobileMenu?: () => void;
+  menuOpen?: boolean;
 }
 
-export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
+export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, menuOpen = false }) => {
   const { userName } = useAuthStore();
   
   const initials = userName 
@@ -36,9 +39,14 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu }) => {
           onClick={onToggleMobileMenu}
           className="mobile-menu-toggle"
           aria-label="Toggle navigation menu"
+          aria-expanded={menuOpen}
         >
-          <Menu size={20} />
+          <Menu size={22} />
         </button>
+
+        <Link to="/dashboard" className="header-brand" aria-label="Q-CAPS home">
+          <img src={qcapsLogo} alt="Q-CAPS" className="header-logo" />
+        </Link>
 
         <div className="header-search-wrapper">
           <Search
