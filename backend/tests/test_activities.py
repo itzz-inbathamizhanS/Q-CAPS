@@ -25,6 +25,14 @@ def correct_and_wrong(scenario):
     return right, wrong
 
 
+def age_attempts(db, seconds=120):
+    """Move earlier lab attempts into the past so the cooldown after a wrong answer has passed."""
+    from datetime import datetime, timedelta, timezone
+    for row in db.query(models.ActivityAttempt).all():
+        row.created_at = datetime.now(timezone.utc) - timedelta(seconds=seconds)
+    db.commit()
+
+
 def xp_of(db, user):
     db.expire_all()
     return db.get(models.User, user.id).xp or 0
@@ -185,6 +193,7 @@ def test_trying_the_options_in_turn_costs_xp(client, learner, db):
     wrongs = [c for c in s["choices"] if not c["correct"]]
     for w in wrongs:
         client.post(f"/api/activities/labs/{s['id']}/answer", json={"choice_id": w["id"]}, headers=headers)
+        age_attempts(db)
     r = client.post(f"/api/activities/labs/{s['id']}/answer", json={"choice_id": right["id"]}, headers=headers).json()
     assert r["awarded"]["xp"] == max(1, round(s["mission_xp_awarded"] * 0.5))
     assert xp_of(db, user) == r["awarded"]["xp"]
@@ -224,3 +233,15 @@ def test_client_cannot_store_its_own_xp_or_completion(client, learner, db):
     assert stored == {"currentModuleId": "m2", "streakDays": 3}
     assert client.post(f"/api/users/{user.id}/progress", json={"progress_data": "not json"}, headers=headers).status_code == 422
     assert client.post(f"/api/users/{user.id}/progress", json={"progress_data": "[1]"}, headers=headers).status_code == 422
+
+
+def test_a_wrong_answer_locks_the_lab_briefly(client, learner, db):
+    _, headers = learner
+    s = lab()
+    right, wrong = correct_and_wrong(s)
+    url = f"/api/activities/labs/{s['id']}/answer"
+    assert client.post(url, json={"choice_id": wrong["id"]}, headers=headers).status_code == 200
+    locked = client.post(url, json={"choice_id": right["id"]}, headers=headers)
+    assert locked.status_code == 429 and "seconds" in locked.json()["detail"]
+    age_attempts(db)
+    assert client.post(url, json={"choice_id": right["id"]}, headers=headers).json()["correct"] is True

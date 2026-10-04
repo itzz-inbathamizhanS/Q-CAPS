@@ -1,6 +1,7 @@
 """Grading and awarding for practice labs and missions. Everything here runs on the server."""
 import secrets
 import uuid
+from datetime import datetime, timezone
 from typing import Dict, List, Optional
 
 from sqlalchemy.exc import IntegrityError
@@ -61,7 +62,16 @@ def answer_lab(db: Session, user: models.User, scenario_id: str, choice_id: str)
     if choice is None:
         raise ActivityError(400, "Unknown choice")
     awarded = None
-    wrong_before = db.query(models.ActivityAttempt).filter_by(user_id=user.id, activity_id=scenario_id, correct=False).count()
+    wrong_attempts = db.query(models.ActivityAttempt).filter_by(user_id=user.id, activity_id=scenario_id, correct=False).order_by(models.ActivityAttempt.id.desc()).all()
+    wrong_before = len(wrong_attempts)
+    # After a wrong answer the lab is locked for a while (15 s, then 30 s, then 45 s, at most 60 s), so the options cannot be tried in quick succession.
+    if wrong_attempts:
+        cooldown = min(60, 15 * wrong_before)
+        last = wrong_attempts[0].created_at
+        last = last if last.tzinfo else last.replace(tzinfo=timezone.utc)
+        waited = (datetime.now(timezone.utc) - last).total_seconds()
+        if waited < cooldown:
+            raise ActivityError(429, f"Read the feedback first: try again in {int(cooldown - waited) + 1} seconds.")
     db.add(models.ActivityAttempt(user_id=user.id, activity_id=scenario_id, correct=bool(choice["correct"])))
     db.commit()
     if choice["correct"]:

@@ -1120,7 +1120,7 @@ export const missionsData: MissionData[] = [
               "min": 75
             },
             "evidence_preserved": {
-              "min": 70
+              "min": 85
             },
             "hours_elapsed": {
               "max": 24

@@ -13,7 +13,7 @@ const shuffled = <T,>(items: T[]): T[] => {
 };
 
 const errorText = (e: unknown) =>
-  e instanceof Error && e.message.includes('429') ? 'Too many attempts. Wait a minute and try again.' : 'Could not reach the server. Your answer was not recorded; try again.';
+  e instanceof Error && e.message.includes('429') ? 'The lab is locked for a few seconds after a wrong answer. Read the feedback, then try again.' : 'Could not reach the server. Your answer was not recorded; try again.';
 
 /** A branching practice scenario shown inside the lesson it belongs to. The server grades the answer and awards XP and the badge. */
 export const ScenarioLab: React.FC<{ scenario: EscapeRoomScenario }> = ({ scenario }) => {
