@@ -1,0 +1,918 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B05",
+      "title": "Becoming Quantum Safe: Protect Your Business and Mitigate Risks with Post-Quantum Cryptography and Crypto-Agility",
+      "authors": "Jai Singh Arun, Ray Harishankar, Walid Rjaibi",
+      "edition": "1st edition",
+      "year": 2025,
+      "publisher": "Wiley"
+    },
+    {
+      "id": "B99",
+      "title": "CycloneDX Bill of Materials specification, version 1.6 (JSON schema with the Cryptography Bill of Materials extension)",
+      "authors": "OWASP CycloneDX",
+      "edition": "1.6",
+      "year": 2024,
+      "publisher": "OWASP Foundation"
+    },
+    {
+      "id": "B161",
+      "title": "RFC 9846: The Transport Layer Security (TLS) Protocol Version 1.3 (obsoletes RFC 8446 and RFC 5246)",
+      "authors": "IETF",
+      "edition": "July 2026",
+      "year": 2026,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B162",
+      "title": "RFC 5280: Internet X.509 Public Key Infrastructure Certificate and Certificate Revocation List (CRL) Profile",
+      "authors": "IETF",
+      "edition": "May 2008",
+      "year": 2008,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B174",
+      "title": "RFC 4251: The Secure Shell (SSH) Protocol Architecture",
+      "authors": "IETF",
+      "edition": "January 2006",
+      "year": 2006,
+      "publisher": "IETF"
+    },
+    {
+      "id": "B71",
+      "title": "Baseline Requirements for the Issuance and Management of Publicly-Trusted TLS Server Certificates",
+      "authors": "CA/Browser Forum",
+      "edition": "current version, accessed 2026-10-04",
+      "publisher": "CA/Browser Forum"
+    },
+    {
+      "id": "B85",
+      "title": "IR 8547 (initial public draft), Transition to Post-Quantum Cryptography Standards",
+      "authors": "Dustin Moody, Ray Perlner, Andrew Regenscheid, Angela Robinson, David Cooper",
+      "edition": "November 2024, accessed 2026-10-04",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B22",
+      "title": "The Python Tutorial and The Python Standard Library (Python 3.14 documentation)",
+      "authors": "Python Software Foundation",
+      "edition": "3.14, accessed 2026-10-03",
+      "publisher": "docs.python.org"
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_d_e2_cryptographic_discovery",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "2.1 Cryptographic Inventory",
+          "summary": "A cryptographic inventory built from live discovery and written as a CycloneDX 1.6 cryptography bill of materials, validated against the schema.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A **cryptographic inventory** is the record of every algorithm, key, certificate and protocol in use, with the asset that uses it and its owner. The course text describes the first step of the transition as exactly this: visibility into the libraries and algorithms used in applications, the cipher suites of network endpoints, the key sizes and the certificates. Two things make the inventory usable: **tooling** (automatic discovery) and **standardisation** (one format that tools and policy checks can share). The standard format is the **cryptography bill of materials (CBOM)**, an extension of the CycloneDX software bill of materials: it models **cryptographic assets** (algorithms, protocols, certificates, related key material), their **properties** (for example the mode in which an algorithm is used) and their **dependencies** (an application uses an algorithm; a library implements it).\n\nThe listing starts five TLS servers on this machine, performs a handshake with each, and records the result as CycloneDX 1.6 components: a signature algorithm, a public key (with its size and algorithm reference), a certificate (subject, issuer, validity, references to key and algorithm) and a TLS protocol component (version, cipher suite), linked by dependency entries. It checks that every reference resolves and prints one component as JSON. The discovery listings are **real**: they start small TLS and plain-TCP services on 127.0.0.1 (this machine, the only target; ports 47100 upwards), generate throw-away self-signed certificates, and then discover them with sockets and the `ssl` module. The lab is a stand-in for an estate, with deliberately weak members (a 1024-bit RSA certificate, an expired certificate, TLS 1.2-only servers); the findings describe the lab, not a real environment. The asset register, dependency graph and data-flow map are **DEMO DATA** invented for the lesson. The lab: web-front (RSA-2048, TLS 1.3), legacy-billing (RSA-1024, TLS 1.2 only), api-gateway (ECDSA P-256, TLS 1.3), old-intranet (expired RSA-2048, TLS 1.2 only), edge-device (Ed25519, TLS 1.3), plus one plain service with a banner."
+            },
+            {
+              "type": "code",
+              "id": "c-cbom",
+              "language": "python",
+              "code": "import datetime, os, socket, ssl, tempfile, threading\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa\nfrom cryptography.x509.oid import NameOID\n\n# ---- lab: small TLS servers on 127.0.0.1 that this script starts and then discovers. Certificates are self-signed and generated now. ----\ndef make_cert(kind, cn, valid_from_days, valid_to_days):\n    if kind == \"rsa1024\": key = rsa.generate_private_key(65537, 1024)\n    elif kind == \"rsa2048\": key = rsa.generate_private_key(65537, 2048)\n    elif kind == \"ec256\": key = ec.generate_private_key(ec.SECP256R1())\n    elif kind == \"ed25519\": key = ed25519.Ed25519PrivateKey.generate()\n    sign_hash = None if kind == \"ed25519\" else hashes.SHA256()\n    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])\n    now = datetime.datetime.now(datetime.timezone.utc)\n    cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key()).serial_number(x509.random_serial_number())\n            .not_valid_before(now + datetime.timedelta(days=valid_from_days)).not_valid_after(now + datetime.timedelta(days=valid_to_days))\n            .add_extension(x509.SubjectAlternativeName([x509.DNSName(cn)]), critical=False).sign(key, sign_hash))\n    return key, cert\n\nLAB = [  # label, key kind, common name, validity (from, to) in days relative to now, highest TLS version the server accepts\n    (\"web-front\",      \"rsa2048\", \"web.lab.test\",     (-30, 335), ssl.TLSVersion.TLSv1_3),\n    (\"legacy-billing\", \"rsa1024\", \"billing.lab.test\", (-900, 200), ssl.TLSVersion.TLSv1_2),\n    (\"api-gateway\",    \"ec256\",   \"api.lab.test\",     (-10, 80),  ssl.TLSVersion.TLSv1_3),\n    (\"old-intranet\",   \"rsa2048\", \"intra.lab.test\",   (-400, -35), ssl.TLSVersion.TLSv1_2),\n    (\"edge-device\",    \"ed25519\", \"edge.lab.test\",    (-5, 3000), ssl.TLSVersion.TLSv1_3),\n]\n_tmp = tempfile.mkdtemp()\n_next_port = [47100]\ndef bind_free():\n    \"\"\"bind the next free port from 47100 upwards on 127.0.0.1 (a fixed small range makes the discovery sweep below short and repeatable)\"\"\"\n    while True:\n        s = socket.socket()\n        try:\n            s.bind((\"127.0.0.1\", _next_port[0])); s.listen(16); _next_port[0] += 1\n            return s\n        except OSError:\n            s.close(); _next_port[0] += 1\ndef start_lab():\n    servers = {}\n    for label, kind, cn, (a, b), maxv in LAB:\n        key, cert = make_cert(kind, cn, a, b)\n        cf, kf = os.path.join(_tmp, label + \".crt\"), os.path.join(_tmp, label + \".key\")\n        open(cf, \"wb\").write(cert.public_bytes(serialization.Encoding.PEM))\n        open(kf, \"wb\").write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))\n        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)\n        ctx.minimum_version = ssl.TLSVersion.TLSv1_2\n        ctx.maximum_version = maxv\n        ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n        ctx.load_cert_chain(cf, kf)\n        sock = bind_free()\n        def serve(s=sock, c=ctx):\n            while True:\n                try:\n                    conn, _ = s.accept()\n                except OSError:\n                    return\n                try:\n                    with c.wrap_socket(conn, server_side=True) as t:\n                        t.settimeout(1)\n                except Exception:\n                    pass\n        threading.Thread(target=serve, daemon=True).start()\n        servers[label] = sock.getsockname()[1]\n    return servers\n\ndef probe(port, minv=None, maxv=None):\n    \"\"\"TLS client handshake to 127.0.0.1:port; returns (version, cipher, DER certificate) or None if the server refuses\"\"\"\n    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)\n    ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE\n    ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n    ctx.minimum_version = minv or ssl.TLSVersion.MINIMUM_SUPPORTED\n    if maxv: ctx.maximum_version = maxv\n    try:\n        with socket.create_connection((\"127.0.0.1\", port), timeout=3) as raw:\n            with ctx.wrap_socket(raw) as t:\n                return t.version(), t.cipher()[0], t.getpeercert(binary_form=True)\n    except (ssl.SSLError, OSError):\n        return None\n\ndef describe_key(cert):\n    pk = cert.public_key()\n    if isinstance(pk, rsa.RSAPublicKey): return \"RSA\", pk.key_size\n    if isinstance(pk, ec.EllipticCurvePublicKey): return \"EC \" + pk.curve.name, pk.key_size\n    if isinstance(pk, ed25519.Ed25519PublicKey): return \"Ed25519\", 256\n    return type(pk).__name__, 0\n\ndef start_plain(payload):\n    \"\"\"a non-TLS service that sends 'payload' bytes to every client and closes (used for banner and SSH-style discovery)\"\"\"\n    sock = bind_free()\n    def serve():\n        while True:\n            try:\n                conn, _ = sock.accept()\n            except OSError:\n                return\n            try:\n                conn.sendall(payload)\n            except OSError:\n                pass\n            conn.close()\n    threading.Thread(target=serve, daemon=True).start()\n    return sock.getsockname()[1]\nimport json\n# Discover the five lab servers (they run on this machine, started above), then record the findings as a CycloneDX 1.6 cryptography bill of materials (CBOM).\nports = start_lab()\nlabels = {label: cn for label, _, cn, _, _ in LAB}\ncomponents, deps = [], []\ndef sig_alg_name(cert):\n    return {\"sha256WithRSAEncryption\": \"SHA-256 with RSA\", \"ecdsa-with-SHA256\": \"ECDSA with SHA-256\", \"ed25519\": \"Ed25519\"}.get(cert.signature_algorithm_oid._name, cert.signature_algorithm_oid._name)\nfor label, port in ports.items():\n    version, cipher, der = probe(port)\n    cert = x509.load_der_x509_certificate(der)\n    alg, size = describe_key(cert)\n    primitive = \"signature\"\n    algref, keyref, certref, protoref = f\"alg-{label}\", f\"key-{label}\", f\"cert-{label}\", f\"tls-{label}\"\n    components += [\n        {\"type\": \"cryptographic-asset\", \"bom-ref\": algref, \"name\": sig_alg_name(cert),\n         \"cryptoProperties\": {\"assetType\": \"algorithm\", \"algorithmProperties\": {\"primitive\": primitive}}},\n        {\"type\": \"cryptographic-asset\", \"bom-ref\": keyref, \"name\": f\"public key of {labels[label]}\",\n         \"cryptoProperties\": {\"assetType\": \"related-crypto-material\", \"relatedCryptoMaterialProperties\": {\"type\": \"public-key\", \"size\": size, \"algorithmRef\": algref}}},\n        {\"type\": \"cryptographic-asset\", \"bom-ref\": certref, \"name\": labels[label],\n         \"cryptoProperties\": {\"assetType\": \"certificate\", \"certificateProperties\": {\n             \"subjectName\": cert.subject.rfc4514_string(), \"issuerName\": cert.issuer.rfc4514_string(),\n             \"notValidBefore\": cert.not_valid_before_utc.isoformat(), \"notValidAfter\": cert.not_valid_after_utc.isoformat(),\n             \"signatureAlgorithmRef\": algref, \"subjectPublicKeyRef\": keyref}}},\n        {\"type\": \"cryptographic-asset\", \"bom-ref\": protoref, \"name\": f\"TLS service {label}\",\n         \"cryptoProperties\": {\"assetType\": \"protocol\", \"protocolProperties\": {\"type\": \"tls\", \"version\": version.replace(\"TLSv\", \"\"), \"cipherSuites\": [{\"name\": cipher}]}}},\n    ]\n    deps.append({\"ref\": protoref, \"dependsOn\": [certref]}); deps.append({\"ref\": certref, \"dependsOn\": [keyref, algref]})\nbom = {\"bomFormat\": \"CycloneDX\", \"specVersion\": \"1.6\", \"version\": 1,\n       \"metadata\": {\"properties\": [{\"name\": \"qcaps:data-source\", \"value\": \"LAB: five TLS servers started by this script on 127.0.0.1; not a real environment\"}]},\n       \"components\": components, \"dependencies\": deps}\n# own consistency checks (the lesson author also validated the structure against the CycloneDX 1.6 JSON schema)\nrefs = {c[\"bom-ref\"] for c in components}\nassert all(d[\"ref\"] in refs and all(x in refs for x in d[\"dependsOn\"]) for d in deps), \"dangling reference\"\nASSET_TYPES = {\"algorithm\", \"certificate\", \"protocol\", \"related-crypto-material\"}\nassert all(c[\"cryptoProperties\"][\"assetType\"] in ASSET_TYPES for c in components)\ncounts = {}\nfor c in components:\n    t = c[\"cryptoProperties\"][\"assetType\"]; counts[t] = counts.get(t, 0) + 1\nprint(\"CBOM built from live discovery of the lab:\", counts, \"| every reference resolves:\", True)\nprint(f\"{'service':<16} {'protocol':<10} {'cipher suite':<32} {'public key':<18} signature algorithm\")\nfor label in ports:\n    g = lambda ref: next(c for c in components if c[\"bom-ref\"] == ref)\n    proto = g(f\"tls-{label}\")[\"cryptoProperties\"][\"protocolProperties\"]\n    key = g(f\"key-{label}\")[\"cryptoProperties\"][\"relatedCryptoMaterialProperties\"]\n    algname = g(f\"alg-{label}\")[\"name\"]\n    print(f\"{label:<16} TLS {proto['version']:<6} {proto['cipherSuites'][0]['name']:<32} {str(key['size']) + ' bit':<18} {algname}\")\nprint()\none = dict(next(c for c in components if c[\"bom-ref\"] == \"tls-web-front\"))\nprint(\"one CBOM component as JSON:\")\nprint(json.dumps(one, indent=2))"
+            },
+            {
+              "type": "code",
+              "id": "o-c-cbom",
+              "language": "text",
+              "code": "CBOM built from live discovery of the lab: {'algorithm': 5, 'related-crypto-material': 5, 'certificate': 5, 'protocol': 5} | every reference resolves: True\nservice          protocol   cipher suite                     public key         signature algorithm\nweb-front        TLS 1.3    TLS_AES_256_GCM_SHA384           2048 bit           SHA-256 with RSA\nlegacy-billing   TLS 1.2    ECDHE-RSA-AES256-GCM-SHA384      1024 bit           SHA-256 with RSA\napi-gateway      TLS 1.3    TLS_AES_256_GCM_SHA384           256 bit            ECDSA with SHA-256\nold-intranet     TLS 1.2    ECDHE-RSA-AES256-GCM-SHA384      2048 bit           SHA-256 with RSA\nedge-device      TLS 1.3    TLS_AES_256_GCM_SHA384           256 bit            Ed25519\n\none CBOM component as JSON:\n{\n  \"type\": \"cryptographic-asset\",\n  \"bom-ref\": \"tls-web-front\",\n  \"name\": \"TLS service web-front\",\n  \"cryptoProperties\": {\n    \"assetType\": \"protocol\",\n    \"protocolProperties\": {\n      \"type\": \"tls\",\n      \"version\": \"1.3\",\n      \"cipherSuites\": [\n        {\n          \"name\": \"TLS_AES_256_GCM_SHA384\"\n        }\n      ]\n    }\n  }\n}",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The inventory holds 20 components, five of each asset type (algorithm, related crypto material, certificate, protocol), and every reference resolves. The summary table already tells a story: web-front and api-gateway negotiate TLS 1.3, legacy-billing and old-intranet TLS 1.2 with `ECDHE-RSA-AES256-GCM-SHA384`, and the public keys range from 1024-bit RSA to Ed25519. When this lesson was written the generated components and dependencies were also validated against the CycloneDX 1.6 JSON schema's `component` and `dependency` definitions and produced no errors (the schema is not part of the listing, which performs only its own consistency checks).\n\n**What an inventory must record to be useful.** Not just the algorithm but **where** (asset and owner), **what for** (key exchange, signature, data at rest), **how** (mode, parameters, library) and **when last observed**. Discovery output is evidence with a timestamp and a method; the CBOM should keep that provenance (the listing records in the metadata that its source is a lab). **Common mistake:** treating an inventory spreadsheet compiled from interviews as the inventory: it describes what people believe, and the sections that follow show how much discovery adds."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does a CBOM model?",
+              "options": [
+                "Cryptographic assets (algorithms, protocols, certificates, key material), their properties and dependencies",
+                "Only certificate expiry dates",
+                "Only open ports"
+              ],
+              "correct_index": 0,
+              "explanation": "It extends CycloneDX with cryptographic asset types."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why record the mode of an algorithm and not only its name?",
+              "options": [
+                "The security level depends on the mode in which it is used",
+                "Modes are optional",
+                "Modes change the key size"
+              ],
+              "correct_index": 0,
+              "explanation": "AES-GCM and AES-CBC differ."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why should an inventory keep the discovery method and time?",
+              "options": [
+                "Discovery output is dated evidence, and its provenance lets others judge it",
+                "To make the file bigger",
+                "Because the schema forbids otherwise"
+              ],
+              "correct_index": 0,
+              "explanation": "The listing records its source in the metadata."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (Cryptographic Discovery and Inventory, Figure 4-2) and Chapter 5 (Step 1: Discover the Cryptographic Inventory, CBOM modelling, Figure 5-3)"
+            },
+            {
+              "book": "B99",
+              "locator": "CycloneDX 1.6 specification, JSON schema definitions cryptoProperties (assetType, algorithmProperties, certificateProperties, relatedCryptoMaterialProperties, protocolProperties)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The discovery runs against a local lab and is real; the lab is not a representative estate. The schema validation was run once by the author on the generated components and dependencies, using the 1.6 JSON schema definitions only (not the full BOM document with its external schema references)."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "2.2 Asset Discovery",
+          "summary": "A port sweep and service identification of this machine, reconciled with an asset register: shadow assets, stale records and the limits of a sweep.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Before algorithms can be inventoried, the **assets** must be found. The usual obstacles are **shadow IT** (systems nobody registered) and **stale records** (systems that no longer exist or moved). Discovery therefore works in two directions: scan the environment and compare with the **asset register** (the CMDB); items found but unregistered are shadow assets, items registered but not found are stale records or are hidden from the scanner.\n\nThe listing sweeps ports 47100 to 47119 on 127.0.0.1 (**this machine only**; scanning anything else requires authorisation, and the Q-CAPS scanner enforces ownership and address restrictions for that reason), identifies each listener by attempting a TLS handshake (and, failing that, reading a banner), extracts the certificate name and reconciles the result with an invented register. The discovery listings are **real**: they start small TLS and plain-TCP services on 127.0.0.1 (this machine, the only target; ports 47100 upwards), generate throw-away self-signed certificates, and then discover them with sockets and the `ssl` module. The lab is a stand-in for an estate, with deliberately weak members (a 1024-bit RSA certificate, an expired certificate, TLS 1.2-only servers); the findings describe the lab, not a real environment. The asset register, dependency graph and data-flow map are **DEMO DATA** invented for the lesson. The lab: web-front (RSA-2048, TLS 1.3), legacy-billing (RSA-1024, TLS 1.2 only), api-gateway (ECDSA P-256, TLS 1.3), old-intranet (expired RSA-2048, TLS 1.2 only), edge-device (Ed25519, TLS 1.3), plus one plain service with a banner."
+            },
+            {
+              "type": "code",
+              "id": "c-asset-discovery",
+              "language": "python",
+              "code": "import datetime, os, socket, ssl, tempfile, threading\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa\nfrom cryptography.x509.oid import NameOID\n\n# ---- lab: small TLS servers on 127.0.0.1 that this script starts and then discovers. Certificates are self-signed and generated now. ----\ndef make_cert(kind, cn, valid_from_days, valid_to_days):\n    if kind == \"rsa1024\": key = rsa.generate_private_key(65537, 1024)\n    elif kind == \"rsa2048\": key = rsa.generate_private_key(65537, 2048)\n    elif kind == \"ec256\": key = ec.generate_private_key(ec.SECP256R1())\n    elif kind == \"ed25519\": key = ed25519.Ed25519PrivateKey.generate()\n    sign_hash = None if kind == \"ed25519\" else hashes.SHA256()\n    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])\n    now = datetime.datetime.now(datetime.timezone.utc)\n    cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key()).serial_number(x509.random_serial_number())\n            .not_valid_before(now + datetime.timedelta(days=valid_from_days)).not_valid_after(now + datetime.timedelta(days=valid_to_days))\n            .add_extension(x509.SubjectAlternativeName([x509.DNSName(cn)]), critical=False).sign(key, sign_hash))\n    return key, cert\n\nLAB = [  # label, key kind, common name, validity (from, to) in days relative to now, highest TLS version the server accepts\n    (\"web-front\",      \"rsa2048\", \"web.lab.test\",     (-30, 335), ssl.TLSVersion.TLSv1_3),\n    (\"legacy-billing\", \"rsa1024\", \"billing.lab.test\", (-900, 200), ssl.TLSVersion.TLSv1_2),\n    (\"api-gateway\",    \"ec256\",   \"api.lab.test\",     (-10, 80),  ssl.TLSVersion.TLSv1_3),\n    (\"old-intranet\",   \"rsa2048\", \"intra.lab.test\",   (-400, -35), ssl.TLSVersion.TLSv1_2),\n    (\"edge-device\",    \"ed25519\", \"edge.lab.test\",    (-5, 3000), ssl.TLSVersion.TLSv1_3),\n]\n_tmp = tempfile.mkdtemp()\n_next_port = [47100]\ndef bind_free():\n    \"\"\"bind the next free port from 47100 upwards on 127.0.0.1 (a fixed small range makes the discovery sweep below short and repeatable)\"\"\"\n    while True:\n        s = socket.socket()\n        try:\n            s.bind((\"127.0.0.1\", _next_port[0])); s.listen(16); _next_port[0] += 1\n            return s\n        except OSError:\n            s.close(); _next_port[0] += 1\ndef start_lab():\n    servers = {}\n    for label, kind, cn, (a, b), maxv in LAB:\n        key, cert = make_cert(kind, cn, a, b)\n        cf, kf = os.path.join(_tmp, label + \".crt\"), os.path.join(_tmp, label + \".key\")\n        open(cf, \"wb\").write(cert.public_bytes(serialization.Encoding.PEM))\n        open(kf, \"wb\").write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))\n        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)\n        ctx.minimum_version = ssl.TLSVersion.TLSv1_2\n        ctx.maximum_version = maxv\n        ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n        ctx.load_cert_chain(cf, kf)\n        sock = bind_free()\n        def serve(s=sock, c=ctx):\n            while True:\n                try:\n                    conn, _ = s.accept()\n                except OSError:\n                    return\n                try:\n                    with c.wrap_socket(conn, server_side=True) as t:\n                        t.settimeout(1)\n                except Exception:\n                    pass\n        threading.Thread(target=serve, daemon=True).start()\n        servers[label] = sock.getsockname()[1]\n    return servers\n\ndef probe(port, minv=None, maxv=None):\n    \"\"\"TLS client handshake to 127.0.0.1:port; returns (version, cipher, DER certificate) or None if the server refuses\"\"\"\n    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)\n    ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE\n    ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n    ctx.minimum_version = minv or ssl.TLSVersion.MINIMUM_SUPPORTED\n    if maxv: ctx.maximum_version = maxv\n    try:\n        with socket.create_connection((\"127.0.0.1\", port), timeout=3) as raw:\n            with ctx.wrap_socket(raw) as t:\n                return t.version(), t.cipher()[0], t.getpeercert(binary_form=True)\n    except (ssl.SSLError, OSError):\n        return None\n\ndef describe_key(cert):\n    pk = cert.public_key()\n    if isinstance(pk, rsa.RSAPublicKey): return \"RSA\", pk.key_size\n    if isinstance(pk, ec.EllipticCurvePublicKey): return \"EC \" + pk.curve.name, pk.key_size\n    if isinstance(pk, ed25519.Ed25519PublicKey): return \"Ed25519\", 256\n    return type(pk).__name__, 0\n\ndef start_plain(payload):\n    \"\"\"a non-TLS service that sends 'payload' bytes to every client and closes (used for banner and SSH-style discovery)\"\"\"\n    sock = bind_free()\n    def serve():\n        while True:\n            try:\n                conn, _ = sock.accept()\n            except OSError:\n                return\n            try:\n                conn.sendall(payload)\n            except OSError:\n                pass\n            conn.close()\n    threading.Thread(target=serve, daemon=True).start()\n    return sock.getsockname()[1]\n# Asset discovery on this machine: sweep a small port range on 127.0.0.1 (the host running this script, which is the only target), identify what answers,\n# and reconcile the result with an asset register (CMDB). DEMO DATA: the CMDB content is invented.\nports = start_lab()\nbanner_port = start_plain(b\"SSH-2.0-OpenSSH_7.4 DEMO-banner\\r\\n\")\nLOW, HIGH = 47100, 47119\nopen_ports = []\nfor p in range(LOW, HIGH + 1):\n    s = socket.socket(); s.settimeout(0.2)\n    if s.connect_ex((\"127.0.0.1\", p)) == 0:\n        open_ports.append(p)\n    s.close()\nprint(f\"swept 127.0.0.1 ports {LOW}-{HIGH}: {len(open_ports)} listening\")\nfound = []\nfor p in open_ports:\n    r = probe(p)\n    if r:\n        cert = x509.load_der_x509_certificate(r[2])\n        cn = cert.subject.get_attributes_for_oid(NameOID.COMMON_NAME)[0].value\n        found.append((p, \"tls\", cn))\n    else:\n        s = socket.create_connection((\"127.0.0.1\", p), timeout=2); s.settimeout(1)\n        try:\n            data = s.recv(64)\n        except OSError:\n            data = b\"\"\n        s.close()\n        found.append((p, \"banner: \" + data.decode(errors=\"replace\").strip() if data else \"silent\", None))\nprint(f\"{'#':>2} {'identified as':<44} certificate name\")\nfor i, (p, kind, cn) in enumerate(found):\n    print(f\"{i:>2} {kind:<44} {cn or '-'}\")\nprint()\nCMDB = {\"web.lab.test\", \"billing.lab.test\", \"api.lab.test\", \"retired-ftp.lab.test\"}          # DEMO DATA: what the asset register believes exists\nseen = {cn for _, _, cn in found if cn}\nprint(\"registered and found:      \", sorted(CMDB & seen))\nprint(\"found but NOT registered (shadow assets):\", sorted(seen - CMDB), \"and\", sum(1 for _, _, cn in found if cn is None), \"service(s) with no certificate (identified by banner)\")\nprint(\"registered but NOT found (stale records or hidden elsewhere):\", sorted(CMDB - seen))\nprint()\nprint(\"limits: a sweep sees only what listens in the range and answers; it does not find systems that are off, behind a firewall, on other hosts or using other ports. Discovery results are a lower bound, so the register must be reconciled continuously, not once\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-asset-discovery",
+              "language": "text",
+              "code": "swept 127.0.0.1 ports 47100-47119: 6 listening\n # identified as                                certificate name\n 0 tls                                          web.lab.test\n 1 tls                                          billing.lab.test\n 2 tls                                          api.lab.test\n 3 tls                                          intra.lab.test\n 4 tls                                          edge.lab.test\n 5 banner: SSH-2.0-OpenSSH_7.4 DEMO-banner      -\n\nregistered and found:       ['api.lab.test', 'billing.lab.test', 'web.lab.test']\nfound but NOT registered (shadow assets): ['edge.lab.test', 'intra.lab.test'] and 1 service(s) with no certificate (identified by banner)\nregistered but NOT found (stale records or hidden elsewhere): ['retired-ftp.lab.test']\n\nlimits: a sweep sees only what listens in the range and answers; it does not find systems that are off, behind a firewall, on other hosts or using other ports. Discovery results are a lower bound, so the register must be reconciled continuously, not once",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Six ports listen: five answer a TLS handshake (web.lab.test, billing.lab.test, api.lab.test, intra.lab.test, edge.lab.test) and one is a plain service whose banner reads `SSH-2.0-OpenSSH_7.4 DEMO-banner`. Against the register (which lists web, billing, api and a `retired-ftp` host) three assets are registered and found, **two TLS services are shadow assets** (intra and edge), one service has no certificate at all (found only through its banner), and the registered `retired-ftp.lab.test` is not found, which means either that the record is stale or that the host lives elsewhere and must be checked.\n\n**Limits.** A sweep sees only what listens in the range and answers. It does not find hosts that are off, behind a firewall, on other networks or using other ports, and it cannot tell who owns a service. Results are a **lower bound**, so discovery must be combined with other sources (cloud APIs, DNS, certificate transparency, network flow data, endpoint agents) and **repeated**, with every difference triaged. **Common mistake:** presenting one scan as the complete asset list."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is a shadow asset?",
+              "options": [
+                "A system found by discovery that is not in the asset register",
+                "A system with an expired certificate",
+                "A backup server"
+              ],
+              "correct_index": 0,
+              "explanation": "intra and edge were found but not registered."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What may a port sweep be pointed at?",
+              "options": [
+                "Only systems the operator owns or is authorised to assess",
+                "Any public address",
+                "Any address in a bug-bounty list without reading its rules"
+              ],
+              "correct_index": 0,
+              "explanation": "The lab sweeps 127.0.0.1 only."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is a discovery result a lower bound?",
+              "options": [
+                "It cannot see hosts that are off, filtered, elsewhere or on other ports",
+                "Because scanners add random hosts",
+                "Because ports are limited to 1024"
+              ],
+              "correct_index": 0,
+              "explanation": "Combine sources and repeat."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (Cryptographic Discovery and Inventory, Figure 4-2) and Chapter 5 (Step 1: Discover the Cryptographic Inventory, CBOM modelling, Figure 5-3)"
+            },
+            {
+              "book": "B71",
+              "locator": "CA/Browser Forum Baseline Requirements: inventory of certificates and issued names as a reason to reconcile discovered certificates with the register (background)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The sweep is real but covers only 20 local ports; the register is DEMO DATA. The listing is only meant for systems the user owns."
+          }
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "2.3 Algorithm Discovery",
+          "summary": "Negotiated key exchange and authentication per server, enumeration of accepted TLS 1.2 suites (including RSA key transport), Shor exposure classification and what the Python ssl module cannot show.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Algorithm discovery asks, for each asset, **which algorithms protect it**, separately for the three roles in a TLS connection: the **key exchange** (how the session key is agreed), the **authentication** (the certificate's key and signature) and the **bulk cipher**. This split is the one that matters for quantum risk: key exchange determines exposure to harvest-now-decrypt-later, authentication determines exposure to forgery, and the bulk cipher (AES-256) is not broken by Shor.\n\nThe listing negotiates with each lab server, reads the cipher suite and splits a TLS 1.2 name into key exchange and authentication (`ECDHE-RSA-…` is ephemeral elliptic-curve Diffie-Hellman authenticated by an RSA certificate; a bare `AES256-GCM-SHA384` is **RSA key transport**: no forward secrecy), enumerates every TLS 1.2 suite each server accepts by offering one suite at a time, and classifies the certificate key by exposure to Shor's algorithm. The discovery listings are **real**: they start small TLS and plain-TCP services on 127.0.0.1 (this machine, the only target; ports 47100 upwards), generate throw-away self-signed certificates, and then discover them with sockets and the `ssl` module. The lab is a stand-in for an estate, with deliberately weak members (a 1024-bit RSA certificate, an expired certificate, TLS 1.2-only servers); the findings describe the lab, not a real environment. The asset register, dependency graph and data-flow map are **DEMO DATA** invented for the lesson. The lab: web-front (RSA-2048, TLS 1.3), legacy-billing (RSA-1024, TLS 1.2 only), api-gateway (ECDSA P-256, TLS 1.3), old-intranet (expired RSA-2048, TLS 1.2 only), edge-device (Ed25519, TLS 1.3), plus one plain service with a banner."
+            },
+            {
+              "type": "code",
+              "id": "c-algorithm-discovery",
+              "language": "python",
+              "code": "import datetime, os, socket, ssl, tempfile, threading\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa\nfrom cryptography.x509.oid import NameOID\n\n# ---- lab: small TLS servers on 127.0.0.1 that this script starts and then discovers. Certificates are self-signed and generated now. ----\ndef make_cert(kind, cn, valid_from_days, valid_to_days):\n    if kind == \"rsa1024\": key = rsa.generate_private_key(65537, 1024)\n    elif kind == \"rsa2048\": key = rsa.generate_private_key(65537, 2048)\n    elif kind == \"ec256\": key = ec.generate_private_key(ec.SECP256R1())\n    elif kind == \"ed25519\": key = ed25519.Ed25519PrivateKey.generate()\n    sign_hash = None if kind == \"ed25519\" else hashes.SHA256()\n    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])\n    now = datetime.datetime.now(datetime.timezone.utc)\n    cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key()).serial_number(x509.random_serial_number())\n            .not_valid_before(now + datetime.timedelta(days=valid_from_days)).not_valid_after(now + datetime.timedelta(days=valid_to_days))\n            .add_extension(x509.SubjectAlternativeName([x509.DNSName(cn)]), critical=False).sign(key, sign_hash))\n    return key, cert\n\nLAB = [  # label, key kind, common name, validity (from, to) in days relative to now, highest TLS version the server accepts\n    (\"web-front\",      \"rsa2048\", \"web.lab.test\",     (-30, 335), ssl.TLSVersion.TLSv1_3),\n    (\"legacy-billing\", \"rsa1024\", \"billing.lab.test\", (-900, 200), ssl.TLSVersion.TLSv1_2),\n    (\"api-gateway\",    \"ec256\",   \"api.lab.test\",     (-10, 80),  ssl.TLSVersion.TLSv1_3),\n    (\"old-intranet\",   \"rsa2048\", \"intra.lab.test\",   (-400, -35), ssl.TLSVersion.TLSv1_2),\n    (\"edge-device\",    \"ed25519\", \"edge.lab.test\",    (-5, 3000), ssl.TLSVersion.TLSv1_3),\n]\n_tmp = tempfile.mkdtemp()\n_next_port = [47100]\ndef bind_free():\n    \"\"\"bind the next free port from 47100 upwards on 127.0.0.1 (a fixed small range makes the discovery sweep below short and repeatable)\"\"\"\n    while True:\n        s = socket.socket()\n        try:\n            s.bind((\"127.0.0.1\", _next_port[0])); s.listen(16); _next_port[0] += 1\n            return s\n        except OSError:\n            s.close(); _next_port[0] += 1\ndef start_lab():\n    servers = {}\n    for label, kind, cn, (a, b), maxv in LAB:\n        key, cert = make_cert(kind, cn, a, b)\n        cf, kf = os.path.join(_tmp, label + \".crt\"), os.path.join(_tmp, label + \".key\")\n        open(cf, \"wb\").write(cert.public_bytes(serialization.Encoding.PEM))\n        open(kf, \"wb\").write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))\n        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)\n        ctx.minimum_version = ssl.TLSVersion.TLSv1_2\n        ctx.maximum_version = maxv\n        ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n        ctx.load_cert_chain(cf, kf)\n        sock = bind_free()\n        def serve(s=sock, c=ctx):\n            while True:\n                try:\n                    conn, _ = s.accept()\n                except OSError:\n                    return\n                try:\n                    with c.wrap_socket(conn, server_side=True) as t:\n                        t.settimeout(1)\n                except Exception:\n                    pass\n        threading.Thread(target=serve, daemon=True).start()\n        servers[label] = sock.getsockname()[1]\n    return servers\n\ndef probe(port, minv=None, maxv=None):\n    \"\"\"TLS client handshake to 127.0.0.1:port; returns (version, cipher, DER certificate) or None if the server refuses\"\"\"\n    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)\n    ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE\n    ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n    ctx.minimum_version = minv or ssl.TLSVersion.MINIMUM_SUPPORTED\n    if maxv: ctx.maximum_version = maxv\n    try:\n        with socket.create_connection((\"127.0.0.1\", port), timeout=3) as raw:\n            with ctx.wrap_socket(raw) as t:\n                return t.version(), t.cipher()[0], t.getpeercert(binary_form=True)\n    except (ssl.SSLError, OSError):\n        return None\n\ndef describe_key(cert):\n    pk = cert.public_key()\n    if isinstance(pk, rsa.RSAPublicKey): return \"RSA\", pk.key_size\n    if isinstance(pk, ec.EllipticCurvePublicKey): return \"EC \" + pk.curve.name, pk.key_size\n    if isinstance(pk, ed25519.Ed25519PublicKey): return \"Ed25519\", 256\n    return type(pk).__name__, 0\n\ndef start_plain(payload):\n    \"\"\"a non-TLS service that sends 'payload' bytes to every client and closes (used for banner and SSH-style discovery)\"\"\"\n    sock = bind_free()\n    def serve():\n        while True:\n            try:\n                conn, _ = sock.accept()\n            except OSError:\n                return\n            try:\n                conn.sendall(payload)\n            except OSError:\n                pass\n            conn.close()\n    threading.Thread(target=serve, daemon=True).start()\n    return sock.getsockname()[1]\n# Algorithm discovery: negotiate with each lab server, split the TLS 1.2 cipher suite into key exchange / authentication / bulk cipher, enumerate the\n# TLS 1.2 suites the server accepts, and classify every public-key component by its exposure to Shor's algorithm.\nports = start_lab()\ndef split_tls12(name):\n    if name.startswith(\"TLS_\"):\n        return \"(TLS 1.3: group chosen separately)\", \"certificate key\", name\n    parts = name.split(\"-\")\n    kex = \"ECDHE\" if parts[0] == \"ECDHE\" else \"DHE\" if parts[0] == \"DHE\" else \"RSA key transport\"\n    auth = \"RSA\" if \"RSA\" in parts[:3] and kex != \"RSA key transport\" else \"ECDSA\" if \"ECDSA\" in parts else \"RSA\" if kex == \"RSA key transport\" else \"?\"\n    return kex, auth, \"-\".join(parts[2:] if kex != \"RSA key transport\" else parts)\ndef accepted_tls12_suites(port):\n    c = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT); c.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n    names = [x[\"name\"] for x in c.get_ciphers() if x[\"protocol\"] == \"TLSv1.2\"]\n    ok = []\n    for n in names:\n        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT); ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE\n        ctx.minimum_version = ctx.maximum_version = ssl.TLSVersion.TLSv1_2\n        try:\n            ctx.set_ciphers(n + \":@SECLEVEL=0\")\n            with socket.create_connection((\"127.0.0.1\", port), timeout=3) as raw, ctx.wrap_socket(raw) as t:\n                ok.append(t.cipher()[0])\n        except (ssl.SSLError, OSError):\n            pass\n    return ok\ndef shor_class(alg):\n    return \"quantum-vulnerable (Shor: factoring / discrete log)\" if alg.startswith((\"RSA\", \"EC\", \"Ed\")) else \"no vulnerability known to Shor\"\nprint(f\"{'service':<16} {'negotiated':<10} {'key exchange':<26} {'authentication key':<18} {'Shor exposure of the certificate key'}\")\nfor label, port in ports.items():\n    version, cipher, der = probe(port)\n    kex, auth, bulk = split_tls12(cipher)\n    alg, size = describe_key(x509.load_der_x509_certificate(der))\n    print(f\"{label:<16} {version:<10} {kex:<26} {alg + ' ' + str(size):<18} {shor_class(alg)}\")\nprint()\nprint(\"TLS 1.2 cipher suites accepted per server (enumerated by offering one suite at a time):\")\nfor label, port in ports.items():\n    suites = accepted_tls12_suites(port)\n    transport = [s for s in suites if not s.startswith((\"ECDHE\", \"DHE\"))]\n    print(f\"  {label:<16} {len(suites):>2} suites; with RSA key transport (no forward secrecy): {len(transport)}\", (\"-> \" + \", \".join(transport[:2]) + (\", ...\" if len(transport) > 2 else \"\")) if transport else \"\")\nprint()\nprint(\"what Python's ssl module cannot show: in TLS 1.3 the key-exchange GROUP (for example X25519 or the hybrid X25519MLKEM768) is not exposed by this API, so a result that reads 'TLSv1.3' says nothing about quantum resistance of the key exchange; the Q-CAPS scanner reads the group with a raw handshake probe\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-algorithm-discovery",
+              "language": "text",
+              "code": "service          negotiated key exchange               authentication key Shor exposure of the certificate key\nweb-front        TLSv1.3    (TLS 1.3: group chosen separately) RSA 2048           quantum-vulnerable (Shor: factoring / discrete log)\nlegacy-billing   TLSv1.2    ECDHE                      RSA 1024           quantum-vulnerable (Shor: factoring / discrete log)\napi-gateway      TLSv1.3    (TLS 1.3: group chosen separately) EC secp256r1 256   quantum-vulnerable (Shor: factoring / discrete log)\nold-intranet     TLSv1.2    ECDHE                      RSA 2048           quantum-vulnerable (Shor: factoring / discrete log)\nedge-device      TLSv1.3    (TLS 1.3: group chosen separately) Ed25519 256        quantum-vulnerable (Shor: factoring / discrete log)\n\nTLS 1.2 cipher suites accepted per server (enumerated by offering one suite at a time):\n  web-front         9 suites; with RSA key transport (no forward secrecy): 4 -> AES256-GCM-SHA384, AES128-GCM-SHA256, ...\n  legacy-billing    9 suites; with RSA key transport (no forward secrecy): 4 -> AES256-GCM-SHA384, AES128-GCM-SHA256, ...\n  api-gateway       5 suites; with RSA key transport (no forward secrecy): 0 \n  old-intranet      9 suites; with RSA key transport (no forward secrecy): 4 -> AES256-GCM-SHA384, AES128-GCM-SHA256, ...\n  edge-device       5 suites; with RSA key transport (no forward secrecy): 0 \n\nwhat Python's ssl module cannot show: in TLS 1.3 the key-exchange GROUP (for example X25519 or the hybrid X25519MLKEM768) is not exposed by this API, so a result that reads 'TLSv1.3' says nothing about quantum resistance of the key exchange; the Q-CAPS scanner reads the group with a raw handshake probe",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The two TLS 1.2-only servers negotiate ECDHE with an RSA certificate (RSA-1024 for billing, RSA-2048 for intranet); the three TLS 1.3 servers show an RSA-2048, a P-256 and an Ed25519 certificate. **Every certificate key is classed as quantum-vulnerable**: RSA, elliptic-curve and EdDSA keys all fall to Shor's algorithm, so authentication would need replacing in all five. The suite enumeration shows nine TLS 1.2 suites accepted by each RSA-certificate server, **four of them RSA key transport**, which gives no forward secrecy and makes recorded sessions decryptable with the server's RSA key alone (and, later, by a quantum computer). The ECDSA and Ed25519 servers accept five suites and none with RSA key transport, because RSA transport needs an RSA certificate.\n\n**A limit worth stating.** For TLS 1.3, the Python `ssl` module reports the version and suite but not the negotiated **key-exchange group**. A line reading TLSv1.3 therefore does not tell whether the key exchange is classical X25519 or the hybrid X25519MLKEM768; telling them apart needs a probe that reads the ServerHello or HelloRetryRequest (RFC 9846 describes the supported-groups and key-share mechanism). The Q-CAPS scanner does this with a raw handshake probe. **Common mistake:** declaring an endpoint \"quantum ready\" because it speaks TLS 1.3."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does a bare TLS 1.2 suite such as AES256-GCM-SHA384 indicate?",
+              "options": [
+                "RSA key transport, with no forward secrecy",
+                "ECDHE key exchange",
+                "A post-quantum suite"
+              ],
+              "correct_index": 0,
+              "explanation": "The session key is encrypted under the server's RSA key."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does a TLS 1.3 result alone not show quantum resistance?",
+              "options": [
+                "The key-exchange group is separate and must be read from the handshake",
+                "TLS 1.3 is always classical",
+                "TLS 1.3 has no key exchange"
+              ],
+              "correct_index": 0,
+              "explanation": "X25519 and X25519MLKEM768 both appear as TLS 1.3."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which certificate key types in the lab are exposed to Shor's algorithm?",
+              "options": [
+                "RSA, elliptic-curve and Ed25519 keys",
+                "Only RSA",
+                "None"
+              ],
+              "correct_index": 0,
+              "explanation": "All three families are broken by Shor."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (Cryptographic Discovery and Inventory, Figure 4-2) and Chapter 5 (Step 1: Discover the Cryptographic Inventory, CBOM modelling, Figure 5-3)"
+            },
+            {
+              "book": "B161",
+              "locator": "RFC 9846 (TLS 1.3): Section 4.3.7 (Supported Groups) and the key_share and HelloRetryRequest mechanism"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The enumeration of accepted TLS 1.2 suites depends on the OpenSSL build used to run the lab (counts of 9 and 5 suites are results for this environment). Suite name parsing is a simplified split for the lesson."
+          }
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "2.4 Certificate Discovery",
+          "summary": "A certificate inventory with key, signature, validity bucket and lifetime, and the findings it produces: a 1024-bit key, an expired certificate, one expiring soon and over-long lifetimes.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Certificates are the most visible cryptographic assets: each one binds a name to a public key and a signature algorithm for a limited period. An inventory needs, per certificate, the **subject and alternative names**, the **issuer** (the CA), the **public-key algorithm and size**, the **signature algorithm**, the **validity period** and **where it is deployed**. RFC 5280 defines these fields (the validity period is in section 4.1.2.5). Certificate discovery also finds operational problems that have nothing to do with quantum computers, and those problems are usually the first findings.\n\nThe listing collects the certificate of each lab server through a live handshake and applies four simple checks: RSA keys below 2048 bits, expired certificates, certificates expiring within 90 days, and lifetimes longer than the 398 days that public TLS certificates are limited to (a limit that does not apply to private CAs, as the finding says). It prints a certificate table and the findings. The discovery listings are **real**: they start small TLS and plain-TCP services on 127.0.0.1 (this machine, the only target; ports 47100 upwards), generate throw-away self-signed certificates, and then discover them with sockets and the `ssl` module. The lab is a stand-in for an estate, with deliberately weak members (a 1024-bit RSA certificate, an expired certificate, TLS 1.2-only servers); the findings describe the lab, not a real environment. The asset register, dependency graph and data-flow map are **DEMO DATA** invented for the lesson. The lab: web-front (RSA-2048, TLS 1.3), legacy-billing (RSA-1024, TLS 1.2 only), api-gateway (ECDSA P-256, TLS 1.3), old-intranet (expired RSA-2048, TLS 1.2 only), edge-device (Ed25519, TLS 1.3), plus one plain service with a banner."
+            },
+            {
+              "type": "code",
+              "id": "c-certificate-discovery",
+              "language": "python",
+              "code": "import datetime, os, socket, ssl, tempfile, threading\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa\nfrom cryptography.x509.oid import NameOID\n\n# ---- lab: small TLS servers on 127.0.0.1 that this script starts and then discovers. Certificates are self-signed and generated now. ----\ndef make_cert(kind, cn, valid_from_days, valid_to_days):\n    if kind == \"rsa1024\": key = rsa.generate_private_key(65537, 1024)\n    elif kind == \"rsa2048\": key = rsa.generate_private_key(65537, 2048)\n    elif kind == \"ec256\": key = ec.generate_private_key(ec.SECP256R1())\n    elif kind == \"ed25519\": key = ed25519.Ed25519PrivateKey.generate()\n    sign_hash = None if kind == \"ed25519\" else hashes.SHA256()\n    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])\n    now = datetime.datetime.now(datetime.timezone.utc)\n    cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key()).serial_number(x509.random_serial_number())\n            .not_valid_before(now + datetime.timedelta(days=valid_from_days)).not_valid_after(now + datetime.timedelta(days=valid_to_days))\n            .add_extension(x509.SubjectAlternativeName([x509.DNSName(cn)]), critical=False).sign(key, sign_hash))\n    return key, cert\n\nLAB = [  # label, key kind, common name, validity (from, to) in days relative to now, highest TLS version the server accepts\n    (\"web-front\",      \"rsa2048\", \"web.lab.test\",     (-30, 335), ssl.TLSVersion.TLSv1_3),\n    (\"legacy-billing\", \"rsa1024\", \"billing.lab.test\", (-900, 200), ssl.TLSVersion.TLSv1_2),\n    (\"api-gateway\",    \"ec256\",   \"api.lab.test\",     (-10, 80),  ssl.TLSVersion.TLSv1_3),\n    (\"old-intranet\",   \"rsa2048\", \"intra.lab.test\",   (-400, -35), ssl.TLSVersion.TLSv1_2),\n    (\"edge-device\",    \"ed25519\", \"edge.lab.test\",    (-5, 3000), ssl.TLSVersion.TLSv1_3),\n]\n_tmp = tempfile.mkdtemp()\n_next_port = [47100]\ndef bind_free():\n    \"\"\"bind the next free port from 47100 upwards on 127.0.0.1 (a fixed small range makes the discovery sweep below short and repeatable)\"\"\"\n    while True:\n        s = socket.socket()\n        try:\n            s.bind((\"127.0.0.1\", _next_port[0])); s.listen(16); _next_port[0] += 1\n            return s\n        except OSError:\n            s.close(); _next_port[0] += 1\ndef start_lab():\n    servers = {}\n    for label, kind, cn, (a, b), maxv in LAB:\n        key, cert = make_cert(kind, cn, a, b)\n        cf, kf = os.path.join(_tmp, label + \".crt\"), os.path.join(_tmp, label + \".key\")\n        open(cf, \"wb\").write(cert.public_bytes(serialization.Encoding.PEM))\n        open(kf, \"wb\").write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))\n        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)\n        ctx.minimum_version = ssl.TLSVersion.TLSv1_2\n        ctx.maximum_version = maxv\n        ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n        ctx.load_cert_chain(cf, kf)\n        sock = bind_free()\n        def serve(s=sock, c=ctx):\n            while True:\n                try:\n                    conn, _ = s.accept()\n                except OSError:\n                    return\n                try:\n                    with c.wrap_socket(conn, server_side=True) as t:\n                        t.settimeout(1)\n                except Exception:\n                    pass\n        threading.Thread(target=serve, daemon=True).start()\n        servers[label] = sock.getsockname()[1]\n    return servers\n\ndef probe(port, minv=None, maxv=None):\n    \"\"\"TLS client handshake to 127.0.0.1:port; returns (version, cipher, DER certificate) or None if the server refuses\"\"\"\n    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)\n    ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE\n    ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n    ctx.minimum_version = minv or ssl.TLSVersion.MINIMUM_SUPPORTED\n    if maxv: ctx.maximum_version = maxv\n    try:\n        with socket.create_connection((\"127.0.0.1\", port), timeout=3) as raw:\n            with ctx.wrap_socket(raw) as t:\n                return t.version(), t.cipher()[0], t.getpeercert(binary_form=True)\n    except (ssl.SSLError, OSError):\n        return None\n\ndef describe_key(cert):\n    pk = cert.public_key()\n    if isinstance(pk, rsa.RSAPublicKey): return \"RSA\", pk.key_size\n    if isinstance(pk, ec.EllipticCurvePublicKey): return \"EC \" + pk.curve.name, pk.key_size\n    if isinstance(pk, ed25519.Ed25519PublicKey): return \"Ed25519\", 256\n    return type(pk).__name__, 0\n\ndef start_plain(payload):\n    \"\"\"a non-TLS service that sends 'payload' bytes to every client and closes (used for banner and SSH-style discovery)\"\"\"\n    sock = bind_free()\n    def serve():\n        while True:\n            try:\n                conn, _ = sock.accept()\n            except OSError:\n                return\n            try:\n                conn.sendall(payload)\n            except OSError:\n                pass\n            conn.close()\n    threading.Thread(target=serve, daemon=True).start()\n    return sock.getsockname()[1]\n# Certificate discovery: collect every certificate the lab presents and record the fields an inventory needs.\nports = start_lab()\nnow = datetime.datetime.now(datetime.timezone.utc)\ndef expiry_bucket(cert):\n    left = (cert.not_valid_after_utc - now).days\n    return \"EXPIRED\" if left < 0 else \"within 90 days\" if left <= 90 else \"valid (> 90 days)\"\nrows = []\nfor label, port in ports.items():\n    version, cipher, der = probe(port)\n    c = x509.load_der_x509_certificate(der)\n    alg, size = describe_key(c)\n    sans = [n.value for n in c.extensions.get_extension_for_class(x509.SubjectAlternativeName).value]\n    sig = c.signature_algorithm_oid._name\n    life = (c.not_valid_after_utc - c.not_valid_before_utc).days\n    issues = []\n    if alg == \"RSA\" and size < 2048: issues.append(f\"RSA key of only {size} bits\")\n    if expiry_bucket(c) == \"EXPIRED\": issues.append(\"expired\")\n    elif expiry_bucket(c) == \"within 90 days\": issues.append(\"expires within 90 days\")\n    if c.issuer == c.subject: issues.append(\"self-signed (lab certificates; a production host would show a CA chain)\")\n    if life > 398: issues.append(f\"validity of {life // 30} months exceeds the 398-day public TLS limit (not applicable to private CAs)\")\n    rows.append((label, c.subject.rfc4514_string(), sans, f\"{alg} {size}\", sig, expiry_bucket(c), life, issues))\nprint(f\"{'service':<16} {'subject':<22} {'key':<18} {'signature':<24} {'validity status':<18} {'lifetime (days)':>15}\")\nfor label, subj, sans, key, sig, status, life, _ in rows:\n    print(f\"{label:<16} {subj:<22} {key:<18} {sig:<24} {status:<18} {life:>15}\")\nprint()\nprint(\"findings from the certificate inventory:\")\nfor label, *_, issues in rows:\n    for i in issues:\n        print(f\"  {label:<16} {i}\")\nprint()\nprint(\"quantum relevance: every key above (RSA, EC, Ed25519) would have to be replaced by a post-quantum or hybrid certificate for authentication to survive a CRQC; the inventory shows which certificates exist, who issues them and when they expire, which is the order in which replacement can be scheduled at no extra cost (replace at renewal)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-certificate-discovery",
+              "language": "text",
+              "code": "service          subject                key                signature                validity status    lifetime (days)\nweb-front        CN=web.lab.test        RSA 2048           sha256WithRSAEncryption  valid (> 90 days)              365\nlegacy-billing   CN=billing.lab.test    RSA 1024           sha256WithRSAEncryption  valid (> 90 days)             1100\napi-gateway      CN=api.lab.test        EC secp256r1 256   ecdsa-with-SHA256        within 90 days                  90\nold-intranet     CN=intra.lab.test      RSA 2048           sha256WithRSAEncryption  EXPIRED                        365\nedge-device      CN=edge.lab.test       Ed25519 256        ed25519                  valid (> 90 days)             3005\n\nfindings from the certificate inventory:\n  web-front        self-signed (lab certificates; a production host would show a CA chain)\n  legacy-billing   RSA key of only 1024 bits\n  legacy-billing   self-signed (lab certificates; a production host would show a CA chain)\n  legacy-billing   validity of 36 months exceeds the 398-day public TLS limit (not applicable to private CAs)\n  api-gateway      expires within 90 days\n  api-gateway      self-signed (lab certificates; a production host would show a CA chain)\n  old-intranet     expired\n  old-intranet     self-signed (lab certificates; a production host would show a CA chain)\n  edge-device      self-signed (lab certificates; a production host would show a CA chain)\n  edge-device      validity of 100 months exceeds the 398-day public TLS limit (not applicable to private CAs)\n\nquantum relevance: every key above (RSA, EC, Ed25519) would have to be replaced by a post-quantum or hybrid certificate for authentication to survive a CRQC; the inventory shows which certificates exist, who issues them and when they expire, which is the order in which replacement can be scheduled at no extra cost (replace at renewal)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The table shows RSA-2048 with SHA-256 for web-front (lifetime 365 days) and old-intranet, RSA-1024 for legacy-billing (1100 days), ECDSA P-256 for api-gateway (90 days) and Ed25519 for edge-device (3005 days). The findings: the **1024-bit RSA key** (below any accepted minimum today), **old-intranet expired**, **api-gateway expires within 90 days**, and two lifetimes (36 and 100 months) that would be unacceptable on a public certificate; every certificate is self-signed, which is expected in a lab and would be a finding in production.\n\n**Quantum relevance.** Each key will have to be replaced with a post-quantum or hybrid certificate for authentication to survive a CRQC. The inventory gives the schedule: replacing at **renewal** costs nothing extra, so the certificates with the nearest expiry are the first candidates, and a policy of short lifetimes makes the later migration cheaper. **Common mistake:** relying on an expiry-monitoring tool for the quantum inventory: it knows when certificates expire, not which key types or algorithms they carry."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which finding of the certificate inventory is independent of quantum computers?",
+              "options": [
+                "A 1024-bit RSA key and an expired certificate",
+                "Use of Shor-vulnerable keys",
+                "TLS 1.3 support"
+              ],
+              "correct_index": 0,
+              "explanation": "They are exploitable or operationally harmful today."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is certificate renewal a good moment for migration?",
+              "options": [
+                "Replacing the key at renewal adds no extra rotation cost",
+                "Because renewal shortens the key",
+                "Because CAs require it"
+              ],
+              "correct_index": 0,
+              "explanation": "Short lifetimes make migration cheaper."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does the 398-day limit apply to?",
+              "options": [
+                "Publicly trusted TLS certificates, not private CAs",
+                "All certificates",
+                "Only code signing"
+              ],
+              "correct_index": 0,
+              "explanation": "The lab's long lifetimes are fine for a private CA but are flagged."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B162",
+              "locator": "RFC 5280: Section 4.1.2.5 (Validity) and the certificate field definitions"
+            },
+            {
+              "book": "B71",
+              "locator": "CA/Browser Forum Baseline Requirements: maximum validity of TLS server certificates (398 days at the time of the cited version)"
+            },
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (Cryptographic Discovery and Inventory, Figure 4-2) and Chapter 5 (Step 1: Discover the Cryptographic Inventory, CBOM modelling, Figure 5-3)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The 398-day figure comes from the Baseline Requirements version cited in earlier modules; the CA/Browser Forum has adopted schedules for shorter lifetimes, so the current limit must be checked against the latest version. The certificates in the lab are self-signed test certificates."
+          }
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "2.5 Protocol Discovery",
+          "summary": "Which TLS versions each server accepts, and an SSH-style KEXINIT packet parsed byte by byte to read the offered key-exchange algorithms.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **protocol** and its version set the ceiling for what is possible. A TLS 1.2-only endpoint cannot use the hybrid post-quantum key exchange standardised for TLS 1.3, however modern its certificate; an SSH server's offered key-exchange list tells whether a post-quantum hybrid is available and whether weak legacy groups are still allowed. Protocol discovery therefore records, per endpoint, **versions accepted**, **algorithms offered**, and **legacy options still enabled**.\n\nThe listing first probes each lab server with a client restricted to TLS 1.2 and to TLS 1.3 to see which it accepts. Then it demonstrates reading an **SSH key-exchange offer**: a local DEMO service sends an SSH banner followed by a KEXINIT packet built in the RFC 4253 binary format (message type 20, a 16-byte cookie and ten name-lists), and the client parses the packet and classifies each key-exchange method. The server's algorithm lists are invented for the lesson (DEMO DATA); the parsing is real. The discovery listings are **real**: they start small TLS and plain-TCP services on 127.0.0.1 (this machine, the only target; ports 47100 upwards), generate throw-away self-signed certificates, and then discover them with sockets and the `ssl` module. The lab is a stand-in for an estate, with deliberately weak members (a 1024-bit RSA certificate, an expired certificate, TLS 1.2-only servers); the findings describe the lab, not a real environment. The asset register, dependency graph and data-flow map are **DEMO DATA** invented for the lesson. The lab: web-front (RSA-2048, TLS 1.3), legacy-billing (RSA-1024, TLS 1.2 only), api-gateway (ECDSA P-256, TLS 1.3), old-intranet (expired RSA-2048, TLS 1.2 only), edge-device (Ed25519, TLS 1.3), plus one plain service with a banner."
+            },
+            {
+              "type": "code",
+              "id": "c-protocol-discovery",
+              "language": "python",
+              "code": "import datetime, os, socket, ssl, tempfile, threading\nfrom cryptography import x509\nfrom cryptography.hazmat.primitives import hashes, serialization\nfrom cryptography.hazmat.primitives.asymmetric import ec, ed25519, rsa\nfrom cryptography.x509.oid import NameOID\n\n# ---- lab: small TLS servers on 127.0.0.1 that this script starts and then discovers. Certificates are self-signed and generated now. ----\ndef make_cert(kind, cn, valid_from_days, valid_to_days):\n    if kind == \"rsa1024\": key = rsa.generate_private_key(65537, 1024)\n    elif kind == \"rsa2048\": key = rsa.generate_private_key(65537, 2048)\n    elif kind == \"ec256\": key = ec.generate_private_key(ec.SECP256R1())\n    elif kind == \"ed25519\": key = ed25519.Ed25519PrivateKey.generate()\n    sign_hash = None if kind == \"ed25519\" else hashes.SHA256()\n    name = x509.Name([x509.NameAttribute(NameOID.COMMON_NAME, cn)])\n    now = datetime.datetime.now(datetime.timezone.utc)\n    cert = (x509.CertificateBuilder().subject_name(name).issuer_name(name).public_key(key.public_key()).serial_number(x509.random_serial_number())\n            .not_valid_before(now + datetime.timedelta(days=valid_from_days)).not_valid_after(now + datetime.timedelta(days=valid_to_days))\n            .add_extension(x509.SubjectAlternativeName([x509.DNSName(cn)]), critical=False).sign(key, sign_hash))\n    return key, cert\n\nLAB = [  # label, key kind, common name, validity (from, to) in days relative to now, highest TLS version the server accepts\n    (\"web-front\",      \"rsa2048\", \"web.lab.test\",     (-30, 335), ssl.TLSVersion.TLSv1_3),\n    (\"legacy-billing\", \"rsa1024\", \"billing.lab.test\", (-900, 200), ssl.TLSVersion.TLSv1_2),\n    (\"api-gateway\",    \"ec256\",   \"api.lab.test\",     (-10, 80),  ssl.TLSVersion.TLSv1_3),\n    (\"old-intranet\",   \"rsa2048\", \"intra.lab.test\",   (-400, -35), ssl.TLSVersion.TLSv1_2),\n    (\"edge-device\",    \"ed25519\", \"edge.lab.test\",    (-5, 3000), ssl.TLSVersion.TLSv1_3),\n]\n_tmp = tempfile.mkdtemp()\n_next_port = [47100]\ndef bind_free():\n    \"\"\"bind the next free port from 47100 upwards on 127.0.0.1 (a fixed small range makes the discovery sweep below short and repeatable)\"\"\"\n    while True:\n        s = socket.socket()\n        try:\n            s.bind((\"127.0.0.1\", _next_port[0])); s.listen(16); _next_port[0] += 1\n            return s\n        except OSError:\n            s.close(); _next_port[0] += 1\ndef start_lab():\n    servers = {}\n    for label, kind, cn, (a, b), maxv in LAB:\n        key, cert = make_cert(kind, cn, a, b)\n        cf, kf = os.path.join(_tmp, label + \".crt\"), os.path.join(_tmp, label + \".key\")\n        open(cf, \"wb\").write(cert.public_bytes(serialization.Encoding.PEM))\n        open(kf, \"wb\").write(key.private_bytes(serialization.Encoding.PEM, serialization.PrivateFormat.PKCS8, serialization.NoEncryption()))\n        ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)\n        ctx.minimum_version = ssl.TLSVersion.TLSv1_2\n        ctx.maximum_version = maxv\n        ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n        ctx.load_cert_chain(cf, kf)\n        sock = bind_free()\n        def serve(s=sock, c=ctx):\n            while True:\n                try:\n                    conn, _ = s.accept()\n                except OSError:\n                    return\n                try:\n                    with c.wrap_socket(conn, server_side=True) as t:\n                        t.settimeout(1)\n                except Exception:\n                    pass\n        threading.Thread(target=serve, daemon=True).start()\n        servers[label] = sock.getsockname()[1]\n    return servers\n\ndef probe(port, minv=None, maxv=None):\n    \"\"\"TLS client handshake to 127.0.0.1:port; returns (version, cipher, DER certificate) or None if the server refuses\"\"\"\n    ctx = ssl.SSLContext(ssl.PROTOCOL_TLS_CLIENT)\n    ctx.check_hostname = False; ctx.verify_mode = ssl.CERT_NONE\n    ctx.set_ciphers(\"DEFAULT:@SECLEVEL=0\")\n    ctx.minimum_version = minv or ssl.TLSVersion.MINIMUM_SUPPORTED\n    if maxv: ctx.maximum_version = maxv\n    try:\n        with socket.create_connection((\"127.0.0.1\", port), timeout=3) as raw:\n            with ctx.wrap_socket(raw) as t:\n                return t.version(), t.cipher()[0], t.getpeercert(binary_form=True)\n    except (ssl.SSLError, OSError):\n        return None\n\ndef describe_key(cert):\n    pk = cert.public_key()\n    if isinstance(pk, rsa.RSAPublicKey): return \"RSA\", pk.key_size\n    if isinstance(pk, ec.EllipticCurvePublicKey): return \"EC \" + pk.curve.name, pk.key_size\n    if isinstance(pk, ed25519.Ed25519PublicKey): return \"Ed25519\", 256\n    return type(pk).__name__, 0\n\ndef start_plain(payload):\n    \"\"\"a non-TLS service that sends 'payload' bytes to every client and closes (used for banner and SSH-style discovery)\"\"\"\n    sock = bind_free()\n    def serve():\n        while True:\n            try:\n                conn, _ = sock.accept()\n            except OSError:\n                return\n            try:\n                conn.sendall(payload)\n            except OSError:\n                pass\n            conn.close()\n    threading.Thread(target=serve, daemon=True).start()\n    return sock.getsockname()[1]\nimport struct\n# Protocol discovery: (1) which TLS versions each server accepts, (2) an SSH-style service whose key-exchange algorithm list is read from its KEXINIT packet (RFC 4253 section 7.1).\nports = start_lab()\nV = {\"TLS 1.2\": ssl.TLSVersion.TLSv1_2, \"TLS 1.3\": ssl.TLSVersion.TLSv1_3}\nprint(f\"{'service':<16}\" + \"\".join(f\"{v:>10}\" for v in V) + \"   reading\")\nfor label, port in ports.items():\n    row, ok = f\"{label:<16}\", {}\n    for v, enum in V.items():\n        ok[v] = probe(port, enum, enum) is not None\n        row += f\"{'accepts' if ok[v] else 'refuses':>10}\"\n    note = \"modern: supports TLS 1.3\" if ok[\"TLS 1.3\"] else \"TLS 1.2 only: no TLS 1.3, so no hybrid post-quantum key exchange is possible on this endpoint\"\n    print(row + \"   \" + note)\nprint()\n# --- a DEMO SSH-style server: banner plus a KEXINIT packet, built to the RFC 4253 binary format ---\ndef name_list(items): b = \",\".join(items).encode(); return struct.pack(\">I\", len(b)) + b\nkex = [\"sntrup761x25519-sha512@openssh.com\", \"curve25519-sha256\", \"diffie-hellman-group14-sha1\", \"diffie-hellman-group1-sha1\"]\nlists = [kex, [\"ssh-ed25519\", \"rsa-sha2-512\", \"ssh-rsa\"], [\"aes256-gcm@openssh.com\", \"aes128-ctr\"], [\"aes256-gcm@openssh.com\", \"aes128-ctr\"],\n         [\"hmac-sha2-256\"], [\"hmac-sha2-256\"], [\"none\"], [\"none\"], [], []]\npayload = bytes([20]) + bytes(16) + b\"\".join(name_list(x) for x in lists) + b\"\\x00\" + bytes(4)\npad = 8 - ((len(payload) + 5) % 8); pad = pad + 8 if pad < 4 else pad\npacket = struct.pack(\">IB\", len(payload) + pad + 1, pad) + payload + bytes(pad)\nport = start_plain(b\"SSH-2.0-DemoSSH_1.0\\r\\n\" + packet)\ns = socket.create_connection((\"127.0.0.1\", port), timeout=3); s.settimeout(2)\ndata = b\"\"\nwhile len(data) < 40:\n    chunk = s.recv(4096)\n    if not chunk: break\n    data += chunk\ns.close()\nbanner, _, rest = data.partition(b\"\\r\\n\")\nplen, padlen = struct.unpack(\">IB\", rest[:5]); body = rest[5:5 + plen - 1 - padlen]\nassert body[0] == 20, \"not a KEXINIT\"\npos, names = 17, []\nfor _ in range(10):\n    (n,) = struct.unpack(\">I\", body[pos:pos + 4]); names.append(body[pos + 4:pos + 4 + n].decode().split(\",\") if n else []); pos += 4 + n\nlabels = [\"kex\", \"host key\", \"cipher c2s\", \"cipher s2c\", \"mac c2s\", \"mac s2c\"]\nprint(\"DEMO SSH-style service, banner:\", banner.decode())\nfor lab, lst in zip(labels, names[:6]):\n    print(f\"  {lab:<12} {', '.join(lst)}\")\ndef classify(k):\n    if \"sntrup\" in k or \"mlkem\" in k: return \"hybrid post-quantum key exchange\"\n    if k.startswith(\"curve25519\") or \"ecdh\" in k: return \"classical elliptic-curve key exchange (quantum-vulnerable)\"\n    if \"group1-sha1\" in k: return \"classical finite-field Diffie-Hellman, 1024-bit group and SHA-1 (weak even today)\"\n    if \"group14\" in k: return \"classical finite-field Diffie-Hellman with SHA-1 (legacy; quantum-vulnerable)\"\n    return \"unclassified\"\nprint(\"key-exchange assessment:\")\nfor k in names[0]:\n    print(f\"  {k:<38} {classify(k)}\")\nprint(\"a client picks the first algorithm in ITS preference list that the server also offers, so the offer list shows what is possible, not what a given client will negotiate; both must be checked\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-protocol-discovery",
+              "language": "text",
+              "code": "service            TLS 1.2   TLS 1.3   reading\nweb-front          accepts   accepts   modern: supports TLS 1.3\nlegacy-billing     accepts   refuses   TLS 1.2 only: no TLS 1.3, so no hybrid post-quantum key exchange is possible on this endpoint\napi-gateway        accepts   accepts   modern: supports TLS 1.3\nold-intranet       accepts   refuses   TLS 1.2 only: no TLS 1.3, so no hybrid post-quantum key exchange is possible on this endpoint\nedge-device        accepts   accepts   modern: supports TLS 1.3\n\nDEMO SSH-style service, banner: SSH-2.0-DemoSSH_1.0\n  kex          sntrup761x25519-sha512@openssh.com, curve25519-sha256, diffie-hellman-group14-sha1, diffie-hellman-group1-sha1\n  host key     ssh-ed25519, rsa-sha2-512, ssh-rsa\n  cipher c2s   aes256-gcm@openssh.com, aes128-ctr\n  cipher s2c   aes256-gcm@openssh.com, aes128-ctr\n  mac c2s      hmac-sha2-256\n  mac s2c      hmac-sha2-256\nkey-exchange assessment:\n  sntrup761x25519-sha512@openssh.com     hybrid post-quantum key exchange\n  curve25519-sha256                      classical elliptic-curve key exchange (quantum-vulnerable)\n  diffie-hellman-group14-sha1            classical finite-field Diffie-Hellman with SHA-1 (legacy; quantum-vulnerable)\n  diffie-hellman-group1-sha1             classical finite-field Diffie-Hellman, 1024-bit group and SHA-1 (weak even today)\na client picks the first algorithm in ITS preference list that the server also offers, so the offer list shows what is possible, not what a given client will negotiate; both must be checked",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "web-front, api-gateway and edge-device accept both TLS 1.2 and TLS 1.3; legacy-billing and old-intranet accept **TLS 1.2 only**, which means that no hybrid post-quantum key exchange is possible on those endpoints until the TLS stack is upgraded. In the SSH offer the first method `sntrup761x25519-sha512@openssh.com` is a hybrid post-quantum exchange, `curve25519-sha256` is classical elliptic-curve (quantum-vulnerable), `diffie-hellman-group14-sha1` is legacy finite-field DH with SHA-1 and `diffie-hellman-group1-sha1` uses a 1024-bit group with SHA-1, weak even today and a finding independent of quantum computing.\n\n**Offer and choice differ.** A client picks the first algorithm in its own preference list that the server also offers, so the offer shows what is possible, not what a given client will negotiate; a complete assessment tests the actual client population or enforces a server-side policy that removes the weak options. **Common mistake:** reading a server's list of supported algorithms as the algorithms in use."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why can a TLS 1.2-only endpoint not support hybrid post-quantum key exchange?",
+              "options": [
+                "The hybrid groups are defined for TLS 1.3",
+                "TLS 1.2 forbids key exchange",
+                "Certificates block it"
+              ],
+              "correct_index": 0,
+              "explanation": "Upgrading the stack is a prerequisite."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does an SSH KEXINIT packet contain that discovery can use?",
+              "options": [
+                "Name-lists of offered key-exchange, host-key, cipher and MAC algorithms",
+                "Private keys",
+                "User passwords"
+              ],
+              "correct_index": 0,
+              "explanation": "Ten name-lists follow a 16-byte cookie."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the difference between an algorithm offer and an algorithm in use?",
+              "options": [
+                "The negotiated choice also depends on the client's preferences",
+                "There is none",
+                "The offer is secret"
+              ],
+              "correct_index": 0,
+              "explanation": "Assess both."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B174",
+              "locator": "RFC 4251 (SSH architecture): the name-list data type and algorithm negotiation concepts; the KEXINIT message layout itself is defined in RFC 4253 section 7.1"
+            },
+            {
+              "book": "B161",
+              "locator": "RFC 9846 (TLS 1.3): supported versions and groups"
+            },
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (Cryptographic Discovery and Inventory, Figure 4-2) and Chapter 5 (Step 1: Discover the Cryptographic Inventory, CBOM modelling, Figure 5-3)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "RFC 4253 (which defines the KEXINIT packet) is not among the cited books and the packet layout was written from memory of the RFC; the parser was tested only against the lesson's own generated packet. The algorithm lists in the SSH demonstration are DEMO DATA."
+          }
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "2.6 Application Discovery",
+          "summary": "Static analysis of a sample code tree: AST-based detection in Python, pattern rules for Java, JavaScript and server configuration, and the cases static analysis cannot determine.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Not all cryptography crosses the network. Applications call hash functions, generate keys, sign tokens and encrypt files; those calls are visible only in **source code, binaries or configuration**. Source scanning finds **literal algorithm names and parameters** (`hashlib.md5`, `key_size=1024`, `algorithm=\"RS256\"`, `getInstance(\"RSA\")`), and it is the main way to find cryptography that is **hard-coded**, which is also the cryptography that will be hardest to change.\n\nThe listing writes a small sample code tree (DEMO DATA: Python, Java, JavaScript and an nginx configuration) to a temporary folder and scans it. Python is analysed with the **abstract syntax tree** (calls, keyword arguments, constants), which is more reliable than text matching; the other languages use pattern rules, which are cruder. Every finding is classified (quantum-vulnerable public key, weak or legacy primitive, other), and one case is deliberately not determinable: an algorithm chosen at run time from configuration. The discovery listings are **real**: they start small TLS and plain-TCP services on 127.0.0.1 (this machine, the only target; ports 47100 upwards), generate throw-away self-signed certificates, and then discover them with sockets and the `ssl` module. The lab is a stand-in for an estate, with deliberately weak members (a 1024-bit RSA certificate, an expired certificate, TLS 1.2-only servers); the findings describe the lab, not a real environment. The asset register, dependency graph and data-flow map are **DEMO DATA** invented for the lesson."
+            },
+            {
+              "type": "code",
+              "id": "c-app-discovery",
+              "language": "python",
+              "code": "import ast, os, re, tempfile, textwrap\n# Application discovery by static analysis of source code. The scanned tree is a small SAMPLE written by this script (DEMO DATA), not a real code base.\nroot = tempfile.mkdtemp()\nfiles = {\n \"billing/pay.py\": '''\nimport hashlib, hmac, jwt\nfrom cryptography.hazmat.primitives.asymmetric import rsa\nKEY = rsa.generate_private_key(public_exponent=65537, key_size=2048)\ndef fingerprint(card): return hashlib.md5(card.encode()).hexdigest()\ndef sign_token(claims, secret): return jwt.encode(claims, secret, algorithm=\"HS256\")\ndef sign_api(claims, key): return jwt.encode(claims, key, algorithm=\"RS256\")\ndef tag(msg, k): return hmac.new(k, msg, hashlib.sha256).hexdigest()\n''',\n \"billing/legacy.py\": '''\nimport hashlib\nfrom cryptography.hazmat.primitives.asymmetric import rsa\ndef old_hash(data): return hashlib.sha1(data).hexdigest()\nOLD_KEY = rsa.generate_private_key(65537, 1024)\n''',\n \"billing/dynamic.py\": '''\nimport hashlib\nfrom config import SETTINGS\ndef digest(data):\n    return hashlib.new(SETTINGS[\"hash_algorithm\"], data).hexdigest()   # algorithm chosen at run time\n''',\n \"web/Auth.java\": '''\nimport java.security.*;\nclass Auth {\n  MessageDigest md = MessageDigest.getInstance(\"SHA-1\");\n  KeyPairGenerator g = KeyPairGenerator.getInstance(\"RSA\");\n  Cipher c = Cipher.getInstance(\"RSA/ECB/PKCS1Padding\");\n  Cipher d = Cipher.getInstance(\"AES/GCM/NoPadding\");\n}\n''',\n \"web/server.js\": '''\nconst crypto = require('crypto');\nconst h = crypto.createHash('sha1');\nconst k = crypto.generateKeyPairSync('ec', { namedCurve: 'prime256v1' });\n''',\n \"deploy/nginx.conf\": '''\nssl_protocols TLSv1 TLSv1.1 TLSv1.2;\nssl_ciphers HIGH:!aNULL:!MD5;\nssl_ecdh_curve prime256v1;\n''',\n}\nfor rel, text in files.items():\n    path = os.path.join(root, rel); os.makedirs(os.path.dirname(path), exist_ok=True)\n    open(path, \"w\", encoding=\"utf-8\").write(textwrap.dedent(text))\nfindings = []\ndef add(rel, line, cls, what):\n    findings.append((rel, line, cls, what))\nfor rel in files:\n    text = open(os.path.join(root, rel), encoding=\"utf-8\").read()\n    if rel.endswith(\".py\"):\n        tree = ast.parse(text)\n        for node in ast.walk(tree):\n            if isinstance(node, ast.Call):\n                f = ast.unparse(node.func)\n                if f in (\"hashlib.md5\", \"hashlib.sha1\"):\n                    add(rel, node.lineno, \"weak hash (classically broken or deprecated)\", f)\n                if f.endswith(\"generate_private_key\"):\n                    size = next((k.value.value for k in node.keywords if k.arg == \"key_size\"), node.args[1].value if len(node.args) > 1 else None)\n                    add(rel, node.lineno, \"quantum-vulnerable public key\" + (\" and short key\" if size and size < 2048 else \"\"), f\"RSA {size} bits\")\n                if f == \"jwt.encode\":\n                    alg = next((k.value.value for k in node.keywords if k.arg == \"algorithm\"), \"?\")\n                    add(rel, node.lineno, \"JWT algorithm\" + (\" (RSA: quantum-vulnerable)\" if alg.startswith(\"RS\") else \" (HMAC: not affected by Shor)\"), alg)\n                if f == \"hashlib.new\" and not isinstance(node.args[0], ast.Constant):\n                    add(rel, node.lineno, \"algorithm chosen at run time: CANNOT be determined statically\", \"hashlib.new(<variable>)\")\n    else:\n        rules = [(r'getInstance\\(\"(MD5|SHA-1)\"\\)', \"weak hash\"), (r'getInstance\\(\"RSA\"\\)', \"quantum-vulnerable public key\"),\n                 (r'\"RSA/ECB/PKCS1Padding\"', \"RSA with PKCS#1 v1.5 encryption padding\"), (r\"createHash\\('(md5|sha1)'\\)\", \"weak hash\"),\n                 (r\"generateKeyPairSync\\('ec'\", \"quantum-vulnerable public key (elliptic curve)\"), (r\"ssl_protocols .*TLSv1 \", \"legacy TLS 1.0/1.1 enabled\"),\n                 (r\"ssl_ecdh_curve\", \"quantum-vulnerable key-exchange group (no PQC group configured)\")]\n        for n, line in enumerate(text.splitlines(), 1):\n            for rx, cls in rules:\n                m = re.search(rx, line)\n                if m: add(rel, n, cls, m.group(0))\nfindings.sort(key=lambda f: (f[0], f[1]))\nprint(f\"{'file':<20} {'line':>4}  {'class':<62} evidence\")\nfor rel, ln, cls, what in findings:\n    print(f\"{rel:<20} {ln:>4}  {cls:<62} {what}\")\nprint()\nby = {}\nfor _, _, cls, _ in findings:\n    key = \"quantum-vulnerable\" if \"quantum-vulnerable\" in cls else \"weak / legacy\" if (\"weak\" in cls or \"legacy\" in cls or \"PKCS#1\" in cls) else \"other\"\n    by[key] = by.get(key, 0) + 1\nprint(\"summary:\", by, \"| not determinable statically:\", sum(1 for f in findings if \"CANNOT\" in f[2]))\nprint(\"limits: static analysis finds literal algorithm names only. 'hashlib.new(SETTINGS[...])' is reported as undeterminable, wrapper functions, reflection and values from configuration or the environment are invisible, and a match is a candidate, not proof that the code path runs; results are combined with runtime discovery (2.3) and the dependency map (2.7)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-app-discovery",
+              "language": "text",
+              "code": "file                 line  class                                                          evidence\nbilling/dynamic.py      5  algorithm chosen at run time: CANNOT be determined statically  hashlib.new(<variable>)\nbilling/legacy.py       4  weak hash (classically broken or deprecated)                   hashlib.sha1\nbilling/legacy.py       5  quantum-vulnerable public key and short key                    RSA 1024 bits\nbilling/pay.py          4  quantum-vulnerable public key                                  RSA 2048 bits\nbilling/pay.py          5  weak hash (classically broken or deprecated)                   hashlib.md5\nbilling/pay.py          6  JWT algorithm (HMAC: not affected by Shor)                     HS256\nbilling/pay.py          7  JWT algorithm (RSA: quantum-vulnerable)                        RS256\ndeploy/nginx.conf       2  legacy TLS 1.0/1.1 enabled                                     ssl_protocols TLSv1 \ndeploy/nginx.conf       4  quantum-vulnerable key-exchange group (no PQC group configured) ssl_ecdh_curve\nweb/Auth.java           4  weak hash                                                      getInstance(\"SHA-1\")\nweb/Auth.java           5  quantum-vulnerable public key                                  getInstance(\"RSA\")\nweb/Auth.java           6  RSA with PKCS#1 v1.5 encryption padding                        \"RSA/ECB/PKCS1Padding\"\nweb/server.js           3  weak hash                                                      createHash('sha1')\nweb/server.js           4  quantum-vulnerable public key (elliptic curve)                 generateKeyPairSync('ec'\n\nsummary: {'other': 2, 'weak / legacy': 6, 'quantum-vulnerable': 6} | not determinable statically: 1\nlimits: static analysis finds literal algorithm names only. 'hashlib.new(SETTINGS[...])' is reported as undeterminable, wrapper functions, reflection and values from configuration or the environment are invisible, and a match is a candidate, not proof that the code path runs; results are combined with runtime discovery (2.3) and the dependency map (2.7)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The scan reports 14 findings: six **quantum-vulnerable** uses (RSA-2048 and an RSA-1024 key generation, an RS256 JWT, Java `RSA` key-pair generation, an elliptic-curve key pair in JavaScript, and an nginx `ssl_ecdh_curve` with no post-quantum group), six **weak or legacy** items (MD5 and SHA-1 uses in Python, Java and JavaScript, RSA with PKCS#1 v1.5 encryption padding, TLS 1.0 and 1.1 enabled), and two others (an HS256 JWT, which is not affected by Shor's algorithm, and the undeterminable case). Findings are listed in file and line order with their evidence. `hashlib.new(SETTINGS[\"hash_algorithm\"], …)` is reported as **undeterminable statically**, and the tool says so instead of guessing.\n\n**Interpreting results.** A match is a *candidate*: the code may be dead, the hash may be used for a non-security purpose (a cache key), or the key may protect nothing sensitive. Conversely, wrappers, reflection, algorithm names read from configuration or the environment, and third-party libraries that choose algorithms internally are invisible. Source analysis is therefore combined with runtime discovery (2.3 to 2.5) and with the dependency map (2.7), and the Q-CAPS scanner's own source-analysis capability is bounded accordingly. **Common mistake:** reporting \"no findings\" as \"no cryptography\"."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why is AST-based analysis preferable to text matching for Python?",
+              "options": [
+                "It reads calls and arguments structurally, so it handles formatting and extracts parameters such as key_size",
+                "It is faster only",
+                "It runs the code"
+              ],
+              "correct_index": 0,
+              "explanation": "Text matching misses and mis-reads parameters."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "How should an algorithm chosen at run time from configuration be reported?",
+              "options": [
+                "As not determinable statically",
+                "As safe",
+                "As AES"
+              ],
+              "correct_index": 0,
+              "explanation": "The tool must not guess."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is an HS256 JWT classified as not affected by Shor?",
+              "options": [
+                "HMAC is symmetric and Grover only reduces its margin",
+                "It uses RSA",
+                "It has no key"
+              ],
+              "correct_index": 0,
+              "explanation": "RS256 uses RSA and is affected."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (Cryptographic Discovery and Inventory, Figure 4-2) and Chapter 5 (Step 1: Discover the Cryptographic Inventory, CBOM modelling, Figure 5-3)"
+            },
+            {
+              "book": "B22",
+              "locator": "Python documentation: the ast module (parsing source into a syntax tree and walking calls)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The sample tree and its findings are DEMO DATA; the Java, JavaScript and nginx rules are simple regular expressions and will produce false positives and negatives on real code. The Python JWT keyword extraction assumes the PyJWT call style."
+          }
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "2.7 Dependency Mapping",
+          "summary": "A dependency graph of assets, certificates, libraries and an HSM, the blast radius of replacing each component, shared single points of migration failure and a dependency-respecting order.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A flat inventory says what exists; a **dependency map** says what depends on what. The CBOM concept models two kinds of dependency: **implementation** (a library implements an algorithm) and **usage** (an application uses an algorithm or certificate). From the map you can compute the **blast radius** of a change: everything that is directly or indirectly affected if a component must be replaced or fails. A component with a wide blast radius is both a priority (many assets benefit) and a risk (many assets can break).\n\nThe listing builds an invented graph (DEMO DATA) of applications, certificates, libraries, an identity provider, a CA and an HSM, computes the blast radius of every component with a reverse traversal, reports components shared by three or more assets and proposes a dependency-respecting order (lower layers first). The discovery listings are **real**: they start small TLS and plain-TCP services on 127.0.0.1 (this machine, the only target; ports 47100 upwards), generate throw-away self-signed certificates, and then discover them with sockets and the `ssl` module. The lab is a stand-in for an estate, with deliberately weak members (a 1024-bit RSA certificate, an expired certificate, TLS 1.2-only servers); the findings describe the lab, not a real environment. The asset register, dependency graph and data-flow map are **DEMO DATA** invented for the lesson."
+            },
+            {
+              "type": "code",
+              "id": "c-dependency-map",
+              "language": "python",
+              "code": "from collections import defaultdict\n# Dependency mapping: which assets depend on which cryptographic components. DEMO DATA: an invented small organisation.\nedges = [  # (asset, depends on)\n    (\"customer portal\", \"tls cert portal.example\"), (\"customer portal\", \"openssl 3.0\"), (\"customer portal\", \"identity provider\"),\n    (\"partner API\", \"tls cert api.example\"), (\"partner API\", \"openssl 3.0\"), (\"partner API\", \"identity provider\"),\n    (\"tls cert portal.example\", \"internal CA\"), (\"tls cert api.example\", \"internal CA\"), (\"identity provider\", \"signing key idp\"),\n    (\"signing key idp\", \"HSM-1\"), (\"internal CA\", \"HSM-1\"),\n    (\"batch export job\", \"bouncycastle 1.70\"), (\"batch export job\", \"sftp server\"), (\"sftp server\", \"openssh 7.4\"),\n    (\"mobile app backend\", \"openssl 1.1.1\"), (\"mobile app backend\", \"tls cert mobile.example\"), (\"tls cert mobile.example\", \"internal CA\"),\n    (\"firmware pipeline\", \"code signing key\"), (\"code signing key\", \"HSM-1\"),\n]\nusers = defaultdict(set); needs = defaultdict(set)\nfor a, b in edges:\n    users[b].add(a); needs[a].add(b)\ndef blast(component):\n    \"\"\"everything that is directly or indirectly affected if 'component' must be replaced or fails\"\"\"\n    seen, stack = set(), [component]\n    while stack:\n        for u in users[stack.pop()]:\n            if u not in seen:\n                seen.add(u); stack.append(u)\n    return seen\nnodes = {x for e in edges for x in e}\nleaves = [n for n in nodes if not needs[n]]\nprint(\"DEMO DATA. blast radius = number of assets affected, directly or indirectly, by replacing the component\")\nprint(f\"{'component':<26} {'blast radius':>12}   affected\")\nfor comp, size in sorted(((n, len(blast(n))) for n in nodes), key=lambda x: (-x[1], x[0]))[:9]:\n    print(f\"{comp:<26} {size:>12}   {', '.join(sorted(blast(comp)))[:96]}\")\nprint()\nshared = [n for n in nodes if len(users[n]) >= 3]\nprint(\"shared components used by three or more assets (single points of migration failure):\", sorted(shared))\nprint(\"leaf components with no dependencies of their own (where a replacement starts):\", sorted(leaves))\n# an order in which components can be replaced so that nothing is replaced before the components below it are ready (topological order from the leaves up)\norder, done = [], set()\ndef visit(n):\n    if n in done: return\n    done.add(n)\n    for d in sorted(needs[n]): visit(d)\n    order.append(n)\nfor n in sorted(nodes, key=lambda x: (-len(blast(x)), x)):\n    visit(n)\nprint(\"a dependency-respecting migration order (lower layers first):\")\nprint(\"  \" + \" -> \".join(order))\nprint(\"old libraries are findings in themselves: openssl 1.1.1 and openssh 7.4 are listed with their dependants so that the owner of each affected asset can be told what a library upgrade will touch\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-dependency-map",
+              "language": "text",
+              "code": "DEMO DATA. blast radius = number of assets affected, directly or indirectly, by replacing the component\ncomponent                  blast radius   affected\nHSM-1                                11   code signing key, customer portal, firmware pipeline, identity provider, internal CA, mobile app\ninternal CA                           6   customer portal, mobile app backend, partner API, tls cert api.example, tls cert mobile.example,\nsigning key idp                       3   customer portal, identity provider, partner API\nidentity provider                     2   customer portal, partner API\nopenssh 7.4                           2   batch export job, sftp server\nopenssl 3.0                           2   customer portal, partner API\nbouncycastle 1.70                     1   batch export job\ncode signing key                      1   firmware pipeline\nopenssl 1.1.1                         1   mobile app backend\n\nshared components used by three or more assets (single points of migration failure): ['HSM-1', 'internal CA']\nleaf components with no dependencies of their own (where a replacement starts): ['HSM-1', 'bouncycastle 1.70', 'openssh 7.4', 'openssl 1.1.1', 'openssl 3.0']\na dependency-respecting migration order (lower layers first):\n  HSM-1 -> internal CA -> signing key idp -> identity provider -> openssh 7.4 -> openssl 3.0 -> bouncycastle 1.70 -> code signing key -> openssl 1.1.1 -> sftp server -> tls cert api.example -> tls cert mobile.example -> tls cert portal.example -> batch export job -> customer portal -> firmware pipeline -> mobile app backend -> partner API\nold libraries are findings in themselves: openssl 1.1.1 and openssh 7.4 are listed with their dependants so that the owner of each affected asset can be told what a library upgrade will touch",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The **HSM-1** that holds the keys of the CA, the identity provider and the code-signing key has a blast radius of 11 assets; the internal CA affects 6, the identity provider's signing key 3, and the libraries and services 1 or 2 each (openssh 7.4 and openssl 3.0 two, openssl 1.1.1 and bouncycastle one). HSM-1 and the internal CA are the **shared components used by three or more assets**, i.e. the single points of migration failure. The proposed order starts with HSM-1, the CA and the identity provider's key, then the libraries, then the certificates, and ends with the applications that sit on top (batch export job, customer portal, firmware pipeline, mobile app backend, partner API).\n\n**Reading the result.** The map explains why migration planning (module E5) is not \"one application at a time\": replacing the HSM for post-quantum signature support touches the whole trust chain, so it needs the longest lead time. It also routes communication: each affected asset's owner is told what a library upgrade will touch. **Common mistake:** counting only direct dependencies, which underestimates the blast radius of foundation components."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What is the blast radius of a component?",
+              "options": [
+                "All assets directly or indirectly affected if it is replaced or fails",
+                "Only its direct users",
+                "Its size in bytes"
+              ],
+              "correct_index": 0,
+              "explanation": "Computed by reverse graph traversal."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why should HSM-1 and the internal CA have the longest lead time in the lesson's plan?",
+              "options": [
+                "Many assets depend on them, directly or indirectly",
+                "They are the oldest",
+                "They are cheap"
+              ],
+              "correct_index": 0,
+              "explanation": "HSM-1 affects 11 assets, the CA 6."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What two kinds of dependency does a CBOM track?",
+              "options": [
+                "Implementation and usage",
+                "Cost and risk",
+                "Owner and vendor"
+              ],
+              "correct_index": 0,
+              "explanation": "A library implements; an application uses."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (Cryptographic Discovery and Inventory, Figure 4-2) and Chapter 5 (Step 1: Discover the Cryptographic Inventory, CBOM modelling, Figure 5-3)"
+            },
+            {
+              "book": "B99",
+              "locator": "CycloneDX 1.6: the dependency definition used with cryptographic assets"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The graph is DEMO DATA; the migration order is one valid topological order and is not an optimal schedule."
+          }
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "2.8 Data-Flow Mapping",
+          "summary": "Tracing each dataset through its hops with the boundary crossed and the key establishment of each hop, to find the weakest capturable hop and non-quantum problems.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The register of E1.3 says what must stay secret and the inventory of 2.1 to 2.7 says what cryptography exists. A **data-flow map** joins them: for each dataset it lists the **hops** it takes (source, destination), the **boundary** each hop crosses (internal, internet, partner link, stored backup) and the **key establishment** protecting the hop. The weakest capturable hop decides the dataset's exposure to harvest-now-decrypt-later (E1.4); a hop with no encryption at all is a more urgent problem that has nothing to do with quantum computers.\n\nThe listing maps ten invented hops for four datasets (DEMO DATA) and prints the hops of each dataset with a status (quantum-resistant, classical and capturable, classical and hard to capture, unencrypted), then summarises the exposure per dataset. The discovery listings are **real**: they start small TLS and plain-TCP services on 127.0.0.1 (this machine, the only target; ports 47100 upwards), generate throw-away self-signed certificates, and then discover them with sockets and the `ssl` module. The lab is a stand-in for an estate, with deliberately weak members (a 1024-bit RSA certificate, an expired certificate, TLS 1.2-only servers); the findings describe the lab, not a real environment. The asset register, dependency graph and data-flow map are **DEMO DATA** invented for the lesson."
+            },
+            {
+              "type": "code",
+              "id": "c-data-flow",
+              "language": "python",
+              "code": "# Data-flow mapping: follow each dataset through the systems that handle it and record how each hop is protected. DEMO DATA: an invented organisation.\nhops = [  # source, destination, dataset, boundary crossed, key establishment of the channel\n    (\"browser\", \"load balancer\", \"customer PII\", \"internet\", \"ECDHE-P256\"),\n    (\"load balancer\", \"app server\", \"customer PII\", \"internal\", \"ECDHE-P256\"),\n    (\"app server\", \"database\", \"customer PII\", \"internal\", \"none (plaintext inside the data centre)\"),\n    (\"database\", \"backup vault\", \"customer PII\", \"stored backup\", \"RSA-2048 wrap\"),\n    (\"app server\", \"analytics partner\", \"customer PII\", \"partner link\", \"RSA key transport\"),\n    (\"hr system\", \"payroll provider\", \"employee records\", \"partner link\", \"ECDHE-P256\"),\n    (\"hr system\", \"archive\", \"employee records\", \"stored backup\", \"RSA-2048 wrap\"),\n    (\"mobile app\", \"api gateway\", \"session tokens\", \"internet\", \"X25519MLKEM768\"),\n    (\"lab instruments\", \"research store\", \"R&D data\", \"internal\", \"ECDHE-P256\"),\n    (\"research store\", \"cloud storage\", \"R&D data\", \"internet\", \"ECDHE-P256\"),\n]\nCAPTURABLE = {\"internet\", \"partner link\", \"stored backup\"}\ndef status(kex, boundary):\n    if kex.startswith((\"X25519MLKEM\", \"ML-KEM\")): return \"quantum-resistant\"\n    if kex.startswith(\"none\"): return \"unencrypted\"\n    return \"classical key establishment\" + (\", capturable in bulk\" if boundary in CAPTURABLE else \", hard to capture in bulk\")\ndatasets = sorted({h[2] for h in hops})\nprint(\"DEMO DATA. every hop of each dataset:\")\nfor d in datasets:\n    print(f\"== {d}\")\n    for s, t, ds, b, kex in hops:\n        if ds == d:\n            print(f\"   {s:<16} -> {t:<18} [{b:<13}] {kex:<40} {status(kex, b)}\")\nprint()\nprint(\"reading across the hops: the weakest capturable hop decides the HNDL exposure of the dataset (module E1.4)\")\nprint(f\"{'dataset':<18} {'hops':>4} {'capturable and classical':>26} {'unencrypted':>12}  verdict\")\nfor d in datasets:\n    hs = [h for h in hops if h[2] == d]\n    exposed = [h for h in hs if h[3] in CAPTURABLE and not h[4].startswith((\"X25519MLKEM\", \"ML-KEM\", \"none\"))]\n    plain = [h for h in hs if h[4].startswith(\"none\")]\n    verdict = \"EXPOSED on \" + \", \".join(f\"{h[0]}->{h[1]}\" for h in exposed) if exposed else \"no capturable classical hop\"\n    if plain: verdict += \"; plaintext hop must be fixed first (not a quantum issue)\"\n    print(f\"{d:<18} {len(hs):>4} {len(exposed):>26} {len(plain):>12}  {verdict}\")\nprint()\nprint(\"two lessons: (1) a protected front door (ECDHE at the load balancer) says nothing about the hops behind it: the same PII also travels to a partner by RSA key transport and to a backup under an RSA-wrapped key; (2) the data-flow map finds non-quantum problems too, such as the plaintext database hop, and those take priority because they are exploitable today\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-data-flow",
+              "language": "text",
+              "code": "DEMO DATA. every hop of each dataset:\n== R&D data\n   lab instruments  -> research store     [internal     ] ECDHE-P256                               classical key establishment, hard to capture in bulk\n   research store   -> cloud storage      [internet     ] ECDHE-P256                               classical key establishment, capturable in bulk\n== customer PII\n   browser          -> load balancer      [internet     ] ECDHE-P256                               classical key establishment, capturable in bulk\n   load balancer    -> app server         [internal     ] ECDHE-P256                               classical key establishment, hard to capture in bulk\n   app server       -> database           [internal     ] none (plaintext inside the data centre)  unencrypted\n   database         -> backup vault       [stored backup] RSA-2048 wrap                            classical key establishment, capturable in bulk\n   app server       -> analytics partner  [partner link ] RSA key transport                        classical key establishment, capturable in bulk\n== employee records\n   hr system        -> payroll provider   [partner link ] ECDHE-P256                               classical key establishment, capturable in bulk\n   hr system        -> archive            [stored backup] RSA-2048 wrap                            classical key establishment, capturable in bulk\n== session tokens\n   mobile app       -> api gateway        [internet     ] X25519MLKEM768                           quantum-resistant\n\nreading across the hops: the weakest capturable hop decides the HNDL exposure of the dataset (module E1.4)\ndataset            hops   capturable and classical  unencrypted  verdict\nR&D data              2                          1            0  EXPOSED on research store->cloud storage\ncustomer PII          5                          3            1  EXPOSED on browser->load balancer, database->backup vault, app server->analytics partner; plaintext hop must be fixed first (not a quantum issue)\nemployee records      2                          2            0  EXPOSED on hr system->payroll provider, hr system->archive\nsession tokens        1                          0            0  no capturable classical hop\n\ntwo lessons: (1) a protected front door (ECDHE at the load balancer) says nothing about the hops behind it: the same PII also travels to a partner by RSA key transport and to a backup under an RSA-wrapped key; (2) the data-flow map finds non-quantum problems too, such as the plaintext database hop, and those take priority because they are exploitable today",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Customer PII** has five hops: three are classical and capturable (the browser to the load balancer by ECDHE, the database to the backup vault under an RSA-2048 wrap, and the partner link by RSA key transport) and one is **unencrypted** (the app server to the database inside the data centre). **Employee records** have two capturable classical hops (payroll provider and archive), **R&D data** one (the upload to cloud storage; the internal hop is hard to capture in bulk), and the **session tokens** to the API gateway use X25519MLKEM768 and have no capturable classical hop.\n\n**Two lessons.** First, protecting the front door tells nothing about the hops behind it: the same PII also travels to a partner and to a backup. Second, a data-flow map finds **non-quantum problems** such as the plaintext database hop, which take priority because they are exploitable today. Together with E1's register this gives the input to the risk model of E1.7 and the roadmap of E5. **Common mistake:** assessing only the externally visible TLS endpoint."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What decides a dataset's HNDL exposure in the data-flow map?",
+              "options": [
+                "The weakest capturable hop with classical key establishment",
+                "Only the first hop",
+                "The dataset's size"
+              ],
+              "correct_index": 0,
+              "explanation": "Every hop must be considered."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "How does the lesson treat an unencrypted internal hop?",
+              "options": [
+                "As a more urgent, non-quantum problem to fix first",
+                "As quantum-resistant",
+                "As acceptable"
+              ],
+              "correct_index": 0,
+              "explanation": "It is exploitable today."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why does a hybrid post-quantum hop make the session-token dataset low risk in the lesson?",
+              "options": [
+                "Its only hop uses a quantum-resistant key establishment",
+                "Tokens are not sensitive",
+                "It is internal"
+              ],
+              "correct_index": 0,
+              "explanation": "X25519MLKEM768 on the mobile API hop."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (Cryptographic Discovery and Inventory, Figure 4-2) and Chapter 5 (Step 1: Discover the Cryptographic Inventory, CBOM modelling, Figure 5-3)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The hops and datasets are DEMO DATA. Capturability by boundary type is an assumption of the lesson, as in E1.4."
+          }
+        }
+      ],
+      "quiz": [
+        {
+          "id": "e2-n01",
+          "prompt": "What does a CBOM extend?",
+          "options": [
+            "The CycloneDX bill of materials format",
+            "The X.509 standard",
+            "The TLS protocol"
+          ],
+          "correct_index": 0,
+          "explanation": "It adds cryptographic asset types.",
+          "source": {
+            "book": "B99",
+            "locator": "cryptoProperties"
+          }
+        },
+        {
+          "id": "e2-n02",
+          "prompt": "Which four asset types does the CycloneDX cryptographic-asset model use?",
+          "options": [
+            "Algorithm, certificate, protocol and related crypto material",
+            "User, role, group and policy",
+            "Key, lock, door and window"
+          ],
+          "correct_index": 0,
+          "explanation": "Each has its own properties object.",
+          "source": {
+            "book": "B99",
+            "locator": "cryptoProperties.assetType"
+          }
+        },
+        {
+          "id": "e2-n03",
+          "prompt": "What is a shadow asset?",
+          "options": [
+            "A discovered system missing from the asset register",
+            "A decommissioned server",
+            "A backup copy"
+          ],
+          "correct_index": 0,
+          "explanation": "Discovery is compared with the register in both directions.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 4, discovery and inventory"
+          }
+        },
+        {
+          "id": "e2-n04",
+          "prompt": "Why is a discovery result only a lower bound?",
+          "options": [
+            "It sees only what answers within the scanned scope",
+            "Scanners are inaccurate",
+            "Ports are limited"
+          ],
+          "correct_index": 0,
+          "explanation": "Combine sources and repeat.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 5, step 1"
+          }
+        },
+        {
+          "id": "e2-n05",
+          "prompt": "Which suite name indicates RSA key transport in TLS 1.2?",
+          "options": [
+            "AES256-GCM-SHA384",
+            "ECDHE-RSA-AES256-GCM-SHA384",
+            "ECDHE-ECDSA-AES128-GCM-SHA256"
+          ],
+          "correct_index": 0,
+          "explanation": "No ephemeral key exchange, no forward secrecy.",
+          "source": {
+            "book": "B161",
+            "locator": "Section on key exchange in TLS 1.2 background and Supported Groups (4.3.7)"
+          }
+        },
+        {
+          "id": "e2-n06",
+          "prompt": "Which part of a TLS 1.3 connection does Python's ssl module not report?",
+          "options": [
+            "The negotiated key-exchange group",
+            "The protocol version",
+            "The cipher suite"
+          ],
+          "correct_index": 0,
+          "explanation": "The group distinguishes X25519 from X25519MLKEM768.",
+          "source": {
+            "book": "B161",
+            "locator": "Section 4.3.7"
+          }
+        },
+        {
+          "id": "e2-n07",
+          "prompt": "Which certificate key types are exposed to Shor's algorithm?",
+          "options": [
+            "RSA, elliptic-curve and EdDSA",
+            "Only RSA",
+            "None"
+          ],
+          "correct_index": 0,
+          "explanation": "All three rely on factoring or discrete logarithm.",
+          "source": {
+            "book": "B85",
+            "locator": "Section 4.1.1"
+          }
+        },
+        {
+          "id": "e2-n08",
+          "prompt": "Which certificate finding in the lab is a problem regardless of quantum computers?",
+          "options": [
+            "A 1024-bit RSA key",
+            "An Ed25519 key",
+            "A TLS 1.3 endpoint"
+          ],
+          "correct_index": 0,
+          "explanation": "1024-bit RSA is below accepted minimums today.",
+          "source": {
+            "book": "B162",
+            "locator": "Section 4.1.2"
+          }
+        },
+        {
+          "id": "e2-n09",
+          "prompt": "What limits the validity of publicly trusted TLS certificates to 398 days in the cited version?",
+          "options": [
+            "The CA/Browser Forum Baseline Requirements",
+            "RFC 5280",
+            "FIPS 203"
+          ],
+          "correct_index": 0,
+          "explanation": "It does not bind private CAs.",
+          "source": {
+            "book": "B71",
+            "locator": "Certificate validity requirements"
+          }
+        },
+        {
+          "id": "e2-n10",
+          "prompt": "What does an SSH server's KEXINIT list show?",
+          "options": [
+            "The algorithms it offers, not necessarily the one negotiated",
+            "The algorithm in use by every client",
+            "The server's private key"
+          ],
+          "correct_index": 0,
+          "explanation": "The client's preferences matter too.",
+          "source": {
+            "book": "B174",
+            "locator": "RFC 4251 and RFC 4253 section 7.1"
+          }
+        },
+        {
+          "id": "e2-n11",
+          "prompt": "How should a code scanner report an algorithm chosen from configuration at run time?",
+          "options": [
+            "As not determinable statically",
+            "As safe",
+            "As deprecated"
+          ],
+          "correct_index": 0,
+          "explanation": "Do not guess.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 5, step 1"
+          }
+        },
+        {
+          "id": "e2-n12",
+          "prompt": "What does the blast radius of a component measure?",
+          "options": [
+            "The assets directly or indirectly affected if it is replaced",
+            "Its price",
+            "Its age"
+          ],
+          "correct_index": 0,
+          "explanation": "Foundation components such as an HSM have the widest radius.",
+          "source": {
+            "book": "B99",
+            "locator": "dependency definition"
+          }
+        }
+      ],
+      "estimated_minutes": 440,
+      "notes": "Rewrites the eight outline sections as lessons with executed listings. The discovery listings run against a local lab of TLS and plain services on 127.0.0.1 (real discovery of a stand-in estate), a CycloneDX 1.6 CBOM, an AST-based source scan of a sample tree, and DEMO DATA graphs for dependencies and data flows. RFC 4253 KEXINIT layout and the CA/Browser Forum validity limit are flagged for verification.",
+      "learning_objectives": [
+        "Build a cryptographic inventory from live discovery and record it as a schema-valid CycloneDX CBOM.",
+        "Discover assets and reconcile the result with an asset register, finding shadow assets and stale records within stated limits.",
+        "Discover algorithms, protocol versions and certificates and classify their exposure to quantum attack.",
+        "Parse protocol offers (such as an SSH KEXINIT) and read the key-exchange options.",
+        "Find cryptography in source code with static analysis and state what it cannot determine.",
+        "Map dependencies and data flows to compute blast radius and the weakest capturable hop."
+      ]
+    }
+  ]
+}
