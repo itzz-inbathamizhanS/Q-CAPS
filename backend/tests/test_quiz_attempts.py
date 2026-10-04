@@ -338,3 +338,22 @@ def test_per_question_retake_does_not_farm_xp(env):
         xps.append(client.post(f"/api/quizzes/attempts/{att['attempt_id']}/submit",
                                json={"answers": []}, headers=h).json()["xp_awarded"])
     assert xps == [50 * bank_size(Session), 0]
+
+
+def test_module_completion_xp_is_awarded_once_by_the_server(env):
+    client, Session = env
+    with Session() as db:
+        track = models.CourseTrack(slug="track-a", code="A", title="Foundations")
+        db.add(track)
+        db.flush()
+        db.add(models.CourseModule(slug=MODULE, track_id=track.id, code="A1", title="Computing", xp=250, sort_order=1))
+        db.commit()
+    uid, h = signup(client, "alice")
+    paid = []
+    for _ in range(2):
+        att = client.post(f"/api/quizzes/{MODULE}/attempts", headers=h).json()
+        r = client.post(f"/api/quizzes/attempts/{att['attempt_id']}/submit", json={"answers": answer_all(Session, att)}, headers=h).json()
+        paid.append((r["xp_awarded"], r["module_xp_awarded"]))
+    assert paid == [(50 * bank_size(Session) + 250, 250), (0, 0)]
+    with Session() as db:
+        assert db.get(models.User, uid).xp == 50 * bank_size(Session) + 250

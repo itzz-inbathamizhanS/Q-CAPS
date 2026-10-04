@@ -9,6 +9,8 @@ export interface ActivityProgress {
   completed_labs: string[];
   completed_missions: string[];
   badges: string[];
+  passed_modules: string[];
+  quiz_scores: Record<string, number>;
   xp: number;
 }
 

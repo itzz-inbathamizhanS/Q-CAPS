@@ -5,12 +5,13 @@ import pytest
 
 import models
 from activities import catalogue
-from activities.routes import lab_limiter
+from activities.routes import lab_limiter, run_limiter
 
 
 @pytest.fixture(autouse=True)
 def _reset_limiter():
     lab_limiter.reset()
+    run_limiter.reset()
     yield
 
 
@@ -55,7 +56,7 @@ def test_correct_lab_answer_awards_xp_and_badge_once(client, learner, db):
     right, _ = correct_and_wrong(s)
     first = client.post(f"/api/activities/labs/{s['id']}/answer", json={"choice_id": right["id"]}, headers=headers).json()
     assert first["correct"] is True
-    assert first["awarded"] == {"xp": s["mission_xp_awarded"], "badge": s["badge_awarded"]}
+    assert first["awarded"] == {"xp": s["mission_xp_awarded"], "badge": s["badge_awarded"]}  # first try: full XP
     again = client.post(f"/api/activities/labs/{s['id']}/answer", json={"choice_id": right["id"]}, headers=headers).json()
     assert again["correct"] is True and again["awarded"] is None
     assert xp_of(db, user) == s["mission_xp_awarded"]
@@ -175,3 +176,51 @@ def test_every_decision_mission_can_be_started_with_its_variables(client, learne
             continue
         run = client.post(f"/api/activities/missions/{mid}/runs", json={}, headers=headers).json()
         assert set(run["values"]) == {h["key"] for h in m["hud"]}
+
+
+def test_trying_the_options_in_turn_costs_xp(client, learner, db):
+    user, headers = learner
+    s = lab()
+    right, _ = correct_and_wrong(s)
+    wrongs = [c for c in s["choices"] if not c["correct"]]
+    for w in wrongs:
+        client.post(f"/api/activities/labs/{s['id']}/answer", json={"choice_id": w["id"]}, headers=headers)
+    r = client.post(f"/api/activities/labs/{s['id']}/answer", json={"choice_id": right["id"]}, headers=headers).json()
+    assert r["awarded"]["xp"] == max(1, round(s["mission_xp_awarded"] * 0.5))
+    assert xp_of(db, user) == r["awarded"]["xp"]
+
+
+def test_mission_runs_are_capped_per_hour(client, learner):
+    _, headers = learner
+    mid = decision_mission()["mission_id"]
+    codes = [client.post(f"/api/activities/missions/{mid}/runs", json={}, headers=headers).status_code for _ in range(12)]
+    assert codes[:10] == [200] * 10 and 429 in codes[10:]
+
+
+def test_progress_reports_verified_quiz_passes_and_scores(client, learner, db):
+    user, headers = learner
+    module = "track_a_a1_computing_foundations"
+    db.add(models.QuizModule(module_id=module, title="t", difficulty="x", passing_score_percent=70, topic="t", reveal_answers=True))
+    db.flush()
+    from datetime import datetime, timezone
+    now = datetime.now(timezone.utc)
+    db.add_all([
+        models.QuizAttempt(id="a1", user_id=user.id, module_id=module, status="graded", form_json="[]", passing_score_percent=70, issued_at=now, graded_at=now, total_questions=10, correct_answers=5, score_percent=50.0, passed=False),
+        models.QuizAttempt(id="a2", user_id=user.id, module_id=module, status="graded", form_json="[]", passing_score_percent=70, issued_at=now, graded_at=now, total_questions=10, correct_answers=8, score_percent=80.0, passed=True),
+    ])
+    db.commit()
+    me = client.get("/api/activities/me", headers=headers).json()
+    assert me["passed_modules"] == [module] and me["quiz_scores"] == {module: 80.0}
+
+
+def test_client_cannot_store_its_own_xp_or_completion(client, learner, db):
+    user, headers = learner
+    forged = {"totalXp": 99999, "completedModules": ["track_a_a1_computing_foundations"], "unlockedBadges": ["PQCTP Certified"],
+              "quizScores": {"x": 100}, "completedEscapes": ["a"], "completedMissions": ["b"], "readinessScore": 100, "currentModuleId": "m2", "streakDays": 3}
+    r = client.post(f"/api/users/{user.id}/progress", json={"progress_data": json.dumps(forged)}, headers=headers)
+    assert r.status_code == 200
+    db.expire_all()
+    stored = json.loads(db.get(models.User, user.id).progress_data)
+    assert stored == {"currentModuleId": "m2", "streakDays": 3}
+    assert client.post(f"/api/users/{user.id}/progress", json={"progress_data": "not json"}, headers=headers).status_code == 422
+    assert client.post(f"/api/users/{user.id}/progress", json={"progress_data": "[1]"}, headers=headers).status_code == 422

@@ -13,6 +13,7 @@ import {
 import { curriculumModules } from '@/data/curriculumData';
 import { badgesData } from '@/data/badgesData';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
+import { fetchActivityProgress } from '@/services/activityApi';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import {
@@ -33,7 +34,7 @@ interface DisplayOption {
 export const QuizPage: React.FC = () => {
   const { moduleId } = useParams<{ moduleId: string }>();
   const navigate = useNavigate();
-  const { completeQuiz } = useCurriculumStore();
+  const applyActivityProgress = useCurriculumStore((st) => st.applyActivityProgress);
   const completedModules = useCurriculumStore((s) => s.completedModules);
 
   const currentMod = moduleId
@@ -225,7 +226,8 @@ export const QuizPage: React.FC = () => {
       const res = await finishQuizAttempt(attempt.attempt_id);
       setResult(res);
       setQuizFinished(true);
-      completeQuiz(attempt.module_id, res.score_percent, matchingBadge?.name, currentMod.xp);
+      // XP, completion and the module badge are decided by the server; mirror its record.
+      void fetchActivityProgress().then(applyActivityProgress).catch(() => undefined);
     } catch (e) {
       setActionError(e instanceof Error ? e.message : 'Could not submit the quiz.');
     } finally {

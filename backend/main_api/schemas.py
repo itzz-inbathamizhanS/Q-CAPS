@@ -373,6 +373,7 @@ class QuizAttemptResult(BaseModel):
     passed: bool
     passing_score_percent: int
     xp_awarded: int
+    module_xp_awarded: int = 0
     graded_at: datetime
     items: List[QuizItemResult]
 

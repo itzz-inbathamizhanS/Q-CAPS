@@ -235,6 +235,9 @@ async def websocket_leaderboard(websocket: WebSocket, token: str = Query(None), 
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
+SERVER_OWNED_PROGRESS_KEYS = ("totalXp", "completedModules", "quizScores", "unlockedBadges", "completedEscapes", "completedMissions", "readinessScore", "xpAwardedModules")
+
+
 @app.post("/api/users/{user_id}/progress")
 def update_user_progress(user_id: int, progress: schemas.ProgressUpdate, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     if current_user.id != user_id:
@@ -244,7 +247,16 @@ def update_user_progress(user_id: int, progress: schemas.ProgressUpdate, db: Ses
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
     
-    user.progress_data = progress.progress_data
+    # XP, completion, scores and badges are decided by the server; a client cannot store its own values for them.
+    try:
+        blob = json.loads(progress.progress_data or "{}")
+    except ValueError:
+        raise HTTPException(status_code=422, detail="progress_data must be JSON")
+    if not isinstance(blob, dict):
+        raise HTTPException(status_code=422, detail="progress_data must be a JSON object")
+    for key in SERVER_OWNED_PROGRESS_KEYS:
+        blob.pop(key, None)
+    user.progress_data = json.dumps(blob)
     db.commit()
     return {"status": "success"}
 

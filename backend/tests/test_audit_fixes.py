@@ -80,10 +80,11 @@ def test_progress_blob_must_be_a_bounded_json_object(client, learner, blob):
 
 def test_valid_progress_blob_is_stored(client, learner, db):
     user, h = learner
-    r = client.post(f"/api/users/{user.id}/progress", headers=h, json={"progress_data": '{"completedModules": []}'})
+    r = client.post(f"/api/users/{user.id}/progress", headers=h, json={"progress_data": '{"currentModuleId": "m1", "completedModules": []}'})
     assert r.status_code == 200
     db.refresh(user)
-    assert json.loads(user.progress_data) == {"completedModules": []}
+    # display preferences are kept; completion is server-owned and is dropped
+    assert json.loads(user.progress_data) == {"currentModuleId": "m1"}
 
 
 # ---------- scanner logs ----------

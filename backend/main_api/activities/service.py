@@ -34,11 +34,20 @@ def _award(db: Session, user: models.User, kind: str, activity_id: str, xp: int,
 
 
 def progress(db: Session, user: models.User) -> dict:
+    """Everything the server has verified about this learner: XP, graded quiz passes and best scores,
+    completed labs and missions. The browser only mirrors it."""
     rows = db.query(models.ActivityCompletion).filter_by(user_id=user.id).all()
+    attempts = db.query(models.QuizAttempt.module_id, models.QuizAttempt.score_percent, models.QuizAttempt.passed).filter(
+        models.QuizAttempt.user_id == user.id, models.QuizAttempt.status == "graded").all()
+    best: Dict[str, float] = {}
+    for module_id, score, _ in attempts:
+        best[module_id] = max(best.get(module_id, 0.0), float(score or 0))
     return {
         "completed_labs": sorted(r.activity_id for r in rows if r.kind == "lab"),
         "completed_missions": sorted(r.activity_id for r in rows if r.kind == "mission"),
         "badges": sorted({r.badge for r in rows if r.badge}),
+        "passed_modules": sorted({m for m, _, passed in attempts if passed}),
+        "quiz_scores": best,
         "xp": user.xp or 0,
     }
 
@@ -52,8 +61,14 @@ def answer_lab(db: Session, user: models.User, scenario_id: str, choice_id: str)
     if choice is None:
         raise ActivityError(400, "Unknown choice")
     awarded = None
+    wrong_before = db.query(models.ActivityAttempt).filter_by(user_id=user.id, activity_id=scenario_id, correct=False).count()
+    db.add(models.ActivityAttempt(user_id=user.id, activity_id=scenario_id, correct=bool(choice["correct"])))
+    db.commit()
     if choice["correct"]:
-        awarded = _award(db, user, "lab", scenario_id, int(scenario["mission_xp_awarded"]), scenario.get("badge_awarded"))
+        # Trying the options in turn costs XP: 100%, 75%, 50%, then 25% for any later correct answer.
+        factor = max(0.25, 1 - 0.25 * wrong_before)
+        xp = max(1, round(int(scenario["mission_xp_awarded"]) * factor))
+        awarded = _award(db, user, "lab", scenario_id, xp, scenario.get("badge_awarded"))
     return {"correct": bool(choice["correct"]), "feedback": choice["feedback"], "awarded": awarded}
 
 

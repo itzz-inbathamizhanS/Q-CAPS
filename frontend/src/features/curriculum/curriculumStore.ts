@@ -1,7 +1,22 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 import { curriculumModules } from '@/data/curriculumData';
+import { badgesData } from '@/data/badgesData';
 import { syncProgressData } from '@/services/backendService';
+
+/** What the server has verified; the store only mirrors it (XP, quiz passes, scores, badges, labs, missions). */
+export interface ServerProgress {
+  completed_labs: string[];
+  completed_missions: string[];
+  badges: string[];
+  passed_modules: string[];
+  quiz_scores: Record<string, number>;
+  xp: number;
+}
+
+/** Module badges are earned by passing the module quiz; the pass itself is verified by the server. */
+const moduleBadgeFor = (moduleId: string): string | undefined =>
+  badgesData.find((b) => b.category === 'module' && b.unlockTrigger.includes(moduleId))?.name;
 
 interface CurriculumState {
   completedModules: string[];
@@ -13,24 +28,17 @@ interface CurriculumState {
   completedEscapes: string[];
   completedMissions: string[];
   completedCapstones: string[];
-  /** Tracks which module IDs have already been awarded XP (prevents double-awards) */
-  xpAwardedModules: string[];
   streakDays: number;
   lastActivityDate: string | null;
 
   // Actions
-  completeQuiz: (moduleId: string, scorePercent: number, badgeName?: string, xpEarned?: number) => void;
-  markModuleRead: (moduleId: string) => void;
-  unlockBadge: (badgeName: string, xp?: number) => void;
   /** Mirror the server's record of completed practice labs and missions (the server owns XP and badges for them). */
-  applyActivityProgress: (p: { completed_labs: string[]; completed_missions: string[]; badges: string[] }) => void;
+  applyActivityProgress: (p: ServerProgress) => void;
   /** Show an award the server has just granted. */
   recordActivityAward: (kind: 'lab' | 'mission', id: string, award: { xp: number; badge: string | null }) => void;
-  completeCapstone: (capstoneId: string, xp?: number) => void;
   isModuleUnlocked: (moduleId: string) => boolean;
   isModuleCompleted: (moduleId: string) => boolean;
   getRecommendedNextModule: () => string;
-  addXp: (amount: number) => void;
   resetProgress: () => void;
   clearLocalProgress: () => void;
   rehydrate: (progressDataStr?: string) => void;
@@ -92,119 +100,23 @@ export const useCurriculumStore = create<CurriculumState>()(
   completedEscapes: [],
   completedMissions: [],
   completedCapstones: [],
-  xpAwardedModules: [],
   streakDays: 0,
   lastActivityDate: null,
 
-  completeQuiz: (moduleId, scorePercent, badgeName, xpEarned) => {
-    set((state) => {
-      const mod = curriculumModules.find((m) => m.id === moduleId);
-      const isPass = scorePercent >= 70;
-      const alreadyCompleted = state.completedModules.includes(moduleId);
-      const newCompleted = isPass && !alreadyCompleted
-        ? [...state.completedModules, moduleId]
-        : state.completedModules;
-
-      const newBadges = isPass && badgeName && !state.unlockedBadges.includes(badgeName)
-        ? [...state.unlockedBadges, badgeName]
-        : state.unlockedBadges;
-
-      // Award XP only once per module
-      const alreadyAwardedXp = state.xpAwardedModules.includes(moduleId);
-      const moduleXp = xpEarned ?? mod?.xp ?? 100;
-      const xpToAward = (isPass && !alreadyAwardedXp) ? moduleXp : 0;
-      const newXpAwardedModules = (isPass && !alreadyAwardedXp)
-        ? [...state.xpAwardedModules, moduleId]
-        : state.xpAwardedModules;
-
-      // Quiz evidence (score, XP, topic) is recorded by the server when the attempt is graded.
-
-      const currentIdx = curriculumModules.findIndex((m) => m.id === moduleId);
-      let nextMod = state.currentModuleId;
-      if (isPass && currentIdx >= 0 && currentIdx < curriculumModules.length - 1) {
-        nextMod = curriculumModules[currentIdx + 1].id;
-      }
-
-      const newQuizScores = {
-        ...state.quizScores,
-        [moduleId]: Math.max(state.quizScores[moduleId] || 0, scorePercent)
-      };
-
-      const streakData = updateStreak(state.streakDays, state.lastActivityDate);
-
-      const newState = {
-        ...state,
-        completedModules: newCompleted,
-        unlockedBadges: newBadges,
-        currentModuleId: nextMod,
-        quizScores: newQuizScores,
-        totalXp: state.totalXp + xpToAward,
-        xpAwardedModules: newXpAwardedModules,
-        readinessScore: calcReadinessScore(newQuizScores),
-        ...streakData
-      };
-      
-      persistToBackend(newState);
-      return newState;
-    });
-  },
-
-  markModuleRead: (moduleId) => {
-    set((state) => {
-      if (state.completedModules.includes(moduleId)) return state;
-
-      const mod = curriculumModules.find((m) => m.id === moduleId);
-
-      // Award XP only once per module
-      const alreadyAwardedXp = state.xpAwardedModules.includes(moduleId);
-      const moduleXp = mod?.xp ?? 0;
-      const xpToAward = !alreadyAwardedXp ? moduleXp : 0;
-      const newXpAwardedModules = !alreadyAwardedXp
-        ? [...state.xpAwardedModules, moduleId]
-        : state.xpAwardedModules;
-
-      // Advance currentModuleId if this was the current module
-      const currentIdx = curriculumModules.findIndex((m) => m.id === moduleId);
-      let nextMod = state.currentModuleId;
-      if (moduleId === state.currentModuleId && currentIdx >= 0 && currentIdx < curriculumModules.length - 1) {
-        nextMod = curriculumModules[currentIdx + 1].id;
-      }
-
-      const streakData = updateStreak(state.streakDays, state.lastActivityDate);
-
-      const newState = {
-        ...state,
-        completedModules: [...state.completedModules, moduleId],
-        totalXp: state.totalXp + xpToAward,
-        xpAwardedModules: newXpAwardedModules,
-        currentModuleId: nextMod,
-        ...streakData
-      };
-      persistToBackend(newState);
-      return newState;
-    });
-  },
-
-  unlockBadge: (badgeName, xp = 0) => {
-    set((state) => {
-      if (state.unlockedBadges.includes(badgeName)) return state;
-      const newState = {
-        ...state,
-        unlockedBadges: [...state.unlockedBadges, badgeName],
-        totalXp: state.totalXp + (xp ?? 0),
-      };
-      persistToBackend(newState);
-      return newState;
-    });
-  },
-
   applyActivityProgress: (p) => {
-    set((state) => ({
-      ...state,
-      completedEscapes: p.completed_labs,
-      completedMissions: p.completed_missions,
-      unlockedBadges: Array.from(new Set([...state.unlockedBadges, ...p.badges])),
-    }));
+    set((state) => {
+      const moduleBadges = p.passed_modules.map(moduleBadgeFor).filter((n): n is string => Boolean(n));
+      return {
+        ...state,
+        completedModules: p.passed_modules,
+        quizScores: p.quiz_scores,
+        readinessScore: calcReadinessScore(p.quiz_scores),
+        totalXp: p.xp,
+        completedEscapes: p.completed_labs,
+        completedMissions: p.completed_missions,
+        unlockedBadges: Array.from(new Set([...p.badges, ...moduleBadges])),
+      };
+    });
   },
 
   recordActivityAward: (kind, id, award) => {
@@ -219,21 +131,6 @@ export const useCurriculumStore = create<CurriculumState>()(
         unlockedBadges: award.badge && !state.unlockedBadges.includes(award.badge) ? [...state.unlockedBadges, award.badge] : state.unlockedBadges,
         totalXp: state.totalXp + award.xp,
         ...streakData,
-      };
-      persistToBackend(newState);
-      return newState;
-    });
-  },
-
-  completeCapstone: (capstoneId, xp = 0) => {
-    set((state) => {
-      if (state.completedCapstones.includes(capstoneId)) return state;
-      const streakData = updateStreak(state.streakDays, state.lastActivityDate);
-      const newState = {
-        ...state,
-        completedCapstones: [...state.completedCapstones, capstoneId],
-        totalXp: state.totalXp + (xp ?? 0),
-        ...streakData
       };
       persistToBackend(newState);
       return newState;
@@ -264,18 +161,6 @@ export const useCurriculumStore = create<CurriculumState>()(
     return curriculumModules[0].id;
   },
 
-  addXp: (amount) => {
-    set((state) => {
-      if (!amount || amount <= 0) return state;
-      const newState = {
-        ...state,
-        totalXp: state.totalXp + amount
-      };
-      persistToBackend(newState);
-      return newState;
-    });
-  },
-
   resetProgress: () => {
     set({
       completedModules: INITIAL_COMPLETED,
@@ -287,7 +172,6 @@ export const useCurriculumStore = create<CurriculumState>()(
       completedEscapes: [],
       completedMissions: [],
       completedCapstones: [],
-      xpAwardedModules: [],
     });
     persistToBackend(get());
   },
@@ -303,7 +187,6 @@ export const useCurriculumStore = create<CurriculumState>()(
       completedEscapes: [],
       completedMissions: [],
       completedCapstones: [],
-      xpAwardedModules: [],
     });
   },
 
@@ -311,6 +194,8 @@ export const useCurriculumStore = create<CurriculumState>()(
     if (!progressDataStr || progressDataStr === "{}") return;
     try {
       const parsed = JSON.parse(progressDataStr);
+      // Completion, scores, XP and badges come from the server's verified record, never from this saved blob.
+      for (const key of ['totalXp', 'completedModules', 'quizScores', 'unlockedBadges', 'completedEscapes', 'completedMissions', 'readinessScore', 'xpAwardedModules']) delete parsed[key];
       set((state) => ({
         ...state,
         ...parsed
@@ -333,7 +218,6 @@ export const useCurriculumStore = create<CurriculumState>()(
         completedEscapes: state.completedEscapes,
         completedMissions: state.completedMissions,
         completedCapstones: state.completedCapstones,
-        xpAwardedModules: state.xpAwardedModules,
       }),
     }
   )

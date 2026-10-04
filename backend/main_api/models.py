@@ -409,3 +409,14 @@ class MissionRun(Base):
     state = Column(JSON, nullable=False)
     band = Column(String, nullable=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class ActivityAttempt(Base):
+    """Every graded lab answer, so the XP of a lab can fall with the number of wrong answers before the right one."""
+    __tablename__ = "activity_attempts"
+
+    id = Column(Integer, primary_key=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    activity_id = Column(String, nullable=False, index=True)
+    correct = Column(Boolean, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))

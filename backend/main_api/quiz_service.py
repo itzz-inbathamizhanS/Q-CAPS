@@ -216,6 +216,19 @@ def grade_attempt(db: Session, user: models.User, attempt_id: str, answers: list
     score = round(correct_count / total * 100, 2)
     passed = score >= attempt.passing_score_percent
     xp = first_time_correct * XP_PER_FIRST_CORRECT
+    # The module's completion XP is awarded on the first pass only, by the server (it used to be added in the browser).
+    module_xp = 0
+    if passed:
+        passed_before = (
+            db.query(models.QuizAttempt.id)
+            .filter(models.QuizAttempt.user_id == user.id, models.QuizAttempt.module_id == attempt.module_id,
+                    models.QuizAttempt.passed.is_(True), models.QuizAttempt.id != attempt_id)
+            .first()
+        )
+        course_module = db.query(models.CourseModule).filter(models.CourseModule.slug == attempt.module_id).first()
+        if passed_before is None and course_module is not None:
+            module_xp = int(course_module.xp or 0)
+    xp += module_xp
     graded_at = _now()
 
     attempt.correct_answers = correct_count
@@ -241,6 +254,7 @@ def grade_attempt(db: Session, user: models.User, attempt_id: str, answers: list
         "passed": passed,
         "passing_score_percent": attempt.passing_score_percent,
         "xp_awarded": xp,
+        "module_xp_awarded": module_xp,
         "graded_at": graded_at,
         "items": results,
     }

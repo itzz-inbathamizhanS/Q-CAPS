@@ -14,6 +14,10 @@ from . import service
 lab_limiter = SlidingWindowLimiter("QCAPS_LAB_RATE_LIMIT", 12, "QCAPS_LAB_RATE_WINDOW_SECONDS", 60)
 
 
+# A mission can only be paid out once, so replaying it to read every branch is capped per hour.
+run_limiter = SlidingWindowLimiter("QCAPS_RUN_RATE_LIMIT", 10, "QCAPS_RUN_RATE_WINDOW_SECONDS", 3600)
+
+
 class LabAnswer(BaseModel):
     choice_id: str = Field(min_length=1, max_length=16)
 
@@ -53,6 +57,9 @@ def create_activities_router(get_current_user: Callable) -> APIRouter:
 
     @router.post("/missions/{mission_id}/runs")
     def start_run(mission_id: str, body: RunStart, db: Session = Depends(get_db), user: models.User = Depends(get_current_user)):
+        retry = run_limiter.hit((user.id, mission_id))
+        if retry:
+            raise HTTPException(status_code=429, detail=f"Too many runs. Try again in {retry} seconds.", headers={"Retry-After": str(retry)})
         return run(service.start_run, db, user, mission_id, body.photons)
 
     @router.post("/missions/runs/{run_id}/choose")
