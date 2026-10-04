@@ -8,6 +8,7 @@ import { useProgress } from '@/features/lesson/useProgress';
 import { LessonError, LessonLoading } from '@/features/lesson/LessonStates';
 import type { LessonSection } from '@/features/lesson/lessonTypes';
 import { isBuiltVisual } from '@/features/lesson/blocks/visualRegistry';
+import { escapeRoomScenarios } from '@/data/escapeRoomData';
 import '@/styles/lesson.css';
 
 const formatDuration = (minutes: number) => {
@@ -199,6 +200,9 @@ export const ModuleOverview: React.FC = () => {
                   <span className="ls-section-title">{s.title}</span>
                   {blurb(s) && <span className="ls-muted ls-blurb">{blurb(s)}</span>}
                   <span className="ls-chips">
+                    {escapeRoomScenarios.some((sc) => sc.module_id === module.slug && sc.section_id === s.slug) && (
+                      <span className="ls-chip ls-chip--sim">Practice lab</span>
+                    )}
                     {sectionChips(s).map((c) => (
                       <span key={c} className={c === 'Simulation' ? 'ls-chip ls-chip--sim' : 'ls-chip'}>
                         {c}

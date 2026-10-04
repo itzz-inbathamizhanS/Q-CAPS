@@ -17,7 +17,6 @@ import { QuizPage } from '@/pages/QuizPage';
 import { BadgesAndCerts } from '@/pages/BadgesAndCerts';
 import { MissionHub } from '@/pages/MissionHub';
 import { MissionPlay } from '@/pages/MissionPlay';
-import { EscapeRoomPage } from '@/pages/EscapeRoomPage';
 import { ScannerPage } from '@/pages/ScannerPage';
 import { ErrorPage } from '@/pages/ErrorPage';
 import { ClosurePage } from '@/pages/ClosurePage';
@@ -97,7 +96,7 @@ export const router = createBrowserRouter([
           },
           {
             path: 'escape-room',
-            element: <EscapeRoomPage />,
+            element: <Navigate to="/curriculum" replace />,
           },
           {
             path: 'scanner',

@@ -500,7 +500,8 @@ if (fs.existsSync(labPath)) {
 
 writeOut(
   path.join(FRONTEND_DATA, 'escapeRoomData.ts'),
-  `// Generated from content/Labs/escape_room_scenarios.json\nexport interface EscapeScenarioChoice {\n  id: string;\n  text: string;\n  correct: boolean;\n  feedback: string;\n}\n\nexport interface EscapeRoomScenario {\n  id: string;\n  title: string;\n  module_id: string;\n  difficulty: 'novice' | 'intermediate' | 'professional' | 'expert' | 'quantum_expert';\n  setup: string;\n  prompt: string;\n  choices: EscapeScenarioChoice[];\n  badge_awarded: string;\n  mission_xp_awarded: number;\n}\n\nexport const escapeRoomScenarios: EscapeRoomScenario[] = ${JSON.stringify(escapeRooms, null, 2)};\n`
+  `// Generated from content/Labs/escape_room_scenarios.json\nexport interface EscapeScenarioChoice {\n  id: string;\n  text: string;\n  correct: boolean;\n  feedback: string;\n}\n\nexport interface EscapeRoomScenario {\n  id: string;\n  title: string;\n  module_id: string;
+  section_id: string;\n  difficulty: 'novice' | 'intermediate' | 'professional' | 'expert' | 'quantum_expert';\n  setup: string;\n  prompt: string;\n  choices: EscapeScenarioChoice[];\n  badge_awarded: string;\n  mission_xp_awarded: number;\n}\n\nexport const escapeRoomScenarios: EscapeRoomScenario[] = ${JSON.stringify(escapeRooms, null, 2)};\n`
 );
 console.log(`Saved ${escapeRooms.length} escape room scenarios.`);
 

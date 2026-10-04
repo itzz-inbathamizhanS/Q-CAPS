@@ -4,7 +4,6 @@ import {
   BarChart3,
   GraduationCap,
   FileQuestion,
-  Terminal,
   Rocket,
   ShieldCheck,
   TrendingUp,
@@ -103,16 +102,6 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onCloseMobil
           <FileQuestion size={18} />
           <span>Assessments</span>
         </NavLink>
-
-        <NavLink
-          to="/escape-room"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-          onClick={handleLinkClick}
-        >
-          <Terminal size={18} />
-          <span>Practical Labs</span>
-        </NavLink>
-
 
         <div className="nav-divider">Community</div>
 

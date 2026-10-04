@@ -278,3 +278,16 @@
   border: 1px solid var(--color-border, rgba(127, 127, 127, 0.4)); border-radius: 6px;
 }
 .ls-input:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 1px; }
+
+/* Practice lab shown inside the lesson it belongs to. */
+.ls-lab { border: 1px solid var(--color-border); border-left: 4px solid var(--color-primary); border-radius: var(--radius-md, 10px); background: var(--color-surface); padding: 20px; display: flex; flex-direction: column; gap: 12px; }
+.ls-lab-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.ls-lab-setup { margin: 0; line-height: 1.6; color: var(--color-text-secondary); }
+.ls-lab-prompt { margin: 0; font-weight: 600; line-height: 1.5; }
+.ls-lab-choices { display: flex; flex-direction: column; gap: 8px; }
+.ls-lab-choice { text-align: left; padding: 12px 14px; border: 1px solid var(--color-border-hover); border-radius: 8px; background: var(--color-surface); color: var(--color-text-primary); font: inherit; line-height: 1.5; cursor: pointer; }
+.ls-lab-choice:hover:not(:disabled) { background: var(--color-surface-low); }
+.ls-lab-choice:disabled { opacity: 0.55; cursor: default; }
+.ls-lab-choice:focus-visible { outline: 2px solid var(--color-primary); outline-offset: 2px; }
+.ls-lab-choice--right { border-color: var(--color-emerald); }
+.ls-lab-choice--wrong { border-color: var(--color-error); }

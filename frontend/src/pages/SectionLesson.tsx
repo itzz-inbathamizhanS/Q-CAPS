@@ -8,6 +8,8 @@ import { useProgress } from '@/features/lesson/useProgress';
 import { LessonError, LessonLoading } from '@/features/lesson/LessonStates';
 import { BlockRenderer } from '@/features/lesson/blocks/BlockRenderer';
 import { SectionReferences } from '@/features/lesson/SectionReferences';
+import { ScenarioLab } from '@/features/lesson/ScenarioLab';
+import { escapeRoomScenarios } from '@/data/escapeRoomData';
 import '@/styles/lesson.css';
 
 export const SectionLesson: React.FC = () => {
@@ -140,6 +142,12 @@ export const SectionLesson: React.FC = () => {
           {section.blocks.map((b) => (
             <BlockRenderer key={b.id} block={b} sectionId={section.id} onCheckpointPassed={() => void refresh()} />
           ))}
+
+          {escapeRoomScenarios
+            .filter((sc) => sc.module_id === module.slug && sc.section_id === section.slug)
+            .map((sc) => (
+              <ScenarioLab key={sc.id} scenario={sc} />
+            ))}
 
           <SectionReferences sources={section.sources} needsVerification={section.needs_verification} />
 
