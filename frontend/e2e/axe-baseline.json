@@ -1,0 +1,8 @@
+{
+  "note": "Serious/critical axe violations present when the check was added (TF.1, 2026-10-05): rule id -> failing elements. TF.4 fixes them and empties this file. Only ever lower these numbers.",
+  "pages": {
+    "dashboard": { "color-contrast": 9 },
+    "curriculum": { "color-contrast": 18 },
+    "quiz": { "color-contrast": 1 }
+  }
+}

@@ -32,3 +32,6 @@ Thumbs.db
 .env.local
 .env.*.local
 !.env.example
+
+# Test artifacts
+e2e/.results/
