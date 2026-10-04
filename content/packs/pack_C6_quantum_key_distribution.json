@@ -1,0 +1,1151 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B115",
+      "title": "Quantum cloning (Rev. Mod. Phys. 77, 1225; arXiv:quant-ph/0511088)",
+      "authors": "Valerio Scarani, Sofyan Iblisdir, Nicolas Gisin",
+      "edition": "2005",
+      "year": 2005
+    },
+    {
+      "id": "B113",
+      "title": "From Classical to Quantum Shannon Theory (Quantum Information Theory, 2nd edition draft, arXiv:1106.1445v8)",
+      "authors": "Mark M. Wilde",
+      "edition": "arXiv v8, 14 July 2019",
+      "year": 2019,
+      "publisher": "Cambridge University Press (draft on arXiv, CC BY-NC-SA 3.0)"
+    },
+    {
+      "id": "B110",
+      "title": "Qiskit Textbook (GitHub repository Qiskit/textbook, notebooks), accessed 2026-10-04",
+      "authors": "Qiskit community",
+      "edition": "accessed 2026-10-04",
+      "year": 2023,
+      "publisher": "IBM and the Qiskit community"
+    },
+    {
+      "id": "B95",
+      "title": "NIST SP 800-227: Recommendations for Key-Encapsulation Mechanisms",
+      "authors": "Alagic, Barker, Chen, Moody, Robinson, Silberg, Waller",
+      "edition": "September 2025",
+      "year": 2025,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B04",
+      "title": "FIPS 203: Module-Lattice-Based Key-Encapsulation Mechanism Standard",
+      "authors": "National Institute of Standards and Technology",
+      "year": 2024,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B100",
+      "title": "cryptography (Python package) version 50.0.1, with ML-KEM and ML-DSA backed by OpenSSL",
+      "authors": "Python Cryptographic Authority",
+      "edition": "50.0.1",
+      "year": 2026
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_c_c6_quantum_key_distribution",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "6.1 BB84",
+          "summary": "The complete BB84 data flow simulated: sifting, the 25 percent error of intercept-resend, the 11 percent threshold, error estimation, error correction and privacy amplification with a Toeplitz hash.",
+          "estimated_minutes": 65,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**BB84** (Bennett and Brassard, 1984) lets two parties agree on a secret key using single qubits and a public classical channel. Alice picks a random bit and a random basis (the Z basis |0⟩, |1⟩ or the X basis |+⟩, |−⟩) for each pulse and sends the state; Bob measures each pulse in a random basis. Afterwards they announce their **bases** (not the bits) over an authenticated classical channel and keep only the pulses where the bases agree (**sifting**, about half of them): there Bob's result equals Alice's bit unless noise or an eavesdropper intervened. Where the bases differ Bob's result is random. Because an unknown qubit cannot be copied (lesson 5.3) and measuring it in the wrong basis disturbs it, an eavesdropper creates **errors** in the sifted key. Alice and Bob sacrifice a random sample to estimate the **quantum bit error rate (QBER)**, correct the remaining errors with an **error-correction** protocol that reveals some parity information, and finally apply **privacy amplification** (a random universal hash, here a Toeplitz matrix) to remove what an eavesdropper may know. For the asymptotic case and collective attacks the key fraction per sifted bit is 1 − 2h(Q) (h is the binary entropy), which is zero at Q ≈ 11.0%.\n\nThe listing simulates BB84 exactly at the level of measurement statistics for 200,000 pulses in six situations (no eavesdropper, channel noise, intercept-resend on all or a fraction of pulses) and then runs the post-processing chain on a concrete sifted key: error estimation on a public sample, a simple interactive parity-based error correction (a toy Cascade-like scheme), and privacy amplification with a Toeplitz hash. The labs are exact or Monte Carlo simulations of the protocols at the level of measurement statistics, closed-form key-rate models and a few small cryptographic demonstrations. All device parameters (efficiencies, dark counts, misalignment, mean photon numbers) are ASSUMED values stated in the output; none of the numbers is a measurement of a real QKD system, and security statements hold only within the stated models."
+            },
+            {
+              "type": "code",
+              "id": "c-bb84",
+              "language": "python",
+              "code": "import math, random\nimport numpy as np\n\ndef h2(x):\n    return 0.0 if x <= 0 or x >= 1 else -x * math.log2(x) - (1 - x) * math.log2(1 - x)\n\n# --- BB84 at the level of measurement statistics (exact for qubits): Alice sends a random bit in a random basis, Bob measures in a random basis.\n# Equal bases: Bob's result equals Alice's bit (no noise, no eavesdropper); different bases: Bob's result is uniformly random.\nrng = np.random.default_rng(61)\ndef run_bb84(n, intercept_fraction=0.0, channel_flip=0.0):\n    a_bits = rng.integers(0, 2, n); a_bases = rng.integers(0, 2, n); b_bases = rng.integers(0, 2, n)\n    # the state sent: (bit, basis). Eve intercepts a fraction of the pulses, measures in a random basis and resends what she found\n    bits, bases = a_bits.copy(), a_bases.copy()\n    intercepted = rng.random(n) < intercept_fraction\n    e_bases = rng.integers(0, 2, n)\n    e_result = np.where(e_bases == bases, bits, rng.integers(0, 2, n))\n    bits = np.where(intercepted, e_result, bits); bases = np.where(intercepted, e_bases, bases)         # the resent state is (e_result, e_bases)\n    result = np.where(b_bases == bases, bits, rng.integers(0, 2, n))\n    result = result ^ (rng.random(n) < channel_flip)                                                     # noise in the channel\n    keep = a_bases == b_bases                                                                            # sifting: keep the pulses with equal bases\n    return a_bits[keep], result[keep], int(keep.sum())\nn = 200000\nprint(f\"{'situation':<46} {'sifted bits':>12} {'QBER':>8} {'asymptotic rate 1 - 2h(QBER) per sifted bit':>46}\")\nfor name, f, flip in ((\"no eavesdropper, perfect channel\", 0.0, 0.0), (\"channel noise 2%\", 0.0, 0.02), (\"channel noise 5%\", 0.0, 0.05), (\"intercept-resend on 100% of pulses\", 1.0, 0.0), (\"intercept-resend on 20% of pulses\", 0.2, 0.0), (\"noise 5% plus intercept-resend on 10%\", 0.1, 0.05)):\n    a, b, kept = run_bb84(n, f, flip)\n    qber = float(np.mean(a != b))\n    print(f\"{name:<46} {kept:>12} {qber:>8.4f} {max(0.0, 1 - 2 * h2(qber)):>46.4f}\")\nprint(\"sifting keeps about half of the pulses; intercept-resend on every pulse causes a 25% error rate (Eve guesses the wrong basis half of the time and then errs half of the time); the key rate formula 1 - 2 h(Q) (error correction h(Q), privacy amplification h(Q)) is zero at Q = 11.0%\")\nQ = 0.0\nwhile 1 - 2 * h2(Q) > 0: Q += 1e-5\nprint(f\"the asymptotic BB84 error threshold: Q = {Q:.4f}\")\n\n# --- the post-processing chain on a concrete run: error estimation, error correction (a simple interactive parity scheme), privacy amplification with a random Toeplitz hash\na, b, kept = run_bb84(40000, 0.0, 0.03)\nsample_idx = rng.choice(len(a), 2000, replace=False)\nq_est = float(np.mean(a[sample_idx] != b[sample_idx]))\nmask = np.ones(len(a), dtype=bool); mask[sample_idx] = False\nka, kb = a[mask].copy(), b[mask].copy()                                       # remaining raw key bits\nprint()\nprint(f\"parameter estimation on a public sample of 2,000 bits: QBER estimate {q_est:.4f} (true channel flip 0.03); raw key bits left: {len(ka)}\")\ndef correct_errors(ka, kb, block=8, rounds=6):\n    # a toy Cascade-like scheme: compare the parity of blocks over a public channel; on a mismatch binary-search the block for the flipped bit; blocks are re-shuffled each round\n    kb = kb.copy(); leaked = 0\n    perm_rng = np.random.default_rng(1)\n    for r in range(rounds):\n        perm = perm_rng.permutation(len(ka)) if r else np.arange(len(ka))\n        size = block * (2 ** r)\n        for start in range(0, len(ka), size):\n            idx = perm[start:start + size]\n            leaked += 1\n            if ka[idx].sum() % 2 != kb[idx].sum() % 2:\n                lo, hi = 0, len(idx)\n                while hi - lo > 1:\n                    mid = (lo + hi) // 2; leaked += 1\n                    if ka[idx[lo:mid]].sum() % 2 != kb[idx[lo:mid]].sum() % 2: hi = mid\n                    else: lo = mid\n                kb[idx[lo]] ^= 1\n    return kb, leaked\nkb_fixed, leaked = correct_errors(ka, kb)\nprint(f\"error correction: {int((ka != kb).sum())} errors before, {int((ka != kb_fixed).sum())} after; parity bits revealed to Eve: {leaked} ({leaked / len(ka):.3f} per key bit; the Shannon limit is h(Q) = {h2(q_est):.3f})\")\nresidual = int((ka != kb_fixed).sum())\nfinal_len = int(len(ka) * max(0.0, 1 - h2(q_est) - leaked / len(ka) - h2(q_est)))   # remove what error correction leaked and what the phase-error bound allows Eve to know\nprint(f\"privacy amplification: final key length about n (1 - leak_EC/n - h(Q)) = {final_len} bits from {len(ka)}\")\ndef toeplitz_hash(bits, out_len, seed):\n    r = np.random.default_rng(seed)\n    seq = r.integers(0, 2, len(bits) + out_len - 1)                           # a Toeplitz matrix is defined by one row and one column: row i is seq[i : i + n]\n    out = np.zeros(out_len, dtype=np.int64)\n    for i in range(out_len):\n        out[i] = int(np.dot(seq[i:i + len(bits)], bits) % 2)\n    return out\nif residual == 0:\n    seed = 424242                                                              # chosen by Alice and announced publicly: the hash function need not be secret\n    fa, fb = toeplitz_hash(ka, min(final_len, 512), seed), toeplitz_hash(kb_fixed, min(final_len, 512), seed)\n    print(\"both parties hash their (now identical) strings with the same public random Toeplitz matrix and obtain identical secret keys of\", len(fa), \"bits (first 512 shown to be equal):\", bool(np.array_equal(fa, fb)))\nelse:\n    print(\"residual errors remain after error correction in this toy scheme (a real scheme adds a confirmation hash and repeats); no final key is produced\")\nprint(\"a complete system also needs authentication of the classical channel (6.9), a finite-key analysis (6.8) and a security proof against general attacks; this listing shows the data flow, not a secure implementation\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-bb84",
+              "language": "text",
+              "code": "situation                                       sifted bits     QBER    asymptotic rate 1 - 2h(QBER) per sifted bit\nno eavesdropper, perfect channel                     100081   0.0000                                         1.0000\nchannel noise 2%                                     100024   0.0201                                         0.7165\nchannel noise 5%                                      99838   0.0501                                         0.4267\nintercept-resend on 100% of pulses                   100371   0.2501                                         0.0000\nintercept-resend on 20% of pulses                     99776   0.0495                                         0.4315\nnoise 5% plus intercept-resend on 10%                 99974   0.0740                                         0.2386\nsifting keeps about half of the pulses; intercept-resend on every pulse causes a 25% error rate (Eve guesses the wrong basis half of the time and then errs half of the time); the key rate formula 1 - 2 h(Q) (error correction h(Q), privacy amplification h(Q)) is zero at Q = 11.0%\nthe asymptotic BB84 error threshold: Q = 0.1100\n\nparameter estimation on a public sample of 2,000 bits: QBER estimate 0.0310 (true channel flip 0.03); raw key bits left: 18231\nerror correction: 530 errors before, 0 after; parity bits revealed to Eve: 6177 (0.339 per key bit; the Shannon limit is h(Q) = 0.199)\nprivacy amplification: final key length about n (1 - leak_EC/n - h(Q)) = 4784 bits from 18231\nboth parties hash their (now identical) strings with the same public random Toeplitz matrix and obtain identical secret keys of 512 bits (first 512 shown to be equal): True\na complete system also needs authentication of the classical channel (6.9), a finite-key analysis (6.8) and a security proof against general attacks; this listing shows the data flow, not a secure implementation",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Sifting keeps about 100,000 of the 200,000 pulses. The QBER is 0.000 without an eavesdropper, 0.0201 and 0.0501 for 2% and 5% channel noise, **0.2501 when Eve intercepts and resends every pulse** (she guesses the wrong basis half the time and then errs half of those: 25%), 0.0495 when she intercepts 20% of the pulses and 0.0740 for 5% noise plus 10% interception; the asymptotic key fraction 1 − 2h(Q) is 1.000, 0.717, 0.427, 0 (at 25%), 0.432 and 0.239, and the threshold evaluates to Q = 0.1100. In the post-processing run the public sample of 2,000 bits estimates the QBER as 0.0310 (true flip rate 0.03); error correction fixes all 530 errors in the 18,231 remaining bits but reveals 6,177 parity bits (0.339 per bit), far above the Shannon limit h(Q) = 0.199 of an ideal scheme, which is why real systems use much more efficient codes (the lesson's scheme is a toy); privacy amplification then allows about 4,784 secret bits (this toy's inefficiency is visible), and a Toeplitz hash with a public random seed gives identical 512-bit keys at both ends.\n\n**What is missing from a real system.** Authentication of the classical channel (6.9), a **finite-key** analysis (6.8, the asymptotic formula assumes infinitely many pulses), a security proof against general attacks (6.7) and devices that match the model (6.7 and 6.10). **Common mistake:** reading \"25% error under intercept-resend\" as \"QKD is secure\": the 25% is a feature of one simple attack, and the 11% threshold (collective attacks) is what the security proofs give for ideal devices."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What error rate does an intercept-resend attack on every pulse cause in BB84?",
+              "options": [
+                "25%",
+                "50%",
+                "11%"
+              ],
+              "correct_index": 0,
+              "explanation": "Eve guesses the wrong basis half the time and then errs half of those times."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does sifting do?",
+              "options": [
+                "Keeps the pulses where Alice's and Bob's bases agree",
+                "Corrects errors",
+                "Hashes the key"
+              ],
+              "correct_index": 0,
+              "explanation": "About half of the pulses are kept."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the purpose of privacy amplification?",
+              "options": [
+                "Remove the information an eavesdropper may have about the corrected key, using a universal hash",
+                "Detect the eavesdropper",
+                "Correct the errors"
+              ],
+              "correct_index": 0,
+              "explanation": "A public random Toeplitz matrix compresses the key."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B115",
+              "locator": "Scarani, Iblisdir, Gisin, Acin, Quantum cloning (arXiv quant-ph/0511088): Section IV.A (generalities of quantum cryptography with cloning) and IV.B.2 (the optimal incoherent attack on BB84)"
+            },
+            {
+              "book": "B110",
+              "locator": "Qiskit Textbook: the quantum key distribution material (BB84 protocol steps)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "BB84 itself (Bennett and Brassard 1984), the 11% asymptotic threshold, Cascade-style error correction and Toeplitz privacy amplification are described from general knowledge and are not among the cited sources; the review section cited concerns attacks on BB84. The key fraction formula 1 - 2h(Q) is the idealised asymptotic one."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "6.2 B92",
+          "summary": "B92 with two non-orthogonal states and an unambiguous-discrimination measurement, its yield, and its sensitivity to loss.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The **B92** protocol (Bennett, 1992) shows that two **non-orthogonal** states are enough for key distribution: Alice sends |0⟩ for bit 0 and |+⟩ for bit 1. Because the states cannot be perfectly distinguished, Bob uses a measurement that never makes a mistake but sometimes gives no answer: **unambiguous state discrimination** (USD). For two pure states with overlap |⟨a|b⟩| the best USD succeeds with probability 1 − |⟨a|b⟩| (equal priors). Bob's POVM has three elements: one that can only click for |0⟩ (proportional to the projector orthogonal to |+⟩), one that can only click for |+⟩ (orthogonal to |0⟩), and an inconclusive element. The conclusive results form the key; Alice learns which pulses were conclusive from Bob's public announcement (no basis announcement is needed).\n\nThe listing builds the POVM for |0⟩ and |+⟩ (overlap 1/√2), checks that its elements are positive and sum to the identity, simulates 100,000 pulses and counts the conclusive results and errors. A short discussion explains the weakness of B92 on lossy channels: loss and an inconclusive result look alike, so an eavesdropper who performs USD herself and blocks the pulses she cannot identify can hide behind the channel loss. The labs are exact or Monte Carlo simulations of the protocols at the level of measurement statistics, closed-form key-rate models and a few small cryptographic demonstrations. All device parameters (efficiencies, dark counts, misalignment, mean photon numbers) are ASSUMED values stated in the output; none of the numbers is a measurement of a real QKD system, and security statements hold only within the stated models."
+            },
+            {
+              "type": "code",
+              "id": "c-b92",
+              "language": "python",
+              "code": "import math, itertools\nimport numpy as np\n\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]], dtype=complex); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]], dtype=complex)\nH = np.array([[1, 1], [1, -1]], dtype=complex) / math.sqrt(2)\ndef kron(*ms):\n    out = np.array([[1.0 + 0j]])\n    for m in ms: out = np.kron(out, m)\n    return out\ndef ket(bits):\n    v = np.zeros(2 ** len(bits), dtype=complex); v[int(\"\".join(map(str, bits)), 2)] = 1; return v\ndef proj(v):\n    return np.outer(v, v.conj())\nPHI_PLUS = (ket([0, 0]) + ket([1, 1])) / math.sqrt(2)\nBELL = {\"phi+\": PHI_PLUS, \"phi-\": (ket([0, 0]) - ket([1, 1])) / math.sqrt(2), \"psi+\": (ket([0, 1]) + ket([1, 0])) / math.sqrt(2), \"psi-\": (ket([0, 1]) - ket([1, 0])) / math.sqrt(2)}\ndef werner(w, target=PHI_PLUS):\n    # w * |target><target| + (1 - w) * I / 4: the noisy entangled pair used throughout; w is the Werner parameter, the fidelity with the target is (1 + 3 w) / 4\n    return w * proj(target) + (1 - w) * np.eye(4) / 4\ndef fidelity_pure(rho, v):\n    return float((v.conj() @ rho @ v).real)\ndef ptrace(rho, dims, keep):\n    n = len(dims); t = rho.reshape(dims + dims)\n    for i in sorted([i for i in range(n) if i not in keep], reverse=True):\n        t = np.trace(t, axis1=i, axis2=i + t.ndim // 2)\n    d = int(np.prod([dims[i] for i in keep])); return t.reshape(d, d)\ndef apply_unitary(rho, U):\n    return U @ rho @ U.conj().T\ndef op_on(n, gate, qubits):\n    # a gate (given as a matrix on len(qubits) qubits) acting on the listed qubits of an n-qubit system, identity elsewhere\n    k = len(qubits); dim = 2 ** n\n    U = np.zeros((dim, dim), dtype=complex)\n    for col in range(dim):\n        bits = [(col >> (n - 1 - i)) & 1 for i in range(n)]\n        sub = int(\"\".join(str(bits[q]) for q in qubits), 2)\n        for row_sub in range(2 ** k):\n            amp = gate[row_sub, sub]\n            if abs(amp) < 1e-15: continue\n            nb = bits.copy()\n            for j, q in enumerate(qubits): nb[q] = (row_sub >> (k - 1 - j)) & 1\n            U[int(\"\".join(map(str, nb)), 2), col] += amp\n    return U\n# --- B92: Alice sends |0> for bit 0 and |+> for bit 1 (non-orthogonal). Bob measures with a POVM that never errs but is often inconclusive.\nzero = np.array([1, 0], dtype=complex); plus = np.array([1, 1], dtype=complex) / math.sqrt(2)\noverlap = abs(np.vdot(zero, plus))\nprint(f\"overlap |<0|+>| = {overlap:.4f}; the best unambiguous discrimination succeeds with probability 1 - overlap = {1 - overlap:.4f}\")\n# Bob's unambiguous-discrimination POVM for two pure states |a>, |b>: E_a proportional to the projector orthogonal to |b>, E_b orthogonal to |a>, E_? = I - E_a - E_b\ndef orth(v): return np.array([-np.conj(v[1]), np.conj(v[0])])\nc = 1 / (1 + overlap)                                                          # the optimal weight for equal priors\nE_for_0 = c * proj(orth(plus))                                                 # clicks only for |0> (it kills |+>)\nE_for_1 = c * proj(orth(zero))                                                 # clicks only for |+> (it kills |0>)\nE_inconclusive = np.eye(2) - E_for_0 - E_for_1\nprint(\"the three POVM elements are positive and sum to the identity:\", all(np.linalg.eigvalsh(E).min() > -1e-12 for E in (E_for_0, E_for_1, E_inconclusive)))\nrng = np.random.default_rng(62)\nn = 100000\nbits = rng.integers(0, 2, n)\nconclusive = errors = 0\nfor bit in bits:\n    state = zero if bit == 0 else plus\n    probs = [float((state.conj() @ E @ state).real) for E in (E_for_0, E_for_1, E_inconclusive)]\n    outcome = rng.choice(3, p=np.array(probs) / sum(probs))\n    if outcome < 2:\n        conclusive += 1; errors += (outcome != bit)\nprint(f\"over {n:,} pulses: conclusive results {conclusive / n:.4f} of the pulses (theory 1 - overlap = {1 - overlap:.4f}), errors among the conclusive results: {errors}\")\nprint(\"the key is made of the conclusive results; errors do not occur without noise or an eavesdropper. With this ideal unambiguous-discrimination measurement about 29% of the pulses give a conclusive result, against 50% sifted for BB84 (practical B92 receivers using simple projective measurements keep a smaller fraction): B92 is simpler (two states, no basis announcement) but less efficient, and it tolerates less noise and loss\")\n# --- with a lossy channel B92 has an inherent weakness: loss of the |+> pulses is indistinguishable from an inconclusive result, so an eavesdropper can use unambiguous state discrimination herself\nprint()\nprint(\"a lossy channel and B92: an eavesdropper who performs the same unambiguous discrimination can resend only the pulses she identified and block the others; Bob cannot tell blocking from natural loss when the channel loss is high enough. Security therefore needs the channel transmission to exceed a threshold that depends on the overlap of the two states\")\nprint(f\"for these states the eavesdropper's unambiguous-discrimination success is {1 - overlap:.3f}: if the channel transmission is below that value, blocking can hide in the natural loss (a simplified statement of the known B92 loss limit, from the literature and not derived here)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-b92",
+              "language": "text",
+              "code": "overlap |<0|+>| = 0.7071; the best unambiguous discrimination succeeds with probability 1 - overlap = 0.2929\nthe three POVM elements are positive and sum to the identity: True\nover 100,000 pulses: conclusive results 0.2950 of the pulses (theory 1 - overlap = 0.2929), errors among the conclusive results: 0\nthe key is made of the conclusive results; errors do not occur without noise or an eavesdropper. With this ideal unambiguous-discrimination measurement about 29% of the pulses give a conclusive result, against 50% sifted for BB84 (practical B92 receivers using simple projective measurements keep a smaller fraction): B92 is simpler (two states, no basis announcement) but less efficient, and it tolerates less noise and loss\n\na lossy channel and B92: an eavesdropper who performs the same unambiguous discrimination can resend only the pulses she identified and block the others; Bob cannot tell blocking from natural loss when the channel loss is high enough. Security therefore needs the channel transmission to exceed a threshold that depends on the overlap of the two states\nfor these states the eavesdropper's unambiguous-discrimination success is 0.293: if the channel transmission is below that value, blocking can hide in the natural loss (a simplified statement of the known B92 loss limit, from the literature and not derived here)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The overlap is 0.7071 and the USD success probability 1 − 0.7071 = 0.2929; the simulated fraction of conclusive results is 0.2950 and there are no errors among them, as the unambiguous measurement guarantees (errors can only come from noise or an attack). With this ideal measurement about 29% of the pulses give key material, against 50% sifted for BB84, and practical B92 receivers using simple projective measurements retain less. The security of B92 against lossy channels is weaker than that of BB84: because an inconclusive result is indistinguishable from a lost pulse, an eavesdropper who can perform USD and block the pulses she cannot identify can hide in the natural loss when the channel transmission is below the USD success probability (a simplified statement of the known B92 loss limit, from the literature).\n\n**Why B92 is still taught.** It isolates the principle that **non-orthogonality alone** gives the security (no-cloning for two states), and its structure (unambiguous discrimination, inconclusive outcomes) reappears in later protocols. In practice BB84 with decoy states has replaced it. **Common mistake:** assuming fewer states mean a simpler security proof; the weaker states-and-measurement structure makes the loss analysis harder."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How many states does B92 use?",
+              "options": [
+                "Two non-orthogonal states",
+                "Four states in two bases",
+                "Three states"
+              ],
+              "correct_index": 0,
+              "explanation": "|0⟩ for bit 0 and |+⟩ for bit 1."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the best probability of unambiguous discrimination of two pure states with overlap c?",
+              "options": [
+                "1 - c",
+                "c",
+                "1/2"
+              ],
+              "correct_index": 0,
+              "explanation": "0.2929 for c = 1/sqrt(2)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is B92 sensitive to channel loss?",
+              "options": [
+                "An inconclusive result looks like a lost pulse, so an eavesdropper doing USD can hide in the loss",
+                "Loss changes the states",
+                "Loss shortens the key"
+              ],
+              "correct_index": 0,
+              "explanation": "A simplified statement of the known loss limit."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde, From Classical to Quantum Shannon Theory: Chapter 9 (distinguishability: trace distance, fidelity) for state discrimination"
+            },
+            {
+              "book": "B115",
+              "locator": "Scarani et al., Quantum cloning: Section IV (cryptography applications of cloning and state estimation)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The B92 protocol (Bennett 1992), the optimality of USD and the known loss limit are stated from the literature and not in the cited sources; the lesson verifies the POVM and the conclusive-result rate numerically."
+          },
+          "after": "sec-1"
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "6.3 E91",
+          "summary": "Entanglement-based QKD: CHSH values and key error rates of ideal and noisy pairs, classically correlated states that cannot violate CHSH, and the effect of intercept-resend on the Bell test.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**E91** (Ekert, 1991) bases key distribution on **entanglement**: a source distributes Bell pairs, Alice measures her halves at one of three angles (0°, 45°, 90°) and Bob his at 45°, 90° or 135°. Outcomes where their angles coincide (45° and 90°) are perfectly correlated for an ideal pair and form the key; the remaining combinations are used to evaluate the **CHSH parameter** S, which for the ideal state is 2√2 ≈ 2.83 and for any local classical explanation at most 2. A violation certifies that the correlations are quantum and therefore that no eavesdropper could have known the outcomes in advance, and the amount of violation bounds the information she could have obtained.\n\nThe listing computes S and the key error rate for several states: the ideal Bell pair, Werner states with noise (S = 2√2·w), a product state, and a classically correlated mixture (50% |00⟩, 50% |11⟩), which has correlated outcomes in the Z basis but cannot violate CHSH. It then applies an intercept-resend attack on Bob's half of every pair (Eve measures in the Z basis and resends) and on a fraction of the pairs. The labs are exact or Monte Carlo simulations of the protocols at the level of measurement statistics, closed-form key-rate models and a few small cryptographic demonstrations. All device parameters (efficiencies, dark counts, misalignment, mean photon numbers) are ASSUMED values stated in the output; none of the numbers is a measurement of a real QKD system, and security statements hold only within the stated models."
+            },
+            {
+              "type": "code",
+              "id": "c-e91",
+              "language": "python",
+              "code": "import math, itertools\nimport numpy as np\n\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]], dtype=complex); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]], dtype=complex)\nH = np.array([[1, 1], [1, -1]], dtype=complex) / math.sqrt(2)\ndef kron(*ms):\n    out = np.array([[1.0 + 0j]])\n    for m in ms: out = np.kron(out, m)\n    return out\ndef ket(bits):\n    v = np.zeros(2 ** len(bits), dtype=complex); v[int(\"\".join(map(str, bits)), 2)] = 1; return v\ndef proj(v):\n    return np.outer(v, v.conj())\nPHI_PLUS = (ket([0, 0]) + ket([1, 1])) / math.sqrt(2)\nBELL = {\"phi+\": PHI_PLUS, \"phi-\": (ket([0, 0]) - ket([1, 1])) / math.sqrt(2), \"psi+\": (ket([0, 1]) + ket([1, 0])) / math.sqrt(2), \"psi-\": (ket([0, 1]) - ket([1, 0])) / math.sqrt(2)}\ndef werner(w, target=PHI_PLUS):\n    # w * |target><target| + (1 - w) * I / 4: the noisy entangled pair used throughout; w is the Werner parameter, the fidelity with the target is (1 + 3 w) / 4\n    return w * proj(target) + (1 - w) * np.eye(4) / 4\ndef fidelity_pure(rho, v):\n    return float((v.conj() @ rho @ v).real)\ndef ptrace(rho, dims, keep):\n    n = len(dims); t = rho.reshape(dims + dims)\n    for i in sorted([i for i in range(n) if i not in keep], reverse=True):\n        t = np.trace(t, axis1=i, axis2=i + t.ndim // 2)\n    d = int(np.prod([dims[i] for i in keep])); return t.reshape(d, d)\ndef apply_unitary(rho, U):\n    return U @ rho @ U.conj().T\ndef op_on(n, gate, qubits):\n    # a gate (given as a matrix on len(qubits) qubits) acting on the listed qubits of an n-qubit system, identity elsewhere\n    k = len(qubits); dim = 2 ** n\n    U = np.zeros((dim, dim), dtype=complex)\n    for col in range(dim):\n        bits = [(col >> (n - 1 - i)) & 1 for i in range(n)]\n        sub = int(\"\".join(str(bits[q]) for q in qubits), 2)\n        for row_sub in range(2 ** k):\n            amp = gate[row_sub, sub]\n            if abs(amp) < 1e-15: continue\n            nb = bits.copy()\n            for j, q in enumerate(qubits): nb[q] = (row_sub >> (k - 1 - j)) & 1\n            U[int(\"\".join(map(str, nb)), 2), col] += amp\n    return U\n# --- E91: Alice and Bob share Bell pairs and measure spin components at angles. Alice: 0, 45, 90 degrees; Bob: 45, 90, 135 degrees. Matching angles (45, 90) give the key; the rest feed the CHSH test.\ndef correlation(rho, a, b):\n    # measurement operators cos(angle) Z + sin(angle) X on each qubit; the joint expectation\n    A = math.cos(a) * Z + math.sin(a) * X; B = math.cos(b) * Z + math.sin(b) * X\n    return float(np.trace(rho @ np.kron(A, B)).real)\ndeg = math.pi / 180\nalice, bob = [0 * deg, 45 * deg, 90 * deg], [45 * deg, 90 * deg, 135 * deg]\ndef chsh(rho):\n    # S = E(a1,b1) - E(a1,b3) + E(a3,b1) + E(a3,b3) with a1 = 0, a3 = 90, b1 = 45, b3 = 135 degrees\n    return correlation(rho, alice[0], bob[0]) - correlation(rho, alice[0], bob[2]) + correlation(rho, alice[2], bob[0]) + correlation(rho, alice[2], bob[2])\nprint(f\"{'state':<42} {'CHSH S':>8} {'violates 2':>11} {'key QBER (matching angles)':>28}\")\nbell_triplet = BELL[\"phi+\"]\ndef key_qber(rho):\n    # for the key Alice and Bob use the pairs of angles that coincide (45 and 90 degrees); the correlations E give the error rate (1 - E)/2 for Phi+ with the sign convention (correlated outcomes)\n    e = [correlation(rho, 45 * deg, 45 * deg), correlation(rho, 90 * deg, 90 * deg)]\n    return float(np.mean([(1 - x) / 2 for x in e]))\ncases = {\"ideal Bell pair\": proj(bell_triplet), \"Werner w = 0.9\": werner(0.9), \"Werner w = 0.8\": werner(0.8), \"Werner w = 0.7\": werner(0.7),\n         \"product state |00> (no entanglement)\": proj(ket([0, 0])), \"classically correlated 50% |00> + 50% |11>\": 0.5 * proj(ket([0, 0])) + 0.5 * proj(ket([1, 1]))}\nfor name, rho in cases.items():\n    S = chsh(rho)\n    print(f\"{name:<42} {S:>8.4f} {str(abs(S) > 2 + 1e-9):>11} {key_qber(rho):>28.4f}\")\nprint(\"the ideal pair gives |S| = 2 sqrt(2) = 2.8284 and no key errors; the Werner states give 2 sqrt(2) w; the classically correlated mixture is correlated only in the Z basis: it cannot violate CHSH and has a 37.5% error rate in the key bases, so a test of the S value tells Alice and Bob whether their correlations come from entanglement, i.e. whether Eve could already know the outcomes\")\n\n# --- an eavesdropper who measures one half of every pair in the Z basis and resends it destroys the entanglement; the CHSH value falls below 2\ndef intercept_resend_pairs(rho):\n    P0, P1 = proj(ket([0])), proj(ket([1]))\n    out = np.zeros((4, 4), dtype=complex)\n    for P in (P0, P1):\n        out += np.kron(I2, P) @ rho @ np.kron(I2, P)                         # Eve measures Bob's half in Z and sends the collapsed qubit on\n    return out\nprint()\neve = intercept_resend_pairs(proj(bell_triplet))\nprint(f\"after intercept-resend of Bob's half in the Z basis: CHSH S = {chsh(eve):.4f} (no violation), key QBER in the 45 and 90 degree bases = {key_qber(eve):.4f}\")\nprint(\"a partial attack on a fraction f of the pairs gives S = 2 sqrt(2) (1 - f/2) when the intercepted pairs become Z-correlated mixtures:\")\nfor f in (0.0, 0.1, 0.2, 0.3, 0.5, 1.0):\n    mixed = (1 - f) * proj(bell_triplet) + f * eve\n    print(f\"  attacked fraction {f:.1f}: S = {chsh(mixed):.4f}  violates: {abs(chsh(mixed)) > 2 + 1e-9}\")\nprint(\"the Bell test is the security check of E91: a violation certifies that the shared correlations cannot be explained by a pre-arranged classical strategy, and the amount of violation bounds Eve's information; the detailed security proofs are in module C6.6 (device independence)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-e91",
+              "language": "text",
+              "code": "state                                        CHSH S  violates 2   key QBER (matching angles)\nideal Bell pair                              2.8284        True                       0.0000\nWerner w = 0.9                               2.5456        True                       0.0500\nWerner w = 0.8                               2.2627        True                       0.1000\nWerner w = 0.7                               1.9799       False                       0.1500\nproduct state |00> (no entanglement)         1.4142       False                       0.3750\nclassically correlated 50% |00> + 50% |11>   1.4142       False                       0.3750\nthe ideal pair gives |S| = 2 sqrt(2) = 2.8284 and no key errors; the Werner states give 2 sqrt(2) w; the classically correlated mixture is correlated only in the Z basis: it cannot violate CHSH and has a 37.5% error rate in the key bases, so a test of the S value tells Alice and Bob whether their correlations come from entanglement, i.e. whether Eve could already know the outcomes\n\nafter intercept-resend of Bob's half in the Z basis: CHSH S = 1.4142 (no violation), key QBER in the 45 and 90 degree bases = 0.3750\na partial attack on a fraction f of the pairs gives S = 2 sqrt(2) (1 - f/2) when the intercepted pairs become Z-correlated mixtures:\n  attacked fraction 0.0: S = 2.8284  violates: True\n  attacked fraction 0.1: S = 2.6870  violates: True\n  attacked fraction 0.2: S = 2.5456  violates: True\n  attacked fraction 0.3: S = 2.4042  violates: True\n  attacked fraction 0.5: S = 2.1213  violates: True\n  attacked fraction 1.0: S = 1.4142  violates: False\nthe Bell test is the security check of E91: a violation certifies that the shared correlations cannot be explained by a pre-arranged classical strategy, and the amount of violation bounds Eve's information; the detailed security proofs are in module C6.6 (device independence)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The ideal pair gives S = 2.8284 and no key errors; Werner pairs give S = 2.5456, 2.2627 and 1.9799 for w = 0.9, 0.8 and 0.7 with key error rates 5%, 10% and 15%, so the Bell violation is lost between w = 0.8 and 0.7 (the exact threshold is w = 1/√2 = 0.7071, as in lesson 4.2). The product state and the classically correlated mixture both give S = 1.4142 and a 37.5% error rate in the key bases: a source that merely sends pre-arranged classical correlations is exposed by the test. Eve's intercept-resend in the Z basis on every pair gives S = 1.4142 (no violation) and 37.5% key errors, and on a fraction f of the pairs S = 2√2(1 − f/2): 2.687, 2.546, 2.404 and 2.121 for f = 0.1, 0.2, 0.3 and 0.5, still violating CHSH until f approaches 1, so for partial attacks the key-error rate and the S value must be used together.\n\n**Relation to BB84.** E91 and the entanglement version of BB84 (the BBM92 protocol) are equivalent in their security analysis; the advantage of the entanglement picture is that the Bell test can be used to check the source and the devices, which leads to the device-independent protocols of 6.6. **Common mistake:** reading a CHSH violation as proof of security by itself: the key-error rate and a complete security proof are still required."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What CHSH value does the ideal Bell pair give?",
+              "options": [
+                "2 sqrt(2) = 2.83",
+                "2",
+                "4"
+              ],
+              "correct_index": 0,
+              "explanation": "Local classical models cannot exceed 2."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does a CHSH violation tell Alice and Bob?",
+              "options": [
+                "Their correlations cannot come from a pre-arranged classical strategy, so Eve could not have known them in advance",
+                "That the key is already secure",
+                "That the channel has no loss"
+              ],
+              "correct_index": 0,
+              "explanation": "A complete security proof still needs the key error rate."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why does the classically correlated mixture fail E91?",
+              "options": [
+                "It is correlated only in one basis and cannot violate CHSH",
+                "It has too few pairs",
+                "It has no key"
+              ],
+              "correct_index": 0,
+              "explanation": "S = 1.4142 and a 37.5% error rate in the key bases."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B110",
+              "locator": "Qiskit Textbook: the CHSH chapter (measurement settings and the S value)"
+            },
+            {
+              "book": "B113",
+              "locator": "Wilde: Section 3.6 (entanglement) and the Bell-state material of Chapter 3"
+            }
+          ],
+          "needs_verification": {
+            "reason": "E91 (Ekert 1991) and the equivalence with BBM92 are stated from the literature, not from the cited sources; the S and error-rate calculations are exact for the states and angles used in the listing."
+          },
+          "after": "sec-2"
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "6.4 Decoy-State Concepts",
+          "summary": "Vacuum-plus-weak-decoy bounds on the single-photon yield and error rate, a photon-number-splitting attack that the decoy pulses expose, and the key rate with and without decoy states.",
+          "estimated_minutes": 70,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Weak coherent pulses contain more than one photon with non-negligible probability (lesson 5.8), and a **photon-number-splitting (PNS) attack** exploits this: Eve keeps one photon of each multi-photon pulse, blocks some single-photon pulses and forwards the rest with a boosted transmission so that the receiver's overall detection rate looks normal; she then measures her photon after the basis announcement and learns the bit. Without a countermeasure the secure key rate must be calculated for this worst case, which forces a very small mean photon number and a poor distance scaling. The **decoy-state method** (Hwang; Lo, Ma and Chen; Wang) fixes this: Alice randomly mixes signal pulses of mean photon number μ with **decoy** pulses of other intensities (ν and vacuum) that are indistinguishable except for their intensity, so the **yield Y_n of n-photon pulses** cannot depend on the intensity. The observed gains Q_μ, Q_ν and error rates then bound Y₁ and the single-photon error rate e₁: with the vacuum and one weak decoy, Y₁ ≥ (μ/(μν − ν²))·(Q_ν e^ν − Q_μ e^μ ν²/μ² − ((μ² − ν²)/μ²)·Y₀) and e₁ ≤ (E_ν Q_ν e^ν − e₀Y₀)/(Y₁ν).\n\nThe listing models a channel with detector efficiency 10%, dark-count yield 10⁻⁶ and single-photon error 1.5%, computes the true yields and the decoy bounds (μ = 0.5, ν = 0.1) at several distances, simulates a PNS attack that leaves the signal gain unchanged and shows what the decoy pulses reveal, and compares the secret key rate with decoy states against the worst-case rate for a receiver without decoys (whose mean photon number is optimised). The labs are exact or Monte Carlo simulations of the protocols at the level of measurement statistics, closed-form key-rate models and a few small cryptographic demonstrations. All device parameters (efficiencies, dark counts, misalignment, mean photon numbers) are ASSUMED values stated in the output; none of the numbers is a measurement of a real QKD system, and security statements hold only within the stated models."
+            },
+            {
+              "type": "code",
+              "id": "c-decoy",
+              "language": "python",
+              "code": "import math\nimport numpy as np\ndef h2(x): return 0.0 if x <= 0 or x >= 1 else -x * math.log2(x) - (1 - x) * math.log2(1 - x)\n\n# --- the decoy-state method. A weak coherent source with mean photon number mu sends n-photon pulses with Poisson probability p_n. The channel+detector has transmission eta, dark-count yield Y0,\n# error rate of single photons e1 = e_det. The yield of n-photon pulses is Y_n = 1 - (1 - Y0)(1 - eta)^n. Alice randomly sends signal (mu), decoy (nu) and vacuum pulses.\ndef poisson(mu, n): return math.exp(-mu) * mu ** n / math.factorial(n)\neta_det, Y0, e_det = 0.1, 1e-6, 0.015\ndef yields(L_km, alpha=0.2):\n    eta = 10 ** (-alpha * L_km / 10) * eta_det\n    return eta, lambda n: 1 - (1 - Y0) * (1 - eta) ** n\ndef gain(mu, Y, nmax=60):\n    return sum(poisson(mu, n) * Y(n) for n in range(nmax))                     # Q_mu = sum p_n Y_n\ndef error_gain(mu, Y, nmax=60):\n    return sum(poisson(mu, n) * (0.5 * Y0 if n == 0 else 0) for n in range(1)) + sum(poisson(mu, n) * e_det * (Y(n) - Y0) for n in range(1, nmax)) + 0.5 * Y0 * poisson(mu, 0)\nmu, nu = 0.5, 0.1\nprint(f\"{'L (km)':>7} {'true Y1':>10} {'decoy estimate of Y1 (lower bound)':>36} {'true e1':>9} {'decoy bound on e1 (upper)':>27} {'estimate is a valid bound':>26}\")\nfor L in (10, 50, 100, 150):\n    eta, Y = yields(L)\n    Qmu, Qnu = gain(mu, Y), gain(nu, Y)\n    Emu, Enu = error_gain(mu, Y) / Qmu, error_gain(nu, Y) / Qnu\n    # the vacuum + weak decoy bounds (Ma, Qi, Zhao, Lo 2005)\n    Y1_lower = (mu / (mu * nu - nu ** 2)) * (Qnu * math.exp(nu) - Qmu * math.exp(mu) * nu ** 2 / mu ** 2 - (mu ** 2 - nu ** 2) / mu ** 2 * Y0)\n    e1_upper = (Enu * Qnu * math.exp(nu) - 0.5 * Y0) / (Y1_lower * nu)\n    true_Y1 = Y(1)\n    print(f\"{L:>7} {true_Y1:>10.3e} {Y1_lower:>36.3e} {e_det:>9.4f} {e1_upper:>27.4f} {str(Y1_lower <= true_Y1 * (1 + 1e-9) and e1_upper >= e_det - 1e-9):>26}\")\nprint(\"from only the observable gains Q_mu, Q_nu and error rates, Alice and Bob bound the yield and error rate of the single-photon pulses, which is the part that carries secure key; the bound is tight when the channel behaves as the model says\")\n\n# --- the photon-number-splitting attack: Eve holds back single-photon pulses and lets multi-photon pulses through with enough transmission to make the total gain look normal\ndef pns_yields(L_km, mu_signal, alpha=0.2):\n    eta, Y = yields(L_km)\n    Q_expected = gain(mu_signal, Y)\n    p_multi = 1 - math.exp(-mu_signal) * (1 + mu_signal)\n    Y_multi = min(1.0, (Q_expected - Y0 * poisson(mu_signal, 0)) / p_multi) if p_multi > 0 else 0\n    return lambda n: Y0 if n <= 1 else Y_multi                                  # single photons never arrive (Eve blocks them); multi-photon pulses arrive with the boosted yield\nprint()\nprint(\"PNS attack at 100 km: Eve blocks every single-photon pulse and forwards multi-photon pulses with a boosted transmission so that the signal gain is unchanged\")\neta, Y_normal = yields(100)\nY_attack = pns_yields(100, mu)\nprint(f\"  signal gain without attack {gain(mu, Y_normal):.4e}, with the attack {gain(mu, Y_attack):.4e}: the receiver cannot see the attack in the signal gain alone\")\nQmu_a, Qnu_a = gain(mu, Y_attack), gain(nu, Y_attack)\nY1_lower_attack = (mu / (mu * nu - nu ** 2)) * (Qnu_a * math.exp(nu) - Qmu_a * math.exp(mu) * nu ** 2 / mu ** 2 - (mu ** 2 - nu ** 2) / mu ** 2 * Y0)\nprint(f\"  decoy gain {nu}: without the attack {gain(nu, Y_normal):.4e}, with it {Qnu_a:.4e}\")\nprint(f\"  decoy-state lower bound on the single-photon yield: honest channel {(mu / (mu * nu - nu ** 2)) * (gain(nu, Y_normal) * math.exp(nu) - gain(mu, Y_normal) * math.exp(mu) * nu ** 2 / mu ** 2 - (mu ** 2 - nu ** 2) / mu ** 2 * Y0):.3e}; under the attack {max(Y1_lower_attack, 0):.3e}\")\nprint(\"with the attack the estimated single-photon yield collapses to (almost) zero, so the secret key fraction becomes zero: the attack that is invisible to a single-intensity receiver is exposed because the weaker decoy pulses do not follow the statistics that a loss-only channel would produce\")\n\n# --- the secret key rate (per pulse): (i) the decoy-state limit, where the single-photon yield and error rate are known (the infinite-decoy asymptote), and\n# (ii) a receiver without decoy states, which must assume the worst-case PNS attack (GLLP bound) and therefore has to choose a much smaller mean photon number\ndef key_rate_decoy(L, mu_s=0.5, f_ec=1.16):\n    eta, Y = yields(L)\n    Qmu = gain(mu_s, Y); Emu = error_gain(mu_s, Y) / Qmu\n    Q1 = poisson(mu_s, 1) * Y(1)\n    return max(0.0, 0.5 * (-Qmu * f_ec * h2(Emu) + Q1 * (1 - h2(e_det))))\ndef key_rate_no_decoy(L, mu_s, f_ec=1.16):\n    eta, Y = yields(L)\n    Qmu = gain(mu_s, Y); Emu = error_gain(mu_s, Y) / Qmu\n    delta = (1 - math.exp(-mu_s) * (1 + mu_s)) / Qmu                          # the share of the gain that may come from multi-photon pulses, all assumed known to Eve\n    if delta >= 1: return 0.0\n    e_eff = Emu / (1 - delta)\n    if e_eff >= 0.5: return 0.0\n    return max(0.0, 0.5 * Qmu * (-f_ec * h2(Emu) + (1 - delta) * (1 - h2(e_eff))))\ndef best_no_decoy(L):\n    best = (0.0, None)\n    for mu_s in np.logspace(-5, 0, 200):\n        r = key_rate_no_decoy(L, mu_s)\n        if r > best[0]: best = (r, mu_s)\n    return best\nprint()\nprint(f\"{'L (km)':>7} {'with decoy states (mu = 0.5)':>30} {'without decoys, best mu':>26} {'best mu':>10} {'ratio decoy / no decoy':>24}\")\nfor L in (10, 25, 50, 75, 100, 125, 150):\n    r1 = key_rate_decoy(L); r0, mu0 = best_no_decoy(L)\n    print(f\"{L:>7} {r1:>30.3e} {r0:>26.3e} {mu0 if mu0 else 0:>10.4f} {(f'{r1 / r0:.1f}' if r0 else 'no key without decoys'):>24}\")\nprint(\"without decoy states the mean photon number must be lowered towards the channel transmission (the best mu falls with distance) and the key rate scales like eta^2, whereas the decoy-state protocol keeps mu fixed at about 0.5 and scales like eta; the gain grows with distance\")\nprint(\"the decoy column uses the exact single-photon yield (the limit of many decoy intensities); the vacuum-plus-weak-decoy bounds above lose only a few percent of it; parameters are idealised assumptions, not a real system\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-decoy",
+              "language": "text",
+              "code": " L (km)    true Y1   decoy estimate of Y1 (lower bound)   true e1   decoy bound on e1 (upper)  estimate is a valid bound\n     10  6.310e-02                            6.129e-02    0.0150                      0.0171                       True\n     50  1.000e-02                            9.697e-03    0.0150                      0.0176                       True\n    100  1.001e-03                            9.703e-04    0.0150                      0.0222                       True\n    150  1.010e-04                            9.792e-05    0.0150                      0.0680                       True\nfrom only the observable gains Q_mu, Q_nu and error rates, Alice and Bob bound the yield and error rate of the single-photon pulses, which is the part that carries secure key; the bound is tight when the channel behaves as the model says\n\nPNS attack at 100 km: Eve blocks every single-photon pulse and forwards multi-photon pulses with a boosted transmission so that the signal gain is unchanged\n  signal gain without attack 5.0087e-04, with the attack 5.0118e-04: the receiver cannot see the attack in the signal gain alone\n  decoy gain 0.1: without the attack 1.0099e-04, with it 2.6944e-05\n  decoy-state lower bound on the single-photon yield: honest channel 9.703e-04; under the attack 0.000e+00\nwith the attack the estimated single-photon yield collapses to (almost) zero, so the secret key fraction becomes zero: the attack that is invisible to a single-intensity receiver is exposed because the weaker decoy pulses do not follow the statistics that a loss-only channel would produce\n\n L (km)   with decoy states (mu = 0.5)    without decoys, best mu    best mu   ratio decoy / no decoy\n     10                      6.467e-03                  6.001e-04     0.0523                     10.8\n     25                      3.232e-03                  1.443e-04     0.0261                     22.4\n     50                      1.019e-03                  9.687e-06     0.0078                    105.2\n     75                      3.207e-04                  0.000e+00     0.0000    no key without decoys\n    100                      1.000e-04                  0.000e+00     0.0000    no key without decoys\n    125                      3.032e-05                  0.000e+00     0.0000    no key without decoys\n    150                      8.357e-06                  0.000e+00     0.0000    no key without decoys\nwithout decoy states the mean photon number must be lowered towards the channel transmission (the best mu falls with distance) and the key rate scales like eta^2, whereas the decoy-state protocol keeps mu fixed at about 0.5 and scales like eta; the gain grows with distance\nthe decoy column uses the exact single-photon yield (the limit of many decoy intensities); the vacuum-plus-weak-decoy bounds above lose only a few percent of it; parameters are idealised assumptions, not a real system",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The decoy bounds are valid and close: the lower bound on the single-photon yield is 6.129×10⁻² against a true 6.310×10⁻² at 10 km, 9.7×10⁻³ against 1.0×10⁻² at 50 km and 9.7×10⁻⁴ against 1.0×10⁻³ at 100 km (about 3% below), and the upper bound on e₁ is 0.0171, 0.0176, 0.0222 and 0.0680 at 10, 50, 100 and 150 km (true value 0.015; the bound loosens as the signal weakens). Under the PNS attack at 100 km the signal gain is unchanged (5.0087×10⁻⁴ without attack, 5.0118×10⁻⁴ with it), so a single-intensity receiver is blind to the attack, but the decoy gain drops from 1.0099×10⁻⁴ to 2.6944×10⁻⁵ and the estimated single-photon yield collapses from 9.7×10⁻⁴ to zero, so the key fraction is zero and the attack fails. In the key-rate comparison the decoy-state protocol gives 6.5×10⁻³ bits per pulse at 10 km, 1.0×10⁻³ at 50 km and 1.0×10⁻⁴ at 100 km (10⁵ bits per second at 1 GHz), while the receiver without decoys must lower μ to 0.052, 0.026 and 0.0078 at 10, 25 and 50 km and still gets 11, 22 and 105 times less key, with no key at all beyond about 75 km in this model.\n\n**Notes.** The decoy column uses the exact single-photon yield (the limit of many decoy intensities) and the real bounds lose a few percent; all parameters are assumptions, and the formulas are the standard asymptotic ones. Real systems add finite-size corrections (6.8) and require that the decoy and signal pulses really are indistinguishable (a source flaw that distinguishes them breaks the argument, 6.7). **Common mistake:** applying the decoy formulas when the intensities are not randomised independently of the choice of basis and bit."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why can decoy pulses expose a PNS attack?",
+              "options": [
+                "The yield of n-photon pulses cannot depend on the pulse intensity, so an attack that changes yields by photon number changes the decoy statistics",
+                "Decoy pulses are brighter",
+                "Decoy pulses carry the key"
+              ],
+              "correct_index": 0,
+              "explanation": "The decoy gain fell from 1.0e-4 to 2.7e-5 under the attack."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does the decoy-state analysis bound?",
+              "options": [
+                "The yield and error rate of single-photon pulses",
+                "The dark count rate",
+                "The detector efficiency"
+              ],
+              "correct_index": 0,
+              "explanation": "Only single-photon pulses carry key that Eve cannot split."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What happens to the mean photon number without decoy states?",
+              "options": [
+                "It must be lowered towards the channel transmission, which costs rate and range",
+                "It can be raised freely",
+                "It does not matter"
+              ],
+              "correct_index": 0,
+              "explanation": "The best mu fell to 0.0078 at 50 km."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B115",
+              "locator": "Scarani et al., Quantum cloning: Section IV.B (incoherent attacks) as background to the photon-number-splitting attack"
+            },
+            {
+              "book": "B110",
+              "locator": "Qiskit Textbook: quantum key distribution material for the BB84 states used by weak pulses"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The decoy-state method (Hwang 2003; Lo, Ma, Chen 2005) and the vacuum-plus-weak-decoy bounds (Ma, Qi, Zhao, Lo 2005) and the GLLP key-rate formula are quoted from the literature (from memory) and were not read here; the lesson verifies that the bounds hold for the lesson's channel model. All parameters are assumptions."
+          },
+          "after": "sec-3"
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "6.5 Measurement-Device-Independent QKD",
+          "summary": "An untrusted relay performs a Bell-state measurement; the exact outcome table shows which bit relations each announcement fixes, and a cheating relay is exposed by a 50 percent error rate.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Detector attacks (6.7) exploit the fact that single-photon detectors are the most vulnerable part of a QKD system. **Measurement-device-independent QKD (MDI-QKD)** (Lo, Curty and Qi, 2012) removes all detectors from the trusted part: Alice and Bob both **send** BB84 states (each in a random basis) to an **untrusted relay Charlie**, who performs a **Bell-state measurement (BSM)** and announces the outcome. The outcome does not reveal either bit but reveals the **relation** between them: in each basis a given announcement fixes the parity of Alice's and Bob's bits. After the bases are announced, they keep the rounds with matching bases and Bob flips his bit where required. Charlie's equipment can be arbitrarily faulty or malicious: because the key is in the correlation between Alice's and Bob's states, he learns only a relation that is public anyway.\n\nThe listing computes the exact BSM outcome probabilities for all pairs of BB84 states in the Z and X bases, derives from the table which parity relation each announcement implies in each basis, and then simulates 40,000 rounds comparing Charlie's honest announcements with random fake ones. The labs are exact or Monte Carlo simulations of the protocols at the level of measurement statistics, closed-form key-rate models and a few small cryptographic demonstrations. All device parameters (efficiencies, dark counts, misalignment, mean photon numbers) are ASSUMED values stated in the output; none of the numbers is a measurement of a real QKD system, and security statements hold only within the stated models."
+            },
+            {
+              "type": "code",
+              "id": "c-mdi",
+              "language": "python",
+              "code": "import math, itertools\nimport numpy as np\n\nI2 = np.eye(2); X = np.array([[0, 1], [1, 0]], dtype=complex); Y = np.array([[0, -1j], [1j, 0]]); Z = np.array([[1, 0], [0, -1]], dtype=complex)\nH = np.array([[1, 1], [1, -1]], dtype=complex) / math.sqrt(2)\ndef kron(*ms):\n    out = np.array([[1.0 + 0j]])\n    for m in ms: out = np.kron(out, m)\n    return out\ndef ket(bits):\n    v = np.zeros(2 ** len(bits), dtype=complex); v[int(\"\".join(map(str, bits)), 2)] = 1; return v\ndef proj(v):\n    return np.outer(v, v.conj())\nPHI_PLUS = (ket([0, 0]) + ket([1, 1])) / math.sqrt(2)\nBELL = {\"phi+\": PHI_PLUS, \"phi-\": (ket([0, 0]) - ket([1, 1])) / math.sqrt(2), \"psi+\": (ket([0, 1]) + ket([1, 0])) / math.sqrt(2), \"psi-\": (ket([0, 1]) - ket([1, 0])) / math.sqrt(2)}\ndef werner(w, target=PHI_PLUS):\n    # w * |target><target| + (1 - w) * I / 4: the noisy entangled pair used throughout; w is the Werner parameter, the fidelity with the target is (1 + 3 w) / 4\n    return w * proj(target) + (1 - w) * np.eye(4) / 4\ndef fidelity_pure(rho, v):\n    return float((v.conj() @ rho @ v).real)\ndef ptrace(rho, dims, keep):\n    n = len(dims); t = rho.reshape(dims + dims)\n    for i in sorted([i for i in range(n) if i not in keep], reverse=True):\n        t = np.trace(t, axis1=i, axis2=i + t.ndim // 2)\n    d = int(np.prod([dims[i] for i in keep])); return t.reshape(d, d)\ndef apply_unitary(rho, U):\n    return U @ rho @ U.conj().T\ndef op_on(n, gate, qubits):\n    # a gate (given as a matrix on len(qubits) qubits) acting on the listed qubits of an n-qubit system, identity elsewhere\n    k = len(qubits); dim = 2 ** n\n    U = np.zeros((dim, dim), dtype=complex)\n    for col in range(dim):\n        bits = [(col >> (n - 1 - i)) & 1 for i in range(n)]\n        sub = int(\"\".join(str(bits[q]) for q in qubits), 2)\n        for row_sub in range(2 ** k):\n            amp = gate[row_sub, sub]\n            if abs(amp) < 1e-15: continue\n            nb = bits.copy()\n            for j, q in enumerate(qubits): nb[q] = (row_sub >> (k - 1 - j)) & 1\n            U[int(\"\".join(map(str, nb)), 2), col] += amp\n    return U\n# --- measurement-device-independent QKD: Alice and Bob each send a BB84 state to an UNTRUSTED relay Charlie, who performs a Bell-state measurement and announces the outcome.\n# Detector side channels of Charlie cannot leak the key, because the key is encoded in the correlation between Alice's and Bob's states, not in anything Charlie measures about one party alone.\ndef bsm_outcomes(state_ab):\n    # projective Bell measurement on the two sent qubits: probabilities and post-measurement information\n    return {name: float((v.conj() @ state_ab @ v).real) for name, v in BELL.items()}\ndef basis_state(bit, basis):\n    return ket([bit]) if basis == \"Z\" else (ket([0]) + (-1) ** bit * ket([1])) / math.sqrt(2)\nprint(\"Bell-state measurement outcomes for the BB84 state pairs sent by Alice (first) and Bob (second):\")\nprint(f\"{'basis':>6} {'(bit a, bit b)':>15} \" + \" \".join(f\"{n:>8}\" for n in BELL))\ntable = {}\nfor basis in (\"Z\", \"X\"):\n    for a, b in itertools.product((0, 1), repeat=2):\n        psi = np.kron(basis_state(a, basis), basis_state(b, basis))\n        probs = bsm_outcomes(proj(psi)); table[(basis, a, b)] = probs\n        print(f\"{basis:>6} {str((a, b)):>15} \" + \" \".join(f\"{p:>8.3f}\" for p in probs.values()))\nprint()\nprint(\"what the outcome announced by Charlie tells Alice and Bob about the relation of their bits (in matching bases):\")\nfor outcome in (\"psi+\", \"psi-\", \"phi+\", \"phi-\"):\n    relation = {}\n    for basis in (\"Z\", \"X\"):\n        possible = [(a, b) for a in (0, 1) for b in (0, 1) if table[(basis, a, b)][outcome] > 1e-9]\n        parities = {(a ^ b) for a, b in possible}\n        relation[basis] = f\"a xor b = {parities.pop()}\" if len(parities) == 1 else \"no relation\"\n    print(f\"  Charlie announces {outcome}: Z basis -> {relation['Z']}; X basis -> {relation['X']}\")\nprint(\"so for each announced outcome the two bits of Alice and Bob in the same basis are perfectly correlated or perfectly anticorrelated, and Bob flips his bit when told: Alice and Bob obtain a shared key without trusting Charlie's equipment, and Charlie learns only the XOR-type relation, which is public anyway\")\n# --- Charlie cheats: announcing random outcomes does not help him learn the bits; he only causes errors (a failed correlation) that Alice and Bob see in their test rounds\nrng = np.random.default_rng(65)\nn = 40000\nhonest_errors = cheating_errors = tested = 0\nfor _ in range(n):\n    basis = \"Z\" if rng.random() < 0.5 else \"X\"\n    a, b = rng.integers(0, 2, 2)\n    probs = table[(basis, a, b)]\n    names = list(probs)\n    outcome = names[rng.choice(4, p=[probs[k] for k in names])]\n    fake = names[rng.integers(0, 4)]\n    def predicted_relation(out):\n        poss = [(x, y) for x in (0, 1) for y in (0, 1) if table[(basis, x, y)][out] > 1e-9]\n        return poss[0][0] ^ poss[0][1]\n    tested += 1\n    honest_errors += (a ^ b) != predicted_relation(outcome)\n    cheating_errors += (a ^ b) != predicted_relation(fake)\nprint(f\"over {tested:,} rounds: error rate with Charlie's honest announcements {honest_errors / tested:.4f}; with random fake announcements {cheating_errors / tested:.4f} (a cheating relay produces a visible error rate of about 1/2, so he cannot cheat undetected)\")\nprint(\"MDI-QKD removes all detector vulnerabilities from the security analysis (the attacks that blind or control single-photon detectors, 6.7) at the cost of a much lower rate: a two-photon coincidence at the relay is needed, and the key rate scales with the transmission of the two half-links; twin-field QKD (a related scheme) reaches a rate scaling like the square root of the channel transmission (from the literature)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-mdi",
+              "language": "text",
+              "code": "Bell-state measurement outcomes for the BB84 state pairs sent by Alice (first) and Bob (second):\n basis  (bit a, bit b)     phi+     phi-     psi+     psi-\n     Z          (0, 0)    0.500    0.500    0.000    0.000\n     Z          (0, 1)    0.000    0.000    0.500    0.500\n     Z          (1, 0)    0.000    0.000    0.500    0.500\n     Z          (1, 1)    0.500    0.500    0.000    0.000\n     X          (0, 0)    0.500    0.000    0.500    0.000\n     X          (0, 1)    0.000    0.500    0.000    0.500\n     X          (1, 0)    0.000    0.500    0.000    0.500\n     X          (1, 1)    0.500    0.000    0.500    0.000\n\nwhat the outcome announced by Charlie tells Alice and Bob about the relation of their bits (in matching bases):\n  Charlie announces psi+: Z basis -> a xor b = 1; X basis -> a xor b = 0\n  Charlie announces psi-: Z basis -> a xor b = 1; X basis -> a xor b = 1\n  Charlie announces phi+: Z basis -> a xor b = 0; X basis -> a xor b = 0\n  Charlie announces phi-: Z basis -> a xor b = 0; X basis -> a xor b = 1\nso for each announced outcome the two bits of Alice and Bob in the same basis are perfectly correlated or perfectly anticorrelated, and Bob flips his bit when told: Alice and Bob obtain a shared key without trusting Charlie's equipment, and Charlie learns only the XOR-type relation, which is public anyway\nover 40,000 rounds: error rate with Charlie's honest announcements 0.0000; with random fake announcements 0.4984 (a cheating relay produces a visible error rate of about 1/2, so he cannot cheat undetected)\nMDI-QKD removes all detector vulnerabilities from the security analysis (the attacks that blind or control single-photon detectors, 6.7) at the cost of a much lower rate: a two-photon coincidence at the relay is needed, and the key rate scales with the transmission of the two half-links; twin-field QKD (a related scheme) reaches a rate scaling like the square root of the channel transmission (from the literature)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "In the Z basis, equal bits give φ± and different bits give ψ±, each outcome with probability 1/2; in the X basis the pairs are split between φ⁺/ψ⁺ (equal bits) and φ⁻/ψ⁻ (different bits). So, for example, ψ⁺ announces \"different bits in Z, equal in X\" and ψ⁻ \"different bits in both\", and for every announcement the XOR of the two bits is fixed in each basis. With Charlie's honest announcements the simulated error rate is 0.0000, with random fake announcements it is 0.4984: a cheating relay cannot produce correlations and is exposed by the test rounds. The key rate is much lower than for BB84 because the BSM needs two photons to arrive simultaneously, so the key rate scales with the transmission of both half-links; the related twin-field protocol reaches a scaling with the square root of the total transmission (from the literature, not shown).\n\n**What MDI-QKD does and does not give.** It removes the detector side channels from the trusted base, which is why it is a leading candidate for certified QKD, but the **sources** are still trusted and must be characterised, the classical channel must still be authenticated, and the practical range and rate remain limited. **Common mistake:** describing MDI-QKD as \"device independent\": only the measurement devices are removed from the assumptions (6.6 treats full device independence)."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does Charlie learn from his Bell-state measurement in MDI-QKD?",
+              "options": [
+                "The parity relation of Alice's and Bob's bits, which is public information, but not the bits",
+                "Both bits",
+                "Alice's basis"
+              ],
+              "correct_index": 0,
+              "explanation": "Each announced outcome fixes the XOR of the bits in each basis."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What vulnerability does MDI-QKD remove from the trusted base?",
+              "options": [
+                "The measurement devices (detectors)",
+                "The photon sources",
+                "The classical channel"
+              ],
+              "correct_index": 0,
+              "explanation": "Sources and authentication are still trusted."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What error rate does a relay produce if it announces random outcomes?",
+              "options": [
+                "About 50%",
+                "About 25%",
+                "0%"
+              ],
+              "correct_index": 0,
+              "explanation": "The simulated rate was 0.4984."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B113",
+              "locator": "Wilde: Section 3.6 (Bell states) and Chapter 6 (the Bell measurement as used in teleportation and swapping)"
+            },
+            {
+              "book": "B110",
+              "locator": "Qiskit Textbook: teleportation chapter (the Bell-state measurement circuit)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "MDI-QKD (Lo, Curty, Qi 2012) and the twin-field protocol are stated from the literature, not from the cited sources; the BSM table and the relay-cheating experiment are computed exactly in the listing. The key-rate scalings are stated without derivation."
+          },
+          "after": "sec-4"
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "6.6 Device-Independent Concepts",
+          "summary": "The CHSH-based key rate bound (positive only for w above 0.857, QBER below 7.15 percent), the rounds needed to certify a violation, and the detection-efficiency thresholds.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "**Device-independent QKD (DIQKD)** goes one step further than MDI: it makes **no assumption about the devices** of Alice and Bob at all; it treats them as black boxes that take inputs (setting choices) and give outputs (bits). Security is derived from the observed **CHSH value** S: the larger the violation, the less the outcomes can be known to an eavesdropper, regardless of how the boxes work. For collective attacks the key rate satisfies the bound of Acín et al. (2007), r ≥ 1 − h((1 + √((S/2)² − 1))/2) − h(Q), which is positive only for S above a threshold that depends on the error rate Q; for Werner-state devices S = 2√2·w and Q = (1 − w)/2.\n\nThe listing evaluates the bound for w from 1 to 0.85 and compares it with BB84 under trusted devices, finds the threshold, estimates the number of rounds needed to certify a violation with a failure probability of 10⁻¹⁰ (a simplified Hoeffding bound), and lists the **detection-efficiency** thresholds below which the detection loophole allows a local model to fake a violation. The labs are exact or Monte Carlo simulations of the protocols at the level of measurement statistics, closed-form key-rate models and a few small cryptographic demonstrations. All device parameters (efficiencies, dark counts, misalignment, mean photon numbers) are ASSUMED values stated in the output; none of the numbers is a measurement of a real QKD system, and security statements hold only within the stated models."
+            },
+            {
+              "type": "code",
+              "id": "c-diqkd",
+              "language": "python",
+              "code": "import math\nimport numpy as np\ndef h2(x): return 0.0 if x <= 0 or x >= 1 else -x * math.log2(x) - (1 - x) * math.log2(1 - x)\n\n# --- device-independent QKD: security from the observed CHSH value S and the error rate Q, with no assumption about the devices. The (collective-attack) rate of Acin et al. (2007):\n# r >= 1 - h((1 + sqrt((S/2)^2 - 1)) / 2) - h(Q), valid for S > 2.\ndef di_rate(S, Q):\n    if S <= 2: return 0.0\n    inner = (1 + math.sqrt((S / 2) ** 2 - 1)) / 2\n    return 1 - h2(inner) - h2(Q)\nprint(\"Werner-state devices: S = 2 sqrt(2) w, and the key QBER Q = (1 - w) / 2\")\nprint(f\"{'w':>6} {'S':>8} {'QBER Q':>8} {'DI key rate lower bound':>25} {'BB84 rate 1 - 2h(Q) (devices trusted)':>40}\")\nfor w in (1.0, 0.99, 0.98, 0.97, 0.96, 0.95, 0.93, 0.9, 0.85):\n    S = 2 * math.sqrt(2) * w; Q = (1 - w) / 2\n    print(f\"{w:>6} {S:>8.4f} {Q:>8.4f} {max(0.0, di_rate(S, Q)):>25.4f} {max(0.0, 1 - 2 * h2(Q)):>40.4f}\")\nlo, hi = 0.8, 1.0\nfor _ in range(60):\n    mid = (lo + hi) / 2\n    if di_rate(2 * math.sqrt(2) * mid, (1 - mid) / 2) > 0: hi = mid\n    else: lo = mid\nprint(f\"the DI rate bound is positive only for w > {hi:.4f}, i.e. QBER below {(1 - hi) / 2:.4f}: device independence tolerates far less noise (about 7%) than BB84 with trusted devices (11%), and the rate bound is lower\")\n\n# --- how many rounds are needed to be confident that the observed CHSH value really exceeds 2? Hoeffding bound for the estimator of S from n rounds per setting pair.\nprint()\nprint(\"number of rounds needed so that the lower confidence bound of the measured CHSH value stays above 2, for failure probability 1e-10 (Hoeffding: each of the four correlators estimated from n/4 rounds, S in [-4, 4])\")\nprint(f\"{'true S':>8} {'rounds needed':>16}\")\nfor S in (2.8284, 2.7, 2.5, 2.3, 2.1):\n    # S_hat is a sum of four correlators, each the mean of n/4 values in [-1, 1]; deviation t = sqrt(2 * 4^2 * ln(1/eps) ... ) simplified: t = 4 * sqrt(2 ln(1/eps) / n)\n    eps = 1e-10\n    margin = S - 2\n    n = 2 * (4 / margin) ** 2 * math.log(1 / eps) * 1.0\n    print(f\"{S:>8} {n:>16,.0f}\")\nprint(\"certifying a very modest violation (S = 2.1) takes tens of thousands of rounds, a near-ideal one about a thousand; the full DI key rate needs many more rounds because parameter estimation, error correction and privacy amplification must all be finite-size secure. The estimate above is a simplified bound, not a full finite-key analysis\")\n# --- the loopholes: a Bell test certifies anything only if the detection loophole is closed; the minimum overall detection efficiency\nprint()\nprint(\"detection efficiency and the CHSH test: if the detectors miss events, a local model can mimic a violation unless the efficiency is high enough:\")\nfor name, eta, note in ((\"maximally entangled state, standard CHSH settings\", 2 / (1 + math.sqrt(2)), \"threshold efficiency 2/(1+sqrt 2) = 0.8284 (Garg-Mermin)\"),\n                         (\"partially entangled states, optimised settings (Eberhard)\", 2 / 3, \"threshold efficiency 2/3 (from the literature)\")):\n    print(f\"  {name:<58} {eta:.4f}   {note}\")\nprint(\"loophole-free Bell tests have been reported (2015 onwards); a practical DI-QKD system additionally needs the detection efficiency above the threshold over the whole channel, which is why DI-QKD has been demonstrated only over very short distances in the laboratory (from the literature, not reproduced)\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-diqkd",
+              "language": "text",
+              "code": "Werner-state devices: S = 2 sqrt(2) w, and the key QBER Q = (1 - w) / 2\n     w        S   QBER Q   DI key rate lower bound    BB84 rate 1 - 2h(Q) (devices trusted)\n   1.0   2.8284   0.0000                    1.0000                                   1.0000\n  0.99   2.8001   0.0050                    0.8735                                   0.9092\n  0.98   2.7719   0.0100                    0.7766                                   0.8384\n  0.97   2.7436   0.0150                    0.6909                                   0.7753\n  0.96   2.7153   0.0200                    0.6123                                   0.7171\n  0.95   2.6870   0.0250                    0.5391                                   0.6627\n  0.93   2.6304   0.0350                    0.4046                                   0.5622\n   0.9   2.5456   0.0500                    0.2250                                   0.4272\n  0.85   2.4042   0.0750                    0.0000                                   0.2314\nthe DI rate bound is positive only for w > 0.8570, i.e. QBER below 0.0715: device independence tolerates far less noise (about 7%) than BB84 with trusted devices (11%), and the rate bound is lower\n\nnumber of rounds needed so that the lower confidence bound of the measured CHSH value stays above 2, for failure probability 1e-10 (Hoeffding: each of the four correlators estimated from n/4 rounds, S in [-4, 4])\n  true S    rounds needed\n  2.8284            1,074\n     2.7            1,504\n     2.5            2,947\n     2.3            8,187\n     2.1           73,683\ncertifying a very modest violation (S = 2.1) takes tens of thousands of rounds, a near-ideal one about a thousand; the full DI key rate needs many more rounds because parameter estimation, error correction and privacy amplification must all be finite-size secure. The estimate above is a simplified bound, not a full finite-key analysis\n\ndetection efficiency and the CHSH test: if the detectors miss events, a local model can mimic a violation unless the efficiency is high enough:\n  maximally entangled state, standard CHSH settings          0.8284   threshold efficiency 2/(1+sqrt 2) = 0.8284 (Garg-Mermin)\n  partially entangled states, optimised settings (Eberhard)  0.6667   threshold efficiency 2/3 (from the literature)\nloophole-free Bell tests have been reported (2015 onwards); a practical DI-QKD system additionally needs the detection efficiency above the threshold over the whole channel, which is why DI-QKD has been demonstrated only over very short distances in the laboratory (from the literature, not reproduced)",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The DI bound is 0.8735 at w = 0.99 (QBER 0.5%), 0.5391 at 0.95, 0.2250 at 0.90 and zero at 0.85; the threshold is **w = 0.8570, QBER 7.15%**, so device independence tolerates about 7% error against the 11% of BB84 with trusted devices, and the rate at the same QBER is lower (at QBER 5%: 0.225 against 0.427). With a failure probability of 10⁻¹⁰ the simplified bound needs about 1,074 rounds to certify S = 2.8284, 1,504 for S = 2.7, 2,947 for 2.5, 8,187 for 2.3 and 73,683 for the very modest S = 2.1; real DI key rates need far more rounds, because parameter estimation, error correction and privacy amplification must all be finite-size secure. The detection loophole needs an overall detection efficiency above 2/(1 + √2) = 0.8284 for the maximally entangled state with standard CHSH settings (Garg and Mermin) and above 2/3 with partially entangled states and optimised settings (Eberhard), figures from the literature.\n\n**Where DIQKD stands.** Loophole-free Bell tests have been reported (from 2015, from the literature), and DIQKD has been demonstrated only in laboratory settings at short distances; it is a research direction that points at what the strongest possible QKD security would look like, not a deployable product. **Common mistake:** equating \"device independent\" with \"implementation proof\": the random number generators, the shielding of the devices from leaking information and the classical post-processing are still assumed trustworthy."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "On what is the security of DIQKD based?",
+              "options": [
+                "The observed CHSH violation, treating the devices as black boxes",
+                "A trusted source",
+                "A trusted detector"
+              ],
+              "correct_index": 0,
+              "explanation": "The key rate bound is a function of S and the error rate Q."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What noise level does the DI rate bound tolerate for Werner devices?",
+              "options": [
+                "About 7% (w above 0.857)",
+                "About 11%",
+                "About 25%"
+              ],
+              "correct_index": 0,
+              "explanation": "The bound vanishes at w = 0.857."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What does the detection loophole require?",
+              "options": [
+                "A high enough overall detection efficiency (above 0.8284 in the standard case)",
+                "Perfect sources",
+                "Longer fibre"
+              ],
+              "correct_index": 0,
+              "explanation": "Otherwise a local model can fake the violation."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B115",
+              "locator": "Scarani et al., Quantum cloning: Section IV (cryptography) for the role of non-orthogonal states and cloning-based attacks as background"
+            },
+            {
+              "book": "B110",
+              "locator": "Qiskit Textbook: CHSH chapter"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The DI key-rate bound (Acin, Brunner, Gisin, Massar, Pironio, Scarani 2007), the efficiency thresholds (Garg and Mermin; Eberhard) and the statement on loophole-free Bell tests are quoted from the literature (from memory) and were not read here; the numerical evaluation is the lesson's own."
+          },
+          "after": "sec-5"
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "6.7 QKD Attack Models",
+          "summary": "How far intercept-resend can go before the key fraction vanishes (44 percent of the pulses), the optimal individual attack at 14.6 percent, and the hardware attacks that exploit gaps between model and device.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A QKD security statement has the form \"the key is secret **against an adversary of type X**, **if the devices satisfy assumptions Y**\". Attacks fall into two groups. **Protocol attacks** act on the quantum states within the model. The simplest is **intercept-resend**; stronger ones copy the states with a cloning machine (**individual attack**, where Eve interacts with each pulse separately and may delay the measurement until the basis is announced; **collective attack**, a fixed interaction per pulse with a joint measurement later; **coherent attack**, any joint operation). Security proofs cover the strongest case, and for BB84 with ideal devices and an infinite key the tolerated error rate is about **11%** for collective and general attacks, against **14.6%** for individual attacks with one-way processing (Fuchs et al.; the optimal individual attack uses the **phase-covariant cloner** and is analysed in section IV.B.2 of the cloning review).\n\n**Implementation attacks** exploit differences between the model and the hardware: multi-photon pulses (**photon-number splitting**), detectors that can be controlled by bright light (**blinding**), differences in detector efficiency over time (**time-shift**), light injected into the apparatus (**Trojan horse**), and imperfect state preparation (**source flaws**). They have been demonstrated against commercial systems in the literature. The listing quantifies intercept-resend on a fraction f of the pulses (QBER f/4, Eve's information f/2), derives the largest f that leaves a positive key fraction, evaluates the phase-covariant cloning attack, and lists the hardware attacks with their countermeasures. The labs are exact or Monte Carlo simulations of the protocols at the level of measurement statistics, closed-form key-rate models and a few small cryptographic demonstrations. All device parameters (efficiencies, dark counts, misalignment, mean photon numbers) are ASSUMED values stated in the output; none of the numbers is a measurement of a real QKD system, and security statements hold only within the stated models."
+            },
+            {
+              "type": "code",
+              "id": "c-qkd-attacks",
+              "language": "python",
+              "code": "import math\nimport numpy as np\ndef h2(x): return 0.0 if x <= 0 or x >= 1 else -x * math.log2(x) - (1 - x) * math.log2(1 - x)\n# --- how far can an eavesdropper go before the receiver sees too many errors? Asymptotic BB84 key fraction 1 - 2 h(D) as a function of the disturbance D she causes.\ndef key_fraction(D): return max(0.0, 1 - 2 * h2(D))\nprint(\"1. intercept-resend on a fraction f of the pulses (Eve measures in a random basis and resends): error rate D = f / 4, Eve's information about the sifted key = f / 2\")\nprint(f\"{'fraction f':>11} {'QBER D = f/4':>14} {'Eve information f/2':>21} {'key fraction 1 - 2h(D)':>25}\")\nfor f in (0.0, 0.1, 0.2, 0.3, 0.4, 0.44, 0.5, 1.0):\n    D = f / 4\n    print(f\"{f:>11} {D:>14.4f} {f / 2:>21.3f} {key_fraction(D):>25.4f}\")\nf_max = 0.0\nwhile key_fraction((f_max + 1e-4) / 4) > 0: f_max += 1e-4\nprint(f\"intercept-resend on more than about {f_max:.3f} of the pulses drives the key fraction to zero; below that the key is still secure after privacy amplification, with less yield\")\n\nprint()\nprint(\"2. the optimal individual attack (phase-covariant cloner): the disturbance and the information are related, and the individual-attack tolerance is higher than the 11% of collective attacks\")\n# cloning-based attack: Eve clones the BB84 states with the phase-covariant cloner (fidelity F_clone = 1/2 + 1/sqrt(8) = 0.8536 for each copy); Bob's error D = 1 - F, Eve's error 1 - F as well\nF_clone = 0.5 + 1 / math.sqrt(8)\nD = 1 - F_clone\nprint(f\"   symmetric phase-covariant cloner: copy fidelity {F_clone:.4f}, so Bob's error rate D = {D:.4f} and Eve's error rate on her copy {1 - F_clone:.4f}\")\nprint(f\"   Eve's information on a key bit (a binary symmetric channel with error {D:.4f}): {1 - h2(D):.4f}; Bob's information {1 - h2(D):.4f}: they are equal, so no one-way key can be distilled by simple (Csiszar-Korner) processing at this disturbance\")\nprint(\"   the cited review (Scarani et al., section IV.B.2) gives the full optimal incoherent attack and its 14.6 percent threshold (1 - 1/sqrt 2)/2 = \", round((1 - 1 / math.sqrt(2)) / 2, 4), \"for individual attacks\")\nprint(\"   collective and coherent attacks are stronger: the tolerated error rate of BB84 with perfect devices falls to about 11% (the formula 1 - 2 h(D) = 0)\")\n\nprint()\nprint(\"3. attacks on the implementation (hardware attacks), not on the protocol: they exploit differences between the model and the device. Described qualitatively; none is simulated here.\")\nfor name, what in ((\"photon-number splitting\", \"weak pulses with several photons; countered by decoy states (6.4)\"),\n                    (\"detector blinding\", \"bright light forces single-photon detectors into a classical regime Eve controls; reported against commercial systems in the literature (Lydersen et al. 2010, from memory)\"),\n                    (\"time-shift / efficiency mismatch\", \"detectors differ in efficiency at different times; Eve shifts pulses in time to bias Bob's detection; a countermeasure is symmetric detection design and MDI-QKD\"),\n                    (\"Trojan horse\", \"Eve sends light into Alice's or Bob's apparatus and analyses the reflection; countered by isolators and monitoring (the reflected light must be bounded in the security proof)\"),\n                    (\"source flaws\", \"imperfect state preparation (side channels in polarisation, timing, spectrum); countered by characterising the source and by 'loss-tolerant' protocols\")):\n    print(f\"   {name:<34} {what}\")\nprint(\"the lesson of the hardware attacks is that a QKD system is secure only under its model: the proofs assume the devices behave as modelled, certification of implementations is therefore essential, and MDI and device-independent protocols remove some of these assumptions at a cost\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-qkd-attacks",
+              "language": "text",
+              "code": "1. intercept-resend on a fraction f of the pulses (Eve measures in a random basis and resends): error rate D = f / 4, Eve's information about the sifted key = f / 2\n fraction f   QBER D = f/4   Eve information f/2    key fraction 1 - 2h(D)\n        0.0         0.0000                 0.000                    1.0000\n        0.1         0.0250                 0.050                    0.6627\n        0.2         0.0500                 0.100                    0.4272\n        0.3         0.0750                 0.150                    0.2314\n        0.4         0.1000                 0.200                    0.0620\n       0.44         0.1100                 0.220                    0.0002\n        0.5         0.1250                 0.250                    0.0000\n        1.0         0.2500                 0.500                    0.0000\nintercept-resend on more than about 0.440 of the pulses drives the key fraction to zero; below that the key is still secure after privacy amplification, with less yield\n\n2. the optimal individual attack (phase-covariant cloner): the disturbance and the information are related, and the individual-attack tolerance is higher than the 11% of collective attacks\n   symmetric phase-covariant cloner: copy fidelity 0.8536, so Bob's error rate D = 0.1464 and Eve's error rate on her copy 0.1464\n   Eve's information on a key bit (a binary symmetric channel with error 0.1464): 0.3991; Bob's information 0.3991: they are equal, so no one-way key can be distilled by simple (Csiszar-Korner) processing at this disturbance\n   the cited review (Scarani et al., section IV.B.2) gives the full optimal incoherent attack and its 14.6 percent threshold (1 - 1/sqrt 2)/2 =  0.1464 for individual attacks\n   collective and coherent attacks are stronger: the tolerated error rate of BB84 with perfect devices falls to about 11% (the formula 1 - 2 h(D) = 0)\n\n3. attacks on the implementation (hardware attacks), not on the protocol: they exploit differences between the model and the device. Described qualitatively; none is simulated here.\n   photon-number splitting            weak pulses with several photons; countered by decoy states (6.4)\n   detector blinding                  bright light forces single-photon detectors into a classical regime Eve controls; reported against commercial systems in the literature (Lydersen et al. 2010, from memory)\n   time-shift / efficiency mismatch   detectors differ in efficiency at different times; Eve shifts pulses in time to bias Bob's detection; a countermeasure is symmetric detection design and MDI-QKD\n   Trojan horse                       Eve sends light into Alice's or Bob's apparatus and analyses the reflection; countered by isolators and monitoring (the reflected light must be bounded in the security proof)\n   source flaws                       imperfect state preparation (side channels in polarisation, timing, spectrum); countered by characterising the source and by 'loss-tolerant' protocols\nthe lesson of the hardware attacks is that a QKD system is secure only under its model: the proofs assume the devices behave as modelled, certification of implementations is therefore essential, and MDI and device-independent protocols remove some of these assumptions at a cost",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "Intercept-resend on a fraction f of the pulses causes QBER f/4 and gives Eve f/2 of the sifted key; the asymptotic key fraction 1 − 2h(f/4) falls from 1.000 (f = 0) to 0.663, 0.427, 0.231, 0.062 for f = 0.1, 0.2, 0.3, 0.4 and reaches zero at f ≈ 0.44 (QBER 11%): above that fraction no key can be extracted, below it the key is secure after privacy amplification, with a lower yield. The symmetric phase-covariant cloner has a copy fidelity of 1/2 + 1/√8 = 0.8536 for each copy, so Bob's error rate is D = 0.1464 and Eve's error rate on her copy is the same, and each has an information of 0.3991 bits per key bit: at that disturbance Bob and Eve are equally informed, so no one-way processing can distil a key, which is the origin of the 14.6% threshold for individual attacks, (1 − 1/√2)/2 = 0.1464.\n\nThe hardware attacks are listed without simulation: blinding was reported against commercial detectors (Lydersen et al. 2010, from memory), time-shift attacks exploit efficiency mismatch, Trojan-horse attacks need isolators and monitoring, and source flaws need characterisation or loss-tolerant protocols. **The lesson for evaluators:** a QKD product is secure only within its stated model; the question to ask of a vendor is which assumptions the proof makes and how each was verified on the actual device. **Common mistake:** quoting the proof's error threshold as the system's security margin."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What are the QBER and Eve's information when she intercepts and resends a fraction f of the pulses?",
+              "options": [
+                "QBER f/4 and information f/2",
+                "QBER f/2 and information f/4",
+                "QBER f and information f"
+              ],
+              "correct_index": 0,
+              "explanation": "At f = 1 the QBER is 25% and Eve knows half of the sifted key."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What error rate does the asymptotic collective-attack analysis tolerate for ideal BB84?",
+              "options": [
+                "About 11%",
+                "About 25%",
+                "About 50%"
+              ],
+              "correct_index": 0,
+              "explanation": "1 - 2h(D) = 0 at D = 0.110."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What distinguishes implementation attacks from protocol attacks?",
+              "options": [
+                "They exploit differences between the device and the model assumed in the proof",
+                "They use more qubits",
+                "They need a quantum computer"
+              ],
+              "correct_index": 0,
+              "explanation": "Blinding, time-shift, Trojan-horse and source-flaw attacks."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B115",
+              "locator": "Scarani et al., Quantum cloning: Section IV.B (incoherent attacks and cloning machines), IV.B.2 (the optimal incoherent attack on BB84 with the phase-covariant cloner) and IV.C (beyond incoherent attacks)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The 11% collective-attack threshold and the hardware attacks (blinding, time-shift, Trojan horse) are stated from the literature; the 14.6% individual-attack threshold follows the structure given in the cited review (section IV.B.2) as I recall it. The review was not re-read for exact statements, and the hardware attacks are not simulated."
+          },
+          "after": "sec-6"
+        },
+        {
+          "slug": "sec-8",
+          "action": "replace",
+          "title": "6.8 Eavesdropping Detection",
+          "summary": "How many sampled bits detect an attack at a given false-alarm rate (exact binomial tails), and the finite-key effect that removes the key for short blocks.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Eavesdropping is detected through the **error rate** of a random public sample of the sifted key: an honest channel produces errors at its natural rate e₀, and an attack adds disturbance. The test is a **hypothesis test**: choose an alarm threshold k so that the probability that an honest channel produces k or more errors in a sample of m bits is below a tolerated false-alarm probability α (an alarm aborts the session and wastes the key). The **detection probability** of an attack is the probability that the attacked channel exceeds the threshold. Two points matter for design. First, a **small attack** is hard to see in a small sample, but it also yields little information, and privacy amplification removes it. Second, the **finite key effect**: the QBER estimated from a sample is only a statistical estimate, so the key must be shortened by the worst case within a confidence interval, and for short blocks that confidence interval consumes the whole key.\n\nThe listing computes exact binomial tail probabilities for an honest QBER of 2% and false-alarm probability 10⁻⁶, giving the alarm threshold and the detection probability of intercept-resend attacks on 10%, 20% and 50% of the pulses (QBER 4.5%, 7%, 14.5%) for sample sizes from 100 to 10,000. It then evaluates a simplified finite-key secret fraction with Hoeffding confidence intervals (security parameter 10⁻¹⁰) for block lengths from 10³ to 10⁸. The labs are exact or Monte Carlo simulations of the protocols at the level of measurement statistics, closed-form key-rate models and a few small cryptographic demonstrations. All device parameters (efficiencies, dark counts, misalignment, mean photon numbers) are ASSUMED values stated in the output; none of the numbers is a measurement of a real QKD system, and security statements hold only within the stated models."
+            },
+            {
+              "type": "code",
+              "id": "c-eavesdropping-detection",
+              "language": "python",
+              "code": "import math\nimport numpy as np\ndef h2(x): return 0.0 if x <= 0 or x >= 1 else -x * math.log2(x) - (1 - x) * math.log2(1 - x)\ndef binom_tail_ge(n, p, k):\n    # P(X >= k) for X ~ Binomial(n, p), computed in log space to stay accurate for small tails\n    total = 0.0\n    for j in range(k, n + 1):\n        total += math.exp(math.lgamma(n + 1) - math.lgamma(j + 1) - math.lgamma(n - j + 1) + j * math.log(p) + (n - j) * math.log(1 - p))\n        if j > k + 200 and total > 0 and math.exp(math.lgamma(n + 1) - math.lgamma(j + 1) - math.lgamma(n - j + 1) + j * math.log(p) + (n - j) * math.log(1 - p)) < 1e-18 * total: break\n    return min(1.0, total)\n\n# --- detecting an eavesdropper: Alice and Bob compare m sifted bits. Honest channel error e0 (2%); an intercept-resend attack on a fraction f adds f/4.\ne0 = 0.02\nalpha = 1e-6                                                                   # tolerated probability of a false alarm\nprint(f\"honest QBER {e0}; false-alarm probability {alpha}; for each sample size m the alarm threshold is the smallest error count k with P(honest >= k) < alpha\")\nprint(f\"{'sample m':>9} {'alarm at k errors':>18} {'detection probability, attack f = 0.1 (QBER 4.5%)':>52} {'f = 0.2 (7%)':>14} {'f = 0.5 (14.5%)':>17}\")\nfor m in (100, 300, 1000, 3000, 10000):\n    k = next(k for k in range(m + 1) if binom_tail_ge(m, e0, k) < alpha)\n    detect = [binom_tail_ge(m, e0 + f / 4, k) for f in (0.1, 0.2, 0.5)]\n    print(f\"{m:>9} {k:>18} {detect[0]:>52.4f} {detect[1]:>14.4f} {detect[2]:>17.4f}\")\nprint(\"a small intercept-resend attack hides in the natural noise unless the sample is large; but a SMALL attack also yields little information (f/2 of the key), and privacy amplification removes it: detection is needed only for attacks large enough to endanger the key\")\n\n# --- finite-key effect: the error rate estimated from m samples carries a statistical uncertainty; the key must be shortened by the worst case within the confidence interval\ndef finite_key_fraction(n_sifted, e_true, eps=1e-10, f_ec=1.16, sample_fraction=0.1):\n    m = int(sample_fraction * n_sifted); n = n_sifted - m\n    delta = math.sqrt(math.log(1 / eps) / (2 * m))                             # Hoeffding deviation of the estimate with confidence 1 - eps\n    e_upper = min(0.5, e_true + delta)\n    rate = 1 - h2(e_upper) - f_ec * h2(e_true) - (5 * math.log2(1 / eps)) / n  # phase-error bound, error correction, and a crude penalty for secrecy and correctness\n    return max(0.0, rate * n / n_sifted), delta\nprint()\nprint(f\"{'sifted block length n':>22} {'estimate deviation':>20} {'secret fraction at QBER 2%':>28} {'at QBER 5%':>12} {'at QBER 8%':>12}\")\nfor n in (10 ** 3, 10 ** 4, 10 ** 5, 10 ** 6, 10 ** 7, 10 ** 8):\n    r2, d = finite_key_fraction(n, 0.02); r5, _ = finite_key_fraction(n, 0.05); r8, _ = finite_key_fraction(n, 0.08)\n    print(f\"{n:>22,} {d:>20.4f} {r2:>28.4f} {r5:>12.4f} {r8:>12.4f}\")\nprint(\"with short blocks the confidence interval swallows the whole key (no key at n = 1,000 even at 2% error); the asymptotic rate is approached only for blocks of millions of bits. The penalty terms here are a crude stand-in for a real finite-key analysis (which is more refined); the qualitative effect is what matters\")\nprint(\"the practical rule: never quote an asymptotic QKD rate for a system that processes short blocks, and always state the finite-key assumptions and the security parameter epsilon\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-eavesdropping-detection",
+              "language": "text",
+              "code": "honest QBER 0.02; false-alarm probability 1e-06; for each sample size m the alarm threshold is the smallest error count k with P(honest >= k) < alpha\n sample m  alarm at k errors    detection probability, attack f = 0.1 (QBER 4.5%)   f = 0.2 (7%)   f = 0.5 (14.5%)\n      100                 12                                               0.0018         0.0469            0.8004\n      300                 22                                               0.0180         0.4423            1.0000\n     1000                 45                                               0.5212         0.9996            1.0000\n     3000                101                                               0.9992         1.0000            1.0000\n    10000                271                                               1.0000         1.0000            1.0000\na small intercept-resend attack hides in the natural noise unless the sample is large; but a SMALL attack also yields little information (f/2 of the key), and privacy amplification removes it: detection is needed only for attacks large enough to endanger the key\n\n sifted block length n   estimate deviation   secret fraction at QBER 2%   at QBER 5%   at QBER 8%\n                 1,000               0.3393                       0.0000       0.0000       0.0000\n                10,000               0.1073                       0.2407       0.0194       0.0000\n               100,000               0.0339                       0.4781       0.2250       0.0180\n             1,000,000               0.0107                       0.5739       0.3035       0.0849\n            10,000,000               0.0034                       0.6082       0.3304       0.1075\n           100,000,000               0.0011                       0.6197       0.3392       0.1148\nwith short blocks the confidence interval swallows the whole key (no key at n = 1,000 even at 2% error); the asymptotic rate is approached only for blocks of millions of bits. The penalty terms here are a crude stand-in for a real finite-key analysis (which is more refined); the qualitative effect is what matters\nthe practical rule: never quote an asymptotic QKD rate for a system that processes short blocks, and always state the finite-key assumptions and the security parameter epsilon",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The alarm threshold is 12 errors for a 100-bit sample, 22 for 300, 45 for 1,000, 101 for 3,000 and 271 for 10,000. A 50% attack (QBER 14.5%) is detected with probability 0.80 already at m = 100 and 1.0000 from m = 300; a 20% attack (QBER 7%) needs about 1,000 bits (0.9996); a 10% attack (QBER 4.5%) is detected with probability only 0.0018 at m = 100, 0.52 at m = 1,000 and 0.9992 at m = 3,000. In the finite-key table the estimate deviation is 0.339, 0.107, 0.034, 0.011, 0.0034 and 0.0011 for block lengths 10³ to 10⁸, and the secret fraction at QBER 2% is 0 (n = 10³), 0.241 (10⁴), 0.478 (10⁵), 0.574 (10⁶), 0.608 (10⁷) and 0.620 (10⁸), approaching the asymptotic value of about 0.62; at QBER 8% a key exists only from about 10⁵ bits and reaches 0.115 at 10⁸.\n\n**Practical consequences.** A QKD system must process blocks of at least a million sifted bits to approach its asymptotic rate, which has an effect on latency and on the rate achievable on slow links; claims of key rates must state the block length and the security parameter ε; and the penalty terms in the lesson are a deliberately crude stand-in for a real finite-key analysis, whose results are somewhat better but with the same shape. **Common mistake:** concluding from \"no alarm\" that no eavesdropper was present: a small attack passes the test and is handled by privacy amplification, which is exactly what the key-fraction formula accounts for."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does the alarm threshold of the error test depend on?",
+              "options": [
+                "The sample size, the honest error rate and the tolerated false-alarm probability",
+                "The key length only",
+                "The detector brand"
+              ],
+              "correct_index": 0,
+              "explanation": "12, 22, 45, 101 and 271 errors for m = 100 to 10,000."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the finite-key effect?",
+              "options": [
+                "The estimated error rate is uncertain, so the key must be shortened by the worst case in the confidence interval; short blocks yield no key",
+                "Keys get longer with time",
+                "Errors vanish for long blocks"
+              ],
+              "correct_index": 0,
+              "explanation": "At n = 1,000 the secret fraction is zero even at 2% error."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is a small intercept-resend attack not a problem even if it passes the test?",
+              "options": [
+                "It gives Eve little information, and privacy amplification removes it",
+                "It cannot happen",
+                "It is detected later"
+              ],
+              "correct_index": 0,
+              "explanation": "The key-fraction formula 1 - 2h(Q) accounts for it."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B115",
+              "locator": "Scarani et al., Quantum cloning: Section IV.B-C (attacks and the information-disturbance balance that the error test measures)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The finite-key penalty terms are a crude stand-in chosen for the lesson and are not a published bound; real finite-key analyses (for example Tomamichel, Lim, Gisin, Renner 2012) were not consulted here. The Hoeffding confidence interval and the exact binomial tails are standard."
+          },
+          "after": "sec-7"
+        },
+        {
+          "slug": "sec-9",
+          "action": "replace",
+          "title": "6.9 QKD Deployment Architecture",
+          "summary": "A trusted-node chain delivering an end-to-end key, the authentication key a round consumes, and a hybrid session key that combines a QKD key with an ML-KEM secret.",
+          "estimated_minutes": 55,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "A deployed QKD system has more parts than the quantum link. **QKD devices** at the two ends of each fibre link produce keys; a **key-management layer** stores the keys and delivers them through a defined interface to **encryptors** (for example link encryptors using a symmetric cipher, or IPsec/TLS gateways); a **classical channel** carries the sifting, error-correction and privacy-amplification messages and must be **authenticated**. Longer distances or networks of more than two sites use **trusted nodes**: each link has its own key, and an end-to-end key is relayed hop by hop, encrypted with a one-time pad using the link keys. Every trusted node sees the key in the clear, so the end-to-end security depends on the physical and operational security of every node.\n\nAuthentication matters because without it a man in the middle can run two separate QKD sessions: QKD needs a **pre-shared secret** (or a computationally secure signature such as a post-quantum signature) to authenticate the first round, and uses part of the key it produces for the next. QKD is therefore a key **expansion** scheme. In practice QKD keys are best **combined** with another key source so that the final session key is secure if either holds. The listing delivers a key through two trusted nodes and shows what the nodes know, computes the authentication key a round consumes using the standard universal-hash authentication cost, and combines a QKD key with an ML-KEM secret through HKDF, bound to the KEM ciphertext. The labs are exact or Monte Carlo simulations of the protocols at the level of measurement statistics, closed-form key-rate models and a few small cryptographic demonstrations. All device parameters (efficiencies, dark counts, misalignment, mean photon numbers) are ASSUMED values stated in the output; none of the numbers is a measurement of a real QKD system, and security statements hold only within the stated models."
+            },
+            {
+              "type": "code",
+              "id": "c-qkd-architecture",
+              "language": "python",
+              "code": "import hashlib, hmac, math, os\nfrom cryptography.hazmat.primitives import hashes\nfrom cryptography.hazmat.primitives.asymmetric import mlkem\nfrom cryptography.hazmat.primitives.kdf.hkdf import HKDF\nrng = os.urandom\nxor = lambda a, b: bytes(x ^ y for x, y in zip(a, b))\n\n# --- a trusted-node chain: QKD works over each link (A-N1, N1-N2, N2-B), each producing its own key. To give A and B a common key, A picks K and sends it hop by hop one-time-padded with the link keys.\nk_a_n1, k_n1_n2, k_n2_b = rng(32), rng(32), rng(32)                            # the secret keys of the three QKD links\nK = rng(32)                                                                    # the end-to-end key chosen by A\nmsg1 = xor(K, k_a_n1)                                                           # A -> N1 (public channel, one-time pad)\nat_n1 = xor(msg1, k_a_n1)                                                       # N1 recovers K\nmsg2 = xor(at_n1, k_n1_n2)                                                      # N1 -> N2\nat_n2 = xor(msg2, k_n1_n2)                                                      # N2 recovers K\nmsg3 = xor(at_n2, k_n2_b)                                                       # N2 -> B\nat_b = xor(msg3, k_n2_b)                                                        # B recovers K\nprint(\"end-to-end key delivered through two trusted nodes:\", at_b == K)\nprint(\"an eavesdropper who sees all three public messages learns nothing (each is one-time padded):\", all(m != K for m in (msg1, msg2, msg3)))\nprint(\"but each trusted node holds the key in the clear:\", at_n1 == K and at_n2 == K, \"-> the security of the end-to-end key depends on the honesty and physical security of every relay\")\n\n# --- authentication of the classical channel: QKD is only secure if the classical messages are authenticated; a Wegman-Carter style one-time MAC consumes fresh key bits per message\ndef authentication_key_bits(message_bits, tag_bits=64):\n    # an almost-strongly-universal family with a tag of t bits needs about 2 t + log2(message length) key bits (a standard result stated from the literature)\n    return 2 * tag_bits + math.ceil(math.log2(message_bits))\nprint()\nprint(f\"{'classical message length (bits)':>32} {'authentication key bits (tag 64)':>34}\")\nfor bits in (10 ** 4, 10 ** 6, 10 ** 8):\n    print(f\"{bits:>32,} {authentication_key_bits(bits):>34}\")\nprint(\"the first authentication needs a pre-shared secret (an initial key) or a computationally secure authentication such as a post-quantum signature; after that part of the generated key is reused to authenticate the next round, so QKD is a key EXPANSION scheme, not key creation from nothing\")\n\n# --- how QKD keys are used in practice: combine the QKD key with a post-quantum KEM secret so that the session key is safe if EITHER source holds (a hybrid)\nqkd_key = k_a_n1                                                                # the key obtained over a QKD link\nkem_private = mlkem.MLKEM768PrivateKey.generate()\nkem_secret, kem_ciphertext = kem_private.public_key().encapsulate()\ndef combine(*parts, label=b\"qkd+mlkem session v1\"):\n    return HKDF(algorithm=hashes.SHA256(), length=32, salt=None, info=label).derive(b\"\".join(len(p).to_bytes(2, \"big\") + p for p in parts))\nsession_a = combine(qkd_key, kem_secret, kem_ciphertext)\nsession_b = combine(qkd_key, kem_private.decapsulate(kem_ciphertext), kem_ciphertext)\nprint()\nprint(\"combined session key (QKD key + ML-KEM secret, bound to the ciphertext) agrees on both sides:\", session_a == session_b)\nprint(\"an attacker who breaks only the KEM (or only the QKD link) does not learn the session key:\", combine(qkd_key, rng(32), kem_ciphertext) != session_a and combine(rng(32), kem_secret, kem_ciphertext) != session_a)\nprint(\"QKD networks in practice combine: link-level QKD devices, a key-management layer that stores and delivers keys to encryptors, classical authentication, and a trusted-node security model; they cover fibre links of tens to a few hundred kilometres and a handful of dedicated sites, not general-purpose internet security\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-qkd-architecture",
+              "language": "text",
+              "code": "end-to-end key delivered through two trusted nodes: True\nan eavesdropper who sees all three public messages learns nothing (each is one-time padded): True\nbut each trusted node holds the key in the clear: True -> the security of the end-to-end key depends on the honesty and physical security of every relay\n\n classical message length (bits)   authentication key bits (tag 64)\n                          10,000                                142\n                       1,000,000                                148\n                     100,000,000                                155\nthe first authentication needs a pre-shared secret (an initial key) or a computationally secure authentication such as a post-quantum signature; after that part of the generated key is reused to authenticate the next round, so QKD is a key EXPANSION scheme, not key creation from nothing\n\ncombined session key (QKD key + ML-KEM secret, bound to the ciphertext) agrees on both sides: True\nan attacker who breaks only the KEM (or only the QKD link) does not learn the session key: True\nQKD networks in practice combine: link-level QKD devices, a key-management layer that stores and delivers keys to encryptors, classical authentication, and a trusted-node security model; they cover fibre links of tens to a few hundred kilometres and a handful of dedicated sites, not general-purpose internet security",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The key is delivered end to end through the chain A–N1–N2–B, an eavesdropper who sees all three public one-time-padded messages learns nothing, and both trusted nodes hold the key in the clear: the architecture works but concentrates trust. A round of authentication with a 64-bit tag consumes about 142 key bits for a 10,000-bit message and 155 bits for a 10⁸-bit message (the cost is dominated by the tag, 2t + log₂(message length), a standard universal-hash result stated from the literature), which is negligible against the key the round produces, but needs an initial secret to start. The combined session key from the QKD key and the ML-KEM secret (with the ciphertext in the derivation) agrees on both sides, and an attacker who replaces either component with a random value obtains a different key.\n\n**Architectural conclusions.** QKD secures the key establishment on the links it covers; it does not protect the endpoints, does not provide signatures and needs authentication. A hybrid with a post-quantum KEM (lesson 11.9) gives defence in depth at the cost of extra complexity. Key-management interfaces and certification of QKD modules are still maturing (standards exist or are in preparation; not summarised here). **Common mistake:** presenting a trusted-node QKD network as \"unhackable end to end\"."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What does a trusted node in a QKD chain know?",
+              "options": [
+                "The end-to-end key in the clear",
+                "Nothing about the key",
+                "Only a hash of the key"
+              ],
+              "correct_index": 0,
+              "explanation": "The key is relayed hop by hop and decrypted at each node."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why does QKD need an initial pre-shared secret or a signature?",
+              "options": [
+                "The classical channel must be authenticated or a man in the middle can run two sessions",
+                "The quantum channel is public",
+                "The qubits are too noisy"
+              ],
+              "correct_index": 0,
+              "explanation": "After the start, part of the generated key authenticates the next round."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why combine a QKD key with a post-quantum KEM secret?",
+              "options": [
+                "The session key stays secure if either source holds",
+                "It is faster",
+                "QKD cannot be used alone for any purpose"
+              ],
+              "correct_index": 0,
+              "explanation": "An attacker breaking only one component does not learn the key."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B95",
+              "locator": "NIST SP 800-227, Section 4.6 (combining key-establishment mechanisms with a key combiner); also module C10.10"
+            },
+            {
+              "book": "B04",
+              "locator": "FIPS 203 (ML-KEM) as the post-quantum component of the hybrid"
+            },
+            {
+              "book": "B100",
+              "locator": "cryptography: ML-KEM and HKDF used in the demonstration"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The cost of universal-hash (Wegman-Carter) authentication, the trusted-node architecture and the key-management interfaces are described from general knowledge and not from the cited sources; standardisation status of QKD interfaces was not checked."
+          },
+          "after": "sec-8"
+        },
+        {
+          "slug": "sec-10",
+          "action": "replace",
+          "title": "6.10 QKD Limitations",
+          "summary": "Rate and range of a decoy-state BB84 link under assumed parameters (about 197 km, a few hundred keys per second at 100 km), the repeaterless limit, and the structural limitations.",
+          "estimated_minutes": 50,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "QKD is physically well founded, but its practical limitations are significant and should be stated plainly in any assessment. **Rate and range**: the key rate falls exponentially with fibre length and the usable range of a point-to-point link is limited by dark counts, so ranges are tens to a few hundred kilometres and rates kilobits to megabits per second; the repeaterless **PLOB bound** says that even an ideal receiver cannot beat a rate proportional to the channel transmission. **Structural limitations**: QKD needs an authenticated classical channel, works point to point (networks need trusted nodes or, in research, repeaters), needs specialised hardware and often dedicated fibre, provides no signatures or identity, and protects only the key exchange on the links it covers. **Implementation security**: the proofs are about modelled devices and real devices have been attacked (6.7).\n\nThe listing evaluates the same decoy-state model as 6.4 over distances from 10 to 400 km for a 1 GHz clock, gives the rate in bits per second, the number of fresh 256-bit keys per second and the repeaterless PLOB limit per channel use, finds the distance at which the key rate reaches zero, and prints the structural limitations. The labs are exact or Monte Carlo simulations of the protocols at the level of measurement statistics, closed-form key-rate models and a few small cryptographic demonstrations. All device parameters (efficiencies, dark counts, misalignment, mean photon numbers) are ASSUMED values stated in the output; none of the numbers is a measurement of a real QKD system, and security statements hold only within the stated models."
+            },
+            {
+              "type": "code",
+              "id": "c-qkd-limits",
+              "language": "python",
+              "code": "import math\nimport numpy as np\ndef h2(x): return 0.0 if x <= 0 or x >= 1 else -x * math.log2(x) - (1 - x) * math.log2(1 - x)\ndef poisson(mu, n): return math.exp(-mu) * mu ** n / math.factorial(n)\n\n# --- the achievable range and rate of a point-to-point decoy-state BB84 link under ASSUMED parameters (same model as lesson 6.4), against the repeaterless PLOB limit of the channel\neta_det, Y0, e_det, mu, f_ec, clock = 0.1, 1e-6, 0.015, 0.5, 1.16, 1e9\ndef rate_per_pulse(L):\n    eta = 10 ** (-0.2 * L / 10) * eta_det\n    Y = lambda n: 1 - (1 - Y0) * (1 - eta) ** n\n    Qmu = sum(poisson(mu, n) * Y(n) for n in range(60))\n    Emu = (0.5 * Y0 + sum(poisson(mu, n) * e_det * (Y(n) - Y0) for n in range(1, 60))) / Qmu\n    Q1 = poisson(mu, 1) * Y(1)\n    return max(0.0, 0.5 * (-Qmu * f_ec * h2(Emu) + Q1 * (1 - h2(e_det))))\ndef plob(L):\n    eta = 10 ** (-0.2 * L / 10)\n    return -math.log1p(-eta) / math.log(2)\nprint(\"ASSUMED parameters: mu 0.5, detector efficiency 10%, dark counts 1e-6, misalignment error 1.5%, error-correction efficiency 1.16, clock 1 GHz (an idealised model, not a product)\")\nprint(f\"{'L (km)':>7} {'secret key per second (decoy BB84 model)':>42} {'256-bit keys per second':>25} {'PLOB limit per channel use (ideal repeaterless)':>50}\")\nfor L in (10, 25, 50, 100, 150, 200, 250, 300, 400):\n    r = rate_per_pulse(L) * clock\n    print(f\"{L:>7} {r:>42.3e} {r / 256:>25.3e} {plob(L):>50.3e}\")\nmax_L = max(L for L in np.arange(0, 600, 1) if rate_per_pulse(L) > 0)\nprint(f\"in this model the key rate drops to zero near {max_L} km of fibre; the limit comes from dark counts against the exponentially falling signal, while the ideal repeaterless bound is above zero (but exponentially small) at any distance\")\nprint(\"a link at 100 km delivers about\", int(rate_per_pulse(100) * clock / 256), \"fresh 256-bit keys per second in the model: enough to refresh the keys of a few encryptors every second, not to serve an internet-scale number of independent connections\")\n\nprint()\nprint(\"structural limitations of QKD (independent of the numbers above):\")\nfor item, text in (\n    (\"authentication\", \"needs an authenticated classical channel: a pre-shared key or a computationally secure signature is required to start; QKD expands a key, it does not replace authentication\"),\n    (\"point to point\", \"a link joins two devices; networks need trusted nodes or, in research, quantum repeaters; a trusted node holds the keys in the clear\"),\n    (\"distance and rate\", \"tens to a few hundred kilometres over fibre; longer distances need satellites or trusted-node chains; rates are kilobits to megabits per second\"),\n    (\"special hardware\", \"dedicated fibre or wavelength, single-photon detectors, and specialised devices at both ends; no software-only deployment\"),\n    (\"implementation security\", \"the proofs hold for modelled devices; real devices have been attacked (6.7); certification and testing of implementations are still maturing\"),\n    (\"no signatures, no identity\", \"QKD gives shared secret keys only; it does not provide digital signatures, certificates or non-repudiation\"),\n    (\"cost and operations\", \"device cost, fibre, maintenance and calibration; every link needs its own pair of devices\"),\n    (\"scope of protection\", \"protects the key exchange on the links it covers; it does not protect endpoints, software or the other parts of the system\")):\n    print(f\"  {item:<28} {text}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-qkd-limits",
+              "language": "text",
+              "code": "ASSUMED parameters: mu 0.5, detector efficiency 10%, dark counts 1e-6, misalignment error 1.5%, error-correction efficiency 1.16, clock 1 GHz (an idealised model, not a product)\n L (km)   secret key per second (decoy BB84 model)   256-bit keys per second    PLOB limit per channel use (ideal repeaterless)\n     10                                  6.467e+06                 2.526e+04                                          1.438e+00\n     25                                  3.232e+06                 1.263e+04                                          5.484e-01\n     50                                  1.019e+06                 3.982e+03                                          1.520e-01\n    100                                  1.004e+05                 3.922e+02                                          1.450e-02\n    150                                  8.682e+03                 3.391e+01                                          1.443e-03\n    200                                  0.000e+00                 0.000e+00                                          1.443e-04\n    250                                  0.000e+00                 0.000e+00                                          1.443e-05\n    300                                  0.000e+00                 0.000e+00                                          1.443e-06\n    400                                  0.000e+00                 0.000e+00                                          1.443e-08\nin this model the key rate drops to zero near 197 km of fibre; the limit comes from dark counts against the exponentially falling signal, while the ideal repeaterless bound is above zero (but exponentially small) at any distance\na link at 100 km delivers about 392 fresh 256-bit keys per second in the model: enough to refresh the keys of a few encryptors every second, not to serve an internet-scale number of independent connections\n\nstructural limitations of QKD (independent of the numbers above):\n  authentication               needs an authenticated classical channel: a pre-shared key or a computationally secure signature is required to start; QKD expands a key, it does not replace authentication\n  point to point               a link joins two devices; networks need trusted nodes or, in research, quantum repeaters; a trusted node holds the keys in the clear\n  distance and rate            tens to a few hundred kilometres over fibre; longer distances need satellites or trusted-node chains; rates are kilobits to megabits per second\n  special hardware             dedicated fibre or wavelength, single-photon detectors, and specialised devices at both ends; no software-only deployment\n  implementation security      the proofs hold for modelled devices; real devices have been attacked (6.7); certification and testing of implementations are still maturing\n  no signatures, no identity   QKD gives shared secret keys only; it does not provide digital signatures, certificates or non-repudiation\n  cost and operations          device cost, fibre, maintenance and calibration; every link needs its own pair of devices\n  scope of protection          protects the key exchange on the links it covers; it does not protect endpoints, software or the other parts of the system",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "In the model the secret key rate is 6.5×10⁶ bits per second at 10 km, 3.2×10⁶ at 25 km, 1.0×10⁶ at 50 km, 1.0×10⁵ at 100 km and 8.7×10³ at 150 km, and zero from 200 km on (the rate drops to zero near 197 km); expressed in keys this is about 25,000, 12,600, 3,980, 392 and 34 fresh 256-bit keys per second. A 100 km link therefore supplies enough keys to refresh a few encryptors every second but not to serve an internet-scale number of independent connections. The PLOB limit per channel use falls from 1.44 at 10 km to 1.4×10⁻⁸ at 400 km but is never zero: the zero rate of the practical model is caused by dark counts and finite detector efficiency, not by a law of nature (and repeaters and satellites change the picture, 5.6 and 5.7).\n\nThe structural list is the more important part: QKD gives shared secret keys, nothing else; it cannot replace the signatures and certificates that the internet relies on; and its security is tied to hardware. **Common mistake:** comparing the rate of a QKD link with the throughput of a software key exchange without noting that a post-quantum KEM exchange needs 32 bytes of shared secret per handshake and can serve many connections per second per core, while QKD supplies key material at a fixed rate per link."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "What limits the range of a point-to-point fibre QKD link?",
+              "options": [
+                "The exponentially falling signal against a constant dark-count noise floor",
+                "The wavelength of light",
+                "The protocol name"
+              ],
+              "correct_index": 0,
+              "explanation": "The model's rate drops to zero near 197 km."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Which of these is not provided by QKD?",
+              "options": [
+                "Digital signatures and identity",
+                "A shared secret key",
+                "Detection of some eavesdropping"
+              ],
+              "correct_index": 0,
+              "explanation": "Signatures still need PQC or classical algorithms."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is a trusted-node chain a limitation?",
+              "options": [
+                "Each node holds the key in the clear",
+                "It is slower than one link",
+                "It needs no hardware"
+              ],
+              "correct_index": 0,
+              "explanation": "End-to-end security depends on every node."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B115",
+              "locator": "Scarani et al., Quantum cloning: Section IV and the closing discussion of cryptographic applications"
+            },
+            {
+              "book": "B113",
+              "locator": "Wilde: the capacity chapters for the repeaterless rate-loss background (see also module C5)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The rate and range come from the lesson's assumed-parameter model (the same as 6.4) and are not specifications of any product; the structural limitations are a summary of general knowledge and of the lessons of this module. The PLOB bound is stated from the literature."
+          },
+          "after": "sec-9"
+        },
+        {
+          "slug": "sec-11",
+          "action": "replace",
+          "title": "6.11 QKD vs. PQC (Full Comparison)",
+          "summary": "A rule-based comparison of PQC and QKD on six deployment scenarios with an explanation for every verdict, a criterion table, and what regulators have said (with the verification status of each statement).",
+          "estimated_minutes": 70,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "PQC and QKD are often presented as rivals. They solve **different problems with different assumptions**, and a sound comparison starts from the requirements of a deployment. **PQC** (ML-KEM for key establishment, ML-DSA and SLH-DSA for signatures, FIPS 203, 204 and 205) is **software**: it runs on existing hardware over the existing internet, covers both key establishment and signatures, scales to any number of endpoints and rests on **computational** assumptions that standards bodies have evaluated for years but that could, in principle, be weakened. **QKD** gives **information-theoretic** key material under a device model, but only for point-to-point links over dedicated fibre or free space, with limited range and rate, **no signatures**, a need for authenticated classical channels, specialised hardware and a security that depends on the implementation (modules 6.7, 6.9 and 6.10).\n\nThe listing encodes the properties established in this and earlier modules as explicit rules, applies them to six scenarios (an internet-scale web service, a data-centre interconnect over 60 km of dark fibre, signing software updates for field devices, two sites 800 km apart with and without trusted relays, a mobile application) and prints, for each option, whether it applies and **why**; a criterion table follows. The rules are the lesson's summary of the established properties; they are not a procurement tool. The labs are exact or Monte Carlo simulations of the protocols at the level of measurement statistics, closed-form key-rate models and a few small cryptographic demonstrations. All device parameters (efficiencies, dark counts, misalignment, mean photon numbers) are ASSUMED values stated in the output; none of the numbers is a measurement of a real QKD system, and security statements hold only within the stated models."
+            },
+            {
+              "type": "code",
+              "id": "c-qkd-vs-pqc",
+              "language": "python",
+              "code": "from dataclasses import dataclass\n\n# A rule-based comparison of PQC and QKD for a given deployment. Every rule below states a property established in modules B9 to B11, C5 and C6; the engine explains each verdict.\n@dataclass\nclass Scenario:\n    name: str\n    needs_signatures: bool          # authentication of identities, software or documents is required\n    endpoints: str                  # \"many\" (internet scale), \"few\" (a handful of fixed sites), \"devices\" (constrained, no fibre)\n    max_link_km: float              # the longest single link between two parties\n    dedicated_fibre: bool           # dark fibre or a dedicated wavelength is available end to end\n    software_only: bool             # the solution must be deployable by software update on existing hardware\n    relays_trusted: bool            # intermediate nodes may hold keys in the clear\n\ndef assess(s):\n    verdicts = {}\n    # PQC (ML-KEM key establishment, ML-DSA / SLH-DSA signatures): software, works over any network, signatures available (FIPS 203, 204, 205); security is computational\n    reasons = [\"runs as software on existing hardware and over the existing internet\", \"provides both key establishment (ML-KEM) and signatures (ML-DSA, SLH-DSA)\", \"security is computational: it rests on the hardness of lattice and hash problems\"]\n    verdicts[\"PQC (ML-KEM + ML-DSA / SLH-DSA)\"] = (\"applicable\", reasons)\n    # QKD point to point\n    why, ok = [], True\n    if s.needs_signatures: ok = False; why.append(\"QKD provides no digital signatures or identity: signatures still need PQC or classical algorithms\")\n    if s.endpoints == \"many\": ok = False; why.append(\"QKD links join device pairs: it does not scale to internet-scale numbers of endpoints\")\n    if s.endpoints == \"devices\": ok = False; why.append(\"constrained devices without dedicated fibre cannot host QKD hardware\")\n    if s.max_link_km > 100: ok = False; why.append(f\"a {s.max_link_km:.0f} km fibre link is beyond the practical range of a direct QKD link in the lesson's model (about 200 km at best, with low rates)\")\n    if not s.dedicated_fibre: ok = False; why.append(\"needs dedicated fibre or wavelength\")\n    if s.software_only: ok = False; why.append(\"needs specialised hardware: not a software update\")\n    if ok: why.append(\"short, dedicated, fixed link between few sites: the use case QKD was built for; it still needs authentication of the classical channel\")\n    verdicts[\"QKD point to point\"] = (\"applicable\" if ok else \"not suitable\", why)\n    # QKD with trusted nodes\n    why, ok = [], True\n    if s.needs_signatures: ok = False; why.append(\"no signatures\")\n    if s.endpoints != \"few\": ok = False; why.append(\"only for a handful of fixed sites\")\n    if s.max_link_km <= 100 and ok: ok = False; why.append(\"no relay needed: the span fits one direct link (point-to-point QKD above)\")\n    if s.max_link_km > 100 and not s.relays_trusted: ok = False; why.append(\"distance beyond one link needs trusted relay nodes, which the scenario does not accept\")\n    if not s.dedicated_fibre: ok = False; why.append(\"needs dedicated fibre\")\n    if s.software_only: ok = False; why.append(\"not a software update\")\n    if ok: why.append(\"a chain of QKD links with trusted nodes can span the distance; each relay holds the keys in the clear\")\n    verdicts[\"QKD with trusted nodes\"] = (\"applicable\" if ok else \"not suitable\", why)\n    # hybrid: PQC combined with QKD keys\n    base_ok = verdicts[\"QKD point to point\"][0] == \"applicable\" or verdicts[\"QKD with trusted nodes\"][0] == \"applicable\"\n    verdicts[\"PQC + QKD hybrid\"] = (\"applicable\" if base_ok else \"not applicable (QKD part unavailable)\", [\"session keys derived from both sources are secure if either holds (module C6.9); adds cost and complexity\", \"PQC still supplies authentication and the large-scale deployment path\"] if base_ok else [\"there is no QKD component to combine\"])\n    return verdicts\n\nscenarios = [\n    Scenario(\"web service for millions of clients\", True, \"many\", 10000, False, True, False),\n    Scenario(\"data-centre interconnect, two sites 60 km apart, dark fibre\", False, \"few\", 60, True, False, True),\n    Scenario(\"software update signing for devices in the field\", True, \"devices\", 0, False, True, False),\n    Scenario(\"two government sites 800 km apart, dedicated fibre\", False, \"few\", 800, True, False, False),\n    Scenario(\"same, relay nodes in secured facilities\", False, \"few\", 800, True, False, True),\n    Scenario(\"mobile app and cloud backend\", True, \"many\", 10000, False, True, False),\n]\nfor s in scenarios:\n    print(f\"== {s.name}\")\n    for option, (verdict, why) in assess(s).items():\n        print(f\"   {option:<34} {verdict}\")\n        for w in why:\n            print(f\"        - {w}\")\nprint()\n# --- what each technology protects against, from the lessons: the comparison on the points that matter for a decision\nprint(f\"{'criterion':<34} {'PQC':<48} {'QKD':<48}\")\nrows = [\n    (\"security basis\", \"computational hardness (lattices, hashes, codes)\", \"physics: information-theoretic key, under a device model\"),\n    (\"assumptions to trust\", \"the problem is hard; the implementation is correct\", \"the devices match the model; authenticated classical channel; trusted nodes for networks\"),\n    (\"signatures / identity\", \"yes (ML-DSA, SLH-DSA)\", \"no\"),\n    (\"deployment\", \"software, any network, standardised (FIPS 203, 204, 205)\", \"dedicated hardware and fibre; point to point\"),\n    (\"reach\", \"global\", \"tens to a few hundred km per link; satellites; trusted-node chains\"),\n    (\"throughput\", \"limited by CPU, thousands of handshakes per second per core natively\", \"kilobits to megabits of key per second per link\"),\n    (\"harvest-now-decrypt-later\", \"addressed by deploying KEMs for key exchange now\", \"addressed on covered links only\"),\n    (\"main risks\", \"an algorithm may be weakened; implementation flaws (C10)\", \"hardware attacks (6.7); operational complexity; limited coverage\"),\n]\nfor c, p, q in rows:\n    print(f\"{c:<34} {p:<48} {q:<48}\")\nprint(\"the rules and the table summarise what the previous lessons established; regulators' published positions on QKD are listed in the lesson text with their verification status, not encoded here\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-qkd-vs-pqc",
+              "language": "text",
+              "code": "== web service for millions of clients\n   PQC (ML-KEM + ML-DSA / SLH-DSA)    applicable\n        - runs as software on existing hardware and over the existing internet\n        - provides both key establishment (ML-KEM) and signatures (ML-DSA, SLH-DSA)\n        - security is computational: it rests on the hardness of lattice and hash problems\n   QKD point to point                 not suitable\n        - QKD provides no digital signatures or identity: signatures still need PQC or classical algorithms\n        - QKD links join device pairs: it does not scale to internet-scale numbers of endpoints\n        - a 10000 km fibre link is beyond the practical range of a direct QKD link in the lesson's model (about 200 km at best, with low rates)\n        - needs dedicated fibre or wavelength\n        - needs specialised hardware: not a software update\n   QKD with trusted nodes             not suitable\n        - no signatures\n        - only for a handful of fixed sites\n        - distance beyond one link needs trusted relay nodes, which the scenario does not accept\n        - needs dedicated fibre\n        - not a software update\n   PQC + QKD hybrid                   not applicable (QKD part unavailable)\n        - there is no QKD component to combine\n== data-centre interconnect, two sites 60 km apart, dark fibre\n   PQC (ML-KEM + ML-DSA / SLH-DSA)    applicable\n        - runs as software on existing hardware and over the existing internet\n        - provides both key establishment (ML-KEM) and signatures (ML-DSA, SLH-DSA)\n        - security is computational: it rests on the hardness of lattice and hash problems\n   QKD point to point                 applicable\n        - short, dedicated, fixed link between few sites: the use case QKD was built for; it still needs authentication of the classical channel\n   QKD with trusted nodes             not suitable\n        - no relay needed: the span fits one direct link (point-to-point QKD above)\n   PQC + QKD hybrid                   applicable\n        - session keys derived from both sources are secure if either holds (module C6.9); adds cost and complexity\n        - PQC still supplies authentication and the large-scale deployment path\n== software update signing for devices in the field\n   PQC (ML-KEM + ML-DSA / SLH-DSA)    applicable\n        - runs as software on existing hardware and over the existing internet\n        - provides both key establishment (ML-KEM) and signatures (ML-DSA, SLH-DSA)\n        - security is computational: it rests on the hardness of lattice and hash problems\n   QKD point to point                 not suitable\n        - QKD provides no digital signatures or identity: signatures still need PQC or classical algorithms\n        - constrained devices without dedicated fibre cannot host QKD hardware\n        - needs dedicated fibre or wavelength\n        - needs specialised hardware: not a software update\n   QKD with trusted nodes             not suitable\n        - no signatures\n        - only for a handful of fixed sites\n        - needs dedicated fibre\n        - not a software update\n   PQC + QKD hybrid                   not applicable (QKD part unavailable)\n        - there is no QKD component to combine\n== two government sites 800 km apart, dedicated fibre\n   PQC (ML-KEM + ML-DSA / SLH-DSA)    applicable\n        - runs as software on existing hardware and over the existing internet\n        - provides both key establishment (ML-KEM) and signatures (ML-DSA, SLH-DSA)\n        - security is computational: it rests on the hardness of lattice and hash problems\n   QKD point to point                 not suitable\n        - a 800 km fibre link is beyond the practical range of a direct QKD link in the lesson's model (about 200 km at best, with low rates)\n   QKD with trusted nodes             not suitable\n        - distance beyond one link needs trusted relay nodes, which the scenario does not accept\n   PQC + QKD hybrid                   not applicable (QKD part unavailable)\n        - there is no QKD component to combine\n== same, relay nodes in secured facilities\n   PQC (ML-KEM + ML-DSA / SLH-DSA)    applicable\n        - runs as software on existing hardware and over the existing internet\n        - provides both key establishment (ML-KEM) and signatures (ML-DSA, SLH-DSA)\n        - security is computational: it rests on the hardness of lattice and hash problems\n   QKD point to point                 not suitable\n        - a 800 km fibre link is beyond the practical range of a direct QKD link in the lesson's model (about 200 km at best, with low rates)\n   QKD with trusted nodes             applicable\n        - a chain of QKD links with trusted nodes can span the distance; each relay holds the keys in the clear\n   PQC + QKD hybrid                   applicable\n        - session keys derived from both sources are secure if either holds (module C6.9); adds cost and complexity\n        - PQC still supplies authentication and the large-scale deployment path\n== mobile app and cloud backend\n   PQC (ML-KEM + ML-DSA / SLH-DSA)    applicable\n        - runs as software on existing hardware and over the existing internet\n        - provides both key establishment (ML-KEM) and signatures (ML-DSA, SLH-DSA)\n        - security is computational: it rests on the hardness of lattice and hash problems\n   QKD point to point                 not suitable\n        - QKD provides no digital signatures or identity: signatures still need PQC or classical algorithms\n        - QKD links join device pairs: it does not scale to internet-scale numbers of endpoints\n        - a 10000 km fibre link is beyond the practical range of a direct QKD link in the lesson's model (about 200 km at best, with low rates)\n        - needs dedicated fibre or wavelength\n        - needs specialised hardware: not a software update\n   QKD with trusted nodes             not suitable\n        - no signatures\n        - only for a handful of fixed sites\n        - distance beyond one link needs trusted relay nodes, which the scenario does not accept\n        - needs dedicated fibre\n        - not a software update\n   PQC + QKD hybrid                   not applicable (QKD part unavailable)\n        - there is no QKD component to combine\n\ncriterion                          PQC                                              QKD                                             \nsecurity basis                     computational hardness (lattices, hashes, codes) physics: information-theoretic key, under a device model\nassumptions to trust               the problem is hard; the implementation is correct the devices match the model; authenticated classical channel; trusted nodes for networks\nsignatures / identity              yes (ML-DSA, SLH-DSA)                            no                                              \ndeployment                         software, any network, standardised (FIPS 203, 204, 205) dedicated hardware and fibre; point to point    \nreach                              global                                           tens to a few hundred km per link; satellites; trusted-node chains\nthroughput                         limited by CPU, thousands of handshakes per second per core natively kilobits to megabits of key per second per link \nharvest-now-decrypt-later          addressed by deploying KEMs for key exchange now addressed on covered links only                 \nmain risks                         an algorithm may be weakened; implementation flaws (C10) hardware attacks (6.7); operational complexity; limited coverage\nthe rules and the table summarise what the previous lessons established; regulators' published positions on QKD are listed in the lesson text with their verification status, not encoded here",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "**Results.** PQC is applicable in all six scenarios, and in the two that involve signatures (software-update signing and the web or mobile services) it is the only option, because QKD gives no signatures and does not scale to many endpoints. Point-to-point QKD is applicable only in the data-centre interconnect: a short (60 km), fixed link over dark fibre between two sites, which is the use case it was built for; even there it still needs authentication of the classical channel, and a hybrid with PQC is possible. For the 800 km link between two sites, QKD is not suitable as a direct link, and it becomes applicable only as a trusted-node chain, and only if the relays are acceptable (each holds the key in the clear). The criterion table summarises: security basis (computational against physics-based under a device model), signatures (yes against no), deployment (software and standardised against dedicated hardware), reach (global against tens to a few hundred kilometres per link), and main risks.\n\n**What regulators and agencies have said.** My understanding, recalled from published statements and **not verified here** (the sources could not be retrieved in this session, and the NSA page returned an access error), is that several national agencies, among them the US NSA, the UK NCSC and the French, German and Dutch cyber-security agencies, have stated that they do not recommend QKD as a general replacement for quantum-resistant cryptography and prefer post-quantum cryptography, citing authentication requirements, hardware limitations, cost, the lack of signatures and implementation risk; some allow research or niche use. A reader who needs to rely on these positions must check the current text of each agency's publication. **A defensible conclusion** from the technical lessons themselves does not depend on those statements: for the great majority of deployments PQC is the migration path; QKD is a possible complement in specific, well-bounded settings, and a hybrid combining both is an option where the costs are justified."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which scenario of the lesson is the best fit for point-to-point QKD?",
+              "options": [
+                "A short fixed link over dedicated fibre between two sites, such as the 60 km data-centre interconnect",
+                "An internet-scale web service",
+                "Signing software updates"
+              ],
+              "correct_index": 0,
+              "explanation": "Even there authentication of the classical channel is still needed."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why can QKD not replace PQC for software signing?",
+              "options": [
+                "QKD provides no digital signatures or identity",
+                "QKD is too fast",
+                "Software cannot use keys"
+              ],
+              "correct_index": 0,
+              "explanation": "ML-DSA and SLH-DSA provide signatures."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What is the main trust cost of using trusted nodes for long distances?",
+              "options": [
+                "Every relay holds the key in the clear",
+                "Relays slow the link",
+                "Relays need no hardware"
+              ],
+              "correct_index": 0,
+              "explanation": "The security of the end-to-end key depends on all nodes."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B04",
+              "locator": "FIPS 203 (ML-KEM), and (B95) NIST SP 800-227 for the combination of key-establishment mechanisms"
+            },
+            {
+              "book": "B115",
+              "locator": "Scarani et al., Quantum cloning: Section IV on the security basis of quantum cryptography"
+            },
+            {
+              "book": "B113",
+              "locator": "Wilde: capacity and communication chapters (rate and loss background)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The positions of national agencies (NSA, NCSC, ANSSI, BSI and others) on QKD are recalled and were NOT verified: the NSA page returned an access error and other sources could not be retrieved; they must be checked against the agencies' current publications before being relied on. The comparison rules summarise the properties established in this and earlier modules and were not validated against a standard."
+          },
+          "after": "sec-10"
+        }
+      ],
+      "quiz": [
+        {
+          "id": "c6-n01",
+          "prompt": "What QBER does intercept-resend on every BB84 pulse cause?",
+          "options": [
+            "25%",
+            "50%",
+            "11%"
+          ],
+          "correct_index": 0,
+          "explanation": "Half the time the wrong basis, then half of those wrong.",
+          "source": {
+            "book": "B115",
+            "locator": "Section IV.B"
+          }
+        },
+        {
+          "id": "c6-n02",
+          "prompt": "What does sifting do in BB84?",
+          "options": [
+            "Keeps the pulses with matching bases",
+            "Corrects errors",
+            "Hashes the key"
+          ],
+          "correct_index": 0,
+          "explanation": "About half of the pulses are kept.",
+          "source": {
+            "book": "B115",
+            "locator": "Section IV"
+          }
+        },
+        {
+          "id": "c6-n03",
+          "prompt": "What does B92 use for its two key states?",
+          "options": [
+            "Two non-orthogonal states",
+            "Four states in two bases",
+            "A Bell pair"
+          ],
+          "correct_index": 0,
+          "explanation": "|0⟩ and |+⟩.",
+          "source": {
+            "book": "B113",
+            "locator": "Chapter 9"
+          }
+        },
+        {
+          "id": "c6-n04",
+          "prompt": "What does E91's CHSH test certify?",
+          "options": [
+            "That correlations are quantum, so Eve could not have known them in advance",
+            "That the key is secure by itself",
+            "That the channel is lossless"
+          ],
+          "correct_index": 0,
+          "explanation": "S = 2 sqrt(2) for the ideal pair.",
+          "source": {
+            "book": "B110",
+            "locator": "CHSH chapter"
+          }
+        },
+        {
+          "id": "c6-n05",
+          "prompt": "What does the decoy-state method bound?",
+          "options": [
+            "The yield and error rate of single-photon pulses",
+            "The dark count rate",
+            "The detector efficiency"
+          ],
+          "correct_index": 0,
+          "explanation": "The yield of n-photon pulses cannot depend on intensity.",
+          "source": {
+            "book": "B115",
+            "locator": "Section IV.B"
+          }
+        },
+        {
+          "id": "c6-n06",
+          "prompt": "What does the photon-number-splitting attack exploit?",
+          "options": [
+            "Multi-photon pulses of weak coherent sources",
+            "Detector blinding",
+            "Fibre bending"
+          ],
+          "correct_index": 0,
+          "explanation": "Eve keeps one photon and measures it later.",
+          "source": {
+            "book": "B115",
+            "locator": "Section IV.B"
+          }
+        },
+        {
+          "id": "c6-n07",
+          "prompt": "What does MDI-QKD remove from the trusted base?",
+          "options": [
+            "The measurement devices",
+            "The sources",
+            "The classical channel"
+          ],
+          "correct_index": 0,
+          "explanation": "A Bell-state measurement by an untrusted relay.",
+          "source": {
+            "book": "B113",
+            "locator": "Chapter 6"
+          }
+        },
+        {
+          "id": "c6-n08",
+          "prompt": "On what is DIQKD's security based?",
+          "options": [
+            "The observed CHSH violation with black-box devices",
+            "Trusted sources",
+            "Trusted detectors"
+          ],
+          "correct_index": 0,
+          "explanation": "The DI rate bound needs w above 0.857 for Werner devices.",
+          "source": {
+            "book": "B110",
+            "locator": "CHSH chapter"
+          }
+        },
+        {
+          "id": "c6-n09",
+          "prompt": "What is the asymptotic BB84 error threshold under collective attacks?",
+          "options": [
+            "About 11%",
+            "About 25%",
+            "About 50%"
+          ],
+          "correct_index": 0,
+          "explanation": "1 - 2h(D) = 0 at D = 0.110.",
+          "source": {
+            "book": "B115",
+            "locator": "Section IV.C"
+          }
+        },
+        {
+          "id": "c6-n10",
+          "prompt": "What is the finite-key effect?",
+          "options": [
+            "Short blocks give uncertain error estimates and little or no key",
+            "Keys grow with block length without limit",
+            "Errors vanish for long blocks"
+          ],
+          "correct_index": 0,
+          "explanation": "At n = 1,000 no key remains.",
+          "source": {
+            "book": "B115",
+            "locator": "Section IV"
+          }
+        },
+        {
+          "id": "c6-n11",
+          "prompt": "What does a trusted node in a QKD chain know?",
+          "options": [
+            "The end-to-end key",
+            "Nothing",
+            "A hash of the key"
+          ],
+          "correct_index": 0,
+          "explanation": "The security depends on every relay.",
+          "source": {
+            "book": "B95",
+            "locator": "Section 4.6"
+          }
+        },
+        {
+          "id": "c6-n12",
+          "prompt": "Which of these is NOT provided by QKD?",
+          "options": [
+            "Digital signatures",
+            "Shared secret keys",
+            "Detection of some eavesdropping"
+          ],
+          "correct_index": 0,
+          "explanation": "Signatures need PQC or classical algorithms.",
+          "source": {
+            "book": "B04",
+            "locator": "FIPS 203 and the signature standards"
+          }
+        }
+      ],
+      "estimated_minutes": 635,
+      "notes": "Rewrites eleven outline sections as lessons with executed listings: BB84 with error estimation, correction and a Toeplitz privacy amplification, B92 with unambiguous discrimination, E91 with CHSH, decoy-state bounds and a PNS attack, an MDI relay table, the DI key-rate bound, attack and detection statistics with finite-key effects, a trusted-node and hybrid architecture demonstration, an assumed-parameter rate and range model, and a rule-based PQC versus QKD comparison. Agency positions are marked as unverified.",
+      "learning_objectives": [
+        "Simulate BB84 and its post-processing, and explain sifting, error estimation, correction and privacy amplification.",
+        "Compare B92 and E91 and explain what each test certifies.",
+        "Explain the photon-number-splitting attack and how decoy states expose it, with the resulting rate gain.",
+        "Explain MDI and device-independent QKD and what each removes from the trusted assumptions.",
+        "Quantify attacks and detection: intercept-resend, cloning attacks, hardware attacks, sample sizes and finite-key effects.",
+        "Describe QKD deployments with trusted nodes, authentication and hybrids, and compare QKD with PQC on stated requirements, with the verification status of agency positions."
+      ]
+    }
+  ]
+}
