@@ -143,7 +143,7 @@ export const BentoSection: React.FC<BentoSectionProps> = ({ liveRecommendation }
                 <div className="flex gap-2 overflow-x-auto">
                   {liveRecommendation.graph_paths.map((path, idx) => (
                     <div key={idx} className="bg-indigo-950/30 border border-indigo-500/20 rounded p-2 text-xs text-gray-300 min-w-[200px]">
-                      <div className="text-indigo-300 mb-1">Target: {path.finding_id?.substring(0,8)}</div>
+                      <div className="text-indigo-300 mb-1">Finding: {path.finding_title ?? path.finding_type ?? path.finding_id?.substring(0,8)}</div>
                       <div>Risk Score: <span className="font-bold text-white">{path.risk_score.toFixed(1)}</span></div>
                       <div>Action: {path.proposed_intervention_type}</div>
                     </div>

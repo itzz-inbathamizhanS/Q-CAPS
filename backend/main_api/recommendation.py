@@ -1,6 +1,7 @@
 from sqlalchemy.orm import Session
 from models import QuizScore, ScannerLog
 from graph.projection import build_graph_projection
+from graph import competency_map
 from graph.optimizer import optimize_intervention_paths
 import json
 
@@ -52,26 +53,29 @@ def get_user_recommendation(
     # but also return the full optimized path list for the new UI.
     top_intervention = interventions[0]
     
-    # Map back to legacy courses for the basic UI compatibility
-    comp_map = {
-        "comp_1": {"course_id": "track_b_b9_pqc_fundamentals", "title": "PQC Fundamentals", "topic": "pqc"}
-    }
-    
-    course_info = comp_map.get(top_intervention["competency_id"], {
-        "course_id": "track_d_e4_crypto_agility", 
-        "title": "Cryptographic Agility", 
-        "topic": "practical_security"
-    })
-    
+    # The competency is a quiz topic (graph.competency_map), which names the course that teaches it.
+    competency = competency_map.COMPETENCIES.get(top_intervention["competency_id"].removeprefix("comp_"))
+    if competency is None:
+        fallback = get_score_based_recommendation(db, user_id, scanner_findings)
+        fallback["graph_paths"] = interventions
+        return fallback
+
+    actual = top_intervention["actual_score"]
+    if actual is None:
+        evidence = f"you have not taken a {competency.name} assessment yet"
+    else:
+        evidence = f"your latest {competency.name} quiz score is {actual * 100:.0f}% (target {top_intervention['minimum_score'] * 100:.0f}%)"
+    course_info = {"course_id": competency.course_id, "title": competency.course_title, "topic": competency.topic}
+
     return {
         "course_id": course_info["course_id"],
         "title": course_info["title"],
         "topic": course_info["topic"],
         "priority": "Critical" if top_intervention["risk_score"] > 5 else "Moderate",
-        "reason": f"Calculated Path Risk: {top_intervention['risk_score']:.2f}. "
-                  f"Competency Deficit: {(top_intervention['competency_deficit'] * 100):.0f}%. "
-                  f"Action: {top_intervention['proposed_intervention_type']}.",
-        "quiz_score": (1.0 - top_intervention["competency_deficit"]) * 100,
+        "reason": f"Recommended because open finding \"{top_intervention['finding_title'] or top_intervention['finding_type']}\" "
+                  f"needs {competency.name} and {evidence}. "
+                  f"Path risk {top_intervention['risk_score']:.2f}; suggested action: {top_intervention['proposed_intervention_type']}.",
+        "quiz_score": None if actual is None else actual * 100,
         "scanner_risk": "High" if top_intervention["risk_score"] > 5 else "Medium",
         "status": "recommendation",
         "graph_paths": interventions

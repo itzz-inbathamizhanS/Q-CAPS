@@ -59,6 +59,10 @@ export interface GraphPath {
   finding_id: string;
   asset_id: string;
   competency_id: string;
+  finding_title?: string | null;
+  finding_type?: string | null;
+  minimum_score?: number;
+  actual_score?: number | null;
   risk_score: number;
   competency_deficit: number;
   time_cost_hours: number;
