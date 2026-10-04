@@ -71,11 +71,30 @@ def test_out_of_range_inputs_raise():
         est(migration_exec_days=-1)
 
 
-def test_shipped_timeline_only_uses_verified_figures_with_provenance():
+def test_shipped_timeline_has_provenance():
     raw = json.loads(exposure.DATA_FILE.read_text(encoding="utf-8"))
-    for key in ("edition", "published", "landing_page_url", "pdf_url", "anchor_date", "caveats"):
+    for key in ("edition", "published", "landing_page_url", "pdf_url", "anchor_date", "bound_meaning", "caveats"):
         assert raw[key]
+    assert all(h["verified"] and h["pdf_page"] for h in raw["horizons"])
     loaded = exposure.load_timeline()
-    assert [h.years for h in loaded.horizons] == [h["years"] for h in raw["horizons"] if h["verified"]]
-    assert loaded.horizons[-1].years == 15  # nothing beyond the verified range is invented
-    assert est(timeline=loaded, confidentiality_days=20 * Y).reason == "beyond survey range"
+    assert [h.years for h in loaded.horizons] == [5, 10, 15, 20, 30]
+    assert est(timeline=loaded, confidentiality_days=31 * Y).reason == "beyond survey range"  # never extrapolated
+
+
+def test_shipped_horizons_are_reproduced_from_the_raw_counts():
+    """The stored curves must equal the counts (PDF p.70) weighted by the assignment table (PDF p.71)."""
+    raw = json.loads(exposure.DATA_FILE.read_text(encoding="utf-8"))
+    n = raw["response_counts"]["respondents"]
+    for h in raw["horizons"]:
+        counts = raw["response_counts"]["by_horizon_years"][str(h["years"])]
+        assert sum(counts) == n
+        for bound, weights in (("lower", raw["assignment"]["pessimistic"]), ("upper", raw["assignment"]["optimistic"])):
+            assert h[bound] == pytest.approx(sum(c * w for c, w in zip(counts, weights)) / n, abs=5e-5)
+
+
+def test_shipped_horizons_match_the_figures_the_report_states():
+    """Rounded values quoted in the report text: 28-49% at 10 years, 51-70% at 15 years (PDF p.6 and p.32)."""
+    by_years = {h.years: h for h in exposure.load_timeline().horizons}
+    assert (round(by_years[10].lower * 100), round(by_years[10].upper * 100)) == (28, 49)
+    assert (round(by_years[15].lower * 100), round(by_years[15].upper * 100)) == (51, 70)
+    assert round(by_years[5].upper * 100) == 15 and round(by_years[20].lower * 100) == 69

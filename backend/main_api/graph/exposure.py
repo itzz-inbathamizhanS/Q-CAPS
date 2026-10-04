@@ -3,7 +3,9 @@
 The Mosca inequality asks whether x + y > z, where x is how long the data must stay confidential, y is how long
 migration takes and z is the (unknown) time until a CRQC. Instead of choosing a z, this uses the cumulative
 probabilities published by an expert survey (crqc_timeline.json) and reports the result as an interval between the
-survey's lower and upper curves. That interval is a range between two published curves, not a confidence interval.
+survey's lower and upper curves: the report's pessimistic and optimistic readings of the probability bin each expert
+chose. The interval reflects the width of those answer bins, not disagreement among experts and not a confidence
+interval.
 See docs/research/COMPETENCY_ADJUSTED_MOSCA_SPEC.md.
 """
 import json

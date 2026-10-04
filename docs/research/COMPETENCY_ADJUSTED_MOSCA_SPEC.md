@@ -54,22 +54,26 @@ replaced by IRT or Rasch ability estimates once the item bank is calibrated.
 
 ### 2.4 The CRQC time: a distribution from a cited survey, not a chosen `z`
 
-Source: Global Risk Institute / evolutionQ, *Quantum Threat Timeline Report 2025* (M. Mosca, M. Piani;
-26 experts; the landing page is dated 9 March 2026). It publishes cumulative probabilities at fixed horizons as a
-range: a CRQC within 10 years is 28-49% and within 15 years is 51-70% (verified on the GRI page). Other
-horizons are not yet transcribed.
+Source: Global Risk Institute / evolutionQ, *Quantum Threat Timeline Report 2025* (M. Mosca, M. Piani; March 2026;
+26 experts). The event is "a quantum computer able to factorize a 2048-bit number in less than 24 hours" (PDF p.70).
+The report publishes the raw response counts at 5, 10, 15, 20 and 30 years (PDF p.70) and the probability assigned
+to each answer bin under an optimistic and a pessimistic reading (PDF p.71). The two curves are computed from those
+tables, and a test recomputes them and checks them against the figures the report quotes (28-49% at 10 years,
+51-70% at 15 years).
 
-- Output is **P(exposed) reported as an interval** from the survey's lower and upper curves. It is a range between
-  two published curves, not a confidence interval.
-- Figures live in a version-pinned data file, `backend/main_api/graph/data/crqc_timeline.json`, each with edition,
-  publication date, URL, PDF page and a `verified` flag. Figures are transcribed from the PDF only, never from
-  memory or secondary sites.
-- Horizons are anchored to the **survey date**, not today. With `e` the years elapsed since the survey and `F` the
+- Output is **P(exposed) reported as an interval** between the pessimistic (lower) and optimistic (upper) curves.
+  The interval reflects the width of the answer bins the experts chose from, **not** disagreement among experts and
+  not a confidence interval (PDF p.30).
+- Figures live in a version-pinned data file, `backend/main_api/graph/data/crqc_timeline.json`, with edition,
+  publication date, URLs, PDF page, raw counts and a `verified` flag.
+- Horizons are anchored to the **survey date**, not today. The report gives no fielding date and aligns horizons to
+  calendar years (PDF p.33; a 10-year horizon is roughly 2035, PDF p.54), so the anchor is year-level (2025-01-01) and the sensitivity
+  analysis must vary it within 2025. With `e` the years elapsed since the survey and `F` the
   survey's cumulative curve, the probability that a CRQC arrives within `t` years from now, given none has
   arrived yet, is `(F(e + t) - F(e)) / (1 - F(e))`. Exposure uses `t = x + y`.
 - Piecewise-linear interpolation between published horizons, with `F(0) = 0`. This is a modelling choice and is
   documented as one.
-- No extrapolation past the last published horizon: the result is `Unknown`, "beyond survey range".
+- No extrapolation past the last published horizon (30 years after the survey): the result is `Unknown`, "beyond survey range".
 - NIST's RSA/ECC deprecation dates are policy deadlines, not CRQC estimates. They are kept out of this model and may
   appear later as a separate compliance overlay.
 - If the UI needs a simpler view, reference years may be shown as values derived from the same curve and labelled
@@ -141,7 +145,7 @@ objective.
 
 1. `graph/exposure.py` and `graph/data/crqc_timeline.json`: pure functions for the cumulative curve, conditional
    probability, `y`, and the interval result with Unknown reasons; unit tests. (Verified horizons only.)
-2. Transcribe the remaining horizons and survey date from the PDF; set their `verified` flags.
+2. Done: all horizons computed from the PDF's raw counts; the fielding date is not stated in the report.
 3. Beta-posterior competency estimate in the projection.
 4. `y_exec` and learner availability: schema, validation, authorization, audit fields, demo seed.
 5. Competency-level knapsack; rewrite the tests; recommendation text and dashboard panel.
