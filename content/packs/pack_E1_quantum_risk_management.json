@@ -1,0 +1,824 @@
+{
+  "pack_version": 1,
+  "books": [
+    {
+      "id": "B05",
+      "title": "Becoming Quantum Safe: Protect Your Business and Mitigate Risks with Post-Quantum Cryptography and Crypto-Agility",
+      "authors": "Jai Singh Arun, Ray Harishankar, Walid Rjaibi",
+      "edition": "1st edition",
+      "year": 2025,
+      "publisher": "Wiley"
+    },
+    {
+      "id": "B24",
+      "title": "FIPS 199, Standards for Security Categorization of Federal Information and Information Systems",
+      "authors": "NIST",
+      "edition": "final, accessed 2026-10-03",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B26",
+      "title": "SP 800-30 Rev. 1, Guide for Conducting Risk Assessments",
+      "authors": "Joint Task Force Transformation Initiative",
+      "edition": "September 2012, accessed 2026-10-03",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B85",
+      "title": "IR 8547 (initial public draft), Transition to Post-Quantum Cryptography Standards",
+      "authors": "Dustin Moody, Ray Perlner, Andrew Regenscheid, Angela Robinson, David Cooper",
+      "edition": "November 2024, accessed 2026-10-04",
+      "publisher": "NIST"
+    },
+    {
+      "id": "B97",
+      "title": "NIST SP 800-57 Part 1 Revision 5: Recommendation for Key Management: Part 1 - General",
+      "authors": "Elaine Barker",
+      "edition": "Revision 5",
+      "year": 2020,
+      "publisher": "NIST"
+    },
+    {
+      "id": "B99",
+      "title": "CycloneDX Bill of Materials specification, version 1.6 (JSON schema with the Cryptography Bill of Materials extension)",
+      "authors": "OWASP CycloneDX",
+      "edition": "1.6",
+      "year": 2024,
+      "publisher": "OWASP Foundation"
+    },
+    {
+      "id": "B82",
+      "title": "How to factor 2048 bit RSA integers with less than a million noisy qubits (arXiv 2505.15917)",
+      "authors": "Craig Gidney",
+      "edition": "May 2025",
+      "year": 2025
+    }
+  ],
+  "modules": [
+    {
+      "slug": "track_d_e1_quantum_risk_management",
+      "action": "modify",
+      "sections": [
+        {
+          "slug": "sec-1",
+          "action": "replace",
+          "title": "1.1 Quantum Threat Landscape (Business Framing)",
+          "summary": "How to state the quantum threat to executives: which cryptography is affected, the time inequality X < Y + Z, and the policy dates that are targets rather than predictions.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Leadership does not need the mathematics of factoring. It needs three statements. **Which cryptography is affected:** public-key algorithms (RSA, Diffie-Hellman, elliptic curves) are broken by Shor's algorithm on a large fault-tolerant quantum computer, and symmetric ciphers and hashes lose security margin to Grover's algorithm but are not broken (modules B8 and A-track). **Which business assets depend on it:** key establishment, digital signatures, certificates and anything encrypted with them. **By when:** nobody knows when a **cryptographically relevant quantum computer (CRQC)** will exist, so the planning question is not \"when?\" but \"**is our own timeline shorter than any plausible date?**\"\n\nThe standard way to ask it is the **time inequality** often attributed to Mosca: a system is exposed if **X < Y + Z**, where **X** is the number of years until a CRQC exists (unknown, an input), **Y** the years the organisation needs to migrate the system, and **Z** the years the data must stay confidential. For confidentiality, data captured today and decrypted later (**harvest now, decrypt later**, HNDL) is at risk whenever the secrecy requirement outlasts the arrival of the machine; for signatures the test is simpler, **X < Y**, because a forged signature only matters from the day a machine exists. The lesson's listing evaluates the inequality for four invented systems and a range of assumed X values. Every dataset, system, vendor, probability and cost in the listings is **DEMO DATA** invented for the lesson. None of it is a finding about a real organisation, and none of the probabilities is derived from an observed quantum attack (none has been observed). The listings show how a risk model is built and how its assumptions are exposed; they do not produce a forecast."
+            },
+            {
+              "type": "code",
+              "id": "c-mosca",
+              "language": "python",
+              "code": "# The Mosca inequality: a system is exposed if  X < Y + Z,\n#   X = years until a cryptographically relevant quantum computer (CRQC) exists  (UNKNOWN: it is a parameter, never a forecast here)\n#   Y = years the organisation needs to migrate the system\n#   Z = years the data must stay confidential after migration is finished (shelf life)\n# DEMO DATA: the three systems below are invented for the lesson.\nsystems = [\n    # name, migration years Y, shelf life Z\n    (\"public marketing site\",              1.0,  0.0),\n    (\"customer chat (retained 3 years)\",   2.0,  3.0),\n    (\"patient records archive\",            4.0, 30.0),\n    (\"firmware signing service\",           6.0,  0.0),\n]\nprint(\"DEMO DATA. A system is exposed to harvest-now-decrypt-later when X < Y + Z (confidentiality), i.e. when X is smaller than the number printed below\")\nprint(f\"{'system':<38} {'Y':>5} {'Z':>6} {'exposed if X <':>16}\")\nfor name, y, z in systems:\n    print(f\"{name:<38} {y:>5.1f} {z:>6.1f} {y + z:>16.1f}\")\nprint()\nprint(\"verdict for assumed values of X (years until a CRQC); X is an input, the lesson does not predict it\")\nheader = f\"{'X (years)':>10}\" + \"\".join(f\"{n.split(' (')[0][:22]:>25}\" for n, _, _ in systems)\nprint(header)\nfor X in (3, 5, 8, 12, 20, 35):\n    row = f\"{X:>10}\"\n    for _, y, z in systems:\n        row += f\"{'EXPOSED' if X < y + z else 'ok':>25}\"\n    print(row)\nprint()\nprint(\"the signing service has Z = 0 (a signature is worthless to forge after the key is retired) but its own risk is different: a forged signature is possible from the day a CRQC exists, so the relevant test is X < Y (migrate before the machine exists)\")\nfor name, y, z in systems:\n    kind = \"confidentiality (Y + Z)\" if z > 0 else \"integrity / authentication (Y)\"\n    print(f\"{name:<38} relevant deadline: {kind}\")\nprint()\nprint(\"reference points from the lesson sources (dates are policy targets, not predictions of when a CRQC arrives):\")\nprint(\"  NIST IR 8547 (initial public draft, Nov 2024): RSA and ECDSA at 112-bit strength deprecated after 2030, all quantum-vulnerable signatures disallowed after 2035\")\nprint(\"  NSM-10 (quoted in IR 8547): goal of mitigating as much quantum risk as is feasible by 2035\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-mosca",
+              "language": "text",
+              "code": "DEMO DATA. A system is exposed to harvest-now-decrypt-later when X < Y + Z (confidentiality), i.e. when X is smaller than the number printed below\nsystem                                     Y      Z   exposed if X <\npublic marketing site                    1.0    0.0              1.0\ncustomer chat (retained 3 years)         2.0    3.0              5.0\npatient records archive                  4.0   30.0             34.0\nfirmware signing service                 6.0    0.0              6.0\n\nverdict for assumed values of X (years until a CRQC); X is an input, the lesson does not predict it\n X (years)    public marketing site            customer chat   patient records archiv   firmware signing servi\n         3                       ok                  EXPOSED                  EXPOSED                  EXPOSED\n         5                       ok                       ok                  EXPOSED                  EXPOSED\n         8                       ok                       ok                  EXPOSED                       ok\n        12                       ok                       ok                  EXPOSED                       ok\n        20                       ok                       ok                  EXPOSED                       ok\n        35                       ok                       ok                       ok                       ok\n\nthe signing service has Z = 0 (a signature is worthless to forge after the key is retired) but its own risk is different: a forged signature is possible from the day a CRQC exists, so the relevant test is X < Y (migrate before the machine exists)\npublic marketing site                  relevant deadline: integrity / authentication (Y)\ncustomer chat (retained 3 years)       relevant deadline: confidentiality (Y + Z)\npatient records archive                relevant deadline: confidentiality (Y + Z)\nfirmware signing service               relevant deadline: integrity / authentication (Y)\n\nreference points from the lesson sources (dates are policy targets, not predictions of when a CRQC arrives):\n  NIST IR 8547 (initial public draft, Nov 2024): RSA and ECDSA at 112-bit strength deprecated after 2030, all quantum-vulnerable signatures disallowed after 2035\n  NSM-10 (quoted in IR 8547): goal of mitigating as much quantum risk as is feasible by 2035",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "A public marketing site with Y = 1 and Z = 0 is exposed only if X < 1; customer chat retained for three years with Y = 2 is exposed if X < 5; the patient archive (Y = 4, Z = 30) is exposed for every X below 34; and the firmware signing service (Y = 6) is exposed if X < 6. In the verdict table the patient archive stays EXPOSED for every X up to 20 and becomes ok only at the largest assumed value (35), whereas the others clear much earlier. **The ranking of the systems does not depend on knowing X**: the long-lived data is the first priority under any plausible value, which is why the exercise is useful even though X cannot be known.\n\n**Policy dates are targets, not forecasts.** NIST IR 8547 (initial public draft, November 2024) proposes that RSA and ECDSA at 112-bit security strength are deprecated after 2030 and that all of the listed quantum-vulnerable signature algorithms are disallowed after 2035; it also quotes National Security Memorandum 10, which sets the goal of mitigating as much quantum risk as is feasible by 2035. These dates tell an enterprise when compliance may require the migration to be done; they do not say when a CRQC will arrive. Business books quote expert probability estimates for the arrival date (the course text by Arun, Harishankar and Rjaibi attributes to Mosca a one-in-seven chance by 2026 and 50% by 2031); such numbers are opinions of individuals and are not used in the models of this module. **Common mistake:** presenting a date as the deadline \"because the quantum computer arrives then\"."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "In the time inequality X < Y + Z, what is Z?",
+              "options": [
+                "The years the data must remain confidential",
+                "The years until a CRQC exists",
+                "The years needed to migrate"
+              ],
+              "correct_index": 0,
+              "explanation": "Z is the shelf life of the data."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why is the ranking of exposed systems useful even when X is unknown?",
+              "options": [
+                "Long-lived data is exposed under any plausible X, so the priority order is stable",
+                "Because X is always 10 years",
+                "Because quantum computers already exist"
+              ],
+              "correct_index": 0,
+              "explanation": "The patient archive stayed exposed up to X = 20."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What do the 2030 and 2035 dates in NIST IR 8547 represent?",
+              "options": [
+                "Proposed deprecation and disallowance dates for quantum-vulnerable algorithms, not predictions of a CRQC",
+                "The date quantum computers will arrive",
+                "The date AES is broken"
+              ],
+              "correct_index": 0,
+              "explanation": "They are policy targets."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (Managing Risks in the Quantum Era): identifying quantum-related business risks and impacts; risk assessment with heat maps and the maturity model"
+            },
+            {
+              "book": "B85",
+              "locator": "NIST IR 8547 initial public draft: Section 4.1.1 (Table 2, deprecation after 2030 and disallowance after 2035) and the NSM-10 quotation (2035 goal)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The inequality X < Y + Z (attributed to Mosca) and the expert probability estimates are stated from the literature and the course text; the inequality itself was not found as a formula in the cited sources, and the estimates are the course book's attribution, not independently verified. IR 8547 is an initial public draft and its dates may have changed in later versions."
+          }
+        },
+        {
+          "slug": "sec-2",
+          "action": "replace",
+          "title": "1.2 Business Impact",
+          "summary": "Five business impact categories, a loss-distribution model with explicit assumptions, and why the percentile matters more than the average.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The course text on quantum risk groups business consequences into a few categories: **data breaches and financial losses** (response costs, claims, regulatory action), **intellectual property theft** (trade secrets exposed by later decryption), **operational disruption** (broken authentication or certificates halting services), **supply chain breakdown** (forged updates when signature trust is lost) and **regulatory and contractual non-compliance** (exclusion from contracts, adverse audits). Budget holders respond to numbers, but the numbers for this threat have no loss history behind them, so the honest model is one in which every figure is an **assumption with an owner**.\n\nThe listing builds a simple annual loss model. Each of five categories has an assumed annual probability that a quantum-related event happens and a triangular distribution (low, most likely, high) for the loss if it does; a Monte Carlo simulation of 200,000 years gives the mean, the median and the tail. The expected annual loss is also computed analytically so that the simulation can be checked. Every dataset, system, vendor, probability and cost in the listings is **DEMO DATA** invented for the lesson. None of it is a finding about a real organisation, and none of the probabilities is derived from an observed quantum attack (none has been observed). The listings show how a risk model is built and how its assumptions are exposed; they do not produce a forecast."
+            },
+            {
+              "type": "code",
+              "id": "c-impact",
+              "language": "python",
+              "code": "import random, statistics\n# Business impact as a loss distribution. DEMO DATA: every figure below is an assumption invented for the lesson, in thousands of currency units.\n# Each category has (low, most likely, high) loss if the event happens and an annual probability of the quantum-related event.\ncategories = [\n    (\"regulatory penalties\",        (200, 800, 3000),  0.04),\n    (\"breach response and claims\",  (500, 2500, 12000), 0.03),\n    (\"intellectual property loss\",  (1000, 5000, 40000), 0.01),\n    (\"operational disruption\",      (100, 600, 4000),  0.05),\n    (\"reputational / customer loss\", (300, 1500, 9000), 0.04),\n]\nrandom.seed(7)\ndef one_year():\n    total = 0.0\n    for _, (lo, mode, hi), p in categories:\n        if random.random() < p:\n            total += random.triangular(lo, hi, mode)\n    return total\nN = 200_000\nlosses = sorted(one_year() for _ in range(N))\nmean = statistics.fmean(losses)\np50, p90, p99 = (losses[int(N * q)] for q in (0.5, 0.9, 0.99))\nprint(f\"DEMO DATA, {N:,} simulated years, seed 7 (thousands of currency units)\")\nprint(f\"{'category':<30} {'event probability/year':>24} {'expected annual loss':>22}\")\nfor name, (lo, mode, hi), p in categories:\n    mean_loss = (lo + mode + hi) / 3\n    print(f\"{name:<30} {p:>24.2f} {p * mean_loss:>22.1f}\")\nanalytic = sum(p * (lo + mode + hi) / 3 for _, (lo, mode, hi), p in categories)\nprint(f\"analytic expected annual loss {analytic:.1f}   simulated mean {mean:.1f}\")\nprint(f\"P(no loss in a year) {sum(1 for x in losses if x == 0) / N:.3f}   median {p50:.1f}   90th percentile {p90:.1f}   99th percentile {p99:.1f}\")\nprint(\"the mean hides the shape: most years cost nothing and a few years cost a great deal, which is why executives need the percentile and the worst case, not only the average\")\nprint()\nprint(\"what the model does NOT contain: these probabilities are not derived from any observed quantum attack (none has been observed); they are the organisation's own assumptions and must be recorded as such, with an owner and a review date\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-impact",
+              "language": "text",
+              "code": "DEMO DATA, 200,000 simulated years, seed 7 (thousands of currency units)\ncategory                         event probability/year   expected annual loss\nregulatory penalties                               0.04                   53.3\nbreach response and claims                         0.03                  150.0\nintellectual property loss                         0.01                  153.3\noperational disruption                             0.05                   78.3\nreputational / customer loss                       0.04                  144.0\nanalytic expected annual loss 579.0   simulated mean 578.3\nP(no loss in a year) 0.842   median 0.0   90th percentile 1650.8   99th percentile 9254.7\nthe mean hides the shape: most years cost nothing and a few years cost a great deal, which is why executives need the percentile and the worst case, not only the average\n\nwhat the model does NOT contain: these probabilities are not derived from any observed quantum attack (none has been observed); they are the organisation's own assumptions and must be recorded as such, with an owner and a review date",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The analytic expected annual loss is 579.0 (thousand currency units) and the simulated mean 578.3, so the simulation agrees with the formula. The biggest contributors are intellectual property loss (153.3), breach response and claims (150.0) and reputational loss (144.0), although IP loss has the lowest event probability (0.01): rare but large events matter. In 84.2% of simulated years nothing happens, the median year costs 0, the 90th percentile is 1,650.8 and the **99th percentile is 9,254.7**, sixteen times the mean. A board reading only the mean would underestimate the severity of the bad years and overestimate the need for a smooth annual budget.\n\n**How to use such a model honestly.** Record each probability and loss range with the person who set it and a review date; show the sensitivity of the result to the largest assumptions; never present the output as a measured probability of quantum attack. The point is to let executives compare the **cost of migration** with the **range of losses it avoids** under assumptions they can challenge. **Common mistake:** attaching a precise percentage to an event with no observed frequency."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does the lesson show the 99th percentile as well as the mean?",
+              "options": [
+                "Most years cost nothing and a few cost a great deal, which the mean hides",
+                "The mean is always wrong",
+                "Percentiles are required by law"
+              ],
+              "correct_index": 0,
+              "explanation": "99th percentile 9,254.7 against a mean of 578."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What is the status of the event probabilities in the model?",
+              "options": [
+                "Owned assumptions, not observed frequencies",
+                "Measured from past quantum attacks",
+                "Published by NIST"
+              ],
+              "correct_index": 0,
+              "explanation": "No quantum attack has been observed."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which check shows that the simulation is implemented correctly?",
+              "options": [
+                "Agreement with the analytic expected loss (578.3 against 579.0)",
+                "A larger seed",
+                "A prettier chart"
+              ],
+              "correct_index": 0,
+              "explanation": "Simulation and formula agree within sampling error."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (Managing Risks in the Quantum Era): identifying quantum-related business risks and impacts; risk assessment with heat maps and the maturity model"
+            },
+            {
+              "book": "B26",
+              "locator": "NIST SP 800-30 Rev. 1: Section 2.3 (key risk concepts: risk as a function of the likelihood of a threat event and its impact)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The impact categories follow the course text; the loss model, its distributions and all numbers are DEMO DATA written for the lesson. Triangular distributions are a modelling convenience, not an empirically fitted choice."
+          }
+        },
+        {
+          "slug": "sec-3",
+          "action": "replace",
+          "title": "1.3 Data Sensitivity and Lifetime",
+          "summary": "A data register with two independent axes, impact level and confidentiality lifetime, and which datasets stay exposed under assumed CRQC years.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Two properties of a dataset decide its quantum exposure, and they are independent. **Sensitivity** is how much harm a loss of confidentiality would cause; FIPS 199 grades the harm as **low** (limited adverse effect), **moderate** (serious adverse effect) or **high** (severe or catastrophic adverse effect). **Lifetime** is how long the data must stay secret. A dataset that is only moderately sensitive but must stay secret for forty years (HR files, board minutes) can be more exposed than a highly sensitive dataset that loses its value in a year or two (a payment token).\n\nThe listing keeps an invented register with an impact level and a secrecy requirement in years for eight datasets, computes the year until which each must be protected, and lists which ones still need secrecy after an **assumed** CRQC year. A two-axis score ranks them. Every dataset, system, vendor, probability and cost in the listings is **DEMO DATA** invented for the lesson. None of it is a finding about a real organisation, and none of the probabilities is derived from an observed quantum attack (none has been observed). The listings show how a risk model is built and how its assumptions are exposed; they do not produce a forecast."
+            },
+            {
+              "type": "code",
+              "id": "c-data-register",
+              "language": "python",
+              "code": "import datetime\n# A data register that records sensitivity (FIPS 199 style impact level for confidentiality) AND required confidentiality lifetime. DEMO DATA: invented datasets.\nregister = [\n    # dataset, impact level of a confidentiality loss, retention / secrecy requirement in years\n    (\"web analytics events\",        \"low\",       1),\n    (\"customer contact details\",    \"moderate\",  7),\n    (\"payment card tokens\",         \"high\",      3),\n    (\"employee HR files\",           \"moderate\", 40),\n    (\"patient clinical records\",    \"high\",     30),\n    (\"product designs (R&D)\",       \"high\",     20),\n    (\"board minutes\",               \"moderate\", 25),\n    (\"public press releases\",       \"low\",       0),\n]\nLEVEL = {\"low\": 1, \"moderate\": 2, \"high\": 3}\nTHIS_YEAR = 2026\nprint(\"DEMO DATA register. Protection horizon = the year until which the data must stay confidential if encrypted today\")\nprint(f\"{'dataset':<28} {'impact':<9} {'lifetime (y)':>12} {'protected until':>16}\")\nrows = []\nfor name, impact, years in register:\n    rows.append((name, impact, years, THIS_YEAR + years))\nfor name, impact, years, until in rows:\n    print(f\"{name:<28} {impact:<9} {years:>12} {until:>16}\")\nprint()\n# a dataset needs quantum-safe protection now if a loss would hurt (moderate or high) and the secrecy requirement is long\ndef needs_pqc_now(impact, years, assumed_crqc_year):\n    return LEVEL[impact] >= 2 and THIS_YEAR + years > assumed_crqc_year\nprint(\"which datasets would still need secrecy after an ASSUMED CRQC year (the year is a scenario input, not a forecast)\")\nprint(f\"{'assumed CRQC year':>18} {'datasets exposed':>18}   names\")\nfor yr in (2030, 2035, 2045, 2060):\n    names = [r[0] for r in rows if needs_pqc_now(r[1], r[2], yr)]\n    print(f\"{yr:>18} {len(names):>18}   {', '.join(names) if names else '-'}\")\nprint()\nprint(\"sensitivity alone is not enough: web analytics are short-lived and low impact, so they are not a priority; HR files are only moderate impact but must stay secret for decades, so they are exposed in every scenario\")\nprint(\"two-axis ranking (impact level x lifetime in decades), highest first:\")\nfor name, impact, years, _ in sorted(rows, key=lambda r: -LEVEL[r[1]] * r[2]):\n    print(f\"  {name:<28} score {LEVEL[impact] * years / 10:>5.1f}\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-data-register",
+              "language": "text",
+              "code": "DEMO DATA register. Protection horizon = the year until which the data must stay confidential if encrypted today\ndataset                      impact    lifetime (y)  protected until\nweb analytics events         low                  1             2027\ncustomer contact details     moderate             7             2033\npayment card tokens          high                 3             2029\nemployee HR files            moderate            40             2066\npatient clinical records     high                30             2056\nproduct designs (R&D)        high                20             2046\nboard minutes                moderate            25             2051\npublic press releases        low                  0             2026\n\nwhich datasets would still need secrecy after an ASSUMED CRQC year (the year is a scenario input, not a forecast)\n assumed CRQC year   datasets exposed   names\n              2030                  5   customer contact details, employee HR files, patient clinical records, product designs (R&D), board minutes\n              2035                  4   employee HR files, patient clinical records, product designs (R&D), board minutes\n              2045                  4   employee HR files, patient clinical records, product designs (R&D), board minutes\n              2060                  1   employee HR files\n\nsensitivity alone is not enough: web analytics are short-lived and low impact, so they are not a priority; HR files are only moderate impact but must stay secret for decades, so they are exposed in every scenario\ntwo-axis ranking (impact level x lifetime in decades), highest first:\n  patient clinical records     score   9.0\n  employee HR files            score   8.0\n  product designs (R&D)        score   6.0\n  board minutes                score   5.0\n  customer contact details     score   1.4\n  payment card tokens          score   0.9\n  web analytics events         score   0.1\n  public press releases        score   0.0",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "If a CRQC existed in 2030, five datasets would still need secrecy (customer contact details, HR files, clinical records, product designs, board minutes); in 2035 or 2045 four remain, and even for 2060 the **HR files** (protected until 2066) are still exposed. Web analytics and press releases never matter. The two-axis ranking puts clinical records first (9.0), then HR files (8.0), R&D designs (6.0) and board minutes (5.0), and puts payment card tokens low (0.9) despite their high impact, because their secrecy requirement is short.\n\n**Practical rule.** The register is the first artefact of the programme: an owner for each dataset, an impact level, a retention and secrecy requirement taken from policy or law, and the encryption protecting it (module E2). Without the lifetime column an organisation spends effort on its most sensitive but shortest-lived data. **Common mistake:** classifying only by sensitivity, which is how the 40-year HR archive gets missed."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which two axes define a dataset's quantum exposure?",
+              "options": [
+                "Sensitivity and required confidentiality lifetime",
+                "Size and age",
+                "Owner and location"
+              ],
+              "correct_index": 0,
+              "explanation": "Both are needed."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Why are the HR files exposed under every assumed CRQC year in the lesson?",
+              "options": [
+                "They must stay secret until 2066, beyond any scenario year",
+                "They are highly sensitive",
+                "They are stored in the cloud"
+              ],
+              "correct_index": 0,
+              "explanation": "Moderate impact but a 40-year requirement."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "In FIPS 199, what does a 'high' impact level mean?",
+              "options": [
+                "A severe or catastrophic adverse effect",
+                "A limited adverse effect",
+                "No adverse effect"
+              ],
+              "correct_index": 0,
+              "explanation": "Low is limited, moderate is serious."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (Managing Risks in the Quantum Era): identifying quantum-related business risks and impacts; risk assessment with heat maps and the maturity model"
+            },
+            {
+              "book": "B24",
+              "locator": "FIPS 199: Section 3 (security categories: limited, serious, and severe or catastrophic adverse effect)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The register and all numbers are DEMO DATA. The two-axis score (impact level times decades of lifetime) is the lesson's own illustration, not a standard method."
+          }
+        },
+        {
+          "slug": "sec-4",
+          "action": "replace",
+          "title": "1.4 Harvest-Now-Decrypt-Later Risk (Organizational Scale)",
+          "summary": "HNDL exposure per data flow from the key-establishment algorithm, the path an adversary can capture, and the secrecy requirement.",
+          "estimated_minutes": 45,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The register of 1.3 says what must stay secret. A **data flow** inventory says how it is protected on the move or at rest, and whether an adversary can capture the ciphertext in bulk. HNDL is a real concern only when three things hold: the ciphertext can be **captured** (internet traffic, partner links, stored backups; internal segments are harder), the **key establishment is quantum-vulnerable** (RSA key transport, finite-field or elliptic-curve Diffie-Hellman) and the **secrecy requirement outlasts** the migration time plus the CRQC arrival, the test of 1.1. A flow that already uses a quantum-resistant key establishment, such as the hybrid X25519MLKEM768 group in TLS 1.3, is not exposed to HNDL, whatever its certificates use.\n\nThe listing assesses five invented flows under two scenarios (a CRQC in 5 years and in 15 years). The kex column stands for what a real discovery exercise (module E2) would record from observed handshakes. Every dataset, system, vendor, probability and cost in the listings is **DEMO DATA** invented for the lesson. None of it is a finding about a real organisation, and none of the probabilities is derived from an observed quantum attack (none has been observed). The listings show how a risk model is built and how its assumptions are exposed; they do not produce a forecast."
+            },
+            {
+              "type": "code",
+              "id": "c-hndl-org",
+              "language": "python",
+              "code": "from dataclasses import dataclass\n# Harvest-now-decrypt-later (HNDL) exposure per data flow. DEMO DATA: the flows are invented; \"kex\" is the key-establishment algorithm a real inventory would record.\n@dataclass\nclass Flow:\n    name: str\n    path: str          # \"internet\", \"partner link\", \"internal\", \"stored backup\"\n    kex: str           # key establishment of the protecting channel\n    secrecy_years: int # how long the content must stay confidential\n    migration_years: int\n\nPQC_KEX = {\"X25519MLKEM768\", \"ML-KEM-768\", \"ML-KEM-1024\"}\nINTERCEPTABLE = {\"internet\": True, \"partner link\": True, \"stored backup\": True, \"internal\": False}   # plausibility that an adversary can capture the ciphertext in bulk\nflows = [\n    Flow(\"customer portal login and data\", \"internet\",      \"ECDHE-P256\",     7,  2),\n    Flow(\"claims upload to insurer\",       \"partner link\",  \"RSA key transport\", 30, 3),\n    Flow(\"backup to offsite storage\",      \"stored backup\", \"RSA-2048 wrap\",  25, 3),\n    Flow(\"admin console\",                  \"internal\",      \"ECDHE-P256\",     2,  1),\n    Flow(\"new mobile API\",                 \"internet\",      \"X25519MLKEM768\", 10, 0),\n]\ndef assess(f, crqc_in):\n    if f.kex in PQC_KEX:\n        return \"not exposed (quantum-resistant key establishment)\"\n    if not INTERCEPTABLE[f.path]:\n        return \"lower exposure (ciphertext hard to capture in bulk): monitor\"\n    if crqc_in < f.migration_years + f.secrecy_years:\n        return \"EXPOSED (X < Y + Z)\"\n    return \"ok under this scenario\"\nprint(\"DEMO DATA. Verdict per flow if a CRQC arrives in X years (X is a scenario, not a prediction)\")\nfor X in (5, 15):\n    print(f\"--- scenario X = {X} years\")\n    print(f\"{'flow':<34} {'kex':<18} {'Y':>3} {'Z':>3}  verdict\")\n    for f in flows:\n        print(f\"{f.name:<34} {f.kex:<18} {f.migration_years:>3} {f.secrecy_years:>3}  {assess(f, X)}\")\nprint()\nprint(\"note the RSA key transport flows: the session key itself is wrapped under the long-term RSA key, so one future break exposes every recorded session; ECDHE flows are protected against later compromise of the certificate key, but not against a CRQC solving the elliptic-curve discrete logarithm of the recorded exchange\")\nprint(\"a real inventory fills the kex column from observed handshakes (module E2), not from documentation\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-hndl-org",
+              "language": "text",
+              "code": "DEMO DATA. Verdict per flow if a CRQC arrives in X years (X is a scenario, not a prediction)\n--- scenario X = 5 years\nflow                               kex                  Y   Z  verdict\ncustomer portal login and data     ECDHE-P256           2   7  EXPOSED (X < Y + Z)\nclaims upload to insurer           RSA key transport    3  30  EXPOSED (X < Y + Z)\nbackup to offsite storage          RSA-2048 wrap        3  25  EXPOSED (X < Y + Z)\nadmin console                      ECDHE-P256           1   2  lower exposure (ciphertext hard to capture in bulk): monitor\nnew mobile API                     X25519MLKEM768       0  10  not exposed (quantum-resistant key establishment)\n--- scenario X = 15 years\nflow                               kex                  Y   Z  verdict\ncustomer portal login and data     ECDHE-P256           2   7  ok under this scenario\nclaims upload to insurer           RSA key transport    3  30  EXPOSED (X < Y + Z)\nbackup to offsite storage          RSA-2048 wrap        3  25  EXPOSED (X < Y + Z)\nadmin console                      ECDHE-P256           1   2  lower exposure (ciphertext hard to capture in bulk): monitor\nnew mobile API                     X25519MLKEM768       0  10  not exposed (quantum-resistant key establishment)\n\nnote the RSA key transport flows: the session key itself is wrapped under the long-term RSA key, so one future break exposes every recorded session; ECDHE flows are protected against later compromise of the certificate key, but not against a CRQC solving the elliptic-curve discrete logarithm of the recorded exchange\na real inventory fills the kex column from observed handshakes (module E2), not from documentation",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "In the 5-year scenario three flows are EXPOSED: the customer portal (ECDHE, Y + Z = 9), the claims upload (RSA key transport, 33) and the offsite backup (RSA wrap, 28). In the 15-year scenario the portal becomes ok (15 is not below 9) but the claims upload and the backup remain exposed. The internal admin console is classed as lower exposure because its ciphertext is hard to capture in bulk (monitor, do not ignore), and the new mobile API using X25519MLKEM768 is not exposed in either scenario.\n\n**Why RSA key transport is the worst case.** The session key travels encrypted under the server's long-term RSA key, so one future break of that key reveals every recorded session; with ephemeral Diffie-Hellman an adversary must break each exchange separately, but a CRQC can do that too, so ephemeral key exchange gives forward secrecy against key theft but not against Shor's algorithm. **Common mistake:** concluding that \"we use forward secrecy, so we are safe from harvest-now-decrypt-later\"."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Which flow of the lesson is not exposed to HNDL?",
+              "options": [
+                "The mobile API using X25519MLKEM768",
+                "The claims upload using RSA key transport",
+                "The backup using an RSA-wrapped key"
+              ],
+              "correct_index": 0,
+              "explanation": "Its key establishment is quantum-resistant."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "Does forward secrecy (ephemeral ECDHE) protect recorded traffic from a CRQC?",
+              "options": [
+                "No, a CRQC can break each recorded exchange",
+                "Yes, completely",
+                "Only for UDP"
+              ],
+              "correct_index": 0,
+              "explanation": "Forward secrecy protects against later key theft only."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why is internal traffic classed as lower exposure?",
+              "options": [
+                "Capturing the ciphertext in bulk is harder, though monitoring is still needed",
+                "It uses no encryption",
+                "It never contains secrets"
+              ],
+              "correct_index": 0,
+              "explanation": "The assumption must be documented."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (Managing Risks in the Quantum Era): identifying quantum-related business risks and impacts; risk assessment with heat maps and the maturity model"
+            },
+            {
+              "book": "B85",
+              "locator": "NIST IR 8547 initial public draft: Section 1 and 4.1 (quantum-vulnerable key establishment and signatures) as the reference for which algorithms are in scope"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The flows and numbers are DEMO DATA. The capture-plausibility rule by path type is a simplifying assumption of the lesson. The hybrid group identifier X25519MLKEM768 is described in IETF drafts and RFCs cited in earlier modules."
+          }
+        },
+        {
+          "slug": "sec-5",
+          "action": "replace",
+          "title": "1.5 Critical Systems",
+          "summary": "Business criticality that inherits the worst case of everything that depends on a system, which makes trust anchors rank first.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The system with the highest direct business impact is not necessarily the most critical to migrate. Cryptographic trust is **transitive**: an internal certificate authority, an identity provider or a code-signing service is trusted by many other systems, and a compromise of such a trust anchor harms everything that relies on it. A useful measure of criticality therefore combines the **own impact** of a system with the **worst impact among its dependants**.\n\nThe listing models eight invented systems with an own impact from 1 to 5 and a dependency graph (which system relies on which for authentication or trust), computes the dependants of every system by graph traversal and ranks the systems by inherited criticality. Every dataset, system, vendor, probability and cost in the listings is **DEMO DATA** invented for the lesson. None of it is a finding about a real organisation, and none of the probabilities is derived from an observed quantum attack (none has been observed). The listings show how a risk model is built and how its assumptions are exposed; they do not produce a forecast."
+            },
+            {
+              "type": "code",
+              "id": "c-critical",
+              "language": "python",
+              "code": "# Critical systems: own business impact PLUS what depends on the system. DEMO DATA: invented systems and dependencies.\nown_impact = {   # 1 (minor) .. 5 (severe) if the system is compromised or unavailable\n    \"public website\": 2, \"customer portal\": 4, \"payments service\": 5, \"internal wiki\": 1,\n    \"identity provider\": 3, \"internal PKI / CA\": 3, \"code signing service\": 3, \"HR system\": 3,\n}\ndepends_on = {   # system -> systems it relies on for authentication or trust\n    \"public website\": [\"internal PKI / CA\"],\n    \"customer portal\": [\"identity provider\", \"internal PKI / CA\"],\n    \"payments service\": [\"identity provider\", \"internal PKI / CA\", \"code signing service\"],\n    \"internal wiki\": [\"identity provider\"],\n    \"identity provider\": [\"internal PKI / CA\"],\n    \"code signing service\": [\"internal PKI / CA\"],\n    \"HR system\": [\"identity provider\"],\n    \"internal PKI / CA\": [],\n}\ndef downstream(system, seen=None):\n    \"\"\"every system that directly or indirectly depends on 'system'\"\"\"\n    seen = seen if seen is not None else set()\n    for s, deps in depends_on.items():\n        if system in deps and s not in seen:\n            seen.add(s)\n            downstream(s, seen)\n    return seen\nprint(\"DEMO DATA. criticality = the highest impact among the system itself and everything that depends on it (a trust anchor inherits the worst case of its dependants)\")\nprint(f\"{'system':<22} {'own':>4} {'dependants':>11} {'inherited':>10}  most critical dependant\")\nrows = []\nfor s in own_impact:\n    dep = downstream(s)\n    worst = max(dep, key=lambda d: own_impact[d]) if dep else None\n    inherited = max([own_impact[s]] + [own_impact[d] for d in dep])\n    rows.append((inherited, len(dep), s, worst))\nfor inherited, n, s, worst in sorted(rows, reverse=True):\n    print(f\"{s:<22} {own_impact[s]:>4} {n:>11} {inherited:>10}  {worst or '-'}\")\nprint()\nprint(\"the internal PKI looks harmless on its own (impact 3) but every other system trusts it, so it inherits the payments impact (5): migration sequencing in module E5 should start from trust anchors, not from the most visible application\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-critical",
+              "language": "text",
+              "code": "DEMO DATA. criticality = the highest impact among the system itself and everything that depends on it (a trust anchor inherits the worst case of its dependants)\nsystem                  own  dependants  inherited  most critical dependant\ninternal PKI / CA         3           7          5  payments service\nidentity provider         3           4          5  payments service\ncode signing service      3           1          5  payments service\npayments service          5           0          5  -\ncustomer portal           4           0          4  -\nHR system                 3           0          3  -\npublic website            2           0          2  -\ninternal wiki             1           0          1  -\n\nthe internal PKI looks harmless on its own (impact 3) but every other system trusts it, so it inherits the payments impact (5): migration sequencing in module E5 should start from trust anchors, not from the most visible application",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The internal PKI has an own impact of only 3 but seven systems depend on it and the payments service (5) is one of them, so its inherited criticality is 5; the identity provider (own 3, four dependants) and the code-signing service (own 3, one dependant) also inherit 5 through payments. The customer portal keeps 4, the HR system 3, the public website 2 and the wiki 1 because nothing depends on them. A ranking by own impact alone would have put the PKI below the portal and the HR system.\n\n**Consequence for sequencing.** Module E5 plans the migration in waves; a sound first wave contains the trust anchors and the shared services (PKI, identity, signing) because their migration is a prerequisite for the dependants and their compromise has the widest reach. **Common mistake:** starting with the most visible customer application and leaving the root of trust for last."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "Why does the internal PKI rank high despite an own impact of 3?",
+              "options": [
+                "Every other system trusts it, so it inherits the worst impact of its dependants",
+                "It is the newest system",
+                "It stores payment cards"
+              ],
+              "correct_index": 0,
+              "explanation": "Inherited criticality 5 through payments."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "How is criticality computed in the lesson?",
+              "options": [
+                "The highest impact among the system and everything that depends on it",
+                "The sum of impacts",
+                "The average"
+              ],
+              "correct_index": 0,
+              "explanation": "A graph traversal over dependencies."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "What should the first migration wave contain?",
+              "options": [
+                "Trust anchors and shared services such as PKI, identity and signing",
+                "Only the public website",
+                "Only the wiki"
+              ],
+              "correct_index": 0,
+              "explanation": "Their migration unblocks dependants."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (Managing Risks in the Quantum Era): identifying quantum-related business risks and impacts; risk assessment with heat maps and the maturity model"
+            },
+            {
+              "book": "B26",
+              "locator": "NIST SP 800-30 Rev. 1: Section 2.3 (key risk concepts) on propagation of impact across dependent systems"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The system list and dependency graph are DEMO DATA. The max-of-dependants rule is a simple illustration; real programmes may weight dependants differently. The cited SP 800-30 section was only skimmed for the concept of impact propagation."
+          }
+        },
+        {
+          "slug": "sec-6",
+          "action": "replace",
+          "title": "1.6 Third-Party Dependencies",
+          "summary": "A vendor register where evidence of a PQC plan changes the exposure, 'unknown' is not treated as safe, and a standard question list produces the evidence.",
+          "estimated_minutes": 40,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "Quantum risk does not stop at the organisation boundary. Cloud providers, payment processors, SaaS applications and code-signing vendors hold your data or your trust, and their cryptography is outside your control. The course text names supply chain dependencies explicitly: software updates, signed binaries and cloud APIs depend on trusted encryption, and recommends software and **cryptographic bills of materials** and assessment of suppliers' PQC readiness.\n\nAssessment turns on **evidence**. A written, dated roadmap shared under NDA is evidence; a marketing statement is a claim; silence is unknown. The listing ranks seven invented vendors by data sensitivity multiplied by an evidence factor (attested 0.2, claimed 0.5, unknown 0.8, none 1.0), where the factors are explicit assumptions of the lesson, and prints the question list that turns unknowns into evidence. Every dataset, system, vendor, probability and cost in the listings is **DEMO DATA** invented for the lesson. None of it is a finding about a real organisation, and none of the probabilities is derived from an observed quantum attack (none has been observed). The listings show how a risk model is built and how its assumptions are exposed; they do not produce a forecast."
+            },
+            {
+              "type": "code",
+              "id": "c-vendors",
+              "language": "python",
+              "code": "# Third-party cryptographic dependency register. DEMO DATA: vendors are invented. \"unknown\" is NOT \"safe\": it ranks above a vendor with evidence of a plan.\nvendors = [\n    # name, what they hold, data sensitivity 1-3, PQC status as evidenced: \"attested\" (written roadmap with dates), \"claimed\" (verbal / marketing), \"unknown\", \"none\"\n    (\"cloud provider A\",      \"all customer data\",         3, \"attested\"),\n    (\"payment processor\",     \"card transactions\",         3, \"claimed\"),\n    (\"HR SaaS\",               \"employee records\",          3, \"unknown\"),\n    (\"marketing platform\",    \"contact emails\",            2, \"unknown\"),\n    (\"code-signing vendor\",   \"signing keys (HSM)\",        3, \"none\"),\n    (\"office suite\",          \"documents, email\",          2, \"attested\"),\n    (\"facilities booking app\",\"room bookings\",             1, \"unknown\"),\n]\nEVIDENCE_RISK = {\"attested\": 0.2, \"claimed\": 0.5, \"unknown\": 0.8, \"none\": 1.0}   # explicit assumption: how much of the exposure remains given the evidence\nprint(\"DEMO DATA. residual exposure = data sensitivity x evidence factor; the factors are assumptions stated in the code, not measurements\")\nprint(f\"{'vendor':<24} {'holds':<22} {'sens':>4} {'evidence':<10} {'exposure':>9}\")\nranked = sorted(vendors, key=lambda v: -v[2] * EVIDENCE_RISK[v[3]])\nfor name, holds, sens, ev in ranked:\n    print(f\"{name:<24} {holds:<22} {sens:>4} {ev:<10} {sens * EVIDENCE_RISK[ev]:>9.2f}\")\nprint()\nprint(\"questions to put to every vendor (the answers become the evidence column):\")\nfor q in (\"Which public-key algorithms protect our data in transit and at rest, and which are used for signatures and certificates?\",\n          \"Do you have a written PQC migration plan with dates? Can you share it under NDA?\",\n          \"Which NIST standards (FIPS 203, 204, 205) will you support, and in which products and when?\",\n          \"Do you provide a cryptographic bill of materials (CBOM) for the service?\",\n          \"How will the migration be communicated to us, and who bears the cost of breaking changes?\",\n          \"What contract clause lets us exit or audit if the plan is not met?\"):\n    print(\"  -\", q)\nprint()\nprint(\"rule used: a vendor that cannot answer is not assumed safe; 'unknown' keeps most of the exposure until evidence arrives\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-vendors",
+              "language": "text",
+              "code": "DEMO DATA. residual exposure = data sensitivity x evidence factor; the factors are assumptions stated in the code, not measurements\nvendor                   holds                  sens evidence    exposure\ncode-signing vendor      signing keys (HSM)        3 none            3.00\nHR SaaS                  employee records          3 unknown         2.40\nmarketing platform       contact emails            2 unknown         1.60\npayment processor        card transactions         3 claimed         1.50\nfacilities booking app   room bookings             1 unknown         0.80\ncloud provider A         all customer data         3 attested        0.60\noffice suite             documents, email          2 attested        0.40\n\nquestions to put to every vendor (the answers become the evidence column):\n  - Which public-key algorithms protect our data in transit and at rest, and which are used for signatures and certificates?\n  - Do you have a written PQC migration plan with dates? Can you share it under NDA?\n  - Which NIST standards (FIPS 203, 204, 205) will you support, and in which products and when?\n  - Do you provide a cryptographic bill of materials (CBOM) for the service?\n  - How will the migration be communicated to us, and who bears the cost of breaking changes?\n  - What contract clause lets us exit or audit if the plan is not met?\n\nrule used: a vendor that cannot answer is not assumed safe; 'unknown' keeps most of the exposure until evidence arrives",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The vendor holding signing keys with no PQC plan ranks first (3.00), the HR SaaS with unknown status second (2.40), then the marketing platform (1.60), the payment processor whose claim is unevidenced (1.50), the facilities app (0.80) and the two attested vendors last (0.60 and 0.40). Two points follow. A vendor with high-sensitivity data and **unknown** status (2.40) ranks above a vendor with **claimed** readiness (1.50): a claim is better than silence but not evidence. And evidence moves a vendor down: the cloud provider holds all customer data yet ranks near the bottom because it has an attested roadmap.\n\n**Contract levers.** Questions are only useful if the contract lets the organisation act on the answers: a right to a cryptographic bill of materials, a notification and migration timeline, audit rights and an exit clause (module E6 returns to vendor requirements). **Common mistake:** treating \"no response\" as \"no risk\"."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How does the lesson treat a vendor that does not answer?",
+              "options": [
+                "As unknown, which keeps most of the exposure",
+                "As safe",
+                "As compliant"
+              ],
+              "correct_index": 0,
+              "explanation": "Unknown has an evidence factor of 0.8."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What counts as evidence of a PQC plan?",
+              "options": [
+                "A written, dated roadmap, for example shared under NDA",
+                "A marketing slide",
+                "A verbal assurance"
+              ],
+              "correct_index": 0,
+              "explanation": "Attested is the strongest status."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Why does the cloud provider rank low in the lesson despite holding all customer data?",
+              "options": [
+                "It has an attested roadmap, which lowers the residual exposure",
+                "It is small",
+                "Its data is public"
+              ],
+              "correct_index": 0,
+              "explanation": "Exposure = sensitivity x evidence factor."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (Managing Risks in the Quantum Era): identifying quantum-related business risks and impacts; risk assessment with heat maps and the maturity model"
+            },
+            {
+              "book": "B99",
+              "locator": "CycloneDX 1.6 specification: the cryptography bill of materials (CBOM) as a way to request vendor evidence"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The vendors and the evidence factors are DEMO DATA and assumptions of the lesson; the factors are not calibrated against any incident data. The CBOM reference concerns the format only."
+          }
+        },
+        {
+          "slug": "sec-7",
+          "action": "replace",
+          "title": "1.7 Risk Modeling",
+          "summary": "A reproducible risk score from algorithm, sensitivity, lifetime, exposure and criticality, with unknown inputs kept out of the ranking and a weight-sensitivity test.",
+          "estimated_minutes": 60,
+          "blocks": [
+            {
+              "type": "text",
+              "id": "t1",
+              "markdown": "The earlier sections produced the inputs of a **risk model**: algorithm vulnerability (what protects the asset), sensitivity (1.3), lifetime (1.3), exposure (1.4, how reachable the ciphertext is) and criticality (1.5). The course text recommends scoring them as a composite of several factors and plotting the result on a heat map. A defensible model has four properties: the **formula is written down** (weights included), the calculation is **reproducible**, **unknown inputs are not invented** and the **sensitivity of the ranking to the weights is tested**, because the weights are judgement.\n\nThe listing scores six invented assets as 100 times a weighted sum of five factors in [0, 1] with weights 0.25, 0.20, 0.25, 0.15 and 0.15. One asset (a vendor-hosted service whose algorithm is unknown) is **not** given a default value: it is reported as *insufficient evidence*. Then the weights are randomly perturbed by up to ±50% (renormalised) 5,000 times to see whether the ranking changes. Every dataset, system, vendor, probability and cost in the listings is **DEMO DATA** invented for the lesson. None of it is a finding about a real organisation, and none of the probabilities is derived from an observed quantum attack (none has been observed). The listings show how a risk model is built and how its assumptions are exposed; they do not produce a forecast."
+            },
+            {
+              "type": "code",
+              "id": "c-risk-model",
+              "language": "python",
+              "code": "import random, itertools\n# A reproducible quantum risk score for each asset, built from the inputs of 1.3 to 1.6. DEMO DATA: invented assets.\n# score = 100 * (w1*algorithm + w2*sensitivity + w3*lifetime + w4*exposure + w5*criticality), each factor in [0, 1].\n# A factor that is UNKNOWN is not replaced by 0.5: the asset gets status \"insufficient evidence\" and is ranked separately.\nFACTORS = (\"algorithm\", \"sensitivity\", \"lifetime\", \"exposure\", \"criticality\")\nWEIGHTS = {\"algorithm\": 0.25, \"sensitivity\": 0.20, \"lifetime\": 0.25, \"exposure\": 0.15, \"criticality\": 0.15}\nassets = {\n    \"claims upload (RSA transport)\":  dict(algorithm=1.0, sensitivity=1.0, lifetime=1.0, exposure=0.8, criticality=0.8),\n    \"customer portal (ECDHE-P256)\":   dict(algorithm=0.7, sensitivity=0.7, lifetime=0.4, exposure=1.0, criticality=0.8),\n    \"backup wrap key (RSA-2048)\":     dict(algorithm=1.0, sensitivity=1.0, lifetime=0.9, exposure=0.5, criticality=0.6),\n    \"admin console (ECDHE-P256)\":     dict(algorithm=0.7, sensitivity=0.4, lifetime=0.1, exposure=0.2, criticality=0.6),\n    \"mobile API (X25519MLKEM768)\":    dict(algorithm=0.1, sensitivity=0.7, lifetime=0.5, exposure=1.0, criticality=0.7),\n    \"HR SaaS (vendor, unverified)\":   dict(algorithm=None, sensitivity=0.7, lifetime=1.0, exposure=0.5, criticality=0.4),\n}\ndef score(a, weights=WEIGHTS):\n    if any(a[f] is None for f in FACTORS):\n        return None\n    return 100 * sum(weights[f] * a[f] for f in FACTORS)\nprint(\"DEMO DATA. weights:\", WEIGHTS)\nscored = {n: score(a) for n, a in assets.items()}\nprint(f\"{'asset':<34} {'score':>7}  band\")\ndef band(s):\n    return \"insufficient evidence\" if s is None else \"high\" if s >= 70 else \"medium\" if s >= 45 else \"low\"\nfor n, s in sorted(scored.items(), key=lambda kv: (kv[1] is None, -(kv[1] or 0))):\n    print(f\"{n:<34} {('%.1f' % s) if s is not None else '-':>7}  {band(s)}\")\n# sensitivity analysis: do the rankings survive plausible disagreement about the weights?\nknown = [n for n, s in scored.items() if s is not None]\nbase_rank = sorted(known, key=lambda n: -scored[n])\nrandom.seed(11)\nchanges = 0\ntrials = 5000\ntop_counts = {n: 0 for n in known}\nfor _ in range(trials):\n    w = {f: WEIGHTS[f] * random.uniform(0.5, 1.5) for f in FACTORS}\n    t = sum(w.values())\n    w = {f: v / t for f, v in w.items()}\n    rank = sorted(known, key=lambda n: -score(assets[n], w))\n    top_counts[rank[0]] += 1\n    if rank != base_rank:\n        changes += 1\nprint()\nprint(f\"weights perturbed by up to +/-50 percent (renormalised), {trials} trials: the full ranking changed in {100 * changes / trials:.1f}% of trials\")\nprint(\"share of trials in which each asset was ranked first:\")\nfor n, c in sorted(top_counts.items(), key=lambda kv: -kv[1]):\n    print(f\"  {n:<34} {100 * c / trials:5.1f}%\")\nprint()\nprint(\"the output is a prioritisation aid with stated assumptions, not a measurement of probability; the unverified vendor stays outside the ranking until its algorithm is known\")"
+            },
+            {
+              "type": "code",
+              "id": "o-c-risk-model",
+              "language": "text",
+              "code": "DEMO DATA. weights: {'algorithm': 0.25, 'sensitivity': 0.2, 'lifetime': 0.25, 'exposure': 0.15, 'criticality': 0.15}\nasset                                score  band\nclaims upload (RSA transport)         94.0  high\nbackup wrap key (RSA-2048)            84.0  high\ncustomer portal (ECDHE-P256)          68.5  medium\nmobile API (X25519MLKEM768)           54.5  medium\nadmin console (ECDHE-P256)            40.0  low\nHR SaaS (vendor, unverified)             -  insufficient evidence\n\nweights perturbed by up to +/-50 percent (renormalised), 5000 trials: the full ranking changed in 1.1% of trials\nshare of trials in which each asset was ranked first:\n  claims upload (RSA transport)      100.0%\n  customer portal (ECDHE-P256)         0.0%\n  backup wrap key (RSA-2048)           0.0%\n  admin console (ECDHE-P256)           0.0%\n  mobile API (X25519MLKEM768)          0.0%\n\nthe output is a prioritisation aid with stated assumptions, not a measurement of probability; the unverified vendor stays outside the ranking until its algorithm is known",
+              "caption": "Expected output"
+            },
+            {
+              "type": "text",
+              "id": "t2",
+              "markdown": "The claims upload scores 94.0 (high), the RSA-wrapped backup key 84.0 (high), the customer portal 68.5 and the mobile API 54.5 (medium), and the admin console 40.0 (low); the HR SaaS is reported as insufficient evidence and has no score. Under the weight perturbation the full ranking changed in only 1.1% of the 5,000 trials, and the claims upload was ranked first in 100% of them, so the conclusion \"start with the RSA-protected, long-lived, sensitive flows\" is robust to the weight choice, although the exact scores are not.\n\n**What the score is.** It is a prioritisation aid: its bands (70 and 45) are conventions, its factors are judgements, and it does not estimate the probability of an attack. Its value is that two reviewers using the same inputs get the same answer, that changing a weight shows its effect, and that a missing input is visible rather than hidden by a default. The Q-CAPS platform's own readiness calculation follows the same principle of recording its inputs and not substituting guesses for missing evidence. **Common mistake:** filling unknown inputs with a mid-range value, which makes unassessed assets look average and removes the pressure to assess them."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp1",
+              "question": "How does the lesson's model treat an asset with an unknown algorithm?",
+              "options": [
+                "It reports insufficient evidence and excludes it from the ranking",
+                "It assumes a score of 50",
+                "It scores it zero"
+              ],
+              "correct_index": 0,
+              "explanation": "A default would hide the missing assessment."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp2",
+              "question": "What does the weight-perturbation test show?",
+              "options": [
+                "Whether the ranking is robust to the judgement-based weights",
+                "That the weights are correct",
+                "The probability of attack"
+              ],
+              "correct_index": 0,
+              "explanation": "The ranking changed in only 1.1% of trials."
+            },
+            {
+              "type": "checkpoint",
+              "id": "cp3",
+              "question": "Which statement about the score is correct?",
+              "options": [
+                "It is a reproducible prioritisation aid, not a probability of attack",
+                "It predicts when attacks happen",
+                "It replaces expert review"
+              ],
+              "correct_index": 0,
+              "explanation": "Bands and weights are conventions."
+            }
+          ],
+          "sources": [
+            {
+              "book": "B05",
+              "locator": "Becoming Quantum Safe, Chapter 4 (Managing Risks in the Quantum Era): identifying quantum-related business risks and impacts; risk assessment with heat maps and the maturity model"
+            },
+            {
+              "book": "B26",
+              "locator": "NIST SP 800-30 Rev. 1: Section 3.2 (conducting the risk assessment: determining likelihood, impact and risk, and the role of assumptions and uncertainty)"
+            }
+          ],
+          "needs_verification": {
+            "reason": "The factors, weights and bands are DEMO DATA and conventions of the lesson, not a published scoring standard; the heat-map idea and the list of scoring factors follow the course text. The SP 800-30 section was cited for the general method of determining risk and uncertainty and not compared line by line."
+          }
+        }
+      ],
+      "quiz": [
+        {
+          "id": "e1-n01",
+          "prompt": "In the time inequality X < Y + Z, what does X represent?",
+          "options": [
+            "The years until a CRQC exists, an unknown input",
+            "The years of data lifetime",
+            "The years of migration"
+          ],
+          "correct_index": 0,
+          "explanation": "X is a scenario input and not a forecast.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 5, the urgency of transition"
+          }
+        },
+        {
+          "id": "e1-n02",
+          "prompt": "Why is the signing-service test X < Y rather than X < Y + Z?",
+          "options": [
+            "A forged signature matters from the day a CRQC exists, not for the shelf life of data",
+            "Signatures never expire",
+            "Signing services are not encrypted"
+          ],
+          "correct_index": 0,
+          "explanation": "Integrity and authentication differ from confidentiality.",
+          "source": {
+            "book": "B85",
+            "locator": "Section 4.1.1"
+          }
+        },
+        {
+          "id": "e1-n03",
+          "prompt": "Which dates does NIST IR 8547 (initial public draft) propose for RSA and ECDSA at 112-bit strength?",
+          "options": [
+            "Deprecated after 2030 and disallowed after 2035",
+            "Disallowed in 2026",
+            "Never deprecated"
+          ],
+          "correct_index": 0,
+          "explanation": "They are policy dates, not predictions.",
+          "source": {
+            "book": "B85",
+            "locator": "Table 2"
+          }
+        },
+        {
+          "id": "e1-n04",
+          "prompt": "Why must a loss model show percentiles and not only the mean?",
+          "options": [
+            "Most years cost nothing while a few years cost a great deal",
+            "Percentiles are easier to compute",
+            "The mean is undefined"
+          ],
+          "correct_index": 0,
+          "explanation": "The 99th percentile was sixteen times the mean in the lesson.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 4, evaluating business impacts"
+          }
+        },
+        {
+          "id": "e1-n05",
+          "prompt": "What is the status of event probabilities in a quantum loss model?",
+          "options": [
+            "Owned, reviewable assumptions",
+            "Measured frequencies",
+            "Regulatory values"
+          ],
+          "correct_index": 0,
+          "explanation": "No quantum attack has been observed.",
+          "source": {
+            "book": "B26",
+            "locator": "Section 2.3"
+          }
+        },
+        {
+          "id": "e1-n06",
+          "prompt": "Which FIPS 199 impact level corresponds to a severe or catastrophic adverse effect?",
+          "options": [
+            "High",
+            "Moderate",
+            "Low"
+          ],
+          "correct_index": 0,
+          "explanation": "Low is limited and moderate is serious.",
+          "source": {
+            "book": "B24",
+            "locator": "Section 3"
+          }
+        },
+        {
+          "id": "e1-n07",
+          "prompt": "A dataset must stay secret for 40 years and has moderate impact. How should it be treated?",
+          "options": [
+            "As exposed under any plausible CRQC year, because of its lifetime",
+            "As low priority because impact is only moderate",
+            "As safe if encrypted today"
+          ],
+          "correct_index": 0,
+          "explanation": "Lifetime is independent of sensitivity.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 4, data classification"
+          }
+        },
+        {
+          "id": "e1-n08",
+          "prompt": "Does ephemeral Diffie-Hellman protect recorded traffic from a CRQC?",
+          "options": [
+            "No, a CRQC can break each recorded exchange",
+            "Yes",
+            "Only for TLS 1.2"
+          ],
+          "correct_index": 0,
+          "explanation": "Forward secrecy addresses later key theft only.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 5"
+          }
+        },
+        {
+          "id": "e1-n09",
+          "prompt": "Why does an internal PKI inherit a high criticality?",
+          "options": [
+            "Its dependants trust it, so it inherits their worst impact",
+            "It has high revenue",
+            "It is internet-facing"
+          ],
+          "correct_index": 0,
+          "explanation": "Cryptographic trust is transitive.",
+          "source": {
+            "book": "B26",
+            "locator": "Section 2.3"
+          }
+        },
+        {
+          "id": "e1-n10",
+          "prompt": "How should a vendor that gives no PQC information be rated?",
+          "options": [
+            "As unknown, keeping most of the exposure",
+            "As low risk",
+            "As compliant"
+          ],
+          "correct_index": 0,
+          "explanation": "Silence is not evidence of safety.",
+          "source": {
+            "book": "B05",
+            "locator": "Chapter 4, supply chain dependencies"
+          }
+        },
+        {
+          "id": "e1-n11",
+          "prompt": "What must a defensible risk model do with an unknown input?",
+          "options": [
+            "Report insufficient evidence instead of inventing a value",
+            "Use 0.5",
+            "Drop the asset silently"
+          ],
+          "correct_index": 0,
+          "explanation": "Defaults hide the missing assessment.",
+          "source": {
+            "book": "B26",
+            "locator": "Section 3.2"
+          }
+        },
+        {
+          "id": "e1-n12",
+          "prompt": "What does a weight-sensitivity test on a risk ranking check?",
+          "options": [
+            "Whether the ranking survives disagreement about judgement-based weights",
+            "Whether weights sum to one",
+            "Whether the data is encrypted"
+          ],
+          "correct_index": 0,
+          "explanation": "Robust rankings support decisions.",
+          "source": {
+            "book": "B26",
+            "locator": "Section 3.2"
+          }
+        }
+      ],
+      "estimated_minutes": 315,
+      "notes": "Rewrites the seven outline sections as lessons with executed listings on labelled DEMO DATA: the time inequality, a loss-distribution model, a sensitivity and lifetime register, HNDL exposure per flow, inherited criticality, a third-party evidence register and a reproducible risk score with weight-sensitivity analysis. Mosca-inequality attribution and the course book's expert estimates are flagged for verification.",
+      "learning_objectives": [
+        "Express the quantum threat to executives with the time inequality X < Y + Z and distinguish policy dates from forecasts.",
+        "Model business impact as a loss distribution with owned assumptions and explain why percentiles matter.",
+        "Build a data register with sensitivity and confidentiality lifetime and derive HNDL exposure per data flow.",
+        "Rank systems by inherited criticality so that trust anchors are sequenced first.",
+        "Assess third-party cryptographic risk from evidence, treating unknown as unknown.",
+        "Build a reproducible risk score with stated weights, unknown handling and a sensitivity test."
+      ]
+    }
+  ]
+}
