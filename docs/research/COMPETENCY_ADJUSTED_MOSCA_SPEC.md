@@ -123,13 +123,19 @@ fallbacks: data lifetime is `x` and competency enters through `y`, so keeping ei
 `risk_score > 5` Critical threshold is removed with them. `test_graph_optimizer.py` is rewritten against the new
 objective.
 
-## 7. Decisions still open
+## 7. Decisions on weighting, ranking and labels (approved)
 
-1. **`asset.criticality`**: keep it as a weight on gain, or drop it. It is also an uncalibrated owner input, so
-   this must be decided before the ranking logic is written.
-2. **Ranking and labelling with an interval**: how to order competencies when gains are intervals (for example by
-   the lower bound, so a recommendation holds under the optimistic curve), and what replaces the Critical label
-   (for example: P(exposed) lower bound above a stated value, with that value shown to the user).
+1. **`asset.criticality` does not enter the ranking.** It is an uncalibrated owner input, and a hidden weight is what
+   this redesign removes. It stays stored and displayed. Gain is the reduction in P(exposed) summed over findings,
+   so the model reports exposure per asset and does not claim to rank assets by business impact.
+2. **Ranking with intervals:** competencies are ordered by the lower bound of the gain (a recommendation then holds
+   under the optimistic survey curve), with the upper bound as the tie-break.
+3. **Labels come from the interval, not from a tuned cutoff.** 0.5 is the "more likely than not" point:
+   - *Likely exposed*: P(exposed) lower bound is at least 0.5.
+   - *Possibly exposed*: upper bound is at least 0.5 and lower bound is below 0.5.
+   - *Unlikely within the survey range*: upper bound is below 0.5.
+   - *Unknown*: shown as Unknown with its reason.
+   The 0.5 value is a presentation threshold, not a calibrated risk tolerance, and the UI must show the interval too.
 
 ## 8. Implementation plan
 
