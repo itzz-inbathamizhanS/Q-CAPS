@@ -11,10 +11,10 @@ interface Props {
 }
 
 const Field: React.FC<{ label: string; hint?: string; children: React.ReactNode }> = ({ label, hint, children }) => (
-  <label className="ad-field">
-    <span className="ad-field-label">{label}</span>
+  <label className="adm-field">
+    <span className="adm-field-label">{label}</span>
     {children}
-    {hint && <span className="ad-hint">{hint}</span>}
+    {hint && <span className="adm-hint">{hint}</span>}
   </label>
 );
 
@@ -40,7 +40,7 @@ export const BlockEditor: React.FC<Props> = ({ blocks, onChange, problems = {} }
         return (
           <Field label="Markdown" hint="Plain markdown. HTML tags are removed when you save.">
             <textarea
-              className="ad-input ad-textarea"
+              className="adm-input adm-textarea"
               rows={6}
               value={b.markdown}
               onChange={(e) => update(i, { markdown: e.target.value })}
@@ -51,22 +51,22 @@ export const BlockEditor: React.FC<Props> = ({ blocks, onChange, problems = {} }
         return (
           <>
             <Field label="Video URL" hint="https only, from an approved video host.">
-              <input className="ad-input" value={b.url} onChange={(e) => update(i, { url: e.target.value })} />
+              <input className="adm-input" value={b.url} onChange={(e) => update(i, { url: e.target.value })} />
             </Field>
             <Field label="Title">
-              <input className="ad-input" value={b.title} onChange={(e) => update(i, { title: e.target.value })} />
+              <input className="adm-input" value={b.title} onChange={(e) => update(i, { title: e.target.value })} />
             </Field>
-            <div className="ad-row">
+            <div className="adm-row">
               <Field label="Captions file URL (.vtt)" hint="Required to publish.">
                 <input
-                  className="ad-input"
+                  className="adm-input"
                   value={b.captions_url ?? ''}
                   onChange={(e) => update(i, { captions_url: e.target.value })}
                 />
               </Field>
               <Field label="Transcript URL">
                 <input
-                  className="ad-input"
+                  className="adm-input"
                   value={b.transcript_url ?? ''}
                   onChange={(e) => update(i, { transcript_url: e.target.value })}
                 />
@@ -77,33 +77,33 @@ export const BlockEditor: React.FC<Props> = ({ blocks, onChange, problems = {} }
       case 'visual':
         return (
           <>
-            <div className="ad-row">
+            <div className="adm-row">
               <Field label="Visual component" hint="Built component: tls-handshake. Other kinds are hidden from learners until a component exists.">
                 <input
-                  className="ad-input"
-                  list="ad-visual-kinds"
+                  className="adm-input"
+                  list="adm-visual-kinds"
                   value={b.kind}
                   onChange={(e) => update(i, { kind: e.target.value.toLowerCase() })}
                 />
-                <datalist id="ad-visual-kinds">
+                <datalist id="adm-visual-kinds">
                   {VISUAL_KINDS.map((k) => (
                     <option key={k} value={k} />
                   ))}
                 </datalist>
               </Field>
               <Field label="Title">
-                <input className="ad-input" value={b.title ?? ''} onChange={(e) => update(i, { title: e.target.value })} />
+                <input className="adm-input" value={b.title ?? ''} onChange={(e) => update(i, { title: e.target.value })} />
               </Field>
             </div>
             <Field label="Description">
               <textarea
-                className="ad-input ad-textarea"
+                className="adm-input adm-textarea"
                 rows={3}
                 value={b.description}
                 onChange={(e) => update(i, { description: e.target.value })}
               />
             </Field>
-            <label className="ad-check">
+            <label className="adm-check">
               <input
                 type="checkbox"
                 checked={b.simulation}
@@ -118,17 +118,17 @@ export const BlockEditor: React.FC<Props> = ({ blocks, onChange, problems = {} }
       case 'code':
         return (
           <>
-            <div className="ad-row">
+            <div className="adm-row">
               <Field label="Language">
-                <input className="ad-input" value={b.language} onChange={(e) => update(i, { language: e.target.value.toLowerCase() })} />
+                <input className="adm-input" value={b.language} onChange={(e) => update(i, { language: e.target.value.toLowerCase() })} />
               </Field>
               <Field label="Caption">
-                <input className="ad-input" value={b.caption ?? ''} onChange={(e) => update(i, { caption: e.target.value })} />
+                <input className="adm-input" value={b.caption ?? ''} onChange={(e) => update(i, { caption: e.target.value })} />
               </Field>
             </div>
             <Field label="Code">
               <textarea
-                className="ad-input ad-textarea ad-mono"
+                className="adm-input adm-textarea adm-mono"
                 rows={6}
                 spellCheck={false}
                 value={b.code}
@@ -140,10 +140,10 @@ export const BlockEditor: React.FC<Props> = ({ blocks, onChange, problems = {} }
       case 'callout':
         return (
           <>
-            <div className="ad-row">
+            <div className="adm-row">
               <Field label="Style">
                 <select
-                  className="ad-input"
+                  className="adm-input"
                   value={b.variant}
                   onChange={(e) => update(i, { variant: e.target.value as typeof b.variant })}
                 >
@@ -154,11 +154,11 @@ export const BlockEditor: React.FC<Props> = ({ blocks, onChange, problems = {} }
                 </select>
               </Field>
               <Field label="Title">
-                <input className="ad-input" value={b.title ?? ''} onChange={(e) => update(i, { title: e.target.value })} />
+                <input className="adm-input" value={b.title ?? ''} onChange={(e) => update(i, { title: e.target.value })} />
               </Field>
             </div>
             <Field label="Callout text">
-              <textarea className="ad-input ad-textarea" rows={3} value={b.text} onChange={(e) => update(i, { text: e.target.value })} />
+              <textarea className="adm-input adm-textarea" rows={3} value={b.text} onChange={(e) => update(i, { text: e.target.value })} />
             </Field>
           </>
         );
@@ -168,34 +168,34 @@ export const BlockEditor: React.FC<Props> = ({ blocks, onChange, problems = {} }
   };
 
   return (
-    <div className="ad-blocks">
+    <div className="adm-blocks">
       {blocks.length === 0 && <p className="ls-muted">No blocks yet. Add one below.</p>}
       {blocks.map((b, i) => (
-        <section key={b.id} className="ad-block" aria-label={`Block ${i + 1}, ${b.type}`}>
-          <div className="ad-block-head">
-            <span className={`ad-tag ad-tag--${b.type}`}>{b.type.toUpperCase()}</span>
-            <span className="ad-block-actions">
-              <button type="button" className="ad-iconbtn" onClick={() => move(i, -1)} disabled={i === 0} aria-label={`Move block ${i + 1} up`}>
+        <section key={b.id} className="adm-block" aria-label={`Block ${i + 1}, ${b.type}`}>
+          <div className="adm-block-head">
+            <span className={`adm-tag adm-tag--${b.type}`}>{b.type.toUpperCase()}</span>
+            <span className="adm-block-actions">
+              <button type="button" className="adm-iconbtn" onClick={() => move(i, -1)} disabled={i === 0} aria-label={`Move block ${i + 1} up`}>
                 <ArrowUp size={15} /> <span>Move up</span>
               </button>
               <button
                 type="button"
-                className="ad-iconbtn"
+                className="adm-iconbtn"
                 onClick={() => move(i, 1)}
                 disabled={i === blocks.length - 1}
                 aria-label={`Move block ${i + 1} down`}
               >
                 <ArrowDown size={15} /> <span>Move down</span>
               </button>
-              <button type="button" className="ad-iconbtn ad-iconbtn--danger" onClick={() => remove(i)} aria-label={`Delete block ${i + 1}`}>
+              <button type="button" className="adm-iconbtn adm-iconbtn--danger" onClick={() => remove(i)} aria-label={`Delete block ${i + 1}`}>
                 <Trash2 size={15} /> <span>Delete</span>
               </button>
             </span>
           </div>
-          <div className="ad-block-body">
+          <div className="adm-block-body">
             {renderFields(b, i)}
             {problems[i]?.length ? (
-              <ul className="ad-problems" role="alert">
+              <ul className="adm-problems" role="alert">
                 {problems[i].map((p) => (
                   <li key={p}>{p}</li>
                 ))}
@@ -205,13 +205,13 @@ export const BlockEditor: React.FC<Props> = ({ blocks, onChange, problems = {} }
         </section>
       ))}
 
-      <div className="ad-addbar">
-        <span className="ad-addbar-label">Add block</span>
+      <div className="adm-addbar">
+        <span className="adm-addbar-label">Add block</span>
         {BLOCK_TYPES.map(({ type, label }) => (
           <button
             key={type}
             type="button"
-            className="ls-btn ls-btn--secondary ad-add"
+            className="ls-btn ls-btn--secondary adm-add"
             disabled={blocks.length >= MAX_BLOCKS}
             onClick={() => onChange([...blocks, newBlock(type as BlockType)])}
           >
@@ -242,12 +242,12 @@ const CheckpointFields: React.FC<{
   return (
     <>
       <Field label="Question">
-        <input className="ad-input" value={block.question} onChange={(e) => onPatch({ question: e.target.value })} />
+        <input className="adm-input" value={block.question} onChange={(e) => onPatch({ question: e.target.value })} />
       </Field>
-      <fieldset className="ad-options">
-        <legend className="ad-field-label">Options (select the correct answer)</legend>
+      <fieldset className="adm-options">
+        <legend className="adm-field-label">Options (select the correct answer)</legend>
         {block.options.map((o, i) => (
-          <div key={i} className="ad-option">
+          <div key={i} className="adm-option">
             <input
               type="radio"
               name={`correct-${block.id}`}
@@ -256,7 +256,7 @@ const CheckpointFields: React.FC<{
               aria-label={`Option ${i + 1} is correct`}
             />
             <input
-              className="ad-input"
+              className="adm-input"
               value={o}
               onChange={(e) => setOption(i, e.target.value)}
               aria-label={`Option ${i + 1} text`}
@@ -264,7 +264,7 @@ const CheckpointFields: React.FC<{
             />
             <button
               type="button"
-              className="ad-iconbtn ad-iconbtn--danger"
+              className="adm-iconbtn adm-iconbtn--danger"
               onClick={() => removeOption(i)}
               disabled={block.options.length <= 2}
               aria-label={`Remove option ${i + 1}`}
@@ -275,7 +275,7 @@ const CheckpointFields: React.FC<{
         ))}
         <button
           type="button"
-          className="ls-btn ls-btn--secondary ad-add"
+          className="ls-btn ls-btn--secondary adm-add"
           disabled={block.options.length >= MAX_OPTIONS}
           onClick={() => onPatch({ options: [...block.options, ''] })}
         >
@@ -284,7 +284,7 @@ const CheckpointFields: React.FC<{
       </fieldset>
       <Field label="Explanation" hint="Shown only after the learner answers correctly. Required to publish.">
         <textarea
-          className="ad-input ad-textarea"
+          className="adm-input adm-textarea"
           rows={2}
           value={block.explanation ?? ''}
           onChange={(e) => onPatch({ explanation: e.target.value })}

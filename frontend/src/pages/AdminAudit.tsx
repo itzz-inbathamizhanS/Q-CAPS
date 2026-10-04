@@ -42,7 +42,7 @@ export const AdminAudit: React.FC = () => {
 
   return (
     <div className="ls-page">
-      <header className="ad-header">
+      <header className="adm-header">
         <div>
           <h1 className="ls-h1">Audit log</h1>
           <p className="ls-muted">Every change to course content, newest first.</p>
@@ -52,12 +52,12 @@ export const AdminAudit: React.FC = () => {
         </Link>
       </header>
 
-      <div className="ad-filters" role="group" aria-label="Filter by item type">
+      <div className="adm-filters" role="group" aria-label="Filter by item type">
         {FILTERS.map((f) => (
           <button
             key={f.value}
             type="button"
-            className="ad-chip-btn"
+            className="adm-chip-btn"
             aria-pressed={entityType === f.value}
             onClick={() => {
               setEntityType(f.value);
@@ -83,8 +83,8 @@ export const AdminAudit: React.FC = () => {
           <p className="ls-muted">No changes recorded yet.</p>
         </div>
       ) : (
-        <div className="ad-audit-wrap">
-          <table className="ad-audit">
+        <div className="adm-audit-wrap">
+          <table className="adm-audit">
             <thead>
               <tr>
                 <th>WHEN</th>
@@ -100,7 +100,7 @@ export const AdminAudit: React.FC = () => {
                   <td className="ls-fineprint">{formatWhen(e.created_at)}</td>
                   <td>{e.actor_name}</td>
                   <td>
-                    <span className="ad-tag">{e.action.toUpperCase()}</span>
+                    <span className="adm-tag">{e.action.toUpperCase()}</span>
                   </td>
                   <td>
                     <span className="ls-fineprint">{e.entity_type} </span>

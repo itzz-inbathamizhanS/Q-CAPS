@@ -14,7 +14,7 @@ const formatDate = (iso: string | null) => {
 };
 
 const StatusBadge: React.FC<{ status: ContentStatus }> = ({ status }) => (
-  <span className={`ad-status ad-status--${status}`}>{status === 'published' ? 'Published' : 'Draft'}</span>
+  <span className={`adm-status adm-status--${status}`}>{status === 'published' ? 'Published' : 'Draft'}</span>
 );
 
 type Dialog =
@@ -118,7 +118,7 @@ export const AdminCourses: React.FC = () => {
 
   return (
     <div className="ls-page">
-      <header className="ad-header">
+      <header className="adm-header">
         <div>
           <h1 className="ls-h1">Course management</h1>
           <p className="ls-muted">Create and edit tracks, modules and sections. Changes stay as drafts until published.</p>
@@ -142,32 +142,32 @@ export const AdminCourses: React.FC = () => {
       </header>
 
       {notice && (
-        <div className={notice.kind === 'error' ? 'ad-banner ad-banner--error' : 'ad-banner'} role={notice.kind === 'error' ? 'alert' : 'status'}>
+        <div className={notice.kind === 'error' ? 'adm-banner adm-banner--error' : 'adm-banner'} role={notice.kind === 'error' ? 'alert' : 'status'}>
           {notice.text}
-          <button type="button" className="ad-banner-close" onClick={() => setNotice(null)} aria-label="Dismiss">
+          <button type="button" className="adm-banner-close" onClick={() => setNotice(null)} aria-label="Dismiss">
             x
           </button>
         </div>
       )}
 
-      <section className="ad-stats" aria-label="Content totals">
+      <section className="adm-stats" aria-label="Content totals">
         {stats.map((s) => (
-          <div key={s.label} className="ad-stat">
+          <div key={s.label} className="adm-stat">
             <div className="ls-muted">{s.label}</div>
-            <div className="ad-stat-value">{s.value}</div>
+            <div className="adm-stat-value">{s.value}</div>
           </div>
         ))}
       </section>
 
-      <div className="ad-layout">
-        <aside className="ad-tracks" aria-label="Tracks">
-          <div className="ls-eyebrow ad-muted-eyebrow">TRACKS</div>
+      <div className="adm-layout">
+        <aside className="adm-tracks" aria-label="Tracks">
+          <div className="ls-eyebrow adm-muted-eyebrow">TRACKS</div>
           {overview.tracks.length === 0 && <p className="ls-muted">No tracks yet.</p>}
           {overview.tracks.map((t) => (
             <button
               key={t.id}
               type="button"
-              className={t.id === trackId ? 'ad-track ad-track--on' : 'ad-track'}
+              className={t.id === trackId ? 'adm-track adm-track--on' : 'adm-track'}
               onClick={() => {
                 setTrackId(t.id);
                 setExpanded(null);
@@ -182,22 +182,22 @@ export const AdminCourses: React.FC = () => {
           ))}
         </aside>
 
-        <section className="ad-table" aria-label="Modules">
+        <section className="adm-table" aria-label="Modules">
           {!track ? (
-            <p className="ls-muted ad-pad">Create a track to start adding modules.</p>
+            <p className="ls-muted adm-pad">Create a track to start adding modules.</p>
           ) : (
             <>
-              <div className="ad-table-head">
+              <div className="adm-table-head">
                 <div>
                   <div className="ls-eyebrow">{track.code.toUpperCase()}</div>
-                  <div className="ad-track-title">
+                  <div className="adm-track-title">
                     {track.title} <StatusBadge status={track.status} />
                   </div>
                 </div>
                 <div className="ls-row">
                   <button
                     type="button"
-                    className="ls-btn ls-btn--secondary ad-small"
+                    className="ls-btn ls-btn--secondary adm-small"
                     disabled={trackIndex <= 0}
                     onClick={() => {
                       const ids = move(overview.tracks.map((t) => t.id), trackIndex, -1);
@@ -208,7 +208,7 @@ export const AdminCourses: React.FC = () => {
                   </button>
                   <button
                     type="button"
-                    className="ls-btn ls-btn--secondary ad-small"
+                    className="ls-btn ls-btn--secondary adm-small"
                     disabled={trackIndex < 0 || trackIndex >= overview.tracks.length - 1}
                     onClick={() => {
                       const ids = move(overview.tracks.map((t) => t.id), trackIndex, 1);
@@ -217,25 +217,25 @@ export const AdminCourses: React.FC = () => {
                   >
                     <ArrowDown size={14} aria-hidden="true" /> Track down
                   </button>
-                  <button type="button" className="ls-btn ls-btn--secondary ad-small" onClick={() => setDialog({ kind: 'track', track })}>
+                  <button type="button" className="ls-btn ls-btn--secondary adm-small" onClick={() => setDialog({ kind: 'track', track })}>
                     Track settings
                   </button>
                   <button
                     type="button"
-                    className="ls-btn ls-btn--secondary ad-small"
+                    className="ls-btn ls-btn--secondary adm-small"
                     onClick={() =>
                       void run(() => adminApi.updateTrack(track.id, { status: track.status === 'published' ? 'draft' : 'published' }))
                     }
                   >
                     {track.status === 'published' ? 'Unpublish' : 'Publish'}
                   </button>
-                  <button type="button" className="ls-btn ad-btn--danger ad-small" onClick={() => setDialog({ kind: 'delete-track', track })}>
+                  <button type="button" className="ls-btn adm-btn--danger adm-small" onClick={() => setDialog({ kind: 'delete-track', track })}>
                     Delete
                   </button>
                 </div>
               </div>
 
-              <div className="ad-cols ad-cols--head" aria-hidden="true">
+              <div className="adm-cols adm-cols--head" aria-hidden="true">
                 <span />
                 <span>MODULE</span>
                 <span>SECTIONS</span>
@@ -244,23 +244,23 @@ export const AdminCourses: React.FC = () => {
                 <span />
               </div>
 
-              {track.modules.length === 0 && <p className="ls-muted ad-pad">This track has no modules yet.</p>}
+              {track.modules.length === 0 && <p className="ls-muted adm-pad">This track has no modules yet.</p>}
               {track.modules.map((m, i) => {
                 const open = expanded === m.id;
                 return (
-                  <div key={m.id} className="ad-module">
-                    <div className="ad-cols">
+                  <div key={m.id} className="adm-module">
+                    <div className="adm-cols">
                       <button
                         type="button"
-                        className="ad-iconbtn"
+                        className="adm-iconbtn"
                         aria-expanded={open}
                         aria-label={`${open ? 'Collapse' : 'Expand'} ${m.code} ${m.title}`}
                         onClick={() => setExpanded(open ? null : m.id)}
                       >
                         {open ? <ChevronDown size={16} /> : <ChevronRight size={16} />}
                       </button>
-                      <span className="ad-module-name">
-                        <span className="ad-code">{m.code}</span>
+                      <span className="adm-module-name">
+                        <span className="adm-code">{m.code}</span>
                         <span>{m.title}</span>
                       </span>
                       <span>
@@ -271,10 +271,10 @@ export const AdminCourses: React.FC = () => {
                         <StatusBadge status={m.status} />
                       </span>
                       <span className="ls-fineprint">{formatDate(m.updated_at)}</span>
-                      <span className="ad-move">
+                      <span className="adm-move">
                         <button
                           type="button"
-                          className="ad-iconbtn"
+                          className="adm-iconbtn"
                           disabled={i === 0}
                           aria-label={`Move ${m.code} up`}
                           onClick={() => {
@@ -286,7 +286,7 @@ export const AdminCourses: React.FC = () => {
                         </button>
                         <button
                           type="button"
-                          className="ad-iconbtn"
+                          className="adm-iconbtn"
                           disabled={i === track.modules.length - 1}
                           aria-label={`Move ${m.code} down`}
                           onClick={() => {
@@ -300,22 +300,22 @@ export const AdminCourses: React.FC = () => {
                     </div>
 
                     {open && (
-                      <div className="ad-expanded">
+                      <div className="adm-expanded">
                         <div className="ls-row">
-                          <button type="button" className="ls-btn ls-btn--secondary ad-small" onClick={() => setDialog({ kind: 'module', module: m, trackId: track.id })}>
+                          <button type="button" className="ls-btn ls-btn--secondary adm-small" onClick={() => setDialog({ kind: 'module', module: m, trackId: track.id })}>
                             Module settings
                           </button>
                           <button
                             type="button"
-                            className="ls-btn ls-btn--secondary ad-small"
+                            className="ls-btn ls-btn--secondary adm-small"
                             onClick={() => void run(() => adminApi.updateModule(m.id, { status: m.status === 'published' ? 'draft' : 'published' }))}
                           >
                             {m.status === 'published' ? 'Unpublish module' : 'Publish module'}
                           </button>
-                          <button type="button" className="ls-btn ls-btn--primary ad-small" onClick={() => setDialog({ kind: 'section', moduleId: m.id })}>
+                          <button type="button" className="ls-btn ls-btn--primary adm-small" onClick={() => setDialog({ kind: 'section', moduleId: m.id })}>
                             <Plus size={14} aria-hidden="true" /> Add section
                           </button>
-                          <button type="button" className="ls-btn ad-btn--danger ad-small" onClick={() => setDialog({ kind: 'delete-module', module: m })}>
+                          <button type="button" className="ls-btn adm-btn--danger adm-small" onClick={() => setDialog({ kind: 'delete-module', module: m })}>
                             Delete module
                           </button>
                         </div>
@@ -324,16 +324,16 @@ export const AdminCourses: React.FC = () => {
                         ) : expandedModule.sections.length === 0 ? (
                           <p className="ls-muted">No sections yet.</p>
                         ) : (
-                          <ol className="ad-sections">
+                          <ol className="adm-sections">
                             {expandedModule.sections.map((s, si) => (
-                              <li key={s.id} className="ad-section-row">
-                                <span className="ad-section-title">{s.title}</span>
+                              <li key={s.id} className="adm-section-row">
+                                <span className="adm-section-title">{s.title}</span>
                                 <StatusBadge status={s.status} />
                                 <span className="ls-fineprint">{s.blocks.length} {s.blocks.length === 1 ? 'block' : 'blocks'}</span>
-                                <span className="ad-move">
+                                <span className="adm-move">
                                   <button
                                     type="button"
-                                    className="ad-iconbtn"
+                                    className="adm-iconbtn"
                                     disabled={si === 0}
                                     aria-label={`Move section ${s.title} up`}
                                     onClick={() => {
@@ -345,7 +345,7 @@ export const AdminCourses: React.FC = () => {
                                   </button>
                                   <button
                                     type="button"
-                                    className="ad-iconbtn"
+                                    className="adm-iconbtn"
                                     disabled={si === expandedModule.sections.length - 1}
                                     aria-label={`Move section ${s.title} down`}
                                     onClick={() => {
@@ -356,7 +356,7 @@ export const AdminCourses: React.FC = () => {
                                     <ArrowDown size={15} />
                                   </button>
                                 </span>
-                                <Link to={`/admin/modules/${m.id}/sections/${s.id}`} className="ls-btn ls-btn--secondary ad-small">
+                                <Link to={`/admin/modules/${m.id}/sections/${s.id}`} className="ls-btn ls-btn--secondary adm-small">
                                   Edit
                                 </Link>
                               </li>

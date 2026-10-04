@@ -222,8 +222,8 @@ export const AdminSectionEditor: React.FC = () => {
   const published = section.status === 'published';
 
   return (
-    <div className="ls-lesson ad-editor">
-      <div className="ls-topbar ad-topbar">
+    <div className="ls-lesson adm-editor">
+      <div className="ls-topbar adm-topbar">
         <nav className="ls-breadcrumb" aria-label="Breadcrumb">
           <Link to="/admin" className="ls-link">
             Courses
@@ -237,7 +237,7 @@ export const AdminSectionEditor: React.FC = () => {
             {section.title}
           </span>
         </nav>
-        <div className="ls-row ad-topbar-actions">
+        <div className="ls-row adm-topbar-actions">
           <span className="ls-fineprint" role="status">
             {dirty ? 'Unsaved changes' : 'All changes saved'}
           </span>
@@ -260,44 +260,44 @@ export const AdminSectionEditor: React.FC = () => {
       </div>
 
       {banner && (
-        <div className={banner.kind === 'error' ? 'ad-banner ad-banner--error' : 'ad-banner'} role={banner.kind === 'error' ? 'alert' : 'status'}>
+        <div className={banner.kind === 'error' ? 'adm-banner adm-banner--error' : 'adm-banner'} role={banner.kind === 'error' ? 'alert' : 'status'}>
           <div>
             {banner.text}
             {banner.list && banner.list.length > 0 && (
-              <ul className="ad-banner-list">
+              <ul className="adm-banner-list">
                 {banner.list.map((l) => (
                   <li key={l}>{l}</li>
                 ))}
               </ul>
             )}
           </div>
-          <button type="button" className="ad-banner-close" onClick={() => setBanner(null)} aria-label="Dismiss">
+          <button type="button" className="adm-banner-close" onClick={() => setBanner(null)} aria-label="Dismiss">
             x
           </button>
         </div>
       )}
 
-      <div className="ls-lesson-body ad-editor-body">
-        <aside className="ls-rail ad-rail" aria-label="Sections in this module">
-          <div className="ad-rail-head">
-            <span className="ls-eyebrow ad-muted-eyebrow">SECTIONS</span>
-            <button type="button" className="ad-linkbtn" onClick={() => setDialog('add')}>
+      <div className="ls-lesson-body adm-editor-body">
+        <aside className="ls-rail adm-rail" aria-label="Sections in this module">
+          <div className="adm-rail-head">
+            <span className="ls-eyebrow adm-muted-eyebrow">SECTIONS</span>
+            <button type="button" className="adm-linkbtn" onClick={() => setDialog('add')}>
               <Plus size={13} aria-hidden="true" /> Add
             </button>
           </div>
           {module.sections.map((s, i) => (
-            <div key={s.id} className={s.id === section.id ? 'ad-rail-row ad-rail-row--on' : 'ad-rail-row'}>
-              <Link to={`/admin/modules/${module.id}/sections/${s.id}`} className="ad-rail-link" aria-current={s.id === section.id ? 'page' : undefined}>
-                <span className={`ad-dot ad-dot--${s.status}`} title={s.status} aria-label={s.status} />
+            <div key={s.id} className={s.id === section.id ? 'adm-rail-row adm-rail-row--on' : 'adm-rail-row'}>
+              <Link to={`/admin/modules/${module.id}/sections/${s.id}`} className="adm-rail-link" aria-current={s.id === section.id ? 'page' : undefined}>
+                <span className={`adm-dot adm-dot--${s.status}`} title={s.status} aria-label={s.status} />
                 {s.title}
               </Link>
-              <span className="ad-move">
-                <button type="button" className="ad-iconbtn" disabled={i === 0} onClick={() => void moveSection(i, -1)} aria-label={`Move ${s.title} up`}>
+              <span className="adm-move">
+                <button type="button" className="adm-iconbtn" disabled={i === 0} onClick={() => void moveSection(i, -1)} aria-label={`Move ${s.title} up`}>
                   <ArrowUp size={14} />
                 </button>
                 <button
                   type="button"
-                  className="ad-iconbtn"
+                  className="adm-iconbtn"
                   disabled={i === module.sections.length - 1}
                   onClick={() => void moveSection(i, 1)}
                   aria-label={`Move ${s.title} down`}
@@ -309,9 +309,9 @@ export const AdminSectionEditor: React.FC = () => {
           ))}
         </aside>
 
-        <main className="ad-editor-main">
+        <main className="adm-editor-main">
           {preview ? (
-            <div className="ls-main ad-preview">
+            <div className="ls-main adm-preview">
               <div className="ls-eyebrow">PREVIEW · INCLUDES UNSAVED EDITS · CHECKPOINTS ARE NOT GRADED HERE</div>
               <h1 className="ls-h1">{title || 'Untitled section'}</h1>
               {blocks.map((b) => (
@@ -321,14 +321,14 @@ export const AdminSectionEditor: React.FC = () => {
             </div>
           ) : (
             <>
-              <section className="ad-panel">
-                <label className="ad-field">
-                  <span className="ad-field-label">Section title</span>
-                  <input className="ad-input ad-title-input" value={title} maxLength={200} onChange={(e) => setTitle(e.target.value)} />
+              <section className="adm-panel">
+                <label className="adm-field">
+                  <span className="adm-field-label">Section title</span>
+                  <input className="adm-input adm-title-input" value={title} maxLength={200} onChange={(e) => setTitle(e.target.value)} />
                 </label>
               </section>
-              <div className="ad-blocks-head">
-                <h2 className="ad-h2">Content blocks</h2>
+              <div className="adm-blocks-head">
+                <h2 className="adm-h2">Content blocks</h2>
                 <span className="ls-fineprint">Shown to learners in this order</span>
               </div>
               <BlockEditor blocks={blocks} onChange={setBlocks} problems={problems} />
@@ -336,26 +336,26 @@ export const AdminSectionEditor: React.FC = () => {
           )}
         </main>
 
-        <aside className="ad-side">
-          <section className="ad-panel">
-            <div className="ls-eyebrow ad-muted-eyebrow">SECTION SETTINGS</div>
-            <div className="ad-kv">
+        <aside className="adm-side">
+          <section className="adm-panel">
+            <div className="ls-eyebrow adm-muted-eyebrow">SECTION SETTINGS</div>
+            <div className="adm-kv">
               <span className="ls-muted">Status</span>
-              <span className={`ad-status ad-status--${section.status}`}>{published ? 'Published' : 'Draft'}</span>
+              <span className={`adm-status adm-status--${section.status}`}>{published ? 'Published' : 'Draft'}</span>
             </div>
-            <div className="ad-kv">
+            <div className="adm-kv">
               <span className="ls-muted">URL slug</span>
-              <code className="ad-mono">{section.slug}</code>
+              <code className="adm-mono">{section.slug}</code>
             </div>
-            <label className="ad-field">
-              <span className="ad-field-label">Summary on the module overview</span>
-              <textarea className="ad-input ad-textarea" rows={3} maxLength={300} value={summary} onChange={(e) => setSummary(e.target.value)} />
-              <span className="ad-hint">Optional. Falls back to the start of the first text block.</span>
+            <label className="adm-field">
+              <span className="adm-field-label">Summary on the module overview</span>
+              <textarea className="adm-input adm-textarea" rows={3} maxLength={300} value={summary} onChange={(e) => setSummary(e.target.value)} />
+              <span className="adm-hint">Optional. Falls back to the start of the first text block.</span>
             </label>
-            <label className="ad-field">
-              <span className="ad-field-label">Estimated minutes</span>
+            <label className="adm-field">
+              <span className="adm-field-label">Estimated minutes</span>
               <input
-                className="ad-input"
+                className="adm-input"
                 type="number"
                 min={1}
                 max={600}
@@ -368,27 +368,27 @@ export const AdminSectionEditor: React.FC = () => {
                 View as learner
               </Link>
             )}
-            <button type="button" className="ls-btn ad-btn--danger" onClick={() => setDialog('delete')}>
+            <button type="button" className="ls-btn adm-btn--danger" onClick={() => setDialog('delete')}>
               Delete section
             </button>
           </section>
 
-          <section className="ad-panel" aria-labelledby="ad-checklist-title">
-            <div id="ad-checklist-title" className="ls-eyebrow ad-muted-eyebrow">
+          <section className="adm-panel" aria-labelledby="adm-checklist-title">
+            <div id="adm-checklist-title" className="ls-eyebrow adm-muted-eyebrow">
               PUBLISH CHECKLIST
             </div>
-            <ul className="ad-checklist">
+            <ul className="adm-checklist">
               {checklist.map((c) => (
-                <li key={c.id} className={c.ok ? 'ad-check-ok' : 'ad-check-fail'}>
+                <li key={c.id} className={c.ok ? 'adm-check-ok' : 'adm-check-fail'}>
                   {c.ok ? <Check size={15} aria-label="Passes" /> : <X size={15} aria-label="Needs attention" />}
                   <span>
                     {c.label}
-                    {c.detail && <span className="ad-hint"> {c.detail}</span>}
+                    {c.detail && <span className="adm-hint"> {c.detail}</span>}
                   </span>
                 </li>
               ))}
             </ul>
-            <p className="ad-hint">
+            <p className="adm-hint">
               {allPass ? 'Ready to publish.' : 'Publishing is blocked until every item passes.'}{' '}
               {dirty ? (liveChecklist ? 'Updates as you edit.' : 'Fix the highlighted fields to refresh it.') : 'Matches the saved version.'}
             </p>

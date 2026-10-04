@@ -36,8 +36,8 @@ export const Modal: React.FC<ModalProps> = ({ title, onClose, children }) => {
   }, []);
 
   return (
-    <div className="ad-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
-      <div ref={ref} className="ad-modal" role="dialog" aria-modal="true" aria-label={title}>
+    <div className="adm-overlay" onMouseDown={(e) => e.target === e.currentTarget && onClose()}>
+      <div ref={ref} className="adm-modal" role="dialog" aria-modal="true" aria-label={title}>
         <h2 className="ls-card-title">{title}</h2>
         {children}
       </div>
@@ -55,11 +55,11 @@ export const ConfirmDialog: React.FC<{
 }> = ({ title, message, confirmLabel, danger, onConfirm, onCancel }) => (
   <Modal title={title} onClose={onCancel}>
     <p className="ls-muted">{message}</p>
-    <div className="ad-modal-actions">
+    <div className="adm-modal-actions">
       <button type="button" className="ls-btn ls-btn--secondary" onClick={onCancel}>
         Cancel
       </button>
-      <button type="button" className={`ls-btn ${danger ? 'ad-btn--danger' : 'ls-btn--primary'}`} onClick={onConfirm}>
+      <button type="button" className={`ls-btn ${danger ? 'adm-btn--danger' : 'ls-btn--primary'}`} onClick={onConfirm}>
         {confirmLabel}
       </button>
     </div>
@@ -67,9 +67,9 @@ export const ConfirmDialog: React.FC<{
 );
 
 const StatusSelect: React.FC<{ value: ContentStatus; onChange: (s: ContentStatus) => void }> = ({ value, onChange }) => (
-  <label className="ad-field">
-    <span className="ad-field-label">Status</span>
-    <select className="ad-input" value={value} onChange={(e) => onChange(e.target.value as ContentStatus)}>
+  <label className="adm-field">
+    <span className="adm-field-label">Status</span>
+    <select className="adm-input" value={value} onChange={(e) => onChange(e.target.value as ContentStatus)}>
       <option value="draft">Draft (hidden from learners)</option>
       <option value="published">Published</option>
     </select>
@@ -79,7 +79,7 @@ const StatusSelect: React.FC<{ value: ContentStatus; onChange: (s: ContentStatus
 function ServerErrors({ error }: { error: AdminApiError | null }) {
   if (!error) return null;
   return (
-    <div className="ad-problems" role="alert">
+    <div className="adm-problems" role="alert">
       <strong>{error.message}</strong>
       {error.issues.length > 0 && (
         <ul>
@@ -118,7 +118,7 @@ const useSubmit = (action: () => Promise<void>) => {
 };
 
 const Actions: React.FC<{ busy: boolean; onClose: () => void; label: string }> = ({ busy, onClose, label }) => (
-  <div className="ad-modal-actions">
+  <div className="adm-modal-actions">
     <button type="button" className="ls-btn ls-btn--secondary" onClick={onClose}>
       Cancel
     </button>
@@ -161,16 +161,16 @@ export const TrackDialog: React.FC<FormProps<TrackInput> & { track?: AdminTrack 
 
   return (
     <Modal title={track ? 'Track settings' : 'New track'} onClose={onClose}>
-      <form onSubmit={submit} className="ad-form">
-        <div className="ad-row">
-          <label className="ad-field">
-            <span className="ad-field-label">Code</span>
-            <input className="ad-input" value={code} required maxLength={50} onChange={(e) => setCode(e.target.value)} placeholder="Track E" />
+      <form onSubmit={submit} className="adm-form">
+        <div className="adm-row">
+          <label className="adm-field">
+            <span className="adm-field-label">Code</span>
+            <input className="adm-input" value={code} required maxLength={50} onChange={(e) => setCode(e.target.value)} placeholder="Track E" />
           </label>
-          <label className="ad-field">
-            <span className="ad-field-label">Title</span>
+          <label className="adm-field">
+            <span className="adm-field-label">Title</span>
             <input
-              className="ad-input"
+              className="adm-input"
               value={title}
               required
               maxLength={200}
@@ -182,51 +182,51 @@ export const TrackDialog: React.FC<FormProps<TrackInput> & { track?: AdminTrack 
           </label>
         </div>
         {!track && (
-          <label className="ad-field">
-            <span className="ad-field-label">URL slug</span>
-            <input className="ad-input ad-mono" value={slug} required pattern="[a-z0-9][a-z0-9_\-]*" onChange={(e) => setSlug(e.target.value)} />
-            <span className="ad-hint">Lowercase letters, numbers, - and _. Cannot be changed later.</span>
+          <label className="adm-field">
+            <span className="adm-field-label">URL slug</span>
+            <input className="adm-input adm-mono" value={slug} required pattern="[a-z0-9][a-z0-9_\-]*" onChange={(e) => setSlug(e.target.value)} />
+            <span className="adm-hint">Lowercase letters, numbers, - and _. Cannot be changed later.</span>
           </label>
         )}
-        <label className="ad-field">
-          <span className="ad-field-label">Subtitle</span>
-          <input className="ad-input" value={subtitle} maxLength={300} onChange={(e) => setSubtitle(e.target.value)} />
+        <label className="adm-field">
+          <span className="adm-field-label">Subtitle</span>
+          <input className="adm-input" value={subtitle} maxLength={300} onChange={(e) => setSubtitle(e.target.value)} />
         </label>
-        <label className="ad-field">
-          <span className="ad-field-label">Description</span>
-          <textarea className="ad-input ad-textarea" rows={3} value={description} maxLength={4000} onChange={(e) => setDescription(e.target.value)} />
+        <label className="adm-field">
+          <span className="adm-field-label">Description</span>
+          <textarea className="adm-input adm-textarea" rows={3} value={description} maxLength={4000} onChange={(e) => setDescription(e.target.value)} />
         </label>
-        <div className="ad-row">
-          <label className="ad-field">
-            <span className="ad-field-label">Accent colour</span>
-            <input type="color" className="ad-color" value={color || '#5427e6'} onChange={(e) => setColor(e.target.value)} />
+        <div className="adm-row">
+          <label className="adm-field">
+            <span className="adm-field-label">Accent colour</span>
+            <input type="color" className="adm-color" value={color || '#5427e6'} onChange={(e) => setColor(e.target.value)} />
           </label>
           <StatusSelect value={status} onChange={setStatus} />
         </div>
-        <details className="ad-details">
+        <details className="adm-details">
           <summary>Certificate and capstone details</summary>
-          <div className="ad-form">
-            <label className="ad-field">
-              <span className="ad-field-label">Entry profile</span>
-              <textarea className="ad-input ad-textarea" rows={2} maxLength={1000} value={meta.entry_profile} onChange={setMetaField('entry_profile')} />
+          <div className="adm-form">
+            <label className="adm-field">
+              <span className="adm-field-label">Entry profile</span>
+              <textarea className="adm-input adm-textarea" rows={2} maxLength={1000} value={meta.entry_profile} onChange={setMetaField('entry_profile')} />
             </label>
-            <div className="ad-row">
-              <label className="ad-field">
-                <span className="ad-field-label">Certificate name</span>
-                <input className="ad-input" maxLength={200} value={meta.certificate_name} onChange={setMetaField('certificate_name')} />
+            <div className="adm-row">
+              <label className="adm-field">
+                <span className="adm-field-label">Certificate name</span>
+                <input className="adm-input" maxLength={200} value={meta.certificate_name} onChange={setMetaField('certificate_name')} />
               </label>
-              <label className="ad-field">
-                <span className="ad-field-label">Certificate code</span>
-                <input className="ad-input" maxLength={100} value={meta.certificate_code} onChange={setMetaField('certificate_code')} />
+              <label className="adm-field">
+                <span className="adm-field-label">Certificate code</span>
+                <input className="adm-input" maxLength={100} value={meta.certificate_code} onChange={setMetaField('certificate_code')} />
               </label>
             </div>
-            <label className="ad-field">
-              <span className="ad-field-label">Capstone title</span>
-              <input className="ad-input" maxLength={200} value={meta.capstone_title} onChange={setMetaField('capstone_title')} />
+            <label className="adm-field">
+              <span className="adm-field-label">Capstone title</span>
+              <input className="adm-input" maxLength={200} value={meta.capstone_title} onChange={setMetaField('capstone_title')} />
             </label>
-            <label className="ad-field">
-              <span className="ad-field-label">Capstone description</span>
-              <textarea className="ad-input ad-textarea" rows={2} maxLength={1000} value={meta.capstone_description} onChange={setMetaField('capstone_description')} />
+            <label className="adm-field">
+              <span className="adm-field-label">Capstone description</span>
+              <textarea className="adm-input adm-textarea" rows={2} maxLength={1000} value={meta.capstone_description} onChange={setMetaField('capstone_description')} />
             </label>
           </div>
         </details>
@@ -273,16 +273,16 @@ export const ModuleDialog: React.FC<FormProps<ModuleInput> & { module?: AdminMod
 
   return (
     <Modal title={module ? 'Module settings' : 'New module'} onClose={onClose}>
-      <form onSubmit={submit} className="ad-form">
-        <div className="ad-row">
-          <label className="ad-field">
-            <span className="ad-field-label">Code</span>
-            <input className="ad-input" value={code} required maxLength={20} onChange={(e) => setCode(e.target.value)} placeholder="A9" />
+      <form onSubmit={submit} className="adm-form">
+        <div className="adm-row">
+          <label className="adm-field">
+            <span className="adm-field-label">Code</span>
+            <input className="adm-input" value={code} required maxLength={20} onChange={(e) => setCode(e.target.value)} placeholder="A9" />
           </label>
-          <label className="ad-field">
-            <span className="ad-field-label">Title</span>
+          <label className="adm-field">
+            <span className="adm-field-label">Title</span>
             <input
-              className="ad-input"
+              className="adm-input"
               value={title}
               required
               maxLength={200}
@@ -294,43 +294,43 @@ export const ModuleDialog: React.FC<FormProps<ModuleInput> & { module?: AdminMod
           </label>
         </div>
         {!module && (
-          <label className="ad-field">
-            <span className="ad-field-label">URL slug</span>
-            <input className="ad-input ad-mono" value={slug} required pattern="[a-z0-9][a-z0-9_\-]*" onChange={(e) => setSlug(e.target.value)} />
-            <span className="ad-hint">Used in learner URLs and prerequisites. Cannot be changed later.</span>
+          <label className="adm-field">
+            <span className="adm-field-label">URL slug</span>
+            <input className="adm-input adm-mono" value={slug} required pattern="[a-z0-9][a-z0-9_\-]*" onChange={(e) => setSlug(e.target.value)} />
+            <span className="adm-hint">Used in learner URLs and prerequisites. Cannot be changed later.</span>
           </label>
         )}
-        <label className="ad-field">
-          <span className="ad-field-label">Subtitle</span>
-          <input className="ad-input" value={subtitle} maxLength={300} onChange={(e) => setSubtitle(e.target.value)} />
+        <label className="adm-field">
+          <span className="adm-field-label">Subtitle</span>
+          <input className="adm-input" value={subtitle} maxLength={300} onChange={(e) => setSubtitle(e.target.value)} />
         </label>
-        <div className="ad-row ad-row--3">
-          <label className="ad-field">
-            <span className="ad-field-label">Level</span>
-            <select className="ad-input" value={level} onChange={(e) => setLevel(e.target.value)}>
+        <div className="adm-row adm-row--3">
+          <label className="adm-field">
+            <span className="adm-field-label">Level</span>
+            <select className="adm-input" value={level} onChange={(e) => setLevel(e.target.value)}>
               {LEVELS.map((l) => (
                 <option key={l}>{l}</option>
               ))}
             </select>
           </label>
-          <label className="ad-field">
-            <span className="ad-field-label">Estimated minutes</span>
-            <input className="ad-input" type="number" min={0} max={3000} value={minutes} onChange={(e) => setMinutes(e.target.value)} />
+          <label className="adm-field">
+            <span className="adm-field-label">Estimated minutes</span>
+            <input className="adm-input" type="number" min={0} max={3000} value={minutes} onChange={(e) => setMinutes(e.target.value)} />
           </label>
-          <label className="ad-field">
-            <span className="ad-field-label">XP</span>
-            <input className="ad-input" type="number" min={0} max={10000} value={xp} onChange={(e) => setXp(e.target.value)} />
+          <label className="adm-field">
+            <span className="adm-field-label">XP</span>
+            <input className="adm-input" type="number" min={0} max={10000} value={xp} onChange={(e) => setXp(e.target.value)} />
           </label>
         </div>
-        <label className="ad-field">
-          <span className="ad-field-label">Prerequisite module slugs</span>
-          <input className="ad-input ad-mono" value={prereqs} onChange={(e) => setPrereqs(e.target.value)} placeholder="track_a_a2_mathematics_foundations" />
-          <span className="ad-hint">Comma separated.</span>
+        <label className="adm-field">
+          <span className="adm-field-label">Prerequisite module slugs</span>
+          <input className="adm-input adm-mono" value={prereqs} onChange={(e) => setPrereqs(e.target.value)} placeholder="track_a_a2_mathematics_foundations" />
+          <span className="adm-hint">Comma separated.</span>
         </label>
-        <label className="ad-field">
-          <span className="ad-field-label">Learning objectives</span>
-          <textarea className="ad-input ad-textarea" rows={4} value={objectives} onChange={(e) => setObjectives(e.target.value)} />
-          <span className="ad-hint">One per line.</span>
+        <label className="adm-field">
+          <span className="adm-field-label">Learning objectives</span>
+          <textarea className="adm-input adm-textarea" rows={4} value={objectives} onChange={(e) => setObjectives(e.target.value)} />
+          <span className="adm-hint">One per line.</span>
         </label>
         <StatusSelect value={status} onChange={setStatus} />
         <ServerErrors error={error} />
@@ -347,11 +347,11 @@ export const SectionDialog: React.FC<FormProps<{ title: string; slug: string }>>
 
   return (
     <Modal title="New section" onClose={onClose}>
-      <form onSubmit={submit} className="ad-form">
-        <label className="ad-field">
-          <span className="ad-field-label">Section title</span>
+      <form onSubmit={submit} className="adm-form">
+        <label className="adm-field">
+          <span className="adm-field-label">Section title</span>
           <input
-            className="ad-input"
+            className="adm-input"
             value={title}
             required
             maxLength={200}
@@ -361,10 +361,10 @@ export const SectionDialog: React.FC<FormProps<{ title: string; slug: string }>>
             }}
           />
         </label>
-        <label className="ad-field">
-          <span className="ad-field-label">URL slug</span>
-          <input className="ad-input ad-mono" value={slug} required pattern="[a-z0-9][a-z0-9_\-]*" onChange={(e) => setSlug(e.target.value)} />
-          <span className="ad-hint">Unique within the module. New sections start as drafts.</span>
+        <label className="adm-field">
+          <span className="adm-field-label">URL slug</span>
+          <input className="adm-input adm-mono" value={slug} required pattern="[a-z0-9][a-z0-9_\-]*" onChange={(e) => setSlug(e.target.value)} />
+          <span className="adm-hint">Unique within the module. New sections start as drafts.</span>
         </label>
         <ServerErrors error={error} />
         <Actions busy={busy} onClose={onClose} label="Create section" />
