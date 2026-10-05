@@ -525,6 +525,13 @@ def get_finding_requirements(finding_id: str, db: Session = Depends(get_db), cur
     requirement_map = requirements.load_map()
     return [{**requirements.describe(r, requirement_map), "competency_name": names.get(r.competency_code)} for r in rows]
 
+@app.get("/api/users/me/skill-matrix", response_model=schemas.SkillMatrixOut)
+def get_my_skill_matrix(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Required vs demonstrated level per competency for the signed-in learner. Requirements come only from the
+    learner's own open findings (and shared ownerless records); Unknown is reported as unassessed, never as rank 0."""
+    from competency import skill_matrix
+    return skill_matrix.build(db, current_user)
+
 @app.get("/api/users/{user_id}/capabilities", response_model=List[schemas.LearnerCapabilityOut])
 def get_user_capabilities(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     if current_user.id != user_id and current_user.role != "admin":

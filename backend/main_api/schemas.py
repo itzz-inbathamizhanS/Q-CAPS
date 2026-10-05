@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union
 import json
 import unicodedata
 
@@ -231,6 +231,37 @@ class ScannerAssetOut(BaseModel):
     open_findings: int
     resolved_findings: int
     last_scanned: Optional[datetime] = None
+
+
+class DrivingFinding(BaseModel):
+    finding_id: str
+    finding_type: str
+    title: Optional[str] = None
+    severity: float
+    requirement_id: str
+    required_level: str
+
+
+class SkillMatrixRow(BaseModel):
+    competency_code: str
+    competency_name: Optional[str] = None
+    required_level: Optional[str] = None  # None: no current requirement from the learner's open findings
+    demonstrated_level: str  # Unknown when there is not enough evidence
+    gap: Optional[Union[int, str]] = None  # rank difference, "unassessed" when demonstrated is Unknown, None without a requirement
+    gap_class: Optional[str] = None  # critical | high | medium | none | unassessed (v1 rule, a hypothesis)
+    driving_findings: List[DrivingFinding]
+    evidence_count: int
+    last_evidence_at: Optional[datetime] = None
+    knowledge_score: Optional[float] = None
+    procedural_score: Optional[float] = None
+
+
+class SkillMatrixOut(BaseModel):
+    competency_model_version: str
+    levels_status: Optional[str] = None
+    requirement_map_version: str
+    requirement_map_status: str
+    rows: List[SkillMatrixRow]
 
 
 class FindingRequirementOut(BaseModel):

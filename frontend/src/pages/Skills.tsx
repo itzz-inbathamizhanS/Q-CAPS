@@ -7,6 +7,8 @@ import { SkillsEmptyState } from '@/features/skills/components/SkillsEmptyState'
 import { CapabilitySummary } from '@/features/skills/components/CapabilitySummary';
 import { PriorityGap } from '@/features/skills/components/PriorityGap';
 import { SkillBreakdown } from '@/features/skills/components/SkillBreakdown';
+import { SkillMatrixTable } from '@/features/skills/components/SkillMatrixTable';
+import { useSkillMatrix } from '@/features/skills/skillMatrix';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
 import { RotateCcw, Calendar, CheckCircle } from 'lucide-react';
@@ -14,6 +16,7 @@ import { RotateCcw, Calendar, CheckCircle } from 'lucide-react';
 export const Skills: React.FC = () => {
   const navigate = useNavigate();
   const diagnostic = useDiagnosticResults();
+  const skillMatrix = useSkillMatrix();
   // Shown once: a result kept only in this browser by the old client-side diagnostic is not trusted or imported.
   const [legacyNotice, setLegacyNotice] = useState(hasLegacyLocalResult);
   const latest = diagnostic.status === 'ready' ? diagnostic.results[0] : undefined;
@@ -33,6 +36,19 @@ export const Skills: React.FC = () => {
     </section>
   );
 
+  // Competency-level view (required by findings vs demonstrated by evidence); independent of the diagnostic.
+  const matrixSection = (
+    <>
+      {skillMatrix.status === 'loading' && <p role="status">Loading your skill matrix…</p>}
+      {skillMatrix.status === 'error' && (
+        <Card variant="glass" padding="normal">
+          <p role="alert" style={{ margin: 0 }}>Your skill matrix could not be loaded ({skillMatrix.message}).</p>
+        </Card>
+      )}
+      {skillMatrix.status === 'ready' && <SkillMatrixTable matrix={skillMatrix.matrix} />}
+    </>
+  );
+
   const notice = legacyNotice && (
     <Card variant="glass" padding="normal" role="note">
       <p style={{ margin: 0, fontSize: 14 }}>
@@ -50,6 +66,7 @@ export const Skills: React.FC = () => {
       <div className="flex flex-col gap-8 w-full max-w-7xl mx-auto">
         {header}
         {notice}
+        {matrixSection}
         {diagnostic.status === 'loading' && <p role="status">Loading your diagnostic results…</p>}
         {diagnostic.status === 'error' && (
           <Card variant="glass" padding="normal">
@@ -88,7 +105,9 @@ export const Skills: React.FC = () => {
 
       {notice}
 
-      {/* 1. Overall Capability Summary */}
+      {matrixSection}
+
+      {/* 1. Overall Capability Summary (diagnostic, domain level) */}
       <CapabilitySummary profile={profile} />
 
       {/* 2. Top Priority Skill Gap (Next Focus) */}
