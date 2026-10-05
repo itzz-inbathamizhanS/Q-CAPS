@@ -5,6 +5,7 @@ import { fetchAssetFindings, fetchScanAssets } from '../../../services/backendSe
 import type { ScanAsset, TrackedFinding } from '../types';
 import { formatDateTime, SEVERITY_LABEL, SEVERITY_VARIANT } from './constants';
 import { SectionTitle } from './shared';
+import { Link } from 'react-router-dom';
 
 interface Props {
   /** Changes whenever a scan was saved, so the counts are refreshed. */
@@ -77,7 +78,9 @@ export const AssetsPanel: React.FC<Props> = ({ refreshKey }) => {
                       <div className="sc-row">
                         <Badge variant={SEVERITY_VARIANT[f.severity]}>{SEVERITY_LABEL[f.severity]}</Badge>
                         <Badge variant={f.status === 'OPEN' ? 'warning' : 'success'}>{f.status === 'OPEN' ? 'Open' : f.status === 'RESOLVED' ? 'Resolved' : f.status}</Badge>
-                        <span className="sc-finding-title">{f.title ?? f.finding_type}</span>
+                        <Link className="sc-finding-title" to={`/closure/${f.id}`} style={{ color: 'var(--color-primary)' }}>
+                          {f.title ?? f.finding_type}
+                        </Link>
                       </div>
                       <span className="sc-muted">
                         First seen {formatDateTime(f.first_seen)} · {f.status === 'RESOLVED' ? 'last seen / resolved' : 'last seen'} {formatDateTime(f.last_seen)}

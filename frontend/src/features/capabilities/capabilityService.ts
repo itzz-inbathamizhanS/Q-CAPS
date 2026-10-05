@@ -2,13 +2,6 @@ import { api } from '@/services/backendService';
 import { LearnerCapability } from './capabilityTypes';
 
 export const capabilityService = {
-  getUserCapabilities: async (userId: number): Promise<LearnerCapability[]> => {
-    try {
-      const response = await api.get(`/users/${userId}/capabilities`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching capabilities:', error);
-      return [];
-    }
-  }
+  /** Throws on failure; an empty list means no capability evidence yet. */
+  getUserCapabilities: async (userId: number): Promise<LearnerCapability[]> => (await api.get(`/users/${userId}/capabilities`)).data,
 };

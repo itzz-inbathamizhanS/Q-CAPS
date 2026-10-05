@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconn
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 import models
 import schemas
@@ -22,7 +22,6 @@ from fastapi.security import OAuth2PasswordBearer
 
 # Candidate A Services
 from services import evidence_service
-from closure.engine import process_closure_verification
 from course_content.admin_routes import create_admin_router
 from course_content.public_routes import create_public_router
 from activities import create_activities_router
@@ -559,48 +558,42 @@ def get_intervention(id: str, db: Session = Depends(get_db), current_user: model
     return intervention
 
 @app.post("/api/interventions/{id}/verify")
-def verify_intervention(id: str, verification_data: dict, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """
-    verification_data should contain:
-    - learner_result: dict
-    - before_evidence_id: str
-    - after_scan_raw: dict
-    """
+def verify_intervention(id: str, body: Optional[dict] = None, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Verify an intervention from evidence the server holds: the finding must have been resolved by a later verified
+    scan, and the asset owner's capability estimate must reach the required level. The result is stored and appended
+    to the finding's hash-chained closure events. Client-supplied results are not accepted."""
     intervention = db.query(models.Intervention).filter(models.Intervention.id == id).first()
     if not intervention or not _finding_visible(db, current_user, intervention.finding_id):
         raise HTTPException(status_code=404, detail="Intervention not found")
-
-    before_evidence = db.query(models.Evidence).filter(models.Evidence.id == verification_data.get("before_evidence_id")).first()
-    if not before_evidence or not asset_visible(db, current_user, before_evidence.asset_id):
-        raise HTTPException(status_code=404, detail="Before evidence not found")
-        
-    # Create after evidence
-    after_evidence = evidence_service.create_evidence(db, verification_data.get("after_scan_raw", {}))
-    
-    # Process closure
-    closure_result = process_closure_verification(
-        intervention.__dict__, 
-        verification_data.get("learner_result", {}), 
-        before_evidence.normalized_payload, 
-        after_evidence.normalized_payload
-    )
-    
-    # In a full implementation, we'd save Verification and ClosureEvent here
-    if intervention.competency_id is not None:
+    finding = db.get(models.Finding, intervention.finding_id)
+    asset = db.get(models.Asset, finding.asset_id) if finding else None
+    if finding is None or asset is None:
+        raise HTTPException(status_code=404, detail="Intervention not found")
+    # Only the owner of the asset (or an admin) records a verification; shared ownerless records are admin-managed.
+    if current_user.role != "admin" and asset.owner_user_id != current_user.id:
+        raise HTTPException(status_code=403, detail="Only the asset owner can verify this intervention")
+    forbidden = sorted(k for k in (body or {}) if k in ("learner_result", "after_scan_raw", "technical_result"))
+    if forbidden:
+        raise HTTPException(status_code=422, detail=f"{', '.join(forbidden)} is computed by the server and cannot be supplied")
+    from closure import service as closure_service
+    from competency import capability
+    if asset.owner_user_id and intervention.competency_id is not None:
         competency = db.get(models.Competency, intervention.competency_id)
-        finding = db.get(models.Finding, intervention.finding_id)
-        asset = db.get(models.Asset, finding.asset_id) if finding else None
-        if competency and asset and asset.owner_user_id:
-            from competency import capability
-            capability.refresh(db, asset.owner_user_id, {competency.code})
-    return closure_result
+        if competency:
+            capability.refresh(db, asset.owner_user_id, {competency.code})  # current estimate before judging it
+    result = closure_service.verify(db, intervention)
+    if asset.owner_user_id and intervention.competency_id is not None:
+        competency = db.get(models.Competency, intervention.competency_id)
+        if competency:
+            capability.refresh(db, asset.owner_user_id, {competency.code})  # the stored verification is operational evidence
+    return result
 
 @app.get("/api/closures/{finding_id}")
 def get_closures(finding_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     if not _finding_visible(db, current_user, finding_id):
         return []  # indistinguishable from a finding that does not exist
-    closures = db.query(models.ClosureEvent).filter(models.ClosureEvent.finding_id == finding_id).all()
-    return closures
+    return (db.query(models.ClosureEvent).filter(models.ClosureEvent.finding_id == finding_id)
+            .order_by(models.ClosureEvent.created_at, models.ClosureEvent.id).all())
 
 @app.get("/api/users/{user_id}/profile", response_model=schemas.UserOut)
 def get_user_profile(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):

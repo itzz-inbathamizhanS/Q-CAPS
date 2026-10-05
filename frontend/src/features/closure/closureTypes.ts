@@ -15,6 +15,7 @@ export interface Finding {
   asset_id?: number;
   evidence_id?: string;
   finding_type: string;
+  title?: string | null;
   algorithm?: string | null;
   protocol?: string | null;
   severity: number;
@@ -25,15 +26,27 @@ export interface Finding {
   last_seen: string;
 }
 
-export interface TechnicalDelta {
-  remediated: boolean;
-  same_asset: boolean;
-  details: Record<string, unknown>;
+/** Row of GET /findings/{id}/requirements (risk-to-skill map). */
+export interface FindingRequirement {
+  requirement_id: string;
+  requirement: string | null;
+  pqc_relevant: boolean | null;
+  rationale: string | null;
+  competency_code: string;
+  competency_name: string | null;
+  required_level: string;
+  map_version: string;
+  map_status: string | null;
 }
 
+/** Result of POST /interventions/{id}/verify; computed entirely by the server. */
 export interface VerificationResult {
   status: string;
-  technical_delta: TechnicalDelta;
-  learner_result_ok: boolean;
+  verification_id: string;
+  event_hash: string;
   technical_ok: boolean;
+  learner_result_ok: boolean;
+  technical: { remediated: boolean; same_asset: boolean; finding_status: string; rule: string };
+  learner: { ok: boolean; competency: string | null; level?: string; required_level?: string | null; rule?: string; detail?: string };
+  verifier_version: string;
 }
