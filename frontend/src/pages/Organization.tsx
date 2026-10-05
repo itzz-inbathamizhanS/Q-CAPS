@@ -3,6 +3,7 @@ import { Card } from '@/components/ui/Card';
 import { fetchLeaderboard, LeaderboardEntry } from '@/services/backendService';
 import { useAuthStore } from '@/features/auth/authStore';
 import { Trophy, Medal, Star, TrendingUp } from 'lucide-react';
+import { WS_BASE_URL } from '@/services/apiConfig';
 
 export const Organization: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
@@ -34,9 +35,10 @@ export const Organization: React.FC = () => {
 
     // Connect to WebSocket for real-time updates
     if (token) {
-      const wsUrl = `ws://localhost:8000/api/ws/leaderboard?token=${token}`;
-      const ws = new WebSocket(wsUrl);
+      // The token goes in the first message, not the URL (URLs end up in logs); ws/wss follows the API's scheme.
+      const ws = new WebSocket(`${WS_BASE_URL}/ws/leaderboard`);
       wsRef.current = ws;
+      ws.onopen = () => ws.send(JSON.stringify({ type: 'auth', token }));
 
       ws.onmessage = (event) => {
         if (!isMounted) return;

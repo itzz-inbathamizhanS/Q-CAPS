@@ -14,6 +14,7 @@ from recommendation import get_user_recommendation
 from leaderboard import get_leaderboard_data, get_user_rank
 import logging
 import os
+import asyncio
 import json
 from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
@@ -215,27 +216,33 @@ def read_me(current_user: models.User = Depends(get_current_user)):
     admin link; every admin endpoint enforces the role itself."""
     return {"id": current_user.id, "name": current_user.name, "role": current_user.role}
 
+WS_AUTH_TIMEOUT_SECONDS = 5
+WS_UNAUTHORIZED = 4401  # application close code: authentication missing, late or invalid
+
+
 @app.websocket("/api/ws/leaderboard")
-async def websocket_leaderboard(websocket: WebSocket, token: str = Query(None), db: Session = Depends(get_db)):
-    if not token:
-        await websocket.close(code=1008)
-        return
-        
+async def websocket_leaderboard(websocket: WebSocket, db: Session = Depends(get_db)):
+    """Live leaderboard. The token is sent as the first message, {"type": "auth", "token": "..."}, within
+    WS_AUTH_TIMEOUT_SECONDS, never in the URL, where it would end up in proxy and server logs."""
+    await websocket.accept()
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        first = await asyncio.wait_for(websocket.receive_text(), timeout=WS_AUTH_TIMEOUT_SECONDS)
+        message = json.loads(first)
+        token = message.get("token") if isinstance(message, dict) and message.get("type") == "auth" else None
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM]) if isinstance(token, str) else {}
         user_id = payload.get("sub")
-        if not user_id:
-            await websocket.close(code=1008)
-            return
-    except jwt.PyJWTError:
-        await websocket.close(code=1008)
+        if not user_id or db.query(models.User.id).filter(models.User.id == int(user_id)).first() is None:
+            raise ValueError("unknown user")
+    except (asyncio.TimeoutError, ValueError, TypeError, jwt.PyJWTError):
+        await websocket.close(code=WS_UNAUTHORIZED)
         return
-        
-    await manager.connect(websocket)
+    except WebSocketDisconnect:
+        return
+
+    manager.active_connections.append(websocket)
     try:
         while True:
-            # We just keep the connection open, clients don't send data here.
-            data = await websocket.receive_text()
+            await websocket.receive_text()  # clients send nothing after authenticating; this waits for disconnect
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
