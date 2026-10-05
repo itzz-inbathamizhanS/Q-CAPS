@@ -70,6 +70,16 @@ def ensure_schema():
             cols = {c["name"] for c in insp.get_columns("quiz_items")}
             if "tag_status" not in cols:
                 conn.execute(text("ALTER TABLE quiz_items ADD COLUMN tag_status VARCHAR"))
+            if "domain" not in cols:
+                conn.execute(text("ALTER TABLE quiz_items ADD COLUMN domain VARCHAR"))
+        if "quiz_modules" in tables:
+            cols = {c["name"] for c in insp.get_columns("quiz_modules")}
+            if "kind" not in cols:
+                conn.execute(text("ALTER TABLE quiz_modules ADD COLUMN kind VARCHAR"))
+        if "quiz_attempts" in tables:
+            cols = {c["name"] for c in insp.get_columns("quiz_attempts")}
+            if "attempt_purpose" not in cols:
+                conn.execute(text("ALTER TABLE quiz_attempts ADD COLUMN attempt_purpose VARCHAR"))
         if "sections" in tables:
             cols = {c["name"] for c in insp.get_columns("sections")}
             if "summary" not in cols:

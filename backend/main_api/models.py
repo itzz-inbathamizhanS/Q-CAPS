@@ -349,6 +349,8 @@ class QuizModule(Base):
     topic = Column(String, nullable=False)
     # When False, a graded attempt reports only correct/incorrect, not the key or explanation.
     reveal_answers = Column(Boolean, nullable=False, default=True)
+    # None for module quizzes; "diagnostic" for the baseline/reassessment instruments (no XP, all items, no key shown).
+    kind = Column(String, nullable=True)
 
 
 class QuizItem(Base):
@@ -367,6 +369,8 @@ class QuizItem(Base):
     lesson_id = Column(String, nullable=True)
     # proposed-unreviewed | reviewed | no-competency. Capability estimates report how many of their items were reviewed.
     tag_status = Column(String, nullable=True)
+    # Reporting group of a diagnostic item (e.g. "PQC Fundamentals"); None for module quiz items.
+    domain = Column(String, nullable=True)
     active = Column(Boolean, nullable=False, default=True)
 
 
@@ -388,6 +392,8 @@ class QuizAttempt(Base):
     score_percent = Column(Float, nullable=True)
     passed = Column(Boolean, nullable=True)
     xp_awarded = Column(Integer, nullable=False, default=0)
+    # diagnostic_pre (the learner's first diagnostic) or diagnostic_post (any later one); None for module quizzes.
+    attempt_purpose = Column(String, nullable=True)
 
 
 class QuizResponse(Base):

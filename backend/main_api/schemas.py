@@ -349,6 +349,7 @@ class QuizAttemptQuestion(BaseModel):
     item_id: str
     prompt: str
     options: List[str]  # already in the order shown to the learner; no answer key
+    domain: Optional[str] = None  # reporting group of a diagnostic item
 
 
 class QuizAttemptOut(BaseModel):
@@ -360,6 +361,26 @@ class QuizAttemptOut(BaseModel):
     issued_at: datetime
     expires_at: datetime
     questions: List[QuizAttemptQuestion]
+    kind: Optional[str] = None  # "diagnostic" for the baseline/reassessment instrument
+    attempt_purpose: Optional[str] = None  # diagnostic_pre | diagnostic_post, decided by the server
+
+
+class DiagnosticDomainResult(BaseModel):
+    domain: str
+    total_questions: int
+    correct_count: int
+    percentage: int
+
+
+class DiagnosticResult(BaseModel):
+    attempt_id: str
+    module_id: str
+    attempt_purpose: Optional[str] = None
+    graded_at: datetime
+    total_questions: int
+    correct_answers: int
+    score_percent: float
+    domains: List[DiagnosticDomainResult]
 
 
 class QuizAnswerIn(BaseModel):

@@ -39,8 +39,11 @@ def progress(db: Session, user: models.User) -> dict:
     """Everything the server has verified about this learner: XP, graded quiz passes and best scores,
     completed labs and missions. The browser only mirrors it."""
     rows = db.query(models.ActivityCompletion).filter_by(user_id=user.id).all()
+    # Diagnostics are an assessment instrument, not course modules: they never count as passed modules.
+    diagnostic = [m for (m,) in db.query(models.QuizModule.module_id).filter(models.QuizModule.kind == "diagnostic")]
     attempts = db.query(models.QuizAttempt.module_id, models.QuizAttempt.score_percent, models.QuizAttempt.passed).filter(
-        models.QuizAttempt.user_id == user.id, models.QuizAttempt.status == "graded").all()
+        models.QuizAttempt.user_id == user.id, models.QuizAttempt.status == "graded",
+        models.QuizAttempt.module_id.notin_(diagnostic)).all()
     best: Dict[str, float] = {}
     for module_id, score, _ in attempts:
         best[module_id] = max(best.get(module_id, 0.0), float(score or 0))

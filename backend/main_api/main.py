@@ -273,6 +273,11 @@ def start_quiz_attempt(module_id: str, db: Session = Depends(get_db), current_us
     except quiz_service.QuizError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
 
+@app.get("/api/diagnostic/results", response_model=List[schemas.DiagnosticResult])
+def get_diagnostic_results(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """The signed-in learner's graded diagnostic attempts (newest first) with per-domain results."""
+    return quiz_service.diagnostic_results(db, current_user)
+
 @app.post("/api/quizzes/attempts/{attempt_id}/answers", response_model=schemas.QuizAnswerResult)
 def answer_quiz_question(attempt_id: str, answer: schemas.QuizAnswerIn, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     """Record and lock one answer; returns feedback so the UI can keep per-question explanations."""

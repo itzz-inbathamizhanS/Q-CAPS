@@ -44,17 +44,19 @@ def build_markdown() -> str:
     by_id = {m["id"]: m for m in modules}
     # The quiz bank is server-side now (content/Quizzes/*.json, seeded into the database);
     # it is no longer bundled into the frontend.
-    quizzes = {}
+    quizzes, diagnostics = {}, []
     for quiz_file in sorted(QUIZ_DIR.rglob("*_questions.json")):
         quiz = json.loads(quiz_file.read_text(encoding="utf-8"))
-        quizzes[quiz["module_id"]] = quiz
+        if quiz.get("kind") == "diagnostic":
+            diagnostics.append(quiz)
+        else:
+            quizzes[quiz["module_id"]] = quiz
     missions = _array(DATA_DIR / "missionsData.ts", "missionsData")
     rooms = _array(DATA_DIR / "escapeRoomData.ts", "escapeRoomScenarios")
     badges = _array(DATA_DIR / "badgesData.ts", "badgesData")
     certs = _array(DATA_DIR / "badgesData.ts", "certificatesData")
-    # assessmentData.ts is hand-written TypeScript (not JSON), so count by pattern.
-    assessment_text = (DATA_DIR / "assessmentData.ts").read_text(encoding="utf-8")
-    assessment_domains = Counter(re.findall(r"^\s+domain: '([^']+)'", assessment_text, re.M))
+    # The diagnostic is a server-side quiz module (content/Quizzes/Diagnostic) since T1.5.
+    assessment_domains = Counter(q.get("domain") for d in diagnostics for q in d["questions"])
 
     total_sections = sum(len(m["sections"]) for m in modules)
     thin = sum(1 for m in modules for s in m["sections"] if _words(clean_content(s["content"])) < 40)
@@ -132,7 +134,7 @@ def build_markdown() -> str:
     w("- No bibliography or source field on any section, module or quiz question yet.")
     w("- No Research Papers or References content type yet.")
     w("- PQC and Quantum Cybersecurity are tags (`domain`), not top-level categories.")
-    w("- Quizzes, the diagnostic and missions are scored in the browser, not on the server.")
+    w("- Competency tags on quiz items, labs and missions are drafts (proposed-unreviewed) until an expert reviews them.")
     return "\n".join(out) + "\n"
 
 

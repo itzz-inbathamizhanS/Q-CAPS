@@ -84,7 +84,8 @@ def create_demo_account(db: Session, name: str, password: str, reset: bool = Fal
     db.flush()
     now = datetime.now(timezone.utc)
     by_code = _module_by_code(db)
-    qmods = {q.module_id: q for q in db.query(models.QuizModule).all()}
+    # Course quizzes only: a demo account has no diagnostic attempts, so its pre/post data is never synthetic.
+    qmods = {q.module_id: q for q in db.query(models.QuizModule).all() if q.kind != "diagnostic"}
 
     if profile == "complete":
         passed_slugs = {q for q in qmods}

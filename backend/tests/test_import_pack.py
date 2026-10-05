@@ -191,7 +191,11 @@ def test_retired_question_stays_in_database_but_is_never_issued(db, course, admi
     r = client.post(f"/api/quizzes/{A3}/attempts", headers=learner[1])
     assert r.status_code in (200, 201), r.text
     issued = json.dumps(r.json())
-    assert first not in issued and "Question 1?" in issued
+    assert first not in issued
+    # The form is a random sample of at most 15 active items, so any particular new question may be left out;
+    # check that everything issued is active instead of expecting one specific question.
+    active = {q.id for q in db.query(models.QuizItem).filter_by(module_id=A3, active=True)}
+    assert {q["item_id"] for q in r.json()["questions"]} <= active
 
 
 def test_existing_question_cannot_change_meaning(db, course, admin_user, quiz_dir):
@@ -239,7 +243,7 @@ def test_new_modules_are_refused(db, course, admin_user, quiz_dir):
 def test_quiz_writer_reproduces_every_existing_quiz_file_byte_for_byte(tmp_path):
     from course_content.quiz_files import write_quiz_file
     files = sorted((REPO / "content" / "Quizzes").glob("*/*.json"))
-    assert len(files) == 36
+    assert len(files) == 37  # 36 course modules + the DIAG-A diagnostic
     for path in files:
         original = path.read_bytes()
         copy = tmp_path / path.name
