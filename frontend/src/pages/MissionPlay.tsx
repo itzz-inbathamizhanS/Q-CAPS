@@ -35,8 +35,8 @@ export const MissionPlay: React.FC = () => {
       style={{
         position: 'fixed',
         inset: 0,
-        backgroundColor: 'var(--cyber-bg, #080B14)',
-        color: '#f8fafc',
+        backgroundColor: 'var(--color-bg)',
+        color: 'var(--color-text-primary)',
         zIndex: 1000,
         overflowY: 'auto',
         fontFamily: 'var(--font-sans)'
@@ -45,8 +45,8 @@ export const MissionPlay: React.FC = () => {
       {/* Masthead */}
       <div
         style={{
-          borderBottom: '1px solid #1e293b',
-          backgroundColor: 'var(--cyber-surface, #121827)',
+          borderBottom: '1px solid var(--color-surface-container)',
+          backgroundColor: 'var(--color-surface)',
           padding: '14px 28px',
           display: 'flex',
           justifyContent: 'space-between',
@@ -57,35 +57,20 @@ export const MissionPlay: React.FC = () => {
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: '14px' }}>
-          <button
-            onClick={() => setShowExitConfirm(true)}
-            style={{
-              background: 'transparent',
-              border: '1px solid #334155',
-              borderRadius: '6px',
-              color: '#94a3b8',
-              padding: '6px 12px',
-              fontSize: '12px',
-              cursor: 'pointer',
-              display: 'flex',
-              alignItems: 'center',
-              gap: '6px'
-            }}
-          >
-            <X size={14} />
-            <span>Abort Mission</span>
-          </button>
+          <Button variant="outline" size="sm" leftIcon={<X size={14} />} onClick={() => setShowExitConfirm(true)}>
+            Abort mission
+          </Button>
           <div>
-            <span style={{ fontSize: '11px', color: 'var(--cyber-primary-violet, #7C5CFF)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
+            <span style={{ fontSize: '11px', color: 'var(--color-primary)', fontFamily: 'var(--font-mono)', textTransform: 'uppercase' }}>
               SIMULATION - scripted scenario, not real data
             </span>
-            <div style={{ fontSize: '15px', fontWeight: 600, color: '#f8fafc' }}>
+            <div style={{ fontSize: '15px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
               {mission.title}
             </div>
           </div>
         </div>
 
-        <div style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', color: '#64748b' }}>
+        <div style={{ fontSize: '12px', fontFamily: 'var(--font-mono)', color: 'var(--color-text-secondary)' }}>
           {mission.mission_id}
         </div>
       </div>
@@ -96,7 +81,7 @@ export const MissionPlay: React.FC = () => {
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.75)',
+            backgroundColor: 'var(--color-overlay)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -104,49 +89,32 @@ export const MissionPlay: React.FC = () => {
           }}
         >
           <div
+            role="dialog"
+            aria-modal="true"
+            aria-label="Abort mission?"
             style={{
-              backgroundColor: 'var(--cyber-card, #1A1C1F)',
-              border: '1px solid #334155',
+              backgroundColor: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
               borderRadius: '12px',
               padding: '24px',
               maxWidth: '400px',
               textAlign: 'center'
             }}
           >
-            <AlertTriangle size={36} color="#f59e0b" style={{ margin: '0 auto 12px' }} />
-            <h3 style={{ fontSize: '18px', fontWeight: 600, color: '#f8fafc', marginBottom: '8px' }}>
+            <AlertTriangle size={36} color="var(--color-warning)" style={{ margin: '0 auto 12px' }} />
+            <h3 style={{ fontSize: '18px', fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
               Abort Mission?
             </h3>
-            <p style={{ fontSize: '14px', color: '#94a3b8', marginBottom: '20px' }}>
+            <p style={{ fontSize: '14px', color: 'var(--color-text-secondary)', marginBottom: '20px' }}>
               Your progress in this simulation attempt will not be recorded.
             </p>
             <div style={{ display: 'flex', justifyContent: 'center', gap: '12px' }}>
-              <button
-                onClick={() => setShowExitConfirm(false)}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  backgroundColor: '#334155',
-                  color: '#f8fafc',
-                  border: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                Continue Mission
-              </button>
-              <button
-                onClick={handleExit}
-                style={{
-                  padding: '8px 16px',
-                  borderRadius: '6px',
-                  backgroundColor: 'var(--color-error)',
-                  color: '#ffffff',
-                  border: 'none',
-                  cursor: 'pointer'
-                }}
-              >
-                Confirm Exit
-              </button>
+              <Button variant="outline" onClick={() => setShowExitConfirm(false)}>
+                Continue mission
+              </Button>
+              <Button variant="danger" onClick={handleExit}>
+                Confirm exit
+              </Button>
             </div>
           </div>
         </div>
@@ -256,33 +224,33 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, backTo }) =>
           display: 'grid',
           gridTemplateColumns: 'repeat(4, 1fr)',
           gap: '12px',
-          backgroundColor: 'var(--cyber-surface, #121827)',
+          backgroundColor: 'var(--color-surface)',
           borderRadius: '12px',
           padding: '16px',
           marginBottom: '28px',
-          border: '1px solid #334155'
+          border: '1px solid var(--color-border)'
         }}
       >
         <div>
-          <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Quantum Channel</div>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--cyber-primary-violet, #7C5CFF)' }}>
+          <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Quantum Channel</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-primary)' }}>
             {stage === 1 ? 'Idle' : 'Active (Single Photon)'}
           </div>
         </div>
         <div>
-          <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Transmitted Photons</div>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: '#f8fafc' }}>
+          <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Transmitted Photons</div>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
             {aliceBits.length}
           </div>
         </div>
         <div>
-          <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Sifted Key Size</div>
+          <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Sifted Key Size</div>
           <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-emerald)' }}>
             {siftedIndices.length} bits
           </div>
         </div>
         <div>
-          <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase' }}>Sample Error Rate</div>
+          <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Sample Error Rate</div>
           <div style={{ fontSize: '18px', fontWeight: 700, color: errorRate > 10 ? 'var(--color-error)' : 'var(--color-emerald)' }}>
             {stage >= 4 ? `${errorRate}%` : 'Unassessed'}
           </div>
@@ -290,26 +258,26 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, backTo }) =>
       </div>
 
       {apiError && (
-        <div role="alert" style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid #ef4444', color: '#fecaca', marginBottom: '16px' }}>
+        <div role="alert" style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--color-danger)', color: 'var(--color-danger)', marginBottom: '16px' }}>
           {apiError}
         </div>
       )}
 
       {/* STAGE 1: Briefing & Transmission Setup */}
       {stage === 1 && (
-        <div style={{ backgroundColor: 'var(--cyber-surface, #121827)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' }}>
-          <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '4px', backgroundColor: '#0284c7', color: '#ffffff', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '14px' }}>
+        <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '28px' }}>
+          <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '4px', backgroundColor: 'var(--color-info-bg)', color: 'var(--color-info)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '14px' }}>
             Stage 1: Transmission Setup
           </div>
-          <h2 style={{ fontSize: '22px', fontWeight: 700, color: '#f8fafc', marginBottom: '12px' }}>
+          <h2 style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '12px' }}>
             Diplomatic Key Exchange Window Active
           </h2>
-          <p style={{ color: '#cbd5e1', lineHeight: 1.6, marginBottom: '20px' }}>
+          <p style={{ color: 'var(--color-text-on-surface-variant)', lineHeight: 1.6, marginBottom: '20px' }}>
             {mission.objective} You will prepare polarized photons with random bits and random rectilinear (+) or diagonal (x) bases. Bob will measure each photon in independently selected bases.
           </p>
 
           <div style={{ marginBottom: '24px' }}>
-            <label style={{ fontSize: '13px', color: '#94a3b8', display: 'block', marginBottom: '8px' }}>
+            <label style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'block', marginBottom: '8px' }}>
               Select Photon Batch Size: <strong>{photonCount} photons</strong>
             </label>
             <input
@@ -331,22 +299,22 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, backTo }) =>
 
       {/* STAGE 2: Measure & Notice */}
       {stage === 2 && (
-        <div style={{ backgroundColor: 'var(--cyber-surface, #121827)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' }}>
-          <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '4px', backgroundColor: '#0284c7', color: '#ffffff', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '14px' }}>
+        <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '28px' }}>
+          <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '4px', backgroundColor: 'var(--color-info-bg)', color: 'var(--color-info)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '14px' }}>
             Stage 2: Measurement Telemetry
           </div>
-          <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#f8fafc', marginBottom: '10px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '10px' }}>
             Transmission Complete — Inspecting Measurement Results
           </h2>
-          <p style={{ color: '#cbd5e1', fontSize: '14px', marginBottom: '20px', lineHeight: 1.5 }}>
+          <p style={{ color: 'var(--color-text-on-surface-variant)', fontSize: '14px', marginBottom: '20px', lineHeight: 1.5 }}>
             Notice that when Alice and Bob choose <strong>matching bases</strong> (highlighted in teal), Bob's result correlates with Alice's bit. When bases mismatch (red), quantum mechanics forces a random 50/50 collapse!
           </p>
 
           {/* Telemetry Table */}
-          <div style={{ maxHeight: '260px', overflowY: 'auto', border: '1px solid #334155', borderRadius: '8px', marginBottom: '24px' }}>
+          <div style={{ maxHeight: '260px', overflowY: 'auto', border: '1px solid var(--color-border)', borderRadius: '8px', marginBottom: '24px' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: '13px', textAlign: 'center' }}>
               <thead>
-                <tr style={{ backgroundColor: 'var(--cyber-card, #1A1C1F)', color: '#94a3b8' }}>
+                <tr style={{ backgroundColor: 'var(--color-surface-low)', color: 'var(--color-text-secondary)' }}>
                   <th style={{ padding: '8px' }}>#</th>
                   <th style={{ padding: '8px' }}>Alice Bit</th>
                   <th style={{ padding: '8px' }}>Alice Basis</th>
@@ -359,13 +327,13 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, backTo }) =>
                 {aliceBits.slice(0, 15).map((bit, i) => {
                   const match = aliceBases[i] === bobBases[i];
                   return (
-                    <tr key={i} style={{ backgroundColor: match ? 'rgba(16, 185, 129, 0.08)' : 'rgba(239, 68, 68, 0.05)', borderBottom: '1px solid #1e293b' }}>
+                    <tr key={i} style={{ backgroundColor: match ? 'var(--color-success-bg)' : 'var(--color-danger-bg)', borderBottom: '1px solid var(--color-surface-container)' }}>
                       <td style={{ padding: '6px' }}>{i + 1}</td>
                       <td style={{ padding: '6px', fontWeight: 600 }}>{bit}</td>
                       <td style={{ padding: '6px', fontFamily: 'var(--font-mono)' }}>{aliceBases[i]}</td>
                       <td style={{ padding: '6px', fontFamily: 'var(--font-mono)' }}>{bobBases[i]}</td>
                       <td style={{ padding: '6px', fontWeight: 600 }}>{bobResults[i]}</td>
-                      <td style={{ padding: '6px', color: match ? 'var(--color-emerald)' : '#f87171', fontWeight: 600 }}>
+                      <td style={{ padding: '6px', color: match ? 'var(--color-emerald)' : 'var(--color-danger)', fontWeight: 600 }}>
                         {match ? 'MATCH' : 'MISMATCH'}
                       </td>
                     </tr>
@@ -383,18 +351,18 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, backTo }) =>
 
       {/* STAGE 3: Sift the Key */}
       {stage === 3 && (
-        <div style={{ backgroundColor: 'var(--cyber-surface, #121827)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' }}>
-          <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '4px', backgroundColor: '#0284c7', color: '#ffffff', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '14px' }}>
+        <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '28px' }}>
+          <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '4px', backgroundColor: 'var(--color-info-bg)', color: 'var(--color-info)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '14px' }}>
             Stage 3: Public Basis Reconciliation
           </div>
-          <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#f8fafc', marginBottom: '10px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '10px' }}>
             Sifted Shared Key Extracted
           </h2>
-          <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: 1.5, marginBottom: '20px' }}>
+          <p style={{ color: 'var(--color-text-on-surface-variant)', fontSize: '14px', lineHeight: 1.5, marginBottom: '20px' }}>
             Alice and Bob announced their basis choices over the public classical channel (never revealing the bit values). All mismatched rows were discarded, leaving {siftedIndices.length} candidate key bits.
           </p>
 
-          <div style={{ padding: '16px', backgroundColor: 'var(--cyber-bg, #080B14)', borderRadius: '8px', border: '1px solid #334155', fontFamily: 'var(--font-mono)', fontSize: '16px', letterSpacing: '4px', color: 'var(--cyber-primary-violet, #7C5CFF)', marginBottom: '24px', overflowX: 'auto' }}>
+          <div style={{ padding: '16px', backgroundColor: 'var(--color-bg)', borderRadius: '8px', border: '1px solid var(--color-border)', fontFamily: 'var(--font-mono)', fontSize: '16px', letterSpacing: '4px', color: 'var(--color-primary)', marginBottom: '24px', overflowX: 'auto' }}>
             {siftedIndices.map((idx) => aliceBits[idx]).join('')}
           </div>
 
@@ -412,19 +380,19 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, backTo }) =>
 
       {/* STAGE 4: Security Alert & Error Rate Estimation */}
       {stage === 4 && (
-        <div style={{ backgroundColor: 'var(--cyber-surface, #121827)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' }}>
-          <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '4px', backgroundColor: 'var(--color-error)', color: '#ffffff', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '14px' }}>
+        <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '28px' }}>
+          <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '4px', backgroundColor: 'var(--color-danger-bg)', color: 'var(--color-danger)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '14px' }}>
             Stage 4: Security Verification
           </div>
-          <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#f8fafc', marginBottom: '10px' }}>
+          <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '10px' }}>
             Error-Rate Assessment: Channel Under Inspection
           </h2>
-          <p style={{ color: '#cbd5e1', fontSize: '14px', lineHeight: 1.5, marginBottom: '20px' }}>
+          <p style={{ color: 'var(--color-text-on-surface-variant)', fontSize: '14px', lineHeight: 1.5, marginBottom: '20px' }}>
             To verify if an eavesdropper (Eve) intercepted the quantum transmission, Alice and Bob publicly sacrifice a sample of sifted bits to calculate the Quantum Bit Error Rate (QBER).
           </p>
 
           <div style={{ marginBottom: '20px' }}>
-            <label style={{ fontSize: '13px', color: '#94a3b8', display: 'block', marginBottom: '8px' }}>
+            <label style={{ fontSize: '13px', color: 'var(--color-text-secondary)', display: 'block', marginBottom: '8px' }}>
               Compare Sample Bits: <strong>{sampleSize} bits</strong>
             </label>
             <input
@@ -437,12 +405,12 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, backTo }) =>
             />
           </div>
 
-          <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: errorRate > 10 ? 'rgba(239, 68, 68, 0.15)' : 'rgba(16, 185, 129, 0.15)', border: `1px solid ${errorRate > 10 ? 'var(--color-error)' : 'var(--color-emerald)'}`, marginBottom: '28px' }}>
-            <div style={{ fontSize: '13px', color: '#94a3b8' }}>Observed Quantum Error Rate (QBER):</div>
+          <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: errorRate > 10 ? 'var(--color-danger-bg)' : 'var(--color-success-bg)', border: `1px solid ${errorRate > 10 ? 'var(--color-error)' : 'var(--color-emerald)'}`, marginBottom: '28px' }}>
+            <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>Observed Quantum Error Rate (QBER):</div>
             <div style={{ fontSize: '32px', fontWeight: 800, color: errorRate > 10 ? 'var(--color-error)' : 'var(--color-emerald)', margin: '4px 0' }}>
               {errorRate}%
             </div>
-            <div style={{ fontSize: '13px', color: '#cbd5e1' }}>
+            <div style={{ fontSize: '13px', color: 'var(--color-text-on-surface-variant)' }}>
               {errorRate > 10
                 ? 'CRITICAL ALERT: QBER exceeds theoretical threshold (~11%). An active eavesdropper is measuring photons and causing quantum state disturbance!'
                 : 'QBER within safe threshold (≤11%). Natural channel noise baseline.'}
@@ -450,68 +418,44 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, backTo }) =>
           </div>
 
           <div style={{ display: 'flex', gap: '14px' }}>
-            <button
-              onClick={() => void handleDecision('abort')}
-              style={{
-                flex: 1,
-                padding: '14px',
-                borderRadius: '8px',
-                backgroundColor: '#dc2626',
-                color: '#ffffff',
-                border: 'none',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              ABORT KEY (Eavesdropping Detected)
-            </button>
-            <button
-              onClick={() => void handleDecision('accept')}
-              style={{
-                flex: 1,
-                padding: '14px',
-                borderRadius: '8px',
-                backgroundColor: '#16a34a',
-                color: '#ffffff',
-                border: 'none',
-                fontWeight: 700,
-                cursor: 'pointer'
-              }}
-            >
-              ACCEPT KEY (Proceed to Encrypt)
-            </button>
+            <Button variant="danger" size="lg" fullWidth onClick={() => void handleDecision('abort')}>
+              Abort key (eavesdropping detected)
+            </Button>
+            <Button variant="success" size="lg" fullWidth onClick={() => void handleDecision('accept')}>
+              Accept key (proceed to encrypt)
+            </Button>
           </div>
         </div>
       )}
 
       {/* STAGE 5: Outcome & Concept Reveal */}
       {stage === 5 && (
-        <div style={{ backgroundColor: 'var(--cyber-surface, #121827)', border: '1px solid #25334d', borderRadius: '14px', padding: '32px', textAlign: 'center' }}>
+        <div style={{ backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '32px', textAlign: 'center' }}>
           {isDecisionCorrect ? (
             <>
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(16, 185, 129, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <CheckCircle2 size={36} color="#10b981" />
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'var(--color-success-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <CheckCircle2 size={36} color="var(--color-success)" />
               </div>
-              <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#f8fafc', marginBottom: '8px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
                 Mission Success! Correct Security Decision
               </h2>
-              <p style={{ color: '#94a3b8', maxWidth: '600px', margin: '0 auto 24px', lineHeight: 1.6 }}>
+              <p style={{ color: 'var(--color-text-secondary)', maxWidth: '600px', margin: '0 auto 24px', lineHeight: 1.6 }}>
                 {decision === 'abort'
                   ? 'You rightly aborted the transmission! Because an eavesdropper was measuring photons in transit, the laws of quantum mechanics (Heisenberg Uncertainty & No-Cloning Theorem) forced irreversible measurement disturbances (~25% error rate), exposing the attack before any confidential embassy data was encrypted!'
                   : `You rightly accepted the quantum key! The observed Quantum Bit Error Rate (${errorRate}%) was within the safe baseline threshold (≤11%), confirming no eavesdropper disturbed the quantum channel. The diplomatic channel is securely encrypted!`}
               </p>
 
               {/* Badge banner */}
-              <div style={{ maxWidth: '420px', margin: '0 auto 28px', padding: '16px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left' }}>
-                <Award size={32} color="#10b981" />
+              <div style={{ maxWidth: '420px', margin: '0 auto 28px', padding: '16px', borderRadius: '10px', backgroundColor: 'var(--color-success-bg)', border: '1px solid var(--color-success)', display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left' }}>
+                <Award size={32} color="var(--color-success)" />
                 <div>
                   <div style={{ fontSize: '11px', color: 'var(--color-emerald)', fontWeight: 700, textTransform: 'uppercase' }}>
                     Lab Badge Awarded
                   </div>
-                  <div style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc' }}>
+                  <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
                     {outcome?.awarded?.badge ?? (mission.rewards?.badge_awarded as string)}
                   </div>
-                  <div style={{ fontSize: '12px', color: '#94a3b8' }}>
+                  <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>
                     {outcome?.awarded ? `+${outcome.awarded.xp} XP recorded by the server` : 'Already earned: awarded the first time'}
                   </div>
                 </div>
@@ -519,13 +463,13 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, backTo }) =>
             </>
           ) : (
             <>
-              <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(239, 68, 68, 0.2)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
-                <XCircle size={36} color="#ef4444" />
+              <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'var(--color-danger-border)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px' }}>
+                <XCircle size={36} color="var(--color-danger)" />
               </div>
-              <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#f8fafc', marginBottom: '8px' }}>
+              <h2 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '8px' }}>
                 {decision === 'accept' ? 'Diplomatic Channel Compromised' : 'Unnecessary Transmission Abort'}
               </h2>
-              <p style={{ color: '#94a3b8', maxWidth: '600px', margin: '0 auto 24px', lineHeight: 1.6 }}>
+              <p style={{ color: 'var(--color-text-secondary)', maxWidth: '600px', margin: '0 auto 24px', lineHeight: 1.6 }}>
                 {decision === 'accept'
                   ? `The error rate of ${errorRate}% clearly exceeded the safe threshold (≤11%). Accepting the key allowed the adversary to decrypt embassy communications.`
                   : `The error rate was only ${errorRate}%, well within the normal noise baseline (≤11%). Aborting a clean quantum channel caused an operational delay during a critical diplomatic window.`}
@@ -551,7 +495,7 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, backTo }) =>
                 setBobResults([]);
                 setSiftedIndices([]);
               }}
-              style={{ color: '#f8fafc', borderColor: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}
+              style={{ color: 'var(--color-text-primary)', borderColor: 'var(--color-outline)', display: 'flex', alignItems: 'center', gap: '6px' }}
             >
               <RotateCcw size={14} />
               <span>Retry Mission</span>
