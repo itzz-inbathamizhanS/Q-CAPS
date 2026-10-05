@@ -3,7 +3,9 @@ import { LogOut, Menu, Moon, Sun } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { useAuthStore } from '@/features/auth/authStore';
 import { useSignOut } from '@/features/auth/useSignOut';
-import qcapsLogo from '@/assets/brand/qcaps-logo.png';
+// Sized for the 38 px header at up to 3x pixel density (the 1600 px source was 326 KB).
+import qcapsLogoWebp from '@/assets/brand/qcaps-logo-header.webp';
+import qcapsLogoPng from '@/assets/brand/qcaps-logo-header.png';
 
 interface HeaderProps {
   onToggleMobileMenu?: () => void;
@@ -66,7 +68,10 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, menuOpen = f
         </button>
 
         <Link to="/dashboard" className="header-brand" aria-label="Q-CAPS home">
-          <img src={qcapsLogo} alt="Q-CAPS" className="header-logo" />
+          <picture>
+            <source srcSet={qcapsLogoWebp} type="image/webp" />
+            <img src={qcapsLogoPng} alt="Q-CAPS" className="header-logo" width={323} height={114} />
+          </picture>
         </Link>
 
         {/* Search returns with the command palette (TF.6); no input without a handler. */}
