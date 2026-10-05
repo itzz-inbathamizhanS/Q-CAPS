@@ -25,6 +25,7 @@ import {
   type QuizAnswerFeedback,
   type QuizAttemptResult,
 } from '@/services/backendService';
+import { announce } from '@/features/a11y/announcer';
 
 interface DisplayOption {
   text: string;
@@ -201,6 +202,9 @@ export const QuizPage: React.FC = () => {
     try {
       const fb = await answerQuizQuestion(attempt.attempt_id, currentQuestion.item_id, selectedOption);
       setFeedback(fb);
+      announce(
+        fb.correct === null ? 'Answer recorded.' : fb.correct ? 'Correct.' : 'Incorrect. The correct answer is now highlighted.',
+      );
       setIsAnswerSubmitted(true);
       setAnswersHistory((prev) => [...prev, { selected: selectedOption, isCorrect: fb.correct === true }]);
     } catch (e) {
@@ -225,6 +229,9 @@ export const QuizPage: React.FC = () => {
       // The server grades the attempt; the page only displays what it returns.
       const res = await finishQuizAttempt(attempt.attempt_id);
       setResult(res);
+      announce(
+        `Quiz graded: ${Math.round(res.score_percent)} percent, ${res.correct_answers} of ${res.total_questions} correct. ${res.passed ? 'Passed.' : 'Not passed.'}`,
+      );
       setQuizFinished(true);
       // XP, completion and the module badge are decided by the server; mirror its record.
       void fetchActivityProgress().then(applyActivityProgress).catch(() => undefined);

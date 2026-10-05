@@ -14,6 +14,7 @@ import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 import { Button } from '@/components/ui/Button';
 import { DecisionMissionEngine } from '@/features/missions/DecisionMissionEngine';
 import { decideBB84, startBB84Run, type BB84Decision } from '@/services/activityApi';
+import { announce } from '@/features/a11y/announcer';
 
 export const MissionPlay: React.FC = () => {
   const { missionId } = useParams<{ missionId: string }>();
@@ -205,6 +206,7 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, backTo }) =>
       setDecision(choice);
       setErrorRate(r.error_rate);
       setOutcome(r);
+      announce(`${r.correct ? 'Correct decision' : 'Incorrect decision'}. Measured error rate ${r.error_rate} percent; ${r.eve_present ? 'an eavesdropper was present' : 'no eavesdropper was present'}.`);
       if (r.awarded) recordActivityAward('mission', mission.mission_id, r.awarded);
       setStage(5);
     } catch {

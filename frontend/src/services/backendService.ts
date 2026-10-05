@@ -159,6 +159,7 @@ export interface QuizAnswerFeedback {
 export interface QuizAttemptResult {
   attempt_id: string;
   module_id: string;
+  total_questions: number;
   correct_answers: number;
   score_percent: number;
   passed: boolean;

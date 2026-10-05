@@ -5,6 +5,7 @@ import { http, HttpResponse } from 'msw';
 import { server } from '@/test/msw/server';
 import { apiUrl, renderRoutes, signIn } from '@/test/render';
 import { QuizPage } from './QuizPage';
+import { useAnnouncer } from '@/features/a11y/announcer';
 
 // A1 has no prerequisites, so its quiz is never locked.
 const MODULE_ID = 'track_a_a1_computing_foundations';
@@ -42,7 +43,7 @@ function mockQuizServer(answers: Array<{ item_id: string; selected_position: num
     // ... but the server's grade is what counts, and the page must show it unchanged.
     http.post(apiUrl(`/quizzes/attempts/${ATTEMPT_ID}/submit`), () =>
       HttpResponse.json({
-        attempt_id: ATTEMPT_ID, module_id: MODULE_ID, correct_answers: 2, score_percent: 66.67, passed: false,
+        attempt_id: ATTEMPT_ID, module_id: MODULE_ID, total_questions: 3, correct_answers: 2, score_percent: 66.67, passed: false,
         passing_score_percent: 70, xp_awarded: 0, graded_at: '2026-10-05T10:05:00Z',
       }),
     ),
@@ -74,6 +75,9 @@ describe('QuizPage', () => {
     const summary = screen.getByText(/you answered/i);
     expect(within(summary).getByText('2')).toBeInTheDocument();
     expect(within(summary).getByText('3')).toBeInTheDocument();
+
+    // Screen readers hear the graded result (AppShell renders the announcer's live region).
+    expect(useAnnouncer.getState().message).toBe('Quiz graded: 67 percent, 2 of 3 correct. Not passed.');
 
     expect(answers).toEqual([
       { item_id: 'q1', selected_position: 1 },

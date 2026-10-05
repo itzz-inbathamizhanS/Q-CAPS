@@ -17,6 +17,7 @@ import {
 } from '@/services/backendService';
 import { Card } from '@/components/ui/Card';
 import { Button } from '@/components/ui/Button';
+import { announce } from '@/features/a11y/announcer';
 
 /** Server questions in the shape the assessment components render. Option ids are the positions shown. */
 function toQuestions(attempt: QuizAttempt): AssessmentQuestion[] {
@@ -85,6 +86,7 @@ export const Assessment: React.FC = () => {
       clearLegacyLocalResult(); // a verified result now exists; the old browser-only one is obsolete
       setIsReviewOpen(false);
       setSubmissionResult(toSubmissionResult(mine));
+      announce(`Diagnostic graded: ${Math.round(mine.score_percent)} percent, ${mine.correct_answers} of ${mine.total_questions} correct.`);
     } catch (e) {
       setSubmitError(e instanceof Error ? e.message : 'Could not submit the diagnostic.');
     } finally {

@@ -30,7 +30,6 @@ export const Button: React.FC<ButtonProps> = ({
     cursor: 'pointer',
     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
     border: '1px solid transparent',
-    outline: 'none',
     width: fullWidth ? '100%' : 'max-content',
   };
 

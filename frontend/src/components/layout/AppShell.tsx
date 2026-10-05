@@ -7,6 +7,7 @@ import { fetchActivityProgress } from '@/services/activityApi';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 import { useAuthStore } from '@/features/auth/authStore';
 import { StateMessage } from '@/components/ui/StateMessage';
+import { useAnnouncer } from '@/features/a11y/announcer';
 
 interface AppShellProps {
   children?: React.ReactNode;
@@ -34,6 +35,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   };
   const userId = useAuthStore((s) => s.userId);
   const applyActivityProgress = useCurriculumStore((s) => s.applyActivityProgress);
+  const announcement = useAnnouncer((s) => s.message);
 
   const [syncError, setSyncError] = useState<string | null>(null);
   const [syncAttempt, setSyncAttempt] = useState(0);
@@ -54,6 +56,7 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
 
   return (
     <div className={`app-shell${railCollapsed ? ' rail-collapsed' : ''}`}>
+      <p className="sr-only" aria-live="polite" aria-atomic="true" data-testid="announcer">{announcement}</p>
       <div className="app-rail">
         <Sidebar variant="rail" collapsed={railCollapsed} onToggleCollapsed={toggleRail} />
       </div>

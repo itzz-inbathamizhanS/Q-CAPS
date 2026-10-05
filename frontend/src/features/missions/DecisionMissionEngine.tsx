@@ -4,6 +4,7 @@ import type { MissionData, MissionHud } from '@/data/missionsData';
 import { Button } from '@/components/ui/Button';
 import { chooseMissionOption, startMissionRun } from '@/services/activityApi';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
+import { announce } from '@/features/a11y/announcer';
 
 interface MissionChoice {
   id: string;
@@ -86,6 +87,7 @@ export const DecisionMissionEngine: React.FC<Props> = ({ mission, onBack, backLa
       const r = await chooseMissionOption(runId, selected.id);
       setValues(r.values);
       setFeedback(r.feedback);
+      announce(r.feedback);
       setCommitted(true);
       if (r.finished) setServerBand(r.band);
       if (r.awarded) {

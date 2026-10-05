@@ -151,7 +151,6 @@ export const LoginPage: React.FC = () => {
                 backgroundColor: 'var(--color-surface-low)',
                 fontSize: '15px',
                 color: 'var(--color-text-primary)',
-                outline: 'none',
                 transition: 'all 0.2s ease',
                 boxSizing: 'border-box'
               }}
@@ -187,7 +186,6 @@ export const LoginPage: React.FC = () => {
                 backgroundColor: 'var(--color-surface-low)',
                 fontSize: '15px',
                 color: 'var(--color-text-primary)',
-                outline: 'none',
                 transition: 'all 0.2s ease',
                 boxSizing: 'border-box'
               }}
