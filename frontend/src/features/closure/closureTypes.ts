@@ -26,6 +26,18 @@ export interface Finding {
   last_seen: string;
 }
 
+/** GET /findings/{id}/risk: risk-v1, an unvalidated model. score null means Unknown (see missing). */
+export interface RiskScore {
+  finding_id: string;
+  model_version: string;
+  score: number | null;
+  factors: { exposure: number | null; asset_criticality: number | null; pqc_dependency: number | null; migration_urgency: number | null };
+  inputs: Record<string, unknown>;
+  missing: string[];
+  computed_at: string;
+  validated: boolean;
+}
+
 /** Row of GET /findings/{id}/requirements (risk-to-skill map). */
 export interface FindingRequirement {
   requirement_id: string;

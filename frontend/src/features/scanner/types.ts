@@ -179,6 +179,18 @@ export interface ScanAsset {
   organization_id?: number | null;
   organization_name?: string | null;
   organization_kind?: 'organization' | 'lab' | null;
+  /** Whether this user may set the asset context below (owner, organization admin or platform admin). */
+  can_manage?: boolean;
+  criticality_level?: AssetContext['criticality_level'];
+  data_sensitivity?: AssetContext['data_sensitivity'];
+  confidentiality_years?: number | null;
+}
+
+/** Declared by whoever manages the asset; feeds the (unvalidated) risk score. null means not declared. */
+export interface AssetContext {
+  criticality_level: 'low' | 'medium' | 'high' | 'critical' | null;
+  data_sensitivity: 'public' | 'internal' | 'confidential' | 'restricted' | null;
+  confidentiality_years: number | null;
 }
 
 /** Row of GET /scanner/assets/{id}/findings. RESOLVED means a later scan completed the supporting check and no longer saw it. */

@@ -1,5 +1,5 @@
 import { api } from '@/services/backendService';
-import { ClosureEvent, Finding, FindingRequirement, VerificationResult } from './closureTypes';
+import { ClosureEvent, Finding, FindingRequirement, RiskScore, VerificationResult } from './closureTypes';
 
 // These calls throw on failure so the closure page can tell "could not load" from "nothing recorded".
 export const closureService = {
@@ -7,6 +7,8 @@ export const closureService = {
 
   getRequirements: async (findingId: string): Promise<FindingRequirement[]> =>
     (await api.get(`/findings/${findingId}/requirements`)).data,
+
+  getRisk: async (findingId: string): Promise<RiskScore> => (await api.get(`/findings/${findingId}/risk`)).data,
 
   getClosuresForFinding: async (findingId: string): Promise<ClosureEvent[]> => (await api.get(`/closures/${findingId}`)).data,
 

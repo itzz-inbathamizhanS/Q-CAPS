@@ -56,6 +56,13 @@ def ensure_schema():
             cols = {c["name"] for c in insp.get_columns("findings")}
             if "title" not in cols:
                 conn.execute(text("ALTER TABLE findings ADD COLUMN title VARCHAR"))
+        if "assets" in tables:
+            cols = {c["name"] for c in insp.get_columns("assets")}
+            for name, sql_type in (("criticality_level", "VARCHAR"), ("data_sensitivity", "VARCHAR"),
+                                   ("confidentiality_years", "FLOAT"), ("context_set_by", "INTEGER"),
+                                   ("context_set_at", "DATETIME")):
+                if name not in cols:
+                    conn.execute(text(f"ALTER TABLE assets ADD COLUMN {name} {sql_type}"))
         if "interventions" in tables:
             cols = {c["name"] for c in insp.get_columns("interventions")}
             if "assigned_user_id" not in cols:

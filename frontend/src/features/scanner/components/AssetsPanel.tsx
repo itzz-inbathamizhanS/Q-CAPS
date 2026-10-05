@@ -5,6 +5,7 @@ import { fetchAssetFindings, fetchScanAssets } from '../../../services/backendSe
 import type { ScanAsset, TrackedFinding } from '../types';
 import { formatDateTime, SEVERITY_LABEL, SEVERITY_VARIANT } from './constants';
 import { SectionTitle } from './shared';
+import { AssetContextForm } from './AssetContextForm';
 import { Link } from 'react-router-dom';
 
 interface Props {
@@ -22,6 +23,7 @@ export const AssetsPanel: React.FC<Props> = ({ refreshKey }) => {
   const [openId, setOpenId] = useState<number | null>(null);
   const [findings, setFindings] = useState<TrackedFinding[] | null>(null);
   const [findingsError, setFindingsError] = useState('');
+  const [reload, setReload] = useState(0);
 
   useEffect(() => {
     let cancelled = false;
@@ -31,7 +33,7 @@ export const AssetsPanel: React.FC<Props> = ({ refreshKey }) => {
     return () => {
       cancelled = true;
     };
-  }, [refreshKey]);
+  }, [refreshKey, reload]);
 
   const toggle = (id: number) => {
     if (openId === id) {
@@ -74,6 +76,7 @@ export const AssetsPanel: React.FC<Props> = ({ refreshKey }) => {
               </div>
               {openId === a.id && (
                 <div className="sc-findings" style={{ marginTop: 8 }}>
+                  <AssetContextForm asset={a} onSaved={() => setReload((n) => n + 1)} />
                   {findingsError && <div className="sc-banner sc-banner--error" role="alert">{findingsError}</div>}
                   {!findingsError && findings === null && <p className="sc-muted" style={{ margin: 0 }}>Loading...</p>}
                   {findings?.length === 0 && <p className="sc-muted" style={{ margin: 0 }}>No exposures have been tracked for this domain.</p>}

@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List, Dict, Any, Union
+from typing import Optional, List, Dict, Any, Union, Literal
 import json
 import unicodedata
 
@@ -239,6 +239,35 @@ class ScannerAssetOut(BaseModel):
     organization_id: Optional[int] = None  # None: a personal asset
     organization_name: Optional[str] = None
     organization_kind: Optional[str] = None  # "lab" assets are the study testbed, labelled "Lab environment"
+    can_manage: bool = False  # whether this user may change the asset context
+    criticality_level: Optional[str] = None
+    data_sensitivity: Optional[str] = None
+    confidentiality_years: Optional[float] = None
+
+
+class AssetContextIn(BaseModel):
+    """Declared by whoever manages the asset. None clears a value (the risk score then becomes Unknown)."""
+    criticality_level: Optional[Literal["low", "medium", "high", "critical"]] = None
+    data_sensitivity: Optional[Literal["public", "internal", "confidential", "restricted"]] = None
+    confidentiality_years: Optional[float] = Field(default=None, ge=0, le=100)
+
+
+class AssetContextOut(AssetContextIn):
+    asset_id: int
+    context_set_by: Optional[int] = None
+    context_set_at: Optional[datetime] = None
+    rescored_findings: int = 0
+
+
+class RiskScoreOut(BaseModel):
+    finding_id: str
+    model_version: str
+    score: Optional[float] = None  # None: Unknown, see missing
+    factors: Dict[str, Optional[float]]
+    inputs: Dict[str, Any]
+    missing: List[str]
+    computed_at: datetime
+    validated: bool = False  # risk-v1 is an unvalidated model
 
 
 class DrivingFinding(BaseModel):

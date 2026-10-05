@@ -127,6 +127,13 @@ class Asset(Base):
     criticality = Column(Float, default=1.0)
     confidentiality_lifetime = Column(Integer, default=0) # Days
     owner_role = Column(String, nullable=True)
+    # Asset context declared by whoever manages the asset (risk/score.py). NULL means not declared: the risk
+    # score is then Unknown, never computed from a default. criticality/confidentiality_lifetime above are legacy.
+    criticality_level = Column(String, nullable=True)  # low | medium | high | critical
+    data_sensitivity = Column(String, nullable=True)   # public | internal | confidential | restricted
+    confidentiality_years = Column(Float, nullable=True)
+    context_set_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    context_set_at = Column(DateTime, nullable=True)
     # Set for assets created from a verified scan; NULL for shared/admin-managed assets.
     owner_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -176,6 +183,18 @@ class FindingRequirement(Base):
     required_level = Column(String, nullable=False)
     map_version = Column(String, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+class RiskScore(Base):
+    """A computed risk score with the exact inputs and model version that produced it (risk/score.py)."""
+    __tablename__ = "risk_scores"
+    id = Column(Integer, primary_key=True)
+    finding_id = Column(String, ForeignKey("findings.id"), nullable=False, index=True)
+    model_version = Column(String, nullable=False)
+    score = Column(Float, nullable=True)  # None: Unknown, see missing
+    factors = Column(JSON, nullable=False)
+    inputs = Column(JSON, nullable=False)
+    missing = Column(JSON, nullable=False)
+    computed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class Competency(Base):
     __tablename__ = "competencies"

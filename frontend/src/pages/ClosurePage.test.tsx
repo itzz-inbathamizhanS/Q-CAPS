@@ -24,6 +24,11 @@ function mockChain(interventions: unknown[] = []) {
       competency_name: 'hybrid modes and crypto-agility', required_level: 'Proficient', map_version: 'proposed-v1', map_status: 'proposed-unreviewed',
     }])),
     http.get(apiUrl('/findings/f-1/interventions'), () => HttpResponse.json(interventions)),
+    http.get(apiUrl('/findings/f-1/risk'), () => HttpResponse.json({
+      finding_id: 'f-1', model_version: 'risk-v1', score: null, missing: ['asset criticality'], validated: false,
+      factors: { exposure: 0.48, asset_criticality: null, pqc_dependency: 1, migration_urgency: null }, inputs: {},
+      computed_at: '2026-10-02T09:00:00Z',
+    })),
     http.get(apiUrl('/closures/f-1'), () => HttpResponse.json([])),
     http.get(apiUrl('/users/me/skill-matrix'), () => HttpResponse.json({
       competency_model_version: '1', levels_status: 'pilot-hypothesis', requirement_map_version: 'proposed-v1', requirement_map_status: 'proposed-unreviewed',
@@ -56,6 +61,8 @@ describe('ClosurePage', () => {
     expect(await screen.findByText('Unknown (not assessed)')).toBeInTheDocument();
     expect(await screen.findByText(/no intervention assigned yet/i)).toBeInTheDocument();
     expect(await screen.findByText(/no closure events recorded yet/i)).toBeInTheDocument();
+    expect(await screen.findByText(/unknown: missing asset criticality/i)).toBeInTheDocument(); // not 0
+    expect(screen.getByText(/not yet validated/i)).toBeInTheDocument();
   });
 
   it('verifies an intervention without sending any results and shows the server outcome', async () => {

@@ -4,7 +4,7 @@
 
 import { useAuthStore } from '../features/auth/authStore';
 import { handleUnauthorized } from '../features/auth/session';
-import type { ScanAsset, ScanLogSummary, TrackedFinding } from '../features/scanner/types';
+import type { AssetContext, ScanAsset, ScanLogSummary, TrackedFinding } from '../features/scanner/types';
 
 import { API_BASE_URL } from './apiConfig';
 
@@ -462,4 +462,16 @@ export async function fetchScanAssets(): Promise<ScanAsset[]> {
 export async function fetchAssetFindings(assetId: number): Promise<TrackedFinding[]> {
   const { data } = await api.get(`/scanner/assets/${assetId}/findings`);
   return data as TrackedFinding[];
+}
+
+/** Set an asset's context (criticality, data sensitivity, confidentiality lifetime); the server rescores its findings. */
+export async function setAssetContext(assetId: number, context: AssetContext): Promise<AssetContext & { rescored_findings: number }> {
+  const { token } = useAuthStore.getState();
+  const res = await send(`/assets/${assetId}/context`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(context),
+  });
+  if (!res.ok) throw await failure(res);
+  return res.json();
 }

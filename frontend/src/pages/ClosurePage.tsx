@@ -8,7 +8,7 @@ import { evidenceService } from '@/features/evidence/evidenceService';
 import { interventionService } from '@/features/interventions/interventionService';
 import { closureService } from '@/features/closure/closureService';
 import { fetchSkillMatrix, type SkillMatrixRow } from '@/features/skills/skillMatrix';
-import type { ClosureEvent, Finding, FindingRequirement, VerificationResult } from '@/features/closure/closureTypes';
+import type { ClosureEvent, Finding, FindingRequirement, RiskScore, VerificationResult } from '@/features/closure/closureTypes';
 import type { Evidence } from '@/features/evidence/evidenceTypes';
 import type { Intervention } from '@/features/interventions/interventionTypes';
 import { Card } from '@/components/ui/Card';
@@ -26,12 +26,15 @@ const Section: React.FC<{ title: string; state: AsyncState<unknown>; children: R
   </Card>
 );
 
+const fmt = (v: number | null) => (v == null ? 'unknown' : v.toFixed(2));
+
 const severityLabel = (s: number) => (s >= 0.8 ? 'High' : s >= 0.5 ? 'Medium' : 'Info');
 
 export const ClosurePage: React.FC = () => {
   const { findingId = '' } = useParams<{ findingId: string }>();
 
   const [finding] = useAsync<Finding>(() => closureService.getFinding(findingId), [findingId]);
+  const [risk] = useAsync<RiskScore>(() => closureService.getRisk(findingId), [findingId]);
   const [requirements] = useAsync<FindingRequirement[]>(() => closureService.getRequirements(findingId), [findingId]);
   const [interventions] = useAsync<Intervention[]>(() => interventionService.getForFinding(findingId), [findingId]);
   const [events, reloadEvents] = useAsync<ClosureEvent[]>(() => closureService.getClosuresForFinding(findingId), [findingId]);
@@ -95,6 +98,27 @@ export const ClosurePage: React.FC = () => {
               {finding.value.algorithm ? ` · ${finding.value.algorithm}` : ''} · first seen {new Date(finding.value.first_seen).toLocaleString()} · last seen{' '}
               {new Date(finding.value.last_seen).toLocaleString()}
             </span>
+          </div>
+        )}
+      </Section>
+
+      <Section title="Risk (unvalidated model)" state={risk}>
+        {risk.status === 'ready' && (
+          <div style={{ fontSize: 14 }}>
+            <p style={{ margin: '0 0 6px' }}>
+              {risk.value.score == null ? (
+                <>Unknown: missing {risk.value.missing.join(' and ')}. Set the asset context in the scanner to compute it.</>
+              ) : (
+                <>
+                  Score <strong>{risk.value.score.toFixed(2)}</strong> on a 0–1 scale
+                </>
+              )}
+            </p>
+            <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-secondary)' }}>
+              Exposure {fmt(risk.value.factors.exposure)} × asset criticality {fmt(risk.value.factors.asset_criticality)} × PQC
+              dependency {fmt(risk.value.factors.pqc_dependency)} × migration urgency {fmt(risk.value.factors.migration_urgency)}.
+              Model {risk.value.model_version}; not yet validated, so use it to order findings, not to judge them.
+            </p>
           </div>
         )}
       </Section>

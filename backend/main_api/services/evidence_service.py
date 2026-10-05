@@ -8,6 +8,7 @@ from evidence.normalizer import normalize_scan
 from evidence.hashing import hash_payload
 from evidence.confidence import weighted_confidence
 from competency import requirements
+from risk import service as risk_service
 
 
 def create_evidence(
@@ -181,6 +182,7 @@ def ingest_scan(db: Session, user: models.User, result: dict, organization_id: O
     for row in touched:
         if not requirements.derive_requirements(db, row, requirement_map):
             unmapped += 1
+        risk_service.score_finding(db, row, asset)  # stored with its inputs and model version
 
     return {"asset_id": asset.id, "evidence_id": evidence.id, "opened": opened, "updated": updated,
             "resolved": resolved, "unmapped": unmapped}

@@ -149,11 +149,13 @@ def seed_quiz_bank():
     from seed_quizzes import seed_if_empty, sync_tags
     from competency.seed import seed_competencies
     from competency.requirements import backfill
+    from risk.service import backfill as risk_backfill
     with SessionLocal() as session:
         seed_if_empty(session)
         sync_tags(session)
         seed_competencies(session)
         backfill(session)
+        risk_backfill(session)
 
 @app.get("/")
 def root():
@@ -477,7 +479,9 @@ def list_scanner_assets(db: Session = Depends(get_db), current_user: models.User
             id=asset.id, target=asset.canonical_target, created_at=asset.created_at,
             open_findings=statuses.count("OPEN"), resolved_findings=statuses.count("RESOLVED"), last_scanned=last,
             organization_id=org.id if org else None, organization_name=org.name if org else None,
-            organization_kind=org.kind if org else None))
+            organization_kind=org.kind if org else None, can_manage=org_access.can_manage_asset(db, current_user, asset),
+            criticality_level=asset.criticality_level, data_sensitivity=asset.data_sensitivity,
+            confidentiality_years=asset.confidentiality_years))
     return out
 
 
@@ -532,6 +536,41 @@ def get_finding_interventions(finding_id: str, db: Session = Depends(get_db), cu
     if not finding or not asset_visible(db, current_user, finding.asset_id):
         raise HTTPException(status_code=404, detail="Finding not found")
     return db.query(models.Intervention).filter(models.Intervention.finding_id == finding_id).order_by(models.Intervention.created_at.desc()).all()
+
+@app.put("/api/assets/{asset_id}/context", response_model=schemas.AssetContextOut)
+def set_asset_context(asset_id: int, body: schemas.AssetContextIn, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Declare criticality, data sensitivity and confidentiality lifetime (the owner, the organization's admin or a
+    platform admin). Every finding of the asset is rescored with the new inputs; the change is audited."""
+    asset = db.get(models.Asset, asset_id)
+    if asset is None or not org_access.can_view_asset(db, current_user, asset):
+        raise HTTPException(status_code=404, detail="Asset not found")
+    if not org_access.can_manage_asset(db, current_user, asset):
+        raise HTTPException(status_code=403, detail="Only the asset owner or an organization admin can set the context")
+    before = {"criticality_level": asset.criticality_level, "data_sensitivity": asset.data_sensitivity,
+              "confidentiality_years": asset.confidentiality_years}
+    asset.criticality_level, asset.data_sensitivity = body.criticality_level, body.data_sensitivity
+    asset.confidentiality_years = body.confidentiality_years
+    asset.context_set_by, asset.context_set_at = current_user.id, datetime.now(timezone.utc)
+    from risk import service as risk_service
+    n = risk_service.rescore_asset(db, asset)
+    org_access.audit(db, current_user, "asset.context", asset.organization_id, "asset", asset.id,
+                     {"before": before, "after": body.model_dump()})
+    db.commit()
+    return schemas.AssetContextOut(asset_id=asset.id, **body.model_dump(), context_set_by=asset.context_set_by,
+                                   context_set_at=asset.context_set_at, rescored_findings=n)
+
+@app.get("/api/findings/{finding_id}/risk", response_model=schemas.RiskScoreOut)
+def get_finding_risk(finding_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """The latest risk-v1 score of a finding with its inputs and factors (unvalidated model)."""
+    finding = db.get(models.Finding, finding_id)
+    if not finding or not asset_visible(db, current_user, finding.asset_id):
+        raise HTTPException(status_code=404, detail="Finding not found")
+    from risk import service as risk_service
+    row = risk_service.latest(db, finding_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="No risk score has been computed for this finding yet")
+    return schemas.RiskScoreOut(finding_id=finding_id, model_version=row.model_version, score=row.score, factors=row.factors,
+                                inputs=row.inputs, missing=row.missing, computed_at=row.computed_at)
 
 @app.get("/api/findings/{finding_id}/requirements", response_model=List[schemas.FindingRequirementOut])
 def get_finding_requirements(finding_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
