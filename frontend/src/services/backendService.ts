@@ -92,6 +92,7 @@ export interface QuizAttemptQuestion {
   item_id: string;
   prompt: string;
   options: string[]; // already in the order shown; the server holds the answer key
+  domain?: string | null; // reporting group of a diagnostic item
 }
 
 export interface QuizAttempt {
@@ -103,6 +104,8 @@ export interface QuizAttempt {
   issued_at: string;
   expires_at: string;
   questions: QuizAttemptQuestion[];
+  kind?: string | null; // "diagnostic" for the baseline/reassessment instrument
+  attempt_purpose?: 'diagnostic_pre' | 'diagnostic_post' | null;
 }
 
 export interface QuizAnswerFeedback {
@@ -348,6 +351,34 @@ export const answerQuizQuestion = (attemptId: string, itemId: string, selectedPo
 /** Finalise the attempt; the score is computed by the server. */
 export const finishQuizAttempt = (attemptId: string) =>
   quizRequest<QuizAttemptResult>(`/quizzes/attempts/${attemptId}/submit`, { answers: [] });
+
+/** Submit every answer at once (the diagnostic lets learners review before submitting); graded by the server. */
+export const submitQuizAnswers = (attemptId: string, answers: Array<{ item_id: string; selected_position: number }>) =>
+  quizRequest<QuizAttemptResult>(`/quizzes/attempts/${attemptId}/submit`, { answers });
+
+export interface DiagnosticDomainResult {
+  domain: string;
+  total_questions: number;
+  correct_count: number;
+  percentage: number;
+}
+
+/** Row of GET /diagnostic/results: one graded diagnostic attempt of the signed-in learner. */
+export interface DiagnosticResult {
+  attempt_id: string;
+  module_id: string;
+  attempt_purpose: 'diagnostic_pre' | 'diagnostic_post' | null;
+  graded_at: string;
+  total_questions: number;
+  correct_answers: number;
+  score_percent: number;
+  domains: DiagnosticDomainResult[];
+}
+
+/** The learner's graded diagnostics, newest first. Throws on failure so callers can tell an error from "none yet". */
+export async function fetchDiagnosticResults(): Promise<DiagnosticResult[]> {
+  return (await api.get('/diagnostic/results')).data as DiagnosticResult[];
+}
 
 /** Row returned by POST /scanner/log. */
 export interface ScannerLogRecord {

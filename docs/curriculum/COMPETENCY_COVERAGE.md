@@ -10,8 +10,8 @@ with fewer than 3 items in the bank can never leave Unknown.
 
 | | Count |
 |---|---|
-| Quiz items | 599 |
-| Tagged (competency + depth) | 592 |
+| Quiz items | 609 |
+| Tagged (competency + depth) | 602 |
 | of which reviewed | 0 |
 | Marked no-competency (tests course structure, not a skill) | 5 |
 | Untagged | 2 |
@@ -22,6 +22,7 @@ with fewer than 3 items in the bank can never leave Unknown.
 
 | Module | Items | Tagged | Reviewed | Competencies with >= 3 items |
 |---|---|---|---|---|
+| DIAG-A | 10 | 10 | 0 | none |
 | track_a_a1_computing_foundations | 14 | 14 | 0 | COMP.1 (6), PROG.1 (3) |
 | track_a_a2_mathematics_foundations | 21 | 21 | 0 | MATH.1 (5), MATH.2 (3), MATH.3 (7), MATH.4 (6) |
 | track_a_a3_networking_foundations | 15 | 15 | 0 | NET.1 (7), NET.2 (5), NET.3 (3) |
@@ -85,16 +86,16 @@ practical, Advanced needs Analyse items (competency_model.json, capability_level
 | NET.3 routing, segmentation, VPN, zero trust | 10 | 0 | 0 | 0 | 2 | no Apply items |
 | NET.4 secure protocols (TLS, SSH, IPsec) | 11 | 2 | 0 | 0 | 1 | - |
 | NET.5 quantum networks and QKD | 38 | 5 | 0 | 0 | 4 | - |
-| SEC.1 CIA, authentication, IAM | 8 | 1 | 0 | 0 | 1 | - |
+| SEC.1 CIA, authentication, IAM | 9 | 1 | 0 | 0 | 1 | - |
 | SEC.2 threats, vulnerabilities, threat modelling | 9 | 0 | 0 | 0 | 1 | no Apply items |
 | SEC.3 monitoring and incident response | 2 | 0 | 0 | 0 | 3 | fewer than 3 items; no Apply items |
 | SEC.4 risk management | 11 | 1 | 2 | 0 | 1 | - |
 | SEC.5 ethics, authorisation and legal scope | 1 | 0 | 0 | 0 | 2 | fewer than 3 items; no Apply items |
 | SEC.6 governance, policy, compliance | 12 | 5 | 0 | 0 | 1 | - |
 | CRYPTO.1 symmetric ciphers, modes, AEAD | 5 | 0 | 0 | 0 | 2 | no Apply items |
-| CRYPTO.2 hashes, MACs, KDFs, randomness | 11 | 0 | 0 | 0 | 2 | no Apply items |
-| CRYPTO.3 public-key (RSA, DH, ECC) | 10 | 0 | 0 | 0 | 0 | no Apply items; no practical |
-| CRYPTO.4 signatures, certificates, PKI | 11 | 2 | 1 | 0 | 3 | - |
+| CRYPTO.2 hashes, MACs, KDFs, randomness | 12 | 0 | 0 | 0 | 2 | no Apply items |
+| CRYPTO.3 public-key (RSA, DH, ECC) | 12 | 0 | 0 | 0 | 0 | no Apply items; no practical |
+| CRYPTO.4 signatures, certificates, PKI | 12 | 2 | 1 | 0 | 3 | - |
 | CRYPTO.5 key management and HSMs | 3 | 2 | 0 | 0 | 1 | - |
 | CRYPTO.6 security notions and proofs | 6 | 0 | 1 | 0 | 0 | no Apply items; no practical |
 | QNT.1 qubits, superposition, measurement | 8 | 0 | 0 | 0 | 1 | no Apply items |
@@ -102,12 +103,12 @@ practical, Advanced needs Analyse items (competency_model.json, capability_level
 | QNT.3 quantum information theory | 28 | 8 | 1 | 0 | 2 | - |
 | QNT.4 quantum algorithms (Grover, QFT, Shor) | 31 | 6 | 0 | 0 | 3 | - |
 | QNT.5 resource estimates and threat timelines | 3 | 0 | 0 | 0 | 1 | no Apply items |
-| PQC.1 quantum threat to crypto (HNDL, Mosca) | 14 | 7 | 1 | 0 | 5 | - |
-| PQC.2 PQC families and assumptions | 21 | 0 | 0 | 0 | 2 | no Apply items |
-| PQC.3 standards and algorithm selection | 23 | 0 | 0 | 0 | 1 | no Apply items |
+| PQC.1 quantum threat to crypto (HNDL, Mosca) | 16 | 7 | 1 | 0 | 5 | - |
+| PQC.2 PQC families and assumptions | 22 | 0 | 0 | 0 | 2 | no Apply items |
+| PQC.3 standards and algorithm selection | 24 | 0 | 0 | 0 | 1 | no Apply items |
 | PQC.4 implementation and testing | 17 | 6 | 3 | 0 | 2 | - |
 | PQC.5 implementation attacks and defence | 14 | 1 | 2 | 0 | 3 | - |
-| PQC.6 hybrid modes and crypto-agility | 23 | 2 | 5 | 0 | 7 | - |
+| PQC.6 hybrid modes and crypto-agility | 24 | 2 | 5 | 0 | 7 | - |
 | PQC.7 discovery and inventory (CBOM) | 13 | 0 | 1 | 0 | 2 | no Apply items |
 | PQC.8 migration planning and readiness | 19 | 1 | 6 | 0 | 3 | - |
 

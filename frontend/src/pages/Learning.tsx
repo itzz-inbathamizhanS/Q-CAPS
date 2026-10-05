@@ -4,24 +4,22 @@ import { LearningEmptyState } from '@/features/learning/components/LearningEmpty
 import { RecommendedLearning } from '@/features/learning/components/RecommendedLearning';
 import { LearningCatalog } from '@/features/learning/components/LearningCatalog';
 import { getPersonalizedLearning } from '@/features/learning/learningRecommendation';
-import { getLatestAssessmentResult } from '@/utils/assessmentStorage';
+import { toSubmissionResult, useDiagnosticResults } from '@/features/assessment/diagnostic';
 import { generateSkillGapProfile } from '@/features/skills/skillsTypes';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 
 export const Learning: React.FC = () => {
-  const latestResult = getLatestAssessmentResult();
+  const diagnostic = useDiagnosticResults();
+  const latest = diagnostic.status === 'ready' ? diagnostic.results[0] : undefined;
 
   // Connect to the canonical curriculum progress store
   const { completedModules } = useCurriculumStore();
 
   const profile = React.useMemo(() => {
-    if (!latestResult) return null;
-    return generateSkillGapProfile(
-      latestResult.domainScores,
-      latestResult.overallScore,
-      latestResult.completedAt
-    );
-  }, [latestResult]);
+    if (!latest) return null;
+    const result = toSubmissionResult(latest);
+    return generateSkillGapProfile(result.domainScores, result.overallScore, result.completedAt);
+  }, [latest]);
 
   const {
     hasAssessmentEvidence,

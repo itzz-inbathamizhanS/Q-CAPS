@@ -1,56 +1,66 @@
 import { describe, expect, it } from 'vitest';
 import { screen } from '@testing-library/react';
-import { renderRoutes, signIn } from '@/test/render';
+import userEvent from '@testing-library/user-event';
+import { http, HttpResponse } from 'msw';
+import { server } from '@/test/msw/server';
+import { apiUrl, renderRoutes, signIn } from '@/test/render';
 import { Skills } from './Skills';
-import type { AssessmentSubmissionResult } from '@/features/assessment/assessmentTypes';
+import type { DiagnosticResult } from '@/services/backendService';
 
 const routes = [{ path: '/skills', element: <Skills /> }];
 
-// Skills currently reads the diagnostic result from localStorage (plan fact F1). T1.5 moves the diagnostic to
-// the server and T1.6 replaces this page's data source with the skill-matrix endpoint; these tests must then
-// switch to MSW handlers.
+const result: DiagnosticResult = {
+  attempt_id: 'a1', module_id: 'DIAG-A', attempt_purpose: 'diagnostic_pre', graded_at: '2026-10-01T09:00:00Z',
+  total_questions: 4, correct_answers: 2, score_percent: 50,
+  domains: [
+    { domain: 'PQC Fundamentals', total_questions: 2, correct_count: 0, percentage: 0 },
+    { domain: 'Applied PQC', total_questions: 2, correct_count: 2, percentage: 100 },
+  ],
+};
+
+const respond = (body: DiagnosticResult[] | null, status = 200) =>
+  server.use(http.get(apiUrl('/diagnostic/results'), () => HttpResponse.json(body, { status })));
+
 describe('Skills', () => {
-  it('shows the empty state, not a score, when no assessment exists', () => {
+  it('shows the empty state, not a score, when the server has no diagnostic', async () => {
     signIn();
+    respond([]);
     renderRoutes(routes, '/skills');
 
-    expect(screen.getByRole('heading', { name: /no assessment evidence recorded/i })).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: /start diagnostic assessment/i })).toBeInTheDocument();
+    expect(await screen.findByRole('heading', { name: /no assessment evidence recorded/i })).toBeInTheDocument();
     expect(screen.queryByText(/%/)).not.toBeInTheDocument();
   });
 
-  it('renders the stored domain results when an assessment exists', () => {
-    signIn(7);
-    const result: AssessmentSubmissionResult = {
-      totalQuestions: 4,
-      answeredCount: 4,
-      correctCount: 2,
-      overallScore: 50,
-      completedAt: '2026-10-01T09:00:00Z',
-      domainScores: [
-        { domain: 'PQC Fundamentals', totalQuestions: 2, correctCount: 0, percentage: 0, status: 'Critical Gap' },
-        { domain: 'Applied PQC', totalQuestions: 2, correctCount: 2, percentage: 100, status: 'Aligned' },
-      ],
-    };
-    localStorage.setItem('qcaps_latest_assessment_result_7', JSON.stringify(result));
-
+  it('renders the latest server-graded result', async () => {
+    signIn();
+    respond([result]);
     renderRoutes(routes, '/skills');
 
-    expect(screen.queryByRole('heading', { name: /no assessment evidence recorded/i })).not.toBeInTheDocument();
-    expect(screen.getAllByText('PQC Fundamentals').length).toBeGreaterThan(0);
+    expect((await screen.findAllByText('PQC Fundamentals')).length).toBeGreaterThan(0);
     expect(screen.getAllByText('Applied PQC').length).toBeGreaterThan(0);
-    expect(screen.getByRole('button', { name: /retake diagnostic assessment/i })).toBeInTheDocument();
+    expect(screen.queryByRole('heading', { name: /no assessment evidence recorded/i })).not.toBeInTheDocument();
   });
 
-  it("does not show another user's stored result", () => {
-    localStorage.setItem(
-      'qcaps_latest_assessment_result_99',
-      JSON.stringify({ totalQuestions: 1, answeredCount: 1, correctCount: 1, overallScore: 100, completedAt: '2026-10-01T09:00:00Z', domainScores: [] }),
-    );
-    signIn(7);
+  it('shows an error, not the empty state, when the results cannot be loaded', async () => {
+    signIn();
+    respond(null, 500);
     renderRoutes(routes, '/skills');
 
-    expect(screen.getByRole('heading', { name: /no assessment evidence recorded/i })).toBeInTheDocument();
+    expect(await screen.findByRole('alert')).toHaveTextContent(/could not be loaded/i);
+    expect(screen.queryByRole('heading', { name: /no assessment evidence recorded/i })).not.toBeInTheDocument();
+  });
+
+  it('never imports an old browser-only result and tells the learner once', async () => {
+    signIn(7);
+    localStorage.setItem('qcaps_latest_assessment_result_7', JSON.stringify({ overallScore: 100, domainScores: [] }));
+    respond([]);
+    renderRoutes(routes, '/skills');
+
+    expect(await screen.findByRole('heading', { name: /no assessment evidence recorded/i })).toBeInTheDocument();
+    expect(screen.getByRole('note')).toHaveTextContent(/cannot be verified/i);
+    await userEvent.setup().click(screen.getByRole('button', { name: /dismiss/i }));
+    expect(screen.queryByRole('note')).not.toBeInTheDocument();
+    expect(localStorage.getItem('qcaps_latest_assessment_result_7')).toBeNull();
   });
 
   // The page has no Unknown level yet: a domain with no evidence cannot be distinguished from a low score

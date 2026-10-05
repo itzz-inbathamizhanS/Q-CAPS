@@ -52,6 +52,20 @@ for (const qDir of quizDirs) {
     }
   }
 }
+// Diagnostic instruments (DIAG-A) are not course modules, so they are not in quizModuleIds, but their tags are
+// validated like any other item.
+const diagDir = path.join(CS_ROOT, 'Quizzes', 'Diagnostic');
+if (fs.existsSync(diagDir)) {
+  for (const file of fs.readdirSync(diagDir).filter((f) => f.endsWith('.json'))) {
+    const quiz = JSON.parse(fs.readFileSync(path.join(diagDir, file), 'utf8'));
+    for (const q of quiz.questions || []) {
+      quizItems.push({
+        id: q.id, module_id: quiz.module_id, competency_id: q.competency_id ?? null, depth: q.depth ?? null,
+        lesson_id: q.lesson_id ?? null, tag_status: q.tag_status ?? null,
+      });
+    }
+  }
+}
 
 // -------------------------------------------------------------
 // 2. COMPILE COURSE MODULES
