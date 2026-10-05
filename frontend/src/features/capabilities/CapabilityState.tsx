@@ -13,7 +13,7 @@ export const CapabilityState: React.FC<{ capability: LearnerCapability }> = ({ c
       </h3>
       <p className="text-sm text-gray-300 mb-4">
         Level: <strong>{capability.level ?? 'Unknown'}</strong>
-        {capability.evidence_count != null && ` (${capability.evidence_count} pieces of evidence)`}
+        {capability.evidence_count != null && ` (${capability.evidence_count} ${capability.evidence_count === 1 ? 'piece' : 'pieces'} of evidence)`}
       </p>
       
       <div className="grid grid-cols-3 gap-4 mb-4">

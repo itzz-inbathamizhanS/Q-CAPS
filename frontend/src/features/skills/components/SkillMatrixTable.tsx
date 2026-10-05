@@ -63,7 +63,7 @@ export const SkillMatrixTable: React.FC<{ matrix: SkillMatrix }> = ({ matrix }) 
                     <strong>{row.competency_code}</strong>
                     <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>{row.competency_name}</div>
                     <div style={{ fontSize: 12, color: 'var(--color-text-secondary)' }}>
-                      {row.evidence_count} pieces of evidence
+                      {row.evidence_count} {row.evidence_count === 1 ? 'piece' : 'pieces'} of evidence
                     </div>
                   </td>
                   <td style={td}><Level level={row.required_level} emptyText="No current requirement" /></td>

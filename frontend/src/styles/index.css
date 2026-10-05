@@ -1229,7 +1229,7 @@ button, input, select, textarea {
    READER FOOTER NAV
    ========================================================== */
 
-.reader-footer { position: fixed; bottom: 0; left: var(--sidebar-width); right: 0; z-index: 40; background: rgba(255,255,255,0.96); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid var(--color-border); padding: 10px 32px; }
+.reader-footer { position: fixed; bottom: 0; left: var(--rail-offset, 0px); right: 0; z-index: 40; background: rgba(255,255,255,0.96); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid var(--color-border); padding: 10px 32px; }
 
 .reader-footer-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 
@@ -1371,4 +1371,57 @@ button, input, select, textarea {
   color: var(--lvl-unknown);
   font-style: italic;
   border-bottom: 1px dashed var(--color-outline);
+}
+
+/* ==========================================================
+   NAVIGATION RAIL (TF.3): persistent on wide screens, drawer below 1024 px
+   ========================================================== */
+.app-shell {
+  --rail-offset: 0px; /* width taken by the rail; fixed footers such as .reader-footer start after it */
+}
+.app-rail {
+  display: none;
+}
+.app-sidebar--drawer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.app-sidebar--rail {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  padding: 16px 12px;
+}
+.app-sidebar--collapsed .nav-link {
+  justify-content: center;
+  padding: 10px;
+}
+.app-sidebar--collapsed .sidebar-nav > [role='group'] + [role='group'] {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+.sidebar-nav > [role='group'] > .nav-divider:first-child {
+  margin-top: 12px;
+}
+.nav-link:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (min-width: 1024px) {
+  .app-shell { --rail-offset: 240px; }
+  .app-shell.rail-collapsed { --rail-offset: 64px; }
+  .app-rail {
+    display: block;
+    flex: 0 0 var(--rail-offset);
+    width: var(--rail-offset);
+    transition: width 0.2s ease, flex-basis 0.2s ease;
+  }
+  .mobile-menu-toggle { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-rail { transition: none; }
 }

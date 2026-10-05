@@ -122,8 +122,13 @@ export const router = createBrowserRouter([
             element: <Reassessment />,
           },
           {
-            path: 'organization',
+            path: 'leaderboard',
             element: <Organization />,
+          },
+          {
+            // The organization readiness page replaces this route in T2.4; until then it shows the leaderboard.
+            path: 'organization',
+            element: <Navigate to="/leaderboard" replace />,
           },
           {
             path: 'closure/:findingId',
