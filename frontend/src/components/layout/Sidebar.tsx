@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
+import { NavLink } from 'react-router-dom';
 import {
   BarChart3,
   GraduationCap,
@@ -14,7 +14,7 @@ import {
   ScrollText
 } from 'lucide-react';
 import { useAuthStore } from '@/features/auth/authStore';
-import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
+import { useSignOut } from '@/features/auth/useSignOut';
 import { useAdminStatus } from '@/features/admin/adminStatus';
 
 interface SidebarProps {
@@ -23,15 +23,14 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onCloseMobile }) => {
-  const navigate = useNavigate();
-  const { userName, userId, logout } = useAuthStore();
-  const { role, load: loadAdminStatus, reset: resetAdminStatus } = useAdminStatus();
+  const { userName, userId } = useAuthStore();
+  const { role, load: loadAdminStatus } = useAdminStatus();
+  const signOut = useSignOut();
 
   // Only decides whether to show the Admin link; the backend enforces the role itself.
   useEffect(() => {
     void loadAdminStatus(userId);
   }, [userId, loadAdminStatus]);
-  const { clearLocalProgress } = useCurriculumStore();
 
   const handleLinkClick = () => {
     if (isMobile && onCloseMobile) {
@@ -40,10 +39,7 @@ export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onCloseMobil
   };
 
   const handleLogout = () => {
-    logout();
-    resetAdminStatus();
-    clearLocalProgress();
-    navigate('/login');
+    signOut();
     if (isMobile && onCloseMobile) {
       onCloseMobile();
     }

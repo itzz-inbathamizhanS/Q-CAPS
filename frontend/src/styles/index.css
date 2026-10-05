@@ -401,6 +401,8 @@ button, input, select, textarea {
 }
 
 .header-avatar {
+  padding: 0;
+  font-family: inherit;
   width: 34px;
   height: 34px;
   border-radius: 9999px;

@@ -11,6 +11,8 @@ export default mergeConfig(
       include: ['src/**/*.test.{ts,tsx}'],
       setupFiles: ['./src/test/setup.ts'],
       restoreMocks: true,
+      // Generous limits: flow tests click through whole pages and this machine can be slow under load.
+      testTimeout: 15_000,
     },
   }),
 );
