@@ -6,8 +6,10 @@ import { useAuthStore } from '../features/auth/authStore';
 import { handleUnauthorized } from '../features/auth/session';
 import type { ScanAsset, ScanLogSummary, TrackedFinding } from '../features/scanner/types';
 
-export const BACKEND_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+import { API_BASE_URL } from './apiConfig';
+
+/** Kept for existing importers; the value comes from apiConfig.ts. */
+export const BACKEND_BASE_URL = API_BASE_URL;
 
 export const api = {
   get: async (url: string) => {

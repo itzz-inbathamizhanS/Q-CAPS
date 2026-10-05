@@ -4,7 +4,7 @@ import viteConfig from './vite.config';
 // Component and flow tests. The network is mocked with MSW (src/test/msw), so the tests exercise the real
 // services in src/services rather than stubbed functions. End-to-end tests live in e2e/ and run with Playwright.
 export default mergeConfig(
-  viteConfig,
+  viteConfig({ command: 'serve', mode: 'test' }),
   defineConfig({
     test: {
       environment: 'jsdom',
