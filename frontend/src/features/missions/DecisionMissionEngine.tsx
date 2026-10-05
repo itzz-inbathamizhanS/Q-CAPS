@@ -27,7 +27,7 @@ const shuffled = <T,>(items: T[]): T[] => {
   return copy;
 };
 
-const card: React.CSSProperties = { backgroundColor: 'var(--cyber-surface, #121827)', border: '1px solid #25334d', borderRadius: '14px', padding: '28px' };
+const card: React.CSSProperties = { backgroundColor: 'var(--color-surface)', border: '1px solid var(--color-border)', borderRadius: '14px', padding: '28px' };
 
 /** A staged decision scenario driven entirely by the mission data: its variables, choices, consequences and outcome bands. */
 export const DecisionMissionEngine: React.FC<Props> = ({ mission, onBack, backLabel }) => {
@@ -55,7 +55,7 @@ export const DecisionMissionEngine: React.FC<Props> = ({ mission, onBack, backLa
   const ordered = useMemo(() => shuffled(stage?.choices ?? []), [stageIdx, run, mission.mission_id]);
   const hasChoices = Boolean(stage?.choices && stage.choices.length > 0);
   const band = bands.find((b) => b.id === serverBand) ?? bands[bands.length - 1];
-  const tone = band?.id === 'success' ? '#10b981' : band?.id === 'partial' ? '#f59e0b' : '#ef4444';
+  const tone = band?.id === 'success' ? 'var(--color-success)' : band?.id === 'partial' ? 'var(--color-warning)' : 'var(--color-danger)';
   const badge = (mission.rewards?.badge_awarded as string) || undefined;
   const xp = (mission.rewards?.mission_xp_awarded as number) || 0;
   const concept = (mission.resolution?.concept_reveal as string) || '';
@@ -122,41 +122,41 @@ export const DecisionMissionEngine: React.FC<Props> = ({ mission, onBack, backLa
   };
 
   const colourFor = (h: MissionHud, v: number) =>
-    (h.warn_below !== undefined && v < h.warn_below) || (h.warn_above !== undefined && v > h.warn_above) ? 'var(--color-amber)' : '#f8fafc';
+    (h.warn_below !== undefined && v < h.warn_below) || (h.warn_above !== undefined && v > h.warn_above) ? 'var(--color-amber)' : 'var(--color-text-primary)';
   const show = (h: MissionHud) => `${values[h.key]}${h.suffix ?? ''}`;
 
   return (
     <div>
       <div
-        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', backgroundColor: 'var(--cyber-surface, #121827)', borderRadius: '12px', padding: '16px', marginBottom: '28px', border: '1px solid #334155' }}
+        style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(170px, 1fr))', gap: '12px', backgroundColor: 'var(--color-surface)', borderRadius: '12px', padding: '16px', marginBottom: '28px', border: '1px solid var(--color-border)' }}
       >
         {hud.map((h) => (
           <div key={h.key}>
-            <div style={{ fontSize: '11px', color: '#94a3b8', textTransform: 'uppercase', fontWeight: 600 }}>{h.label}</div>
+            <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)', textTransform: 'uppercase', fontWeight: 600 }}>{h.label}</div>
             <div style={{ fontSize: '20px', fontWeight: 700, color: colourFor(h, values[h.key]) }}>{show(h)}</div>
           </div>
         ))}
       </div>
 
       {error && (
-        <div role="alert" style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid #ef4444', color: '#fecaca', marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
+        <div role="alert" style={{ padding: '12px 16px', borderRadius: '8px', border: '1px solid var(--color-danger)', color: 'var(--color-danger)', marginBottom: '16px', display: 'flex', gap: '12px', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap' }}>
           <span>{error}</span>
           {!runId && (
-            <Button variant="outline" onClick={() => void begin()} style={{ color: '#f8fafc', borderColor: '#475569' }}>
+            <Button variant="outline" onClick={() => void begin()}>
               Retry
             </Button>
           )}
         </div>
       )}
-      {busy && !runId && !error && <p style={{ color: '#94a3b8', marginBottom: '16px' }}>Starting the mission on the server...</p>}
+      {busy && !runId && !error && <p style={{ color: 'var(--color-text-secondary)', marginBottom: '16px' }}>Starting the mission on the server...</p>}
 
       {!finished && stage && runId ? (
         <div style={card}>
-          <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '4px', backgroundColor: 'var(--color-amber)', color: '#ffffff', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '14px' }}>
+          <div style={{ display: 'inline-block', padding: '4px 10px', borderRadius: '4px', backgroundColor: 'var(--color-warning-bg)', color: 'var(--color-warning)', fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', marginBottom: '14px' }}>
             Stage {stageIdx + 1} of {stages.length}
           </div>
-          <h2 style={{ fontSize: '20px', fontWeight: 700, color: '#f8fafc', marginBottom: '12px' }}>{stage.narrative}</h2>
-          <p style={{ color: 'var(--cyber-primary-violet, #7C5CFF)', fontSize: '15px', fontWeight: 600, marginBottom: '20px' }}>{stage.decision_prompt}</p>
+          <h2 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '12px' }}>{stage.narrative}</h2>
+          <p style={{ color: 'var(--color-primary)', fontSize: '15px', fontWeight: 600, marginBottom: '20px' }}>{stage.decision_prompt}</p>
 
           {hasChoices ? (
             <>
@@ -174,12 +174,12 @@ export const DecisionMissionEngine: React.FC<Props> = ({ mission, onBack, backLa
                         textAlign: 'left',
                         padding: '16px 20px',
                         borderRadius: '10px',
-                        backgroundColor: isSel ? 'rgba(124, 92, 255, 0.18)' : 'var(--cyber-card, #1A1C1F)',
-                        border: isSel ? '2px solid var(--cyber-primary-violet, #7C5CFF)' : '1px solid #334155',
+                        backgroundColor: isSel ? 'var(--color-primary-soft)' : 'var(--color-surface-low)',
+                        border: isSel ? '2px solid var(--color-primary)' : '1px solid var(--color-border)',
                         opacity: committed && !isSel ? 0.45 : 1,
                         cursor: committed ? 'default' : 'pointer',
                         fontSize: '14px',
-                        color: '#f8fafc',
+                        color: 'var(--color-text-primary)',
                         lineHeight: 1.5,
                         font: 'inherit',
                         display: 'flex',
@@ -189,7 +189,7 @@ export const DecisionMissionEngine: React.FC<Props> = ({ mission, onBack, backLa
                     >
                       <span style={{ flex: 1 }}>{choice.text}</span>
                       {isSel && committed && (
-                        <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: '#10b981', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
+                        <span style={{ fontSize: '11px', fontWeight: 700, textTransform: 'uppercase', color: 'var(--color-success)', display: 'flex', alignItems: 'center', gap: '4px', whiteSpace: 'nowrap' }}>
                           <Check size={12} /> Committed
                         </span>
                       )}
@@ -199,8 +199,8 @@ export const DecisionMissionEngine: React.FC<Props> = ({ mission, onBack, backLa
               </div>
 
               {!committed && (
-                <div style={{ padding: '16px 20px', borderRadius: '10px', border: `1px dashed ${selected ? 'var(--cyber-primary-violet, #7C5CFF)' : '#334155'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
-                  <div style={{ fontSize: '13px', fontWeight: 600, color: selected ? '#f8fafc' : '#94a3b8', flex: 1, minWidth: '220px' }}>
+                <div style={{ padding: '16px 20px', borderRadius: '10px', border: `1px dashed ${selected ? 'var(--color-primary)' : 'var(--color-border)'}`, display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '14px' }}>
+                  <div style={{ fontSize: '13px', fontWeight: 600, color: selected ? 'var(--color-text-primary)' : 'var(--color-text-secondary)', flex: 1, minWidth: '220px' }}>
                     {selected ? 'You can switch options above, or commit this decision.' : 'Select an option above, then commit your decision.'}
                   </div>
                   <Button variant="primary" disabled={!selected || busy} onClick={() => void commit()} style={{ display: 'flex', alignItems: 'center', gap: '8px', padding: '0 24px' }}>
@@ -212,12 +212,12 @@ export const DecisionMissionEngine: React.FC<Props> = ({ mission, onBack, backLa
 
               {committed && selected && (
                 <div>
-                  <div style={{ padding: '18px 20px', borderRadius: '10px', backgroundColor: 'rgba(56, 189, 248, 0.08)', border: '1px solid #0284c7', marginBottom: '24px' }}>
+                  <div style={{ padding: '18px 20px', borderRadius: '10px', backgroundColor: 'var(--color-info-bg)', border: '1px solid var(--color-info)', marginBottom: '24px' }}>
                     <div style={{ display: 'flex', alignItems: 'center', gap: '8px', marginBottom: '6px' }}>
-                      <CheckCircle2 size={16} color="#38bdf8" />
-                      <strong style={{ fontSize: '13px', color: '#38bdf8', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Consequence</strong>
+                      <CheckCircle2 size={16} color="var(--color-info)" />
+                      <strong style={{ fontSize: '13px', color: 'var(--color-info)', textTransform: 'uppercase', letterSpacing: '0.04em' }}>Consequence</strong>
                     </div>
-                    <p style={{ fontSize: '14px', color: '#e2e8f0', lineHeight: 1.6, margin: 0 }}>{feedback}</p>
+                    <p style={{ fontSize: '14px', color: 'var(--color-text-primary)', lineHeight: 1.6, margin: 0 }}>{feedback}</p>
                   </div>
                   <Button variant="primary" onClick={advance} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                     <span>{stageIdx < stages.length - 1 ? 'Next Stage' : 'View Final Report'}</span>
@@ -228,9 +228,9 @@ export const DecisionMissionEngine: React.FC<Props> = ({ mission, onBack, backLa
             </>
           ) : (
             <div>
-              <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: 'rgba(148, 163, 184, 0.08)', border: `1px solid ${tone}`, marginBottom: '24px' }}>
+              <div style={{ padding: '20px', borderRadius: '12px', backgroundColor: 'var(--color-surface-low)', border: `1px solid ${tone}`, marginBottom: '24px' }}>
                 <div style={{ fontSize: '12px', textTransform: 'uppercase', fontWeight: 700, color: tone, marginBottom: '6px' }}>{band?.title}</div>
-                <p style={{ fontSize: '15px', color: '#f8fafc', lineHeight: 1.6, margin: 0 }}>{band?.text}</p>
+                <p style={{ fontSize: '15px', color: 'var(--color-text-primary)', lineHeight: 1.6, margin: 0 }}>{band?.text}</p>
               </div>
               <Button variant="primary" onClick={advance} style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
                 <span>View Debrief</span>
@@ -241,11 +241,11 @@ export const DecisionMissionEngine: React.FC<Props> = ({ mission, onBack, backLa
         </div>
       ) : (
         <div style={{ ...card, padding: '36px 28px', textAlign: 'center' }}>
-          <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'rgba(16, 185, 129, 0.15)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: '#10b981' }}>
+          <div style={{ width: '64px', height: '64px', borderRadius: '50%', backgroundColor: 'var(--color-success-bg)', display: 'flex', alignItems: 'center', justifyContent: 'center', margin: '0 auto 16px', color: 'var(--color-success)' }}>
             <Award size={36} />
           </div>
-          <h2 style={{ fontSize: '24px', fontWeight: 700, color: '#f8fafc', marginBottom: '8px' }}>{mission.outcome?.final_title ?? 'Mission concluded'}</h2>
-          <p style={{ color: '#94a3b8', maxWidth: '640px', margin: '0 auto 16px', lineHeight: 1.6 }}>
+          <h2 style={{ fontSize: '24px', fontWeight: 700, color: 'var(--color-text-primary)', marginBottom: '8px' }}>{mission.outcome?.final_title ?? 'Mission concluded'}</h2>
+          <p style={{ color: 'var(--color-text-secondary)', maxWidth: '640px', margin: '0 auto 16px', lineHeight: 1.6 }}>
             {hud.map((h, i) => (
               <React.Fragment key={h.key}>
                 {i > 0 && ' · '}
@@ -254,15 +254,15 @@ export const DecisionMissionEngine: React.FC<Props> = ({ mission, onBack, backLa
             ))}
           </p>
           {band && <p style={{ color: tone, fontWeight: 700, marginBottom: '16px' }}>{band.title}</p>}
-          {concept && <p style={{ color: '#cbd5e1', maxWidth: '680px', margin: '0 auto 24px', lineHeight: 1.6, textAlign: 'left' }}>{concept}</p>}
-          {!awardText && <p style={{ color: '#94a3b8', maxWidth: '640px', margin: '0 auto 24px' }}>No new badge or XP this time: they are awarded once, for a success or partial outcome.</p>}
+          {concept && <p style={{ color: 'var(--color-text-on-surface-variant)', maxWidth: '680px', margin: '0 auto 24px', lineHeight: 1.6, textAlign: 'left' }}>{concept}</p>}
+          {!awardText && <p style={{ color: 'var(--color-text-secondary)', maxWidth: '640px', margin: '0 auto 24px' }}>No new badge or XP this time: they are awarded once, for a success or partial outcome.</p>}
           {badge && awardText && (
-            <div style={{ maxWidth: '420px', margin: '0 auto 32px', padding: '16px', borderRadius: '10px', backgroundColor: 'rgba(16, 185, 129, 0.1)', border: '1px solid #10b981', display: 'flex', alignItems: 'center', gap: '14px', textAlign: 'left' }}>
-              <Award size={32} color="#10b981" />
+            <div style={{ maxWidth: '420px', margin: '0 auto 32px', padding: '16px', borderRadius: '10px', backgroundColor: 'var(--color-success-bg)', border: '1px solid var(--color-success)', display: 'flex', alignItems: 'center', gap: '14px', textAlign: 'left' }}>
+              <Award size={32} color="var(--color-success)" />
               <div>
                 <div style={{ fontSize: '11px', color: 'var(--color-emerald)', fontWeight: 700, textTransform: 'uppercase' }}>Mission Badge Awarded</div>
-                <div style={{ fontSize: '15px', fontWeight: 700, color: '#f8fafc' }}>{badge}</div>
-                <div style={{ fontSize: '12px', color: '#94a3b8' }}>+{xp} XP recorded by the server</div>
+                <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)' }}>{badge}</div>
+                <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>+{xp} XP recorded by the server</div>
               </div>
             </div>
           )}
@@ -270,7 +270,7 @@ export const DecisionMissionEngine: React.FC<Props> = ({ mission, onBack, backLa
             <Button variant="primary" onClick={onBack}>
               {backLabel}
             </Button>
-            <Button variant="outline" onClick={restart} style={{ color: '#f8fafc', borderColor: '#475569', display: 'flex', alignItems: 'center', gap: '6px' }}>
+            <Button variant="outline" onClick={restart} style={{ display: 'flex', alignItems: 'center', gap: '6px' }}>
               <RotateCcw size={14} />
               <span>Replay Scenario</span>
             </Button>
