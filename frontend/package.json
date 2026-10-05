@@ -14,7 +14,8 @@
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
-    "content:coverage": "node scripts/competency-coverage.cjs"
+    "content:coverage": "node scripts/competency-coverage.cjs",
+    "lint:colors": "node scripts/check-hex-colors.cjs"
   },
   "dependencies": {
     "lucide-react": "^0.441.0",

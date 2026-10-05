@@ -1,0 +1,20 @@
+{
+  "note": "Hex colour literals per .tsx file. Counts may only go down.",
+  "total": 113,
+  "files": {
+    "components/ui/Button.tsx": 1,
+    "components/ui/Card.tsx": 1,
+    "features/admin/AdminDialogs.tsx": 1,
+    "features/curriculum/components/ModuleNode.tsx": 19,
+    "features/curriculum/components/TrackSection.tsx": 19,
+    "features/dashboard/components/BentoSection.tsx": 3,
+    "features/dashboard/components/KpiSection.tsx": 2,
+    "features/dashboard/components/LowerSection.tsx": 4,
+    "features/learning/components/LearningCatalog.tsx": 8,
+    "pages/CurriculumMap.tsx": 12,
+    "pages/ErrorPage.tsx": 2,
+    "pages/LoginPage.tsx": 11,
+    "pages/Organization.tsx": 7,
+    "pages/QuizPage.tsx": 23
+  }
+}

@@ -245,13 +245,13 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, backTo }) =>
         </div>
         <div>
           <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Sifted Key Size</div>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-emerald)' }}>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: 'var(--color-success)' }}>
             {siftedIndices.length} bits
           </div>
         </div>
         <div>
           <div style={{ fontSize: '11px', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>Sample Error Rate</div>
-          <div style={{ fontSize: '18px', fontWeight: 700, color: errorRate > 10 ? 'var(--color-error)' : 'var(--color-emerald)' }}>
+          <div style={{ fontSize: '18px', fontWeight: 700, color: errorRate > 10 ? 'var(--color-danger)' : 'var(--color-success)' }}>
             {stage >= 4 ? `${errorRate}%` : 'Unassessed'}
           </div>
         </div>
@@ -333,7 +333,7 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, backTo }) =>
                       <td style={{ padding: '6px', fontFamily: 'var(--font-mono)' }}>{aliceBases[i]}</td>
                       <td style={{ padding: '6px', fontFamily: 'var(--font-mono)' }}>{bobBases[i]}</td>
                       <td style={{ padding: '6px', fontWeight: 600 }}>{bobResults[i]}</td>
-                      <td style={{ padding: '6px', color: match ? 'var(--color-emerald)' : 'var(--color-danger)', fontWeight: 600 }}>
+                      <td style={{ padding: '6px', color: match ? 'var(--color-success)' : 'var(--color-danger)', fontWeight: 600 }}>
                         {match ? 'MATCH' : 'MISMATCH'}
                       </td>
                     </tr>
@@ -405,9 +405,9 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, backTo }) =>
             />
           </div>
 
-          <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: errorRate > 10 ? 'var(--color-danger-bg)' : 'var(--color-success-bg)', border: `1px solid ${errorRate > 10 ? 'var(--color-error)' : 'var(--color-emerald)'}`, marginBottom: '28px' }}>
+          <div style={{ padding: '16px', borderRadius: '8px', backgroundColor: errorRate > 10 ? 'var(--color-danger-bg)' : 'var(--color-success-bg)', border: `1px solid ${errorRate > 10 ? 'var(--color-danger)' : 'var(--color-success)'}`, marginBottom: '28px' }}>
             <div style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>Observed Quantum Error Rate (QBER):</div>
-            <div style={{ fontSize: '32px', fontWeight: 800, color: errorRate > 10 ? 'var(--color-error)' : 'var(--color-emerald)', margin: '4px 0' }}>
+            <div style={{ fontSize: '32px', fontWeight: 800, color: errorRate > 10 ? 'var(--color-danger)' : 'var(--color-success)', margin: '4px 0' }}>
               {errorRate}%
             </div>
             <div style={{ fontSize: '13px', color: 'var(--color-text-on-surface-variant)' }}>
@@ -449,7 +449,7 @@ const BB84SimulationEngine: React.FC<SimulationProps> = ({ mission, backTo }) =>
               <div style={{ maxWidth: '420px', margin: '0 auto 28px', padding: '16px', borderRadius: '10px', backgroundColor: 'var(--color-success-bg)', border: '1px solid var(--color-success)', display: 'flex', alignItems: 'center', gap: '12px', textAlign: 'left' }}>
                 <Award size={32} color="var(--color-success)" />
                 <div>
-                  <div style={{ fontSize: '11px', color: 'var(--color-emerald)', fontWeight: 700, textTransform: 'uppercase' }}>
+                  <div style={{ fontSize: '11px', color: 'var(--color-success)', fontWeight: 700, textTransform: 'uppercase' }}>
                     Lab Badge Awarded
                   </div>
                   <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)' }}>

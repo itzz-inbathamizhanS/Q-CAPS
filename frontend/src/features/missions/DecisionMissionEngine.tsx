@@ -122,7 +122,7 @@ export const DecisionMissionEngine: React.FC<Props> = ({ mission, onBack, backLa
   };
 
   const colourFor = (h: MissionHud, v: number) =>
-    (h.warn_below !== undefined && v < h.warn_below) || (h.warn_above !== undefined && v > h.warn_above) ? 'var(--color-amber)' : 'var(--color-text-primary)';
+    (h.warn_below !== undefined && v < h.warn_below) || (h.warn_above !== undefined && v > h.warn_above) ? 'var(--color-warning)' : 'var(--color-text-primary)';
   const show = (h: MissionHud) => `${values[h.key]}${h.suffix ?? ''}`;
 
   return (
@@ -260,7 +260,7 @@ export const DecisionMissionEngine: React.FC<Props> = ({ mission, onBack, backLa
             <div style={{ maxWidth: '420px', margin: '0 auto 32px', padding: '16px', borderRadius: '10px', backgroundColor: 'var(--color-success-bg)', border: '1px solid var(--color-success)', display: 'flex', alignItems: 'center', gap: '14px', textAlign: 'left' }}>
               <Award size={32} color="var(--color-success)" />
               <div>
-                <div style={{ fontSize: '11px', color: 'var(--color-emerald)', fontWeight: 700, textTransform: 'uppercase' }}>Mission Badge Awarded</div>
+                <div style={{ fontSize: '11px', color: 'var(--color-success)', fontWeight: 700, textTransform: 'uppercase' }}>Mission Badge Awarded</div>
                 <div style={{ fontSize: '15px', fontWeight: 700, color: 'var(--color-text-primary)' }}>{badge}</div>
                 <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)' }}>+{xp} XP recorded by the server</div>
               </div>
