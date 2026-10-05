@@ -76,9 +76,9 @@ export const Organization: React.FC = () => {
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Trophy size={24} color="#f59e0b" />;
+        return <Trophy size={24} color="var(--color-warning)" />;
       case 2:
-        return <Medal size={24} color="#94a3b8" />;
+        return <Medal size={24} color="var(--color-text-secondary)" />;
       case 3:
         return <Medal size={24} color="#b45309" />;
       default:
@@ -100,7 +100,7 @@ export const Organization: React.FC = () => {
       </div>
 
       <Card variant="glass" padding="none">
-        <div style={{ padding: '24px', borderBottom: '1px solid var(--color-border, #e2e8f0)' }}>
+        <div style={{ padding: '24px', borderBottom: '1px solid var(--color-border)' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <TrendingUp size={18} />
             Top Operators
@@ -123,7 +123,7 @@ export const Organization: React.FC = () => {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ backgroundColor: 'rgba(0,0,0,0.02)', borderBottom: '1px solid var(--color-border, #e2e8f0)' }}>
+                <tr style={{ backgroundColor: 'rgba(0,0,0,0.02)', borderBottom: '1px solid var(--color-border)' }}>
                   <th style={{ padding: '16px 24px', fontSize: '13px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>RANK</th>
                   <th style={{ padding: '16px 24px', fontSize: '13px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>OPERATOR</th>
                   <th style={{ padding: '16px 24px', fontSize: '13px', fontWeight: 600, color: 'var(--color-text-secondary)', textAlign: 'right' }}>EXPERIENCE (XP)</th>
@@ -136,8 +136,8 @@ export const Organization: React.FC = () => {
                     <tr
                       key={entry.id}
                       style={{
-                        borderBottom: '1px solid var(--color-border, #e2e8f0)',
-                        backgroundColor: isMe ? 'rgba(84, 39, 230, 0.04)' : 'transparent',
+                        borderBottom: '1px solid var(--color-border)',
+                        backgroundColor: isMe ? 'var(--color-primary-soft)' : 'transparent',
                         transition: 'background-color 0.2s ease',
                       }}
                     >
@@ -156,8 +156,8 @@ export const Organization: React.FC = () => {
                               width: '32px',
                               height: '32px',
                               borderRadius: '50%',
-                              backgroundColor: isMe ? 'var(--color-primary)' : 'rgba(0,0,0,0.05)',
-                              color: isMe ? '#fff' : 'var(--color-text-secondary)',
+                              backgroundColor: isMe ? 'var(--color-primary-container)' : 'var(--color-surface-low)',
+                              color: isMe ? 'var(--color-on-primary)' : 'var(--color-text-secondary)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',

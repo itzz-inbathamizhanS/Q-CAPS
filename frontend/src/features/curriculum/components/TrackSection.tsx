@@ -33,7 +33,7 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
   // Determine track status badge
   let statusBadge = {
     label: 'Not Started',
-    color: '#64748b',
+    color: 'var(--color-text-secondary)',
     bg: 'rgba(100, 116, 139, 0.1)',
     border: 'rgba(100, 116, 139, 0.25)'
   };
@@ -41,35 +41,35 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
   if (isFullyCompleted) {
     statusBadge = {
       label: 'Completed',
-      color: '#10b981',
-      bg: 'rgba(16, 185, 129, 0.15)',
-      border: 'rgba(16, 185, 129, 0.3)'
+      color: 'var(--color-success)',
+      bg: 'var(--color-success-bg)',
+      border: 'var(--color-success-border)'
     };
   } else if (isInProgress) {
     statusBadge = {
       label: 'In Progress',
-      color: '#38bdf8',
-      bg: 'rgba(56, 189, 248, 0.15)',
-      border: 'rgba(56, 189, 248, 0.3)'
+      color: 'var(--color-info)',
+      bg: 'var(--color-info-bg)',
+      border: 'var(--color-info-bg)'
     };
   } else if (isLockedTrack) {
     statusBadge = {
       label: 'Locked',
-      color: '#f87171',
-      bg: 'rgba(239, 68, 68, 0.12)',
-      border: 'rgba(239, 68, 68, 0.25)'
+      color: 'var(--color-danger)',
+      bg: 'var(--color-danger-bg)',
+      border: 'var(--color-danger-bg)'
     };
   }
 
   return (
     <div
       style={{
-        backgroundColor: 'var(--color-surface, #ffffff)',
-        border: `1px solid ${isExpanded ? 'rgba(84, 39, 230, 0.35)' : 'var(--color-border, #e2e8f0)'}`,
+        backgroundColor: 'var(--color-surface)',
+        border: `1px solid ${isExpanded ? 'var(--color-primary-soft)' : 'var(--color-border)'}`,
         borderRadius: '16px',
         overflow: 'hidden',
         boxShadow: isExpanded
-          ? '0 10px 30px rgba(84, 39, 230, 0.08)'
+          ? '0 10px 30px var(--color-primary-soft)'
           : '0 2px 10px rgba(0, 0, 0, 0.02)',
         transition: 'all 0.25s ease',
         marginBottom: '20px'
@@ -86,8 +86,8 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
           alignItems: 'center',
           justifyContent: 'space-between',
           cursor: 'pointer',
-          backgroundColor: isExpanded ? 'rgba(84, 39, 230, 0.02)' : 'transparent',
-          borderBottom: isExpanded ? '1px solid var(--color-border, #e2e8f0)' : 'none',
+          backgroundColor: isExpanded ? 'var(--color-surface-low)' : 'transparent', // neutral, so text and status chips keep their contrast
+          borderBottom: isExpanded ? '1px solid var(--color-border)' : 'none',
           userSelect: 'none'
         }}
       >
@@ -97,8 +97,8 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
             style={{
               padding: '6px 12px',
               borderRadius: '8px',
-              backgroundColor: isLockedTrack ? 'rgba(100, 116, 139, 0.1)' : 'rgba(84, 39, 230, 0.1)',
-              color: isLockedTrack ? '#64748b' : 'var(--color-primary, #5427e6)',
+              backgroundColor: isLockedTrack ? 'rgba(100, 116, 139, 0.1)' : 'var(--color-primary-soft)',
+              color: isLockedTrack ? 'var(--color-text-secondary)' : 'var(--color-primary)',
               fontWeight: 700,
               fontSize: '13px',
               fontFamily: 'var(--font-mono)'
@@ -109,12 +109,12 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
 
           <div>
             <div style={{ display: 'flex', alignItems: 'center', gap: '10px' }}>
-              <h3 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--color-text-primary, #0f172a)' }}>
+              <h3 style={{ fontSize: '17px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
                 {track.title}
               </h3>
-              {isLockedTrack && <Lock size={15} color="#94a3b8" />}
+              {isLockedTrack && <Lock size={15} color="var(--color-text-secondary)" />}
             </div>
-            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary, #64748b)', marginTop: '3px' }}>
+            <p style={{ fontSize: '13px', color: 'var(--color-text-secondary)', marginTop: '3px' }}>
               {track.subtitle}
             </p>
           </div>
@@ -129,7 +129,7 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
               alignItems: 'center',
               gap: '6px',
               fontSize: '12px',
-              color: 'var(--color-text-secondary, #64748b)',
+              color: 'var(--color-text-secondary)',
               padding: '4px 10px',
               borderRadius: '6px',
               backgroundColor: 'rgba(0,0,0,0.03)'
@@ -225,7 +225,7 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
                   left: '40px',
                   right: '40px',
                   height: '3px',
-                  backgroundColor: '#e2e8f0',
+                  backgroundColor: 'var(--color-text-primary)',
                   zIndex: 1
                 }}
               />
@@ -274,8 +274,8 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
               marginTop: '16px',
               padding: '16px 20px',
               borderRadius: '12px',
-              backgroundColor: 'rgba(84, 39, 230, 0.04)',
-              border: '1px dashed rgba(84, 39, 230, 0.25)',
+              backgroundColor: 'var(--color-primary-soft)',
+              border: '1px dashed var(--color-primary-soft)',
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'space-between'
@@ -287,13 +287,13 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
                   width: '36px',
                   height: '36px',
                   borderRadius: '8px',
-                  backgroundColor: 'rgba(84, 39, 230, 0.1)',
+                  backgroundColor: 'var(--color-primary-soft)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center'
                 }}
               >
-                <Award size={20} color="var(--color-primary, #5427e6)" />
+                <Award size={20} color="var(--color-primary)" />
               </div>
               <div>
                 <h4 style={{ fontSize: '14px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
@@ -309,7 +309,7 @@ export const TrackSection: React.FC<TrackSectionProps> = ({
               style={{
                 fontSize: '12px',
                 fontWeight: 600,
-                color: isFullyCompleted ? '#10b981' : '#64748b'
+                color: isFullyCompleted ? 'var(--color-success)' : 'var(--color-text-secondary)'
               }}
             >
               {isFullyCompleted ? '✓ Capstone Eligible' : `Requires all ${totalCount} modules`}

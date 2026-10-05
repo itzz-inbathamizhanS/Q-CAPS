@@ -60,23 +60,23 @@ export const ModuleNode: React.FC<ModuleNodeProps> = ({
           justifyContent: 'center',
           transition: 'all 0.2s ease',
           backgroundColor: isCompleted
-            ? '#10b981'
+            ? 'var(--color-success)'
             : isCurrent
-            ? '#080b14'
+            ? 'var(--color-bg)'
             : isLocked
             ? '#1a1e29'
-            : '#1e293b',
+            : 'var(--color-surface-container)',
           border: isCompleted
-            ? '2px solid #10b981'
+            ? '2px solid var(--color-success)'
             : isCurrent
-            ? '2px solid #38bdf8'
+            ? '2px solid var(--color-info)'
             : isLocked
             ? '2px solid #2d3748'
-            : '2px solid #64748b',
+            : '2px solid var(--color-text-secondary)',
           boxShadow: isCompleted
-            ? '0 0 12px rgba(16, 185, 129, 0.35)'
+            ? '0 0 12px var(--color-success-bg)'
             : isCurrent
-            ? '0 0 16px rgba(56, 189, 248, 0.45)'
+            ? '0 0 16px var(--color-info-bg)'
             : 'none'
         }}
       >
@@ -87,18 +87,18 @@ export const ModuleNode: React.FC<ModuleNodeProps> = ({
               width: '12px',
               height: '12px',
               borderRadius: '50%',
-              backgroundColor: '#38bdf8'
+              backgroundColor: 'var(--color-info)'
             }}
           />
         )}
-        {isLocked && <Lock size={16} color="#64748b" />}
+        {isLocked && <Lock size={16} color="var(--color-text-secondary)" />}
         {!isCompleted && !isCurrent && !isLocked && (
           <div
             style={{
               width: '8px',
               height: '8px',
               borderRadius: '50%',
-              backgroundColor: '#94a3b8'
+              backgroundColor: 'var(--color-text-secondary)'
             }}
           />
         )}
@@ -112,12 +112,12 @@ export const ModuleNode: React.FC<ModuleNodeProps> = ({
           fontSize: '12px',
           fontWeight: 600,
           color: isCompleted
-            ? '#10b981'
+            ? 'var(--color-success)'
             : isCurrent
-            ? '#38bdf8'
+            ? 'var(--color-info)'
             : isLocked
-            ? '#64748b'
-            : '#94a3b8'
+            ? 'var(--color-text-secondary)'
+            : 'var(--color-text-secondary)'
         }}
       >
         {module.code}
@@ -133,13 +133,13 @@ export const ModuleNode: React.FC<ModuleNodeProps> = ({
             transform: 'translateX(-50%)',
             width: '240px',
             backgroundColor: '#450a0a',
-            border: '1px solid #ef4444',
+            border: '1px solid var(--color-danger)',
             borderRadius: '6px',
             padding: '8px 10px',
             fontSize: '11px',
-            color: '#fecaca',
+            color: 'var(--color-danger)',
             textAlign: 'center',
-            boxShadow: '0 4px 16px rgba(239, 68, 68, 0.3)',
+            boxShadow: '0 4px 16px var(--color-danger-border)',
             zIndex: 60,
             animation: 'fadeIn 0.2s ease'
           }}

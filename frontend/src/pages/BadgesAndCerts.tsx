@@ -156,7 +156,7 @@ export const BadgesAndCerts: React.FC = () => {
                 padding: '8px 16px',
                 borderRadius: '8px',
                 border: `1px solid ${isActive ? 'var(--color-primary)' : 'var(--color-border)'}`,
-                backgroundColor: isActive ? 'var(--color-primary)' : 'var(--color-surface)',
+                backgroundColor: isActive ? 'var(--color-primary-container)' : 'var(--color-surface)',
                 color: isActive ? 'var(--color-on-primary)' : 'var(--color-text-secondary)',
                 fontSize: '13px',
                 fontWeight: 600,

@@ -66,16 +66,16 @@ export const LoginPage: React.FC = () => {
       display: 'flex',
       alignItems: 'center',
       justifyContent: 'center',
-      backgroundColor: 'var(--color-background, #f8fafc)',
+      backgroundColor: 'var(--color-background)',
       padding: '24px'
     }}>
       <div style={{
         width: '100%',
         maxWidth: '440px',
-        backgroundColor: 'var(--color-surface, #ffffff)',
+        backgroundColor: 'var(--color-surface)',
         borderRadius: '24px',
         boxShadow: '0 20px 40px rgba(0,0,0,0.08), 0 1px 3px rgba(0,0,0,0.05)',
-        border: '1px solid rgba(84, 39, 230, 0.1)',
+        border: '1px solid var(--color-primary-soft)',
         padding: '48px',
         position: 'relative',
         overflow: 'hidden'
@@ -87,7 +87,7 @@ export const LoginPage: React.FC = () => {
           right: '-50px',
           width: '150px',
           height: '150px',
-          background: 'radial-gradient(circle, rgba(84, 39, 230, 0.1) 0%, rgba(255,255,255,0) 70%)',
+          background: 'radial-gradient(circle, var(--color-primary-soft) 0%, rgba(255,255,255,0) 70%)',
           borderRadius: '50%'
         }} />
 
@@ -96,26 +96,26 @@ export const LoginPage: React.FC = () => {
             width: '64px',
             height: '64px',
             borderRadius: '16px',
-            backgroundColor: 'rgba(84, 39, 230, 0.1)',
+            backgroundColor: 'var(--color-primary-soft)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             margin: '0 auto 20px',
-            color: 'var(--color-primary, #5427e6)'
+            color: 'var(--color-primary)'
           }}>
             <Shield size={32} />
           </div>
           <h1 style={{
             fontSize: '28px',
             fontWeight: 800,
-            color: 'var(--color-text-primary, #0f172a)',
+            color: 'var(--color-text-primary)',
             marginBottom: '8px',
             letterSpacing: '-0.5px'
           }}>
             Q-CAPS Terminal
           </h1>
           <p style={{
-            color: 'var(--color-text-secondary, #64748b)',
+            color: 'var(--color-text-secondary)',
             fontSize: '15px'
           }}>
             Sign in to continue your post-quantum cybersecurity training.
@@ -147,8 +147,8 @@ export const LoginPage: React.FC = () => {
                 width: '100%',
                 padding: '14px 16px',
                 borderRadius: '12px',
-                border: '1px solid var(--color-border, #e2e8f0)',
-                backgroundColor: 'var(--color-surface-low, #f8fafc)',
+                border: '1px solid var(--color-border)',
+                backgroundColor: 'var(--color-surface-low)',
                 fontSize: '15px',
                 color: 'var(--color-text-primary)',
                 outline: 'none',
@@ -183,8 +183,8 @@ export const LoginPage: React.FC = () => {
                 width: '100%',
                 padding: '14px 16px',
                 borderRadius: '12px',
-                border: '1px solid var(--color-border, #e2e8f0)',
-                backgroundColor: 'var(--color-surface-low, #f8fafc)',
+                border: '1px solid var(--color-border)',
+                backgroundColor: 'var(--color-surface-low)',
                 fontSize: '15px',
                 color: 'var(--color-text-primary)',
                 outline: 'none',
@@ -215,8 +215,8 @@ export const LoginPage: React.FC = () => {
             <div role="alert" style={{
               padding: '12px',
               borderRadius: '8px',
-              backgroundColor: 'rgba(239, 68, 68, 0.1)',
-              color: 'var(--color-error, #dc2626)',
+              backgroundColor: 'var(--color-danger-bg)',
+              color: 'var(--color-error)',
               fontSize: '13px',
               display: 'flex',
               alignItems: 'center',

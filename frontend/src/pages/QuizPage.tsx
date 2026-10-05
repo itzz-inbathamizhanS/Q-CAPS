@@ -109,7 +109,7 @@ export const QuizPage: React.FC = () => {
     return (
       <div style={{ maxWidth: '720px', margin: '60px auto', textAlign: 'center' }}>
         <Card variant="glass" padding="large">
-          <ShieldAlert size={48} color="#f59e0b" style={{ margin: '0 auto 16px' }} />
+          <ShieldAlert size={48} color="var(--color-warning)" style={{ margin: '0 auto 16px' }} />
           <h2 style={{ fontSize: '22px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
             Quiz Not Found
           </h2>
@@ -132,7 +132,7 @@ export const QuizPage: React.FC = () => {
     return (
       <div style={{ maxWidth: '720px', margin: '60px auto', textAlign: 'center' }}>
         <Card variant="glass" padding="large">
-          <ShieldAlert size={48} color="#f59e0b" style={{ margin: '0 auto 16px' }} />
+          <ShieldAlert size={48} color="var(--color-warning)" style={{ margin: '0 auto 16px' }} />
           <h2 style={{ fontSize: '22px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
             {currentMod.code} quiz is locked
           </h2>
@@ -161,7 +161,7 @@ export const QuizPage: React.FC = () => {
             <p style={{ color: 'var(--color-text-secondary)' }}>Preparing your quiz…</p>
           ) : (
             <>
-              <ShieldAlert size={48} color="#f59e0b" style={{ margin: '0 auto 16px' }} />
+              <ShieldAlert size={48} color="var(--color-warning)" style={{ margin: '0 auto 16px' }} />
               <h2 style={{ fontSize: '22px', fontWeight: 600, color: 'var(--color-text-primary)' }}>
                 {needsLogin ? 'Sign in to take this quiz' : 'Quiz unavailable'}
               </h2>
@@ -283,8 +283,8 @@ export const QuizPage: React.FC = () => {
       {/* Main Container */}
       <div
         style={{
-          backgroundColor: 'var(--color-surface, #ffffff)',
-          border: '1px solid var(--color-border, #e2e8f0)',
+          backgroundColor: 'var(--color-surface)',
+          border: '1px solid var(--color-border)',
           borderRadius: '16px',
           padding: '32px',
           boxShadow: '0 8px 30px rgba(0,0,0,0.04)'
@@ -299,7 +299,7 @@ export const QuizPage: React.FC = () => {
                 alignItems: 'center',
                 justifyContent: 'space-between',
                 paddingBottom: '20px',
-                borderBottom: '1px solid var(--color-border, #f1f5f9)',
+                borderBottom: '1px solid var(--color-border)',
                 marginBottom: '28px'
               }}
             >
@@ -336,7 +336,7 @@ export const QuizPage: React.FC = () => {
                             : 'var(--color-error)'
                           : isCurrent
                           ? 'var(--color-primary)'
-                          : '#e2e8f0',
+                          : 'var(--color-text-primary)',
                         transition: 'all 0.2s ease',
                         transform: isCurrent ? 'scale(1.2)' : 'scale(1)'
                       }}
@@ -352,7 +352,7 @@ export const QuizPage: React.FC = () => {
                 style={{
                   fontSize: '20px',
                   fontWeight: 600,
-                  color: 'var(--color-text-primary, #0f172a)',
+                  color: 'var(--color-text-primary)',
                   lineHeight: 1.5,
                   marginBottom: '24px'
                 }}
@@ -366,24 +366,24 @@ export const QuizPage: React.FC = () => {
                   const isSelected = selectedOption === optIdx;
                   const isCorrectAnswer = isAnswerSubmitted && feedback?.correct_position === opt.position;
 
-                  let rowBorder = '1px solid var(--color-border, #e2e8f0)';
-                  let rowBg = 'var(--color-surface, #ffffff)';
+                  let rowBorder = '1px solid var(--color-border)';
+                  let rowBg = 'var(--color-surface)';
                   let leftBorder = '4px solid transparent';
 
                   if (isAnswerSubmitted) {
                     if (isCorrectAnswer) {
-                      rowBorder = '1px solid rgba(16, 185, 129, 0.4)';
-                      rowBg = 'rgba(16, 185, 129, 0.06)';
-                      leftBorder = '4px solid #10b981';
+                      rowBorder = '1px solid var(--color-success-border)';
+                      rowBg = 'var(--color-success-bg)';
+                      leftBorder = '4px solid var(--color-success)';
                     } else if (isSelected && !isCorrectAnswer) {
-                      rowBorder = '1px solid rgba(239, 68, 68, 0.4)';
-                      rowBg = 'rgba(239, 68, 68, 0.06)';
-                      leftBorder = '4px solid #ef4444';
+                      rowBorder = '1px solid var(--color-danger-border)';
+                      rowBg = 'var(--color-danger-bg)';
+                      leftBorder = '4px solid var(--color-danger)';
                     }
                   } else if (isSelected) {
-                    rowBorder = '1px solid var(--color-primary, #5427e6)';
-                    rowBg = 'rgba(84, 39, 230, 0.04)';
-                    leftBorder = '4px solid var(--color-primary, #5427e6)';
+                    rowBorder = '1px solid var(--color-primary)';
+                    rowBg = 'var(--color-primary-soft)';
+                    leftBorder = '4px solid var(--color-primary)';
                   }
 
                   return (
@@ -408,13 +408,13 @@ export const QuizPage: React.FC = () => {
                         alignItems: 'center',
                         justifyContent: 'space-between',
                         transition: 'all 0.15s ease',
-                        boxShadow: isSelected && !isAnswerSubmitted ? '0 2px 8px rgba(84, 39, 230, 0.1)' : 'none'
+                        boxShadow: isSelected && !isAnswerSubmitted ? '0 2px 8px var(--color-primary-soft)' : 'none'
                       }}
                     >
                       <span
                         style={{
                           fontSize: '15px',
-                          color: 'var(--color-text-primary, #1e293b)',
+                          color: 'var(--color-text-primary)',
                           lineHeight: 1.4,
                           fontWeight: isSelected ? 500 : 400
                         }}
@@ -424,8 +424,8 @@ export const QuizPage: React.FC = () => {
 
                       {isAnswerSubmitted && (
                         <div>
-                          {isCorrectAnswer && <CheckCircle2 size={20} color="#10b981" />}
-                          {isSelected && !isCorrectAnswer && <XCircle size={20} color="#ef4444" />}
+                          {isCorrectAnswer && <CheckCircle2 size={20} color="var(--color-success)" />}
+                          {isSelected && !isCorrectAnswer && <XCircle size={20} color="var(--color-danger)" />}
                         </div>
                       )}
                     </button>
@@ -438,8 +438,8 @@ export const QuizPage: React.FC = () => {
             {isAnswerSubmitted && (
               <div
                 style={{
-                  backgroundColor: 'rgba(56, 189, 248, 0.08)',
-                  border: '1px solid rgba(56, 189, 248, 0.25)',
+                  backgroundColor: 'var(--color-info-bg)',
+                  border: '1px solid var(--color-info-bg)',
                   borderRadius: '10px',
                   padding: '16px 20px',
                   marginBottom: '28px',
@@ -450,13 +450,13 @@ export const QuizPage: React.FC = () => {
                   style={{
                     fontSize: '13px',
                     fontWeight: 600,
-                    color: 'var(--color-primary, #0369a1)',
+                    color: 'var(--color-primary)',
                     marginBottom: '4px'
                   }}
                 >
                   Explanation
                 </div>
-                <div style={{ fontSize: '14px', color: 'var(--color-text-primary, #1e293b)', lineHeight: 1.5 }}>
+                <div style={{ fontSize: '14px', color: 'var(--color-text-primary)', lineHeight: 1.5 }}>
                   {feedback?.explanation}
                 </div>
               </div>
@@ -499,7 +499,7 @@ export const QuizPage: React.FC = () => {
                 width: '72px',
                 height: '72px',
                 borderRadius: '50%',
-                backgroundColor: isPassed ? 'rgba(16, 185, 129, 0.15)' : 'rgba(245, 158, 11, 0.15)',
+                backgroundColor: isPassed ? 'var(--color-success-bg)' : 'rgba(245, 158, 11, 0.15)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
@@ -507,9 +507,9 @@ export const QuizPage: React.FC = () => {
               }}
             >
               {isPassed ? (
-                <Award size={36} color="#10b981" />
+                <Award size={36} color="var(--color-success)" />
               ) : (
-                <RotateCcw size={36} color="#f59e0b" />
+                <RotateCcw size={36} color="var(--color-warning)" />
               )}
             </div>
 
@@ -539,8 +539,8 @@ export const QuizPage: React.FC = () => {
                 style={{
                   margin: '28px auto',
                   maxWidth: '480px',
-                  backgroundColor: 'rgba(16, 185, 129, 0.08)',
-                  border: '1px solid rgba(16, 185, 129, 0.3)',
+                  backgroundColor: 'var(--color-success-bg)',
+                  border: '1px solid var(--color-success-border)',
                   borderRadius: '12px',
                   padding: '16px 20px',
                   display: 'flex',

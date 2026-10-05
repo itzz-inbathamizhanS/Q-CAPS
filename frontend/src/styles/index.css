@@ -31,7 +31,7 @@
   /* Border & Dividers */
   --color-border: #E5E5EE;
   --color-border-hover: #DADAED;
-  --color-outline: #797588;
+  --color-outline: #686478; /* 4.67:1 or better on every light surface (axe, TF.4) */
   --color-outline-variant: #C9C4D9;
 
   /* Text & Content */
@@ -42,8 +42,8 @@
   /* Feedback Colors */
   --color-error: #BA1A1A;
   --color-error-container: #FFDAD6;
-  --color-emerald: #10B981;
-  --color-amber: #F59E0B;
+  --color-emerald: #065F46; /* text-safe on light surfaces and green tints; was #10B981 (2.5:1) */
+  --color-amber: #B45309; /* text-safe on light surfaces; was #F59E0B (2.1:1) */
 
   /* Cyber Mode / Terminal Container */
   --cyber-bg: #080B14;
@@ -89,7 +89,7 @@
   --color-surface-variant: #283350;
 
   /* Primary Brand Violet Scale */
-  --color-primary: var(--cyber-primary-violet);
+  --color-primary: #B3A4FF; /* text-safe violet on dark surfaces (5.2:1 or better); fills that carry white text use --color-primary-container */
   --color-primary-container: #6243E5;
   --color-primary-hover: #8D73FF;
   --color-primary-fixed: #39219A;
@@ -637,7 +637,7 @@ button, input, select, textarea {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--color-secondary);
+  color: var(--color-primary);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
@@ -964,7 +964,7 @@ button, input, select, textarea {
 
 .module-card:hover:not(.module-card--locked) { border-color: var(--color-border-hover); box-shadow: var(--shadow-card-hover); transform: translateY(-1px); }
 
-.module-card--locked { opacity: 0.7; background: var(--color-surface-dim); }
+.module-card--locked { background: var(--color-surface-dim); } /* no opacity: it pushed the card text below 4.5:1; the lock icon and muted title carry the state */
 
 .module-card-accent-bar { height: 3px; width: 100%; flex-shrink: 0; }
 
@@ -981,7 +981,7 @@ button, input, select, textarea {
 .module-status-badge--completed { color: var(--color-emerald); background: rgba(16,185,129,0.08); }
 .module-status-badge--inprogress { color: var(--color-primary); background: var(--color-primary-fixed); }
 .module-status-badge--locked { color: var(--color-outline); background: var(--color-surface-container); }
-.module-status-badge--available { color: var(--color-technical-cyan); background: rgba(60,183,232,0.08); }
+.module-status-badge--available { color: var(--color-info); background: var(--color-info-bg); }
 
 .module-card-title { font-size: 15px; font-weight: 700; color: var(--color-text-primary); line-height: 1.3; margin-bottom: 5px; }
 .module-card--locked .module-card-title { color: var(--color-text-secondary); }
@@ -1314,7 +1314,7 @@ button, input, select, textarea {
    for chips and banners (pair them with the matching text colour, never with white text).
    ========================================================== */
 :root {
-  --color-success: #047857;
+  --color-success: #065f46;
   --color-success-bg: rgba(16, 185, 129, 0.12);
   --color-success-border: rgba(16, 185, 129, 0.45);
   --color-warning: #b45309;
@@ -1341,8 +1341,14 @@ button, input, select, textarea {
   --lvl-unknown: var(--color-text-secondary);
   --lvl-beginner: #b45309;
   --lvl-developing: #0369a1;
-  --lvl-proficient: #047857;
+  --lvl-proficient: #065f46;
   --lvl-advanced: #5427e6;
+
+  /* Curriculum track accents (text on surfaces and on their *-bg tint) */
+  --track-b: #4338ca;
+  --track-b-bg: rgba(129, 140, 248, 0.14);
+  --track-c: #7e22ce;
+  --track-c-bg: rgba(192, 132, 252, 0.14);
 }
 
 [data-theme="dark"] {
@@ -1365,6 +1371,10 @@ button, input, select, textarea {
   --lvl-developing: #38bdf8;
   --lvl-proficient: #34d399;
   --lvl-advanced: #a78bfa;
+  --track-b: #a5b4fc;
+  --track-b-bg: rgba(129, 140, 248, 0.16);
+  --track-c: #d8b4fe;
+  --track-c-bg: rgba(192, 132, 252, 0.16);
 }
 
 .lvl-unknown {

@@ -11,13 +11,17 @@ import { signInAsDemoLearner } from './fixtures';
 // empties it; lower a count when a fix lands. Do not raise a count to hide a new violation.
 const here = dirname(fileURLToPath(import.meta.url));
 const baseline: Record<string, Record<string, number>> = JSON.parse(readFileSync(resolve(here, 'axe-baseline.json'), 'utf8')).pages;
-const reportFile = resolve(here, '.results/axe-report.json');
-const report: Record<string, Array<{ id: string; impact: string | null | undefined; nodes: number; help: string }>> = {};
+const reportDir = resolve(here, '.results/axe'); // one file per page: survives worker restarts after a failure
 
 async function check(page: Page, name: string) {
   const { violations } = await new AxeBuilder({ page }).withTags(['wcag2a', 'wcag2aa', 'wcag21a', 'wcag21aa']).analyze();
   const severe = violations.filter((v) => v.impact === 'serious' || v.impact === 'critical');
-  report[name] = severe.map((v) => ({ id: v.id, impact: v.impact, nodes: v.nodes.length, help: v.help }));
+  const entries = severe.map((v) => ({
+    id: v.id, impact: v.impact, nodes: v.nodes.length, help: v.help,
+    targets: v.nodes.map((n) => `${n.target.join(' ')} :: ${(n.failureSummary ?? '').split('\n').slice(1).join(' ')}`),
+  }));
+  mkdirSync(reportDir, { recursive: true });
+  writeFileSync(resolve(reportDir, `${name}.json`), JSON.stringify(entries, null, 2));
   const allowed = baseline[name] ?? {};
   const unexpected = severe
     .filter((v) => v.nodes.length > (allowed[v.id] ?? 0))
@@ -25,32 +29,36 @@ async function check(page: Page, name: string) {
   expect.soft(unexpected, `new serious/critical axe violations on ${name}`).toEqual([]);
 }
 
-test.describe.configure({ mode: 'serial' });
+for (const theme of ['light', 'dark'] as const) {
+  test(`login page (${theme})`, async ({ page }) => {
+    await page.addInitScript((t) => localStorage.setItem('theme', t), theme);
+    await page.goto('/login');
+    await expect(page.getByRole('button', { name: /initialize session/i })).toBeVisible();
+    await check(page, `login-${theme}`);
+  });
 
-test.afterAll(() => {
-  mkdirSync(dirname(reportFile), { recursive: true });
-  writeFileSync(reportFile, JSON.stringify(report, null, 2));
-});
-
-test('login page', async ({ page }) => {
-  await page.goto('/login');
-  await expect(page.getByRole('button', { name: /initialize session/i })).toBeVisible();
-  await check(page, 'login');
-});
-
-test('signed-in pages', async ({ page }) => {
-  await signInAsDemoLearner(page);
-  const pages: Array<[string, string, RegExp]> = [
-    ['dashboard', '/dashboard', /welcome back/i],
-    ['skills', '/skills', /your skill profile/i],
-    ['curriculum', '/curriculum', /./],
-    ['quiz', '/quiz/track_a_a1_computing_foundations', /./],
-    ['scanner', '/scanner', /./],
-  ];
-  for (const [name, path, heading] of pages) {
-    await page.goto(path);
-    await expect(page.getByRole('heading', { level: 1, name: heading }).or(page.getByRole('heading', { level: 2 })).first()).toBeVisible();
-    if (name === 'quiz') await expect(page.getByRole('button', { name: /submit answer/i })).toBeVisible();
-    await check(page, name);
-  }
-});
+  test(`signed-in pages (${theme})`, async ({ page }) => {
+    test.setTimeout(240_000); // ten pages with a full axe scan each
+    await page.addInitScript((t) => localStorage.setItem('theme', t), theme);
+    await signInAsDemoLearner(page);
+    const pages: Array<[string, string]> = [
+      ['dashboard', '/dashboard'],
+      ['skills', '/skills'],
+      ['learning', '/learning'],
+      ['diagnostic', '/assessment'],
+      ['curriculum', '/curriculum'],
+      ['quiz', '/quiz/track_a_a1_computing_foundations'],
+      ['mission', '/missions/mission_flat_network_breach'],
+      ['scanner', '/scanner'],
+      ['badges', '/badges'],
+      ['leaderboard', '/leaderboard'],
+    ];
+    for (const [name, path] of pages) {
+      await page.goto(path);
+      await page.waitForLoadState('networkidle');
+      await expect(page.getByRole('heading').first()).toBeVisible();
+      if (name === 'quiz') await expect(page.getByRole('button', { name: /submit answer/i })).toBeVisible();
+      await check(page, `${name}-${theme}`);
+    }
+  });
+}

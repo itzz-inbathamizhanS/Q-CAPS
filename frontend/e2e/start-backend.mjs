@@ -5,6 +5,7 @@
 // JWT secret come from playwright.config.ts through the environment and are random per run.
 import { spawn, spawnSync } from 'node:child_process';
 import { mkdirSync, rmSync } from 'node:fs';
+import { createServer } from 'node:net';
 import { dirname, resolve } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -21,6 +22,17 @@ for (const name of ['E2E_API_PORT', 'QCAPS_JWT_SECRET', 'QCAPS_ADMIN_PASSWORD', 
     process.exit(2);
   }
 }
+
+// Fail fast if the port is taken (for example by servers a crashed run left behind) instead of waiting until the
+// webServer timeout; the message says what to stop.
+await new Promise((resolveCheck) => {
+  const probe = createServer();
+  probe.once('error', () => {
+    console.error(`Port ${port} is already in use. Stop the process listening on it (a previous e2e run?) and retry.`);
+    process.exit(1);
+  });
+  probe.listen(Number(port), '127.0.0.1', () => probe.close(resolveCheck));
+});
 
 rmSync(tmp, { recursive: true, force: true });
 mkdirSync(tmp, { recursive: true });

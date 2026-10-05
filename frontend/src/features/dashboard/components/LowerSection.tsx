@@ -76,9 +76,9 @@ export const LowerSection: React.FC = () => {
   const avg = (arr: [string, number][]): number | null => arr.length > 0 ? Math.round(arr.reduce((sum, [, v]) => sum + v, 0) / arr.length) : null;
 
   const skillBreakdown = [
-    { name: 'Quantum & PQC', score: avg(quantumScores), color: '#3CB7E8' },
-    { name: 'Applied Cryptography', score: avg(cryptoScores), color: '#5427E6' },
-    { name: 'Cybersecurity', score: avg(algoScores), color: '#EF4444' },
+    { name: 'Quantum & PQC', score: avg(quantumScores), color: 'var(--color-info)' },
+    { name: 'Applied Cryptography', score: avg(cryptoScores), color: 'var(--color-primary)' },
+    { name: 'Cybersecurity', score: avg(algoScores), color: 'var(--color-danger)' },
   ];
   const renderAchievementIcon = (achievement: AchievementItem) => {
     switch (achievement.iconName) {
@@ -110,8 +110,8 @@ export const LowerSection: React.FC = () => {
       case 'primary':
       default:
         return {
-          bg: 'rgba(84, 39, 230, 0.1)',
-          border: 'rgba(84, 39, 230, 0.2)',
+          bg: 'var(--color-primary-soft)',
+          border: 'var(--color-primary-soft)',
           color: 'var(--color-primary)',
         };
     }
@@ -202,7 +202,7 @@ export const LowerSection: React.FC = () => {
                   width: '32px',
                   height: '32px',
                   borderRadius: '9999px',
-                  backgroundColor: item.active ? 'var(--color-primary)' : 'var(--color-surface-variant)',
+                  backgroundColor: item.active ? 'var(--color-primary-container)' : 'var(--color-surface-variant)',
                   color: item.active ? '#FFFFFF' : 'var(--color-outline)',
                   display: 'flex',
                   alignItems: 'center',

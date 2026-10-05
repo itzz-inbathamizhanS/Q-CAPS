@@ -82,7 +82,7 @@ export const BentoSection: React.FC<BentoSectionProps> = ({ liveRecommendation }
             right: 0,
             width: '256px',
             height: '256px',
-            background: 'radial-gradient(circle, rgba(84, 39, 230, 0.08) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, var(--color-primary-soft) 0%, transparent 70%)',
             borderBottomLeftRadius: '100%',
             pointerEvents: 'none',
           }}
@@ -251,7 +251,7 @@ export const BentoSection: React.FC<BentoSectionProps> = ({ liveRecommendation }
                 height: '48px',
                 borderRadius: '8px',
                 backgroundColor: 'rgba(60, 183, 232, 0.15)',
-                color: 'var(--color-technical-cyan)',
+                color: 'var(--color-info)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
