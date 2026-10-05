@@ -5,11 +5,11 @@ from the capability estimator. Unknown is never treated as rank 0: a gap against
 """
 from typing import Dict, List, Optional
 
-from sqlalchemy import or_
 from sqlalchemy.orm import Session
 
 import models
 from competency import requirements
+from organizations import access
 from competency.seed import load_model
 
 # v1 gap classes (a hypothesis to calibrate, documented in SKILL_MATRIX.md): by rank difference, escalated one step
@@ -36,15 +36,24 @@ def build(db: Session, user: models.User) -> dict:
     ranks = level_ranks(model)
     req_map = requirements.load_map()
 
-    # The learner's own open findings plus shared (ownerless) records, as elsewhere. Admins get the same scope: the
-    # matrix describes the learner's environment, not every user's assets.
-    rows = (db.query(models.FindingRequirement, models.Finding)
+    # Open findings in the learner's working scope: own assets, assets of organizations the learner belongs to,
+    # and legacy shared records. Admins get the same scope: the matrix describes the learner's environment, not
+    # every tenant's. On an organization asset, a finding whose interventions are assigned to someone else does
+    # not set requirements for this learner.
+    rows = (db.query(models.FindingRequirement, models.Finding, models.Asset.organization_id)
             .join(models.Finding, models.Finding.id == models.FindingRequirement.finding_id)
             .join(models.Asset, models.Asset.id == models.Finding.asset_id)
             .filter(models.Finding.status == "OPEN",
                     models.FindingRequirement.map_version == req_map["version"],
-                    or_(models.Asset.owner_user_id == user.id, models.Asset.owner_user_id.is_(None)))
+                    access.visible_asset_filter(db, user))
             .all())
+    org_finding_ids = {f.id for _, f, org in rows if org is not None}
+    assignees: Dict[str, set] = {}
+    if org_finding_ids:
+        for fid, uid in db.query(models.Intervention.finding_id, models.Intervention.assigned_user_id).filter(
+                models.Intervention.finding_id.in_(org_finding_ids), models.Intervention.assigned_user_id.isnot(None)):
+            assignees.setdefault(fid, set()).add(uid)
+    rows = [(req, f) for req, f, org in rows if org is None or f.id not in assignees or user.id in assignees[f.id]]
     required: Dict[str, dict] = {}
     for req, finding in rows:
         entry = required.setdefault(req.competency_code, {"level": None, "findings": {}})

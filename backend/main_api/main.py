@@ -10,6 +10,8 @@ import quiz_service
 import scan_receipts
 import scan_report
 from database import engine, Base, get_db, ensure_schema
+from organizations import access as org_access
+from organizations.routes import create_organizations_router
 from recommendation import get_user_recommendation
 from leaderboard import get_leaderboard_data, get_user_rank
 import logging
@@ -83,13 +85,17 @@ def require_admin(current_user: models.User = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin access required")
     return current_user
 
+def require_intervention_author(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Gate for assigning interventions: platform admins, or org admins of some organization (the handler then
+    checks the finding belongs to that organization). Refused before the request body is looked at."""
+    if current_user.role != "admin" and not org_access.orgs_with_role(db, current_user, org_access.MANAGE_ROLES):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
+
 def asset_visible(db: Session, user: models.User, asset_id) -> bool:
-    """Evidence, findings and interventions hang off assets. An asset created from a verified scan is
-    private to the user who scanned it (and admins); assets without an owner are shared, admin-managed records."""
-    if user.role == "admin" or asset_id is None:
-        return True
-    asset = db.query(models.Asset).filter(models.Asset.id == asset_id).first()
-    return asset is None or asset.owner_user_id is None or asset.owner_user_id == user.id
+    """Evidence, findings and interventions hang off assets; organizations/access.py decides who may see them
+    (personal: the owner; organization: its admins and members; legacy shared: everyone; platform admins: all)."""
+    return org_access.can_view_asset(db, user, asset_id)
 
 class ConnectionManager:
     def __init__(self):
@@ -134,6 +140,7 @@ app.add_middleware(
 app.include_router(create_public_router(get_current_user))
 app.include_router(create_activities_router(get_current_user))
 app.include_router(create_admin_router(require_admin))
+app.include_router(create_organizations_router(get_current_user))
 
 @app.on_event("startup")
 def seed_quiz_bank():
@@ -357,6 +364,8 @@ def log_scanner_result(log_in: schemas.ScannerLogCreate, background_tasks: Backg
     user = db.query(models.User).filter(models.User.id == log_in.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if log_in.organization_id is not None and org_access.org_role(db, user, log_in.organization_id) != "org_admin":
+        raise HTTPException(status_code=403, detail="Only an organization admin can record scans for the organization")
 
     # The result is relayed by the browser, so it is only accepted with the scanner's signed receipt,
     # and everything stored or awarded is derived from it rather than from client-supplied numbers.
@@ -393,7 +402,7 @@ def log_scanner_result(log_in: schemas.ScannerLogCreate, background_tasks: Backg
     # the verified scan log or its XP, so it runs in a savepoint and is logged rather than raised.
     try:
         with db.begin_nested():
-            evidence_service.ingest_scan(db, user, result)
+            evidence_service.ingest_scan(db, user, result, organization_id=log_in.organization_id)
     except Exception:
         logger.exception("Evidence ingestion failed for scan log %s", db_log.id)
 
@@ -453,23 +462,31 @@ def _finding_visible(db: Session, user: models.User, finding_id) -> bool:
 
 @app.get("/api/scanner/assets", response_model=List[schemas.ScannerAssetOut])
 def list_scanner_assets(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Domains the user has scanned with verified ownership, with how many findings are open or resolved."""
-    assets = db.query(models.Asset).filter(models.Asset.owner_user_id == current_user.id) \
-        .order_by(models.Asset.created_at.desc(), models.Asset.id.desc()).all()
+    """Domains scanned with verified ownership by the user, or for an organization the user belongs to, with how
+    many findings are open or resolved."""
+    assets = (db.query(models.Asset).filter(org_access.visible_asset_filter(db, current_user, include_shared=False))
+              .order_by(models.Asset.created_at.desc(), models.Asset.id.desc()).all())
+    org_names = {o.id: o for o in db.query(models.Organization).filter(
+        models.Organization.id.in_({a.organization_id for a in assets if a.organization_id}))} if assets else {}
     out = []
     for asset in assets:
         statuses = [f.status for f in db.query(models.Finding).filter(models.Finding.asset_id == asset.id).all()]
         last = db.query(func.max(models.Evidence.observed_at)).filter(models.Evidence.asset_id == asset.id).scalar()
+        org = org_names.get(asset.organization_id)
         out.append(schemas.ScannerAssetOut(
             id=asset.id, target=asset.canonical_target, created_at=asset.created_at,
-            open_findings=statuses.count("OPEN"), resolved_findings=statuses.count("RESOLVED"), last_scanned=last))
+            open_findings=statuses.count("OPEN"), resolved_findings=statuses.count("RESOLVED"), last_scanned=last,
+            organization_id=org.id if org else None, organization_name=org.name if org else None,
+            organization_kind=org.kind if org else None))
     return out
 
 
 @app.get("/api/scanner/assets/{asset_id}/findings", response_model=List[schemas.ScannerFindingOut])
 def list_asset_findings(asset_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    asset = db.query(models.Asset).filter(models.Asset.id == asset_id, models.Asset.owner_user_id == current_user.id).first()
-    if not asset:
+    asset = db.get(models.Asset, asset_id)
+    # Only the user's own and organization assets are listed here (not legacy shared records).
+    if not asset or (asset.owner_user_id is None and asset.organization_id is None) \
+            or not org_access.can_view_asset(db, current_user, asset):
         raise HTTPException(status_code=404, detail="Asset not found")
     rows = db.query(models.Finding).filter(models.Finding.asset_id == asset.id).all()
     rows.sort(key=lambda f: (f.status != "OPEN", -f.severity, -(f.last_seen.timestamp() if f.last_seen else 0)))
@@ -549,10 +566,25 @@ def get_user_capabilities(user_id: int, db: Session = Depends(get_db), current_u
             for cap, comp in rows]
 
 @app.post("/api/interventions", response_model=schemas.InterventionOut)
-def create_intervention(intervention_in: schemas.InterventionCreate, db: Session = Depends(get_db), _admin: models.User = Depends(require_admin)):
+def create_intervention(intervention_in: schemas.InterventionCreate, db: Session = Depends(get_db), current_user: models.User = Depends(require_intervention_author)):
+    """Platform admins, or the org_admin of the finding's organization, assign interventions. An assigned learner
+    must be a member of that organization."""
     import uuid
+    finding = db.get(models.Finding, intervention_in.finding_id) if intervention_in.finding_id else None
+    asset = db.get(models.Asset, finding.asset_id) if finding else None
+    if not org_access.is_platform_admin(current_user):
+        if asset is None or asset.organization_id is None or not org_access.can_manage_asset(db, current_user, asset):
+            if finding is not None and org_access.can_view_asset(db, current_user, asset):
+                raise HTTPException(status_code=403, detail="Only an organization admin can assign interventions")
+            raise HTTPException(status_code=403, detail="Admin access required")
+    if intervention_in.assigned_user_id is not None:
+        if asset is None or asset.organization_id is None or \
+                org_access.org_role(db, db.get(models.User, intervention_in.assigned_user_id) or models.User(id=-1), asset.organization_id) not in ("org_admin", "member", "instructor"):
+            raise HTTPException(status_code=422, detail="assigned_user_id must be a member of the finding's organization")
     intervention = models.Intervention(**intervention_in.dict(), id=str(uuid.uuid4()))
     db.add(intervention)
+    org_access.audit(db, current_user, "intervention.create", asset.organization_id if asset else None, "intervention",
+                     intervention.id, {"finding_id": intervention_in.finding_id, "assigned_user_id": intervention_in.assigned_user_id})
     db.commit()
     db.refresh(intervention)
     return intervention
@@ -576,23 +608,24 @@ def verify_intervention(id: str, body: Optional[dict] = None, db: Session = Depe
     asset = db.get(models.Asset, finding.asset_id) if finding else None
     if finding is None or asset is None:
         raise HTTPException(status_code=404, detail="Intervention not found")
-    # Only the owner of the asset (or an admin) records a verification; shared ownerless records are admin-managed.
-    if current_user.role != "admin" and asset.owner_user_id != current_user.id:
-        raise HTTPException(status_code=403, detail="Only the asset owner can verify this intervention")
+    # Only someone who manages the asset (owner, the organization's admin, or a platform admin) records a verification.
+    if not org_access.can_manage_asset(db, current_user, asset):
+        raise HTTPException(status_code=403, detail="Only the asset owner or an organization admin can verify this intervention")
     forbidden = sorted(k for k in (body or {}) if k in ("learner_result", "after_scan_raw", "technical_result"))
     if forbidden:
         raise HTTPException(status_code=422, detail=f"{', '.join(forbidden)} is computed by the server and cannot be supplied")
     from closure import service as closure_service
     from competency import capability
-    if asset.owner_user_id and intervention.competency_id is not None:
-        competency = db.get(models.Competency, intervention.competency_id)
-        if competency:
-            capability.refresh(db, asset.owner_user_id, {competency.code})  # current estimate before judging it
+    learner_id = org_access.learner_for(db, intervention)
+    competency = db.get(models.Competency, intervention.competency_id) if intervention.competency_id is not None else None
+    if learner_id and competency:
+        capability.refresh(db, learner_id, {competency.code})  # current estimate before judging it
     result = closure_service.verify(db, intervention)
-    if asset.owner_user_id and intervention.competency_id is not None:
-        competency = db.get(models.Competency, intervention.competency_id)
-        if competency:
-            capability.refresh(db, asset.owner_user_id, {competency.code})  # the stored verification is operational evidence
+    org_access.audit(db, current_user, "intervention.verify", asset.organization_id, "intervention", intervention.id,
+                     {"status": result["status"], "verification_id": result["verification_id"]})
+    db.commit()
+    if learner_id and competency:
+        capability.refresh(db, learner_id, {competency.code})  # the stored verification is operational evidence
     return result
 
 @app.get("/api/closures/{finding_id}")

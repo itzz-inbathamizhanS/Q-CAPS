@@ -74,9 +74,53 @@ class CryptoDelta(Base):
 
 # --- CANDIDATE A: CLOSURE LOOP MODELS ---
 
+class Organization(Base):
+    """A tenant. kind "lab" is the clearly labelled study environment whose assets are testbed endpoints."""
+    __tablename__ = "organizations"
+    __table_args__ = (CheckConstraint("kind IN ('organization', 'lab')", name="ck_organizations_kind"),)
+    id = Column(Integer, primary_key=True)
+    slug = Column(String(80), nullable=False, unique=True)
+    name = Column(String(200), nullable=False)
+    kind = Column(String(20), nullable=False, default="organization")
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+ORG_ROLES = ("org_admin", "member", "instructor", "researcher")
+
+
+class OrganizationMembership(Base):
+    """A user's role inside one organization (organizations/access.py decides what each role may do)."""
+    __tablename__ = "organization_memberships"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "user_id", name="uq_org_membership"),
+        CheckConstraint("org_role IN ('org_admin', 'member', 'instructor', 'researcher')", name="ck_org_role"),
+    )
+    id = Column(Integer, primary_key=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    org_role = Column(String(20), nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class AuditEvent(Base):
+    """Append-only record of security-relevant actions (membership, roles, interventions, verifications, exports)."""
+    __tablename__ = "audit_events"
+    id = Column(Integer, primary_key=True)
+    at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    actor_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    organization_id = Column(Integer, nullable=True, index=True)
+    action = Column(String(60), nullable=False)
+    target_type = Column(String(40), nullable=True)
+    target_id = Column(String(80), nullable=True)
+    details = Column(JSON, nullable=True)
+
+
 class Asset(Base):
     __tablename__ = "assets"
     id = Column(Integer, primary_key=True, index=True)
+    # The owning organization (organizations.id), or NULL for a personal or legacy shared asset.
     organization_id = Column(Integer, index=True)
     canonical_target = Column(String, nullable=False, index=True)
     asset_type = Column(String, nullable=False)
@@ -171,6 +215,8 @@ class Intervention(Base):
     module_id = Column(String, nullable=True)
     lab_template_id = Column(String, nullable=True)
     minimum_score = Column(Float, default=0.8)
+    # The learner responsible for an intervention on an organization asset (personal assets: the owner).
+    assigned_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class Verification(Base):

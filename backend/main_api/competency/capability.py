@@ -17,6 +17,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Dict, Iterable, List, Optional
 
+from sqlalchemy import and_, or_
 from sqlalchemy.orm import Session
 
 import models
@@ -119,13 +120,15 @@ def gather_evidence(db: Session, user_id: int, codes: Optional[set] = None) -> D
             if codes is None or c["id"] in codes:
                 out[c["id"]].practicals[f"mission:{mission_id}"] = (c["depth"], run.band in PASSING_MISSION_BANDS, _aware(run.created_at))
 
-    # Operational: verifications of interventions for a competency, on assets the learner owns.
+    # Operational: verifications of interventions for a competency that judge this learner: interventions assigned
+    # to the learner, or unassigned ones on the learner's own assets.
     vq = db.query(models.Verification, models.Competency.code) \
         .join(models.Intervention, models.Intervention.id == models.Verification.intervention_id) \
         .join(models.Competency, models.Competency.id == models.Intervention.competency_id) \
         .join(models.Finding, models.Finding.id == models.Intervention.finding_id) \
         .join(models.Asset, models.Asset.id == models.Finding.asset_id) \
-        .filter(models.Asset.owner_user_id == user_id)
+        .filter(or_(models.Intervention.assigned_user_id == user_id,
+                    and_(models.Intervention.assigned_user_id.is_(None), models.Asset.owner_user_id == user_id)))
     for verification, code in vq.all():
         if codes is None or code in codes:
             passed = bool((verification.technical_result or {}).get("remediated")) and \

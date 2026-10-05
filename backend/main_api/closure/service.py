@@ -16,6 +16,7 @@ from sqlalchemy.orm import Session
 
 import models
 from closure.state_machine import ClosureStatus
+from organizations import access
 from evidence.hashing import hash_payload
 
 VERIFIER_VERSION = "closure-v2"
@@ -99,7 +100,7 @@ def verify_chain(events: list) -> bool:
 def verify(db: Session, intervention: models.Intervention) -> dict:
     finding = db.get(models.Finding, intervention.finding_id)
     asset = db.get(models.Asset, finding.asset_id) if finding else None
-    learner_id = asset.owner_user_id if asset else None
+    learner_id = access.learner_for(db, intervention)  # the assigned learner, else the asset owner
     technical = _technical(db, finding)
     learner = _learner(db, learner_id, intervention, finding)
     technical_ok = technical["remediated"] and technical["same_asset"]

@@ -58,6 +58,10 @@ export const AssetsPanel: React.FC<Props> = ({ refreshKey }) => {
               <div className="sc-history-item">
                 <div style={{ display: 'flex', flexDirection: 'column', gap: 4, minWidth: 0 }}>
                   <span className="sc-history-target">{a.target}</span>
+                  {a.organization_kind === 'lab' && <Badge size="sm" variant="cyan">Lab environment</Badge>}
+                  {a.organization_kind === 'organization' && a.organization_name && (
+                    <Badge size="sm" variant="neutral">{a.organization_name}</Badge>
+                  )}
                   <span className="sc-muted">Last full scan {formatDateTime(a.last_scanned)}</span>
                 </div>
                 <div className="sc-row">

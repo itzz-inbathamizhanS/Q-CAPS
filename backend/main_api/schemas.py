@@ -88,6 +88,8 @@ class ScannerLogCreate(BaseModel):
     details: str = Field(max_length=256 * 1024)
     # Signed by the scanner over `details` (see scan_receipts.py).
     receipt: Optional[str] = Field(default=None, max_length=2048)
+    # Record a verified full scan as an asset of this organization (the user must be its org_admin).
+    organization_id: Optional[int] = None
 
 class ScannerLogSummary(BaseModel):
     id: int
@@ -234,6 +236,9 @@ class ScannerAssetOut(BaseModel):
     open_findings: int
     resolved_findings: int
     last_scanned: Optional[datetime] = None
+    organization_id: Optional[int] = None  # None: a personal asset
+    organization_name: Optional[str] = None
+    organization_kind: Optional[str] = None  # "lab" assets are the study testbed, labelled "Lab environment"
 
 
 class DrivingFinding(BaseModel):
@@ -333,6 +338,7 @@ class InterventionBase(BaseModel):
     module_id: Optional[str] = None
     lab_template_id: Optional[str] = None
     minimum_score: float = 0.8
+    assigned_user_id: Optional[int] = None  # learner responsible for an intervention on an organization asset
 
 class InterventionCreate(InterventionBase):
     pass

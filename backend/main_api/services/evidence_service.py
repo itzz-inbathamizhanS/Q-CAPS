@@ -104,8 +104,9 @@ def _check_for(finding_type: str) -> Optional[str]:
     return None
 
 
-def ingest_scan(db: Session, user: models.User, result: dict) -> Optional[dict]:
-    """Record a verified full scan against an asset owned by `user` and update its findings.
+def ingest_scan(db: Session, user: models.User, result: dict, organization_id: Optional[int] = None) -> Optional[dict]:
+    """Record a verified full scan against an asset of `user` (or of `organization_id`, whose org_admin the caller
+    has checked `user` is) and update its findings.
 
     Only scans of a domain whose ownership was proven are tracked over time. The caller commits.
     Returns a summary, or None when the scan is not eligible.
@@ -117,12 +118,21 @@ def ingest_scan(db: Session, user: models.User, result: dict) -> Optional[dict]:
     if not isinstance(target, str) or not target:
         return None
 
-    asset = db.query(models.Asset).filter(
-        models.Asset.owner_user_id == user.id, models.Asset.canonical_target == target).first()
-    if asset is None:
-        asset = models.Asset(owner_user_id=user.id, canonical_target=target, asset_type="domain")
-        db.add(asset)
-        db.flush()
+    if organization_id is not None:
+        asset = db.query(models.Asset).filter(
+            models.Asset.organization_id == organization_id, models.Asset.canonical_target == target).first()
+        if asset is None:
+            asset = models.Asset(organization_id=organization_id, canonical_target=target, asset_type="domain")
+            db.add(asset)
+            db.flush()
+    else:
+        asset = db.query(models.Asset).filter(
+            models.Asset.owner_user_id == user.id, models.Asset.organization_id.is_(None),
+            models.Asset.canonical_target == target).first()
+        if asset is None:
+            asset = models.Asset(owner_user_id=user.id, canonical_target=target, asset_type="domain")
+            db.add(asset)
+            db.flush()
 
     evidence = create_evidence(
         db, result, asset_id=asset.id, scanner_version=result.get("scanner_version") or "unknown",

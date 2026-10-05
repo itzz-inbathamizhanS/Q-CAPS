@@ -1,7 +1,7 @@
-from sqlalchemy import or_
 from sqlalchemy.orm import Session
 from models import Asset, Finding, FindingRequirement, Competency, LearnerCapability, Intervention, User
 from .schema import Graph, Node, Edge
+from organizations import access
 
 def build_graph_projection(db: Session, user_id: int) -> Graph:
     nodes = []
@@ -37,7 +37,9 @@ def build_graph_projection(db: Session, user_id: int) -> Graph:
     # 3. Asset and Finding Nodes
     # In a real scenario we'd filter by organization/RBAC.
     # Assets from the verified scans of another user are private; ownerless assets are shared records.
-    assets = db.query(Asset).filter(or_(Asset.owner_user_id.is_(None), Asset.owner_user_id == user_id)).all()
+    # The user's working scope: own assets, assets of the user's organizations, and legacy shared records.
+    assets = db.query(Asset).filter(access.visible_asset_filter(db, user)).all() if user else \
+        db.query(Asset).filter(Asset.owner_user_id.is_(None), Asset.organization_id.is_(None)).all()
     for asset in assets:
         asset_id = f"asset_{asset.id}"
         nodes.append(Node(

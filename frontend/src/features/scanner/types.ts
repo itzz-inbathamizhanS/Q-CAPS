@@ -175,6 +175,10 @@ export interface ScanAsset {
   open_findings: number;
   resolved_findings: number;
   last_scanned: string | null;
+  /** Set for an organization's asset; a "lab" organization is the study testbed, never real infrastructure. */
+  organization_id?: number | null;
+  organization_name?: string | null;
+  organization_kind?: 'organization' | 'lab' | null;
 }
 
 /** Row of GET /scanner/assets/{id}/findings. RESOLVED means a later scan completed the supporting check and no longer saw it. */
