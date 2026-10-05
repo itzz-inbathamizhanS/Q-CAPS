@@ -37,20 +37,20 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, menuOpen = f
     ? userName.slice(0, 2).toUpperCase()
     : '??';
 
-  const [isDark, setIsDark] = useState(() => {
-    return localStorage.getItem('theme') === 'dark' || 
-           (!localStorage.getItem('theme') && window.matchMedia('(prefers-color-scheme: dark)').matches);
-  });
+  // index.html applies the saved (or system) theme before the first paint; start from what it chose.
+  const [isDark, setIsDark] = useState(() => document.documentElement.getAttribute('data-theme') === 'dark');
 
-  useEffect(() => {
-    if (isDark) {
-      document.documentElement.setAttribute('data-theme', 'dark');
-      localStorage.setItem('theme', 'dark');
-    } else {
-      document.documentElement.removeAttribute('data-theme');
-      localStorage.setItem('theme', 'light');
+  const toggleTheme = () => {
+    const next = !isDark;
+    setIsDark(next);
+    if (next) document.documentElement.setAttribute('data-theme', 'dark');
+    else document.documentElement.removeAttribute('data-theme');
+    try {
+      localStorage.setItem('theme', next ? 'dark' : 'light'); // an explicit choice overrides the system preference
+    } catch {
+      /* storage unavailable: the choice lasts for this page view */
     }
-  }, [isDark]);
+  };
 
   return (
     <header className="app-header">
@@ -78,7 +78,7 @@ export const Header: React.FC<HeaderProps> = ({ onToggleMobileMenu, menuOpen = f
         <button
           className="header-icon-btn"
           aria-label="Toggle Theme"
-          onClick={() => setIsDark(!isDark)}
+          onClick={toggleTheme}
         >
           {isDark ? <Sun size={19} /> : <Moon size={19} />}
         </button>
