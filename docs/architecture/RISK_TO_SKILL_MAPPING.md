@@ -89,8 +89,8 @@ tracked, with severity 0.3.
 - **After review:** when an expert round is accepted (T5.2), publish a new version (for example `reviewed-v1`) with
   `status` set to `reviewed`.
 
-## Relation to `graph/competency_map.py`
+## Relation to the graph projection
 
-`graph/competency_map.py` maps finding prefixes to two quiz topics for the exposure-graph recommender. It predates
-this map and is a second, coarser mapping. T1.4 switches the graph projection to per-competency capability and
-`finding_requirements`, and then retires `competency_map.py`, so that the system has a single mapping.
+`graph/competency_map.py`, an older and coarser map from findings to two quiz topics, was removed in T1.7. The
+exposure-graph projection (`graph/projection.py`) now builds its `REQUIRES` edges from `finding_requirements`, so
+this map is the only mapping from findings to competencies.

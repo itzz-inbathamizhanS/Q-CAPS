@@ -159,14 +159,16 @@ def get_recommendation_from_scores(
             )
         )
 
-        # Composite sort key (lower = more urgent):
-        #   • unattempted topics sort as 50 (between Weak and Moderate),
-        #     nudging the user to start them without falsely calling them
-        #     "Critical".
-        #   • scanner boost is subtracted so scanner-flagged topics rise
-        #     in urgency.
-        base = quiz_score if attempted else 50.0
-        sort_key = base - scanner_boost
+        # Sort key (lower = more urgent), in explicit tiers so "not attempted" is never given a stand-in score:
+        #   tier 0  attempted and below Strong: ordered by score minus the scanner boost;
+        #   tier 1  not attempted: ordered by scanner boost (an untested topic the scanner flags comes first);
+        #   tier 2  attempted and Strong.
+        if attempted and priority_label != "Strong":
+            sort_key = (0, quiz_score - scanner_boost)
+        elif not attempted:
+            sort_key = (1, -scanner_boost)
+        else:
+            sort_key = (2, quiz_score - scanner_boost)
 
         candidates.append({
             "course": course,
@@ -207,6 +209,7 @@ def get_recommendation_from_scores(
             "quiz_score": None,
             "scanner_risk": None,
             "status": "no_major_skill_gap",
+            "reasons": [{"type": "all_strong", "detail": "Every assessed topic is Strong and no scan raises urgency."}],
         }
 
     # ------------------------------------------------------------------
@@ -274,6 +277,15 @@ def get_recommendation_from_scores(
 
     reason = " ".join(reason_parts)
 
+    # Structured factors behind the recommendation (rendered as "Why this?").
+    reasons = [{"type": "quiz_score", "topic": course["topic"], "score": quiz_score, "band": get_priority(quiz_score)}
+               if attempted else
+               {"type": "not_attempted", "topic": course["topic"],
+                "detail": "Not attempted: ranked after measured weaknesses, never given a stand-in score."}]
+    if scanner_boost > 0 and scanner_risk:
+        reasons.append({"type": "scanner", "topic": course["topic"], "risk": scanner_risk,
+                        "detail": "A recent scan found a quantum-vulnerable public-key algorithm related to this topic."})
+
     return {
         "course_id": course["course_id"],
         "title": course["title"],
@@ -283,6 +295,7 @@ def get_recommendation_from_scores(
         "quiz_score": quiz_score,
         "scanner_risk": scanner_risk,
         "status": "recommendation",
+        "reasons": reasons,
     }
 
 

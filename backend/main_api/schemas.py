@@ -122,7 +122,10 @@ class RecommendationOut(BaseModel):
     quiz_score: Optional[float] = None
     scanner_risk: Optional[str] = None
     status: str = "recommendation"
-    graph_paths: List[Dict[str, Any]] = []
+    engine: Optional[str] = None  # gap | score | none (docs/architecture/RECOMMENDATIONS.md)
+    reasons: List[Dict[str, Any]] = []  # structured factors behind the top recommendation ("Why this?")
+    recommendations: List[Dict[str, Any]] = []  # ranked gap-tier recommendations, each with its own reasons
+    graph_paths: List[Dict[str, Any]] = []  # deprecated: always empty since T1.7, kept for older clients
 
 # --- V2 SCANNER SCHEMAS ---
 

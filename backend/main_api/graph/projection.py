@@ -1,7 +1,6 @@
 from sqlalchemy import or_
 from sqlalchemy.orm import Session
-from models import Asset, Finding, Competency, LearnerCapability, Intervention, QuizScore, User
-from . import competency_map
+from models import Asset, Finding, FindingRequirement, Competency, LearnerCapability, Intervention, User
 from .schema import Graph, Node, Edge
 
 def build_graph_projection(db: Session, user_id: int) -> Graph:
@@ -30,24 +29,9 @@ def build_graph_projection(db: Session, user_id: int) -> Graph:
                         "knowledge_score": cap.knowledge_score,
                         "procedural_score": cap.procedural_score,
                         "operational_score": cap.operational_score,
-                        "confidence": cap.confidence
+                        "confidence": cap.confidence,
+                        "level": cap.level,
                     }
-                ))
-    
-        # 2b. Quiz-measured capability. The latest result per topic is the learner's current knowledge; a topic
-        # that was never attempted gets no edge, so the optimizer can tell "unassessed" from "scored zero".
-        latest = {}
-        for qs in db.query(QuizScore).filter(QuizScore.user_id == user.id).order_by(QuizScore.created_at, QuizScore.id):
-            latest[qs.topic] = qs
-        for topic, comp in competency_map.COMPETENCIES.items():
-            node_id = f"comp_{topic}"
-            nodes.append(Node(id=node_id, type="Competency", properties={"name": comp.name, "topic": topic}))
-            if topic in latest:
-                edges.append(Edge(
-                    source_id=f"user_{user.id}",
-                    target_id=node_id,
-                    relationship="HAS_CAPABILITY",
-                    properties={"knowledge_score": latest[topic].score / 100.0}
                 ))
 
     # 3. Asset and Finding Nodes
@@ -88,15 +72,21 @@ def build_graph_projection(db: Session, user_id: int) -> Graph:
                 properties={}
             ))
             
-            # Only finding types with a defined competency (competency_map) get a REQUIRES edge; the rest are
-            # covered by the score-based recommender rather than given an invented requirement.
-            requirement = competency_map.requirement_for(finding.finding_type)
-            if requirement and user:
+            # REQUIRES edges come from the risk-to-skill map (finding_requirements); a finding with no rule gets no
+            # edge rather than an invented requirement.
+            for req in db.query(FindingRequirement).filter(FindingRequirement.finding_id == finding.id):
+                comp = db.query(Competency).filter(Competency.code == req.competency_code).first()
+                if comp is None:
+                    continue
+                comp_node_id = f"comp_{comp.id}"
+                if not any(n.id == comp_node_id for n in nodes):
+                    nodes.append(Node(id=comp_node_id, type="Competency", properties={"name": comp.name, "code": comp.code}))
                 edges.append(Edge(
                     source_id=finding_id,
-                    target_id=f"comp_{requirement.competency}",
+                    target_id=comp_node_id,
                     relationship="REQUIRES",
-                    properties={"minimum_score": requirement.minimum_score, "rationale": requirement.rationale}
+                    properties={"required_level": req.required_level, "requirement_id": req.requirement_id,
+                                "map_version": req.map_version}
                 ))
 
     return Graph(nodes=nodes, edges=edges)

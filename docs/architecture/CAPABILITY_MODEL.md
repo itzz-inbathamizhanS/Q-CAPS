@@ -75,4 +75,4 @@ the error is logged with its traceback and the next recompute repairs the estima
 - The exposure-graph projection (`graph/projection.py`) turns each row into a `HAS_CAPABILITY` edge for the
   competency node `comp_{competency.id}`.
 - The closure page shows a capability row.
-- T1.6 adds the skill matrix and T1.7 the gap-based recommendations on top of these rows.
+- The skill matrix (`SKILL_MATRIX.md`) and the recommendation engine (`RECOMMENDATIONS.md`) build on these rows.

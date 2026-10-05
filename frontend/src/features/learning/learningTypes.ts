@@ -1,5 +1,6 @@
 import { PriorityLevel } from '@/features/skills/skillsTypes';
 import { CurriculumModule } from '@/features/curriculum/curriculumTypes';
+import type { RecommendationReason } from '@/services/backendService';
 
 export type ModuleLevel = 'Beginner' | 'Intermediate' | 'Advanced';
 
@@ -9,4 +10,5 @@ export interface LearningModule extends CurriculumModule {
   recommendationReason?: string;
   priorityLevel?: PriorityLevel;
   isRecommended?: boolean;
+  reasons?: RecommendationReason[]; // structured factors from the server ("Why this?")
 }

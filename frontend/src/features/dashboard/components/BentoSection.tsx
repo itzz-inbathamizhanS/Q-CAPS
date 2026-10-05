@@ -10,6 +10,7 @@ import { UserRecommendation } from '@/services/backendService';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 import { curriculumModules } from '@/data/curriculumData';
 import { resolveRecommendedModule } from '@/features/curriculum/recommendedModule';
+import { RecommendationReasons } from '@/features/learning/RecommendationReasons';
 
 interface BentoSectionProps {
   liveRecommendation?: UserRecommendation | null;
@@ -135,20 +136,9 @@ export const BentoSection: React.FC<BentoSectionProps> = ({ liveRecommendation }
               gap: '24px',
             }}
           >
-            {liveRecommendation?.graph_paths && liveRecommendation.graph_paths.length > 0 && (
-              <div style={{ width: '100%', marginBottom: '12px' }}>
-                <span className="text-xs text-indigo-400 font-mono font-semibold tracking-wider uppercase mb-2 block">
-                  ⟡ Graph Engine Optimization
-                </span>
-                <div className="flex gap-2 overflow-x-auto">
-                  {liveRecommendation.graph_paths.map((path, idx) => (
-                    <div key={idx} className="bg-indigo-950/30 border border-indigo-500/20 rounded p-2 text-xs text-gray-300 min-w-[200px]">
-                      <div className="text-indigo-300 mb-1">Finding: {path.finding_title ?? path.finding_type ?? path.finding_id?.substring(0,8)}</div>
-                      <div>Risk Score: <span className="font-bold text-white">{path.risk_score.toFixed(1)}</span></div>
-                      <div>Action: {path.proposed_intervention_type}</div>
-                    </div>
-                  ))}
-                </div>
+            {liveRecommendation?.reasons && liveRecommendation.reasons.length > 0 && (
+              <div style={{ width: '100%' }}>
+                <RecommendationReasons reasons={liveRecommendation.reasons} />
               </div>
             )}
             

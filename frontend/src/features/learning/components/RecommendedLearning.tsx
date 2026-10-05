@@ -3,19 +3,32 @@ import { useNavigate } from 'react-router-dom';
 import { Sparkles, CheckCircle2, Clock, BookOpen, ArrowRight } from 'lucide-react';
 import { ProgressBar } from '@/components/ui/ProgressBar';
 import { LearningModule } from '../learningTypes';
+import { RecommendationReasons } from '../RecommendationReasons';
+import type { RecommendationReason } from '@/services/backendService';
 
 interface RecommendedLearningProps {
   recommendedModules: LearningModule[];
   topPriorityReason?: string;
+  topReasons?: RecommendationReason[];
 }
 
 export const RecommendedLearning: React.FC<RecommendedLearningProps> = ({
   recommendedModules,
   topPriorityReason,
+  topReasons,
 }) => {
   const navigate = useNavigate();
 
-  if (recommendedModules.length === 0) return null;
+  if (recommendedModules.length === 0) {
+    // Evidence exists but no module can be recommended (e.g. no gap, or a gap with no tagged content).
+    return topPriorityReason ? (
+      <section className="recommendation-section">
+        <h2 className="section-title">Priority Learning Queue</h2>
+        <p className="section-subtitle">{topPriorityReason}</p>
+        <RecommendationReasons reasons={topReasons} />
+      </section>
+    ) : null;
+  }
 
   return (
     <section className="recommendation-section">
@@ -58,6 +71,7 @@ export const RecommendedLearning: React.FC<RecommendedLearningProps> = ({
               {module.recommendationReason && (
                 <p className="rec-module-reason">{module.recommendationReason}</p>
               )}
+              <RecommendationReasons reasons={module.reasons} />
 
               {/* Competencies */}
               {module.learningObjectives && module.learningObjectives.length > 0 && (

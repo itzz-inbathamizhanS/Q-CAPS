@@ -69,6 +69,26 @@ export interface GraphPath {
   proposed_intervention_type: 'LAB_REMEDIATION' | 'THEORY_MODULE';
 }
 
+/** One structured factor behind a recommendation (see docs/architecture/RECOMMENDATIONS.md for the types). */
+export interface RecommendationReason {
+  type: string;
+  [key: string]: unknown;
+}
+
+/** One ranked recommendation of the gap engine. */
+export interface RecommendationItem {
+  module_id: string | null;
+  title: string | null;
+  code: string | null;
+  action: 'assess' | 'learn' | 'practice' | 'none';
+  practical: { kind: string; id: string; title: string | null; depth: string; module_id: string | null } | null;
+  competencies: string[];
+  priority: string;
+  scanner_risk: string | null;
+  topic: string | null;
+  reasons: RecommendationReason[];
+}
+
 export interface UserRecommendation {
   course_id: string | null;
   title: string | null;
@@ -78,6 +98,10 @@ export interface UserRecommendation {
   quiz_score: number | null;
   scanner_risk: string | null;
   status: string;
+  engine?: 'gap' | 'score' | 'none' | null;
+  reasons?: RecommendationReason[];
+  recommendations?: RecommendationItem[];
+  /** @deprecated always empty since T1.7 (one recommendation engine) */
   graph_paths?: GraphPath[];
 }
 
@@ -293,6 +317,12 @@ export async function fetchUserProfile(userId?: number): Promise<UserProfile | n
     console.debug('Backend offline or unavailable, falling back to local data.', error);
     return null;
   }
+}
+
+/** The signed-in learner's recommendation. Throws on failure so callers can tell an error from "no recommendation". */
+export async function getMyRecommendation(): Promise<UserRecommendation> {
+  const { userId } = useAuthStore.getState();
+  return (await api.get(`/users/${userId}/recommendation`)).data as UserRecommendation;
 }
 
 /**

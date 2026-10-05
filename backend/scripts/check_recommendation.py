@@ -165,9 +165,12 @@ def run_tests():
           f"got {rec['status']}")
 
     # ------------------------------------------------------------------
-    # Test 7: Scanner boosts unattempted topic above attempted weak topic
+    # Test 7: Scanner-flagged topics; a measured weakness ranks before an unattempted topic
     # ------------------------------------------------------------------
-    print("\nTest 7: Scanner boosts unattempted PQC above attempted weak QF")
+    # Changed in T1.7. The old expectation (unattempted pqc first, Critical) only held because unattempted
+    # topics were scored as a stand-in 50%. Unattempted is now its own tier after measured weaknesses: we know
+    # practical_security is Moderate (70%) and the scanner flags it; we know nothing about pqc yet.
+    print("\nTest 7: Scanner-flagged measured weakness ranks before an unattempted topic")
     scores = {
         "quantum_fundamentals": 55,
         "practical_security": 70,
@@ -177,12 +180,25 @@ def run_tests():
     ]
     rec = get_recommendation_from_scores(scores, scanner_findings=scanner)
     print_rec(rec)
-    check("recommended topic is pqc (scanner-boosted unattempted)",
-          rec["topic"] == "pqc",
+    check("recommended topic is practical_security (measured, scanner-flagged)",
+          rec["topic"] == "practical_security",
           f"got {rec['topic']}")
-    check("priority is Critical (scanner-driven)",
-          rec["priority"] == "Critical",
+    check("priority is Weak (70% minus the Critical scanner boost of 20)",
+          rec["priority"] == "Weak",
           f"got {rec['priority']}")
+    check("reasons record the quiz score and the scanner context",
+          [r["type"] for r in rec["reasons"]] == ["quiz_score", "scanner"],
+          f"got {rec.get('reasons')}")
+
+    # ------------------------------------------------------------------
+    # Test 8: Unattempted is a tier with its own reason, never a 50% stand-in
+    # ------------------------------------------------------------------
+    print("\nTest 8: Unattempted topics carry a not_attempted reason and no score")
+    rec = get_recommendation_from_scores({"quantum_fundamentals": 95, "practical_security": 90})
+    print_rec(rec)
+    check("the unattempted topic is recommended", rec["topic"] == "pqc", f"got {rec['topic']}")
+    check("quiz_score is None, not 50", rec["quiz_score"] is None, f"got {rec['quiz_score']}")
+    check("reason type is not_attempted", rec["reasons"][0]["type"] == "not_attempted", f"got {rec['reasons']}")
 
     # ------------------------------------------------------------------
     # Summary
