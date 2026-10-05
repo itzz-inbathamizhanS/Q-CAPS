@@ -1307,3 +1307,68 @@ button, input, select, textarea {
 @media (prefers-reduced-motion: reduce) {
   .state-message-spin { animation: none; }
 }
+
+/* ==========================================================
+   SEMANTIC TOKENS (TF.2). Use these instead of hex literals in components; both themes define them.
+   Status colours are text/icon colours that meet contrast on --color-surface; *-bg are tinted backgrounds
+   for chips and banners (pair them with the matching text colour, never with white text).
+   ========================================================== */
+:root {
+  --color-success: #047857;
+  --color-success-bg: rgba(16, 185, 129, 0.12);
+  --color-success-border: rgba(16, 185, 129, 0.45);
+  --color-warning: #b45309;
+  --color-warning-bg: rgba(245, 158, 11, 0.14);
+  --color-danger: #b91c1c;
+  --color-danger-bg: rgba(239, 68, 68, 0.10);
+  --color-danger-border: rgba(239, 68, 68, 0.40);
+  --color-info: #0369a1;
+  --color-info-bg: rgba(14, 165, 233, 0.12);
+  --color-primary-soft: rgba(84, 39, 230, 0.10);
+  --color-primary-border: rgba(84, 39, 230, 0.40);
+  --color-overlay: rgba(15, 23, 42, 0.60);
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-raised: 0 12px 32px rgba(15, 23, 42, 0.14);
+
+  /* Finding severity */
+  --sev-high: var(--color-danger);
+  --sev-medium: var(--color-warning);
+  --sev-low: var(--color-info);
+  --sev-info: var(--color-text-secondary);
+
+  /* Capability levels. Unknown is "no evidence", not a low level: it is grey AND drawn differently
+     (dashed outline, italic) via .lvl-unknown, so it never reads as a lighter Beginner. */
+  --lvl-unknown: var(--color-text-secondary);
+  --lvl-beginner: #b45309;
+  --lvl-developing: #0369a1;
+  --lvl-proficient: #047857;
+  --lvl-advanced: #5427e6;
+}
+
+[data-theme="dark"] {
+  --color-success: #34d399;
+  --color-success-bg: rgba(16, 185, 129, 0.16);
+  --color-success-border: rgba(52, 211, 153, 0.45);
+  --color-warning: #fbbf24;
+  --color-warning-bg: rgba(245, 158, 11, 0.16);
+  --color-danger: #f87171;
+  --color-danger-bg: rgba(239, 68, 68, 0.16);
+  --color-danger-border: rgba(248, 113, 113, 0.45);
+  --color-info: #38bdf8;
+  --color-info-bg: rgba(56, 189, 248, 0.14);
+  --color-primary-soft: rgba(124, 92, 255, 0.18);
+  --color-primary-border: rgba(124, 92, 255, 0.45);
+  --color-overlay: rgba(0, 0, 0, 0.70);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-raised: 0 12px 32px rgba(0, 0, 0, 0.55);
+  --lvl-beginner: #fbbf24;
+  --lvl-developing: #38bdf8;
+  --lvl-proficient: #34d399;
+  --lvl-advanced: #a78bfa;
+}
+
+.lvl-unknown {
+  color: var(--lvl-unknown);
+  font-style: italic;
+  border-bottom: 1px dashed var(--color-outline);
+}
