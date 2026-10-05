@@ -4,16 +4,20 @@ import { fetchLeaderboard, LeaderboardEntry } from '@/services/backendService';
 import { useAuthStore } from '@/features/auth/authStore';
 import { Trophy, Medal, Star, TrendingUp } from 'lucide-react';
 import { WS_BASE_URL } from '@/services/apiConfig';
+import { StateMessage } from '@/components/ui/StateMessage';
 
 export const Organization: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const { userId, token } = useAuthStore();
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
+    setLoadError(null);
     fetchLeaderboard()
       .then((data) => {
         if (isMounted) {
@@ -28,9 +32,10 @@ export const Organization: React.FC = () => {
           setIsLoading(false);
         }
       })
-      .catch((error) => {
-        console.error('Error fetching leaderboard:', error);
-        if (isMounted) setIsLoading(false);
+      .catch((error: unknown) => {
+        if (!isMounted) return;
+        setLoadError(error instanceof Error ? error.message : 'Request failed');
+        setIsLoading(false);
       });
 
     // Connect to WebSocket for real-time updates
@@ -66,7 +71,7 @@ export const Organization: React.FC = () => {
         wsRef.current.close();
       }
     };
-  }, [token]);
+  }, [token, attempt]);
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
@@ -103,8 +108,12 @@ export const Organization: React.FC = () => {
         </div>
 
         {isLoading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
-            Syncing matrix data...
+          <div style={{ padding: '24px' }}>
+            <StateMessage kind="loading" message="Loading the leaderboard…" />
+          </div>
+        ) : loadError ? (
+          <div style={{ padding: '24px' }}>
+            <StateMessage kind="error" message="The leaderboard could not be loaded." detail={loadError} onRetry={() => setAttempt((n) => n + 1)} />
           </div>
         ) : leaderboard.length === 0 ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>

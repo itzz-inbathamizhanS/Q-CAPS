@@ -1297,3 +1297,14 @@ button, input, select, textarea {
 @media (max-width: 560px) {
   .header-search-wrapper { display: none; }
 }
+
+/* StateMessage (components/ui/StateMessage.tsx) */
+@keyframes stateMessageSpin {
+  to { transform: rotate(360deg); }
+}
+.state-message-spin {
+  animation: stateMessageSpin 1s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .state-message-spin { animation: none; }
+}

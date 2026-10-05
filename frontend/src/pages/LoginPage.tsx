@@ -41,7 +41,11 @@ export const LoginPage: React.FC = () => {
         // expired is not a logout, so nothing cleared it). Start from empty and load this account's own.
         const curriculum = useCurriculumStore.getState();
         curriculum.clearLocalProgress();
-        const profile = await fetchUserProfile(authData.user_id);
+        // Signing in succeeded; if the profile cannot be loaded now, the shell's progress sync reports it.
+        const profile = await fetchUserProfile(authData.user_id).catch((e: unknown) => {
+          console.warn('Profile could not be loaded after sign-in:', e);
+          return null;
+        });
         if (profile) {
             curriculum.rehydrate(profile.progress_data);
         }

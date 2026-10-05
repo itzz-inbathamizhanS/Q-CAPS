@@ -1,4 +1,5 @@
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useState } from 'react';
+import { useAsync, type AsyncState } from '@/hooks/useAsync';
 import { Link, useParams } from 'react-router-dom';
 import { EvidenceCard } from '@/features/evidence/EvidenceCard';
 import { ClosureTimeline } from '@/features/closure/ClosureTimeline';
@@ -14,30 +15,9 @@ import { Card } from '@/components/ui/Card';
 import { Badge } from '@/components/ui/Badge';
 import { Button } from '@/components/ui/Button';
 
-type Load<T> = { status: 'loading' } | { status: 'error'; message: string } | { status: 'ready'; value: T };
-
 const errorText = (e: unknown) => (e instanceof Error ? e.message : 'Request failed');
 
-/** Run a request into a Load state; errors stay distinct from empty results. */
-function useLoad<T>(fn: (() => Promise<T>) | null, deps: unknown[]): [Load<T>, () => void] {
-  const [state, setState] = useState<Load<T>>({ status: 'loading' });
-  const [nonce, setNonce] = useState(0);
-  useEffect(() => {
-    if (!fn) return;
-    let live = true;
-    setState({ status: 'loading' });
-    fn()
-      .then((value) => live && setState({ status: 'ready', value }))
-      .catch((e: unknown) => live && setState({ status: 'error', message: errorText(e) }));
-    return () => {
-      live = false;
-    };
-    // eslint-disable-next-line react-hooks/exhaustive-deps -- deps are passed explicitly by the caller
-  }, [...deps, nonce]);
-  return [state, () => setNonce((n) => n + 1)];
-}
-
-const Section: React.FC<{ title: string; state: Load<unknown>; children: React.ReactNode }> = ({ title, state, children }) => (
+const Section: React.FC<{ title: string; state: AsyncState<unknown>; children: React.ReactNode }> = ({ title, state, children }) => (
   <Card variant="glass" padding="normal">
     <h2 style={{ fontSize: 18, fontWeight: 700, margin: '0 0 12px' }}>{title}</h2>
     {state.status === 'loading' && <p role="status" style={{ margin: 0 }}>Loading {title.toLowerCase()}…</p>}
@@ -51,16 +31,16 @@ const severityLabel = (s: number) => (s >= 0.8 ? 'High' : s >= 0.5 ? 'Medium' : 
 export const ClosurePage: React.FC = () => {
   const { findingId = '' } = useParams<{ findingId: string }>();
 
-  const [finding] = useLoad<Finding>(() => closureService.getFinding(findingId), [findingId]);
-  const [requirements] = useLoad<FindingRequirement[]>(() => closureService.getRequirements(findingId), [findingId]);
-  const [interventions] = useLoad<Intervention[]>(() => interventionService.getForFinding(findingId), [findingId]);
-  const [events, reloadEvents] = useLoad<ClosureEvent[]>(() => closureService.getClosuresForFinding(findingId), [findingId]);
-  const [gaps] = useLoad<SkillMatrixRow[]>(
+  const [finding] = useAsync<Finding>(() => closureService.getFinding(findingId), [findingId]);
+  const [requirements] = useAsync<FindingRequirement[]>(() => closureService.getRequirements(findingId), [findingId]);
+  const [interventions] = useAsync<Intervention[]>(() => interventionService.getForFinding(findingId), [findingId]);
+  const [events, reloadEvents] = useAsync<ClosureEvent[]>(() => closureService.getClosuresForFinding(findingId), [findingId]);
+  const [gaps] = useAsync<SkillMatrixRow[]>(
     () => fetchSkillMatrix().then((m) => m.rows.filter((r) => r.driving_findings.some((f) => f.finding_id === findingId))),
     [findingId],
   );
   const evidenceId = finding.status === 'ready' ? finding.value.evidence_id : undefined;
-  const [evidence] = useLoad<Evidence | null>(
+  const [evidence] = useAsync<Evidence | null>(
     finding.status === 'ready' ? () => (evidenceId ? evidenceService.getEvidence(evidenceId) : Promise.resolve(null)) : null,
     [finding.status, evidenceId],
   );

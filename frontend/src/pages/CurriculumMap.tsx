@@ -35,9 +35,11 @@ export const CurriculumMap: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   useEffect(() => {
     let cancelled = false;
-    fetchUserProfile().then((p) => {
-      if (!cancelled) setProfile(p);
-    });
+    fetchUserProfile()
+      .then((p) => {
+        if (!cancelled) setProfile(p);
+      })
+      .catch((e: unknown) => console.warn('Profile unavailable; showing locally cached progress:', e));
     return () => {
       cancelled = true;
     };

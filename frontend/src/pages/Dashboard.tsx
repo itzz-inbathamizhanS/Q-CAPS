@@ -1,45 +1,18 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { KpiSection } from '@/features/dashboard/components/KpiSection';
 import { BentoSection } from '@/features/dashboard/components/BentoSection';
 import { LowerSection } from '@/features/dashboard/components/LowerSection';
-import {
-  fetchUserProfile,
-  fetchUserRecommendation,
-  UserProfile,
-  UserRecommendation,
-} from '@/services/backendService';
+import { fetchUserProfile, getMyRecommendation } from '@/services/backendService';
 import { useAuthStore } from '@/features/auth/authStore';
+import { useAsync } from '@/hooks/useAsync';
+import { StateMessage } from '@/components/ui/StateMessage';
 
 export const Dashboard: React.FC = () => {
-  const [profile, setProfile] = useState<UserProfile | null>(null);
-  const [recommendation, setRecommendation] =
-    useState<UserRecommendation | null>(null);
-  
   const { userId } = useAuthStore();
-
-  useEffect(() => {
-    let isMounted = true;
-    
-    // Clear previous profile data if userId changes
-    setProfile(null);
-    setRecommendation(null);
-
-    fetchUserProfile().then((data) => {
-      if (isMounted && data) {
-        setProfile(data);
-      }
-    });
-
-    fetchUserRecommendation().then((data) => {
-      if (isMounted && data) {
-        setRecommendation(data);
-      }
-    });
-
-    return () => {
-      isMounted = false;
-    };
-  }, [userId]);
+  const [profileState, reloadProfile] = useAsync(() => fetchUserProfile(), [userId]);
+  const [recState, reloadRec] = useAsync(() => getMyRecommendation(), [userId]);
+  const profile = profileState.status === 'ready' ? profileState.value : null;
+  const recommendation = recState.status === 'ready' ? recState.value : null;
 
   const displayName = profile?.name || 'Operator';
 
@@ -55,11 +28,20 @@ export const Dashboard: React.FC = () => {
         </p>
       </section>
 
-      {/* KPI Row (4 Cards) */}
-      <KpiSection liveProfile={profile} />
+      {/* KPI Row (4 Cards). XP, rank and readiness come from the server; on failure say so instead of
+          showing this browser's cached values as if they were current. */}
+      {profileState.status === 'error' ? (
+        <StateMessage kind="error" message="Your progress figures could not be loaded from the server." detail={profileState.message} onRetry={reloadProfile} />
+      ) : (
+        <KpiSection liveProfile={profile} />
+      )}
 
       {/* Bento Section (8 cols + 4 cols) */}
-      <BentoSection liveRecommendation={recommendation} />
+      {recState.status === 'error' && (
+        <StateMessage kind="error" message="Your recommendation could not be loaded." detail={recState.message} onRetry={reloadRec} />
+      )}
+      {recState.status === 'loading' && <StateMessage kind="loading" message="Loading your recommendation…" />}
+      {recState.status === 'ready' && <BentoSection liveRecommendation={recommendation} />}
 
       {/* Lower 3-column Section */}
       <LowerSection />
