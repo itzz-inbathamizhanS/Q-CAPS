@@ -29,7 +29,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ isOpen, onCl
           right: 0,
           bottom: 0,
           left: 0,
-          backgroundColor: 'rgba(0, 0, 0, 0.4)',
+          backgroundColor: 'var(--color-overlay)',
           backdropFilter: 'blur(4px)',
           WebkitBackdropFilter: 'blur(4px)',
           transition: 'opacity 0.2s',
@@ -47,7 +47,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ isOpen, onCl
         maxWidth: '320px',
         width: '100%',
         backgroundColor: 'var(--color-surface)',
-        boxShadow: '0 25px 50px -12px rgba(0, 0, 0, 0.25)',
+        boxShadow: 'var(--shadow-raised)',
         zIndex: 50,
       }}>
         <button
@@ -69,7 +69,7 @@ export const MobileNavigation: React.FC<MobileNavigationProps> = ({ isOpen, onCl
           <X size={20} />
         </button>
 
-        <Sidebar isMobile onCloseMobile={onClose} />
+        <Sidebar variant="drawer" onNavigate={onClose} />
       </div>
     </div>
   );

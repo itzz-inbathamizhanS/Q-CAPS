@@ -3,16 +3,21 @@ import { Card } from '@/components/ui/Card';
 import { fetchLeaderboard, LeaderboardEntry } from '@/services/backendService';
 import { useAuthStore } from '@/features/auth/authStore';
 import { Trophy, Medal, Star, TrendingUp } from 'lucide-react';
+import { WS_BASE_URL } from '@/services/apiConfig';
+import { StateMessage } from '@/components/ui/StateMessage';
 
 export const Organization: React.FC = () => {
   const [leaderboard, setLeaderboard] = useState<LeaderboardEntry[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [loadError, setLoadError] = useState<string | null>(null);
+  const [attempt, setAttempt] = useState(0);
   const { userId, token } = useAuthStore();
   const wsRef = useRef<WebSocket | null>(null);
 
   useEffect(() => {
     let isMounted = true;
     setIsLoading(true);
+    setLoadError(null);
     fetchLeaderboard()
       .then((data) => {
         if (isMounted) {
@@ -27,16 +32,18 @@ export const Organization: React.FC = () => {
           setIsLoading(false);
         }
       })
-      .catch((error) => {
-        console.error('Error fetching leaderboard:', error);
-        if (isMounted) setIsLoading(false);
+      .catch((error: unknown) => {
+        if (!isMounted) return;
+        setLoadError(error instanceof Error ? error.message : 'Request failed');
+        setIsLoading(false);
       });
 
     // Connect to WebSocket for real-time updates
     if (token) {
-      const wsUrl = `ws://localhost:8000/api/ws/leaderboard?token=${token}`;
-      const ws = new WebSocket(wsUrl);
+      // The token goes in the first message, not the URL (URLs end up in logs); ws/wss follows the API's scheme.
+      const ws = new WebSocket(`${WS_BASE_URL}/ws/leaderboard`);
       wsRef.current = ws;
+      ws.onopen = () => ws.send(JSON.stringify({ type: 'auth', token }));
 
       ws.onmessage = (event) => {
         if (!isMounted) return;
@@ -64,14 +71,14 @@ export const Organization: React.FC = () => {
         wsRef.current.close();
       }
     };
-  }, [token]);
+  }, [token, attempt]);
 
   const getRankIcon = (rank: number) => {
     switch (rank) {
       case 1:
-        return <Trophy size={24} color="#f59e0b" />;
+        return <Trophy size={24} color="var(--color-warning)" />;
       case 2:
-        return <Medal size={24} color="#94a3b8" />;
+        return <Medal size={24} color="var(--color-text-secondary)" />;
       case 3:
         return <Medal size={24} color="#b45309" />;
       default:
@@ -93,7 +100,7 @@ export const Organization: React.FC = () => {
       </div>
 
       <Card variant="glass" padding="none">
-        <div style={{ padding: '24px', borderBottom: '1px solid var(--color-border, #e2e8f0)' }}>
+        <div style={{ padding: '24px', borderBottom: '1px solid var(--color-border)' }}>
           <h2 style={{ fontSize: '18px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '8px' }}>
             <TrendingUp size={18} />
             Top Operators
@@ -101,8 +108,12 @@ export const Organization: React.FC = () => {
         </div>
 
         {isLoading ? (
-          <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
-            Syncing matrix data...
+          <div style={{ padding: '24px' }}>
+            <StateMessage kind="loading" message="Loading the leaderboard…" />
+          </div>
+        ) : loadError ? (
+          <div style={{ padding: '24px' }}>
+            <StateMessage kind="error" message="The leaderboard could not be loaded." detail={loadError} onRetry={() => setAttempt((n) => n + 1)} />
           </div>
         ) : leaderboard.length === 0 ? (
           <div style={{ padding: '40px', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
@@ -112,7 +123,7 @@ export const Organization: React.FC = () => {
           <div style={{ overflowX: 'auto' }}>
             <table style={{ width: '100%', borderCollapse: 'collapse', textAlign: 'left' }}>
               <thead>
-                <tr style={{ backgroundColor: 'rgba(0,0,0,0.02)', borderBottom: '1px solid var(--color-border, #e2e8f0)' }}>
+                <tr style={{ backgroundColor: 'rgba(0,0,0,0.02)', borderBottom: '1px solid var(--color-border)' }}>
                   <th style={{ padding: '16px 24px', fontSize: '13px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>RANK</th>
                   <th style={{ padding: '16px 24px', fontSize: '13px', fontWeight: 600, color: 'var(--color-text-secondary)' }}>OPERATOR</th>
                   <th style={{ padding: '16px 24px', fontSize: '13px', fontWeight: 600, color: 'var(--color-text-secondary)', textAlign: 'right' }}>EXPERIENCE (XP)</th>
@@ -125,8 +136,8 @@ export const Organization: React.FC = () => {
                     <tr
                       key={entry.id}
                       style={{
-                        borderBottom: '1px solid var(--color-border, #e2e8f0)',
-                        backgroundColor: isMe ? 'rgba(84, 39, 230, 0.04)' : 'transparent',
+                        borderBottom: '1px solid var(--color-border)',
+                        backgroundColor: isMe ? 'var(--color-primary-soft)' : 'transparent',
                         transition: 'background-color 0.2s ease',
                       }}
                     >
@@ -145,8 +156,8 @@ export const Organization: React.FC = () => {
                               width: '32px',
                               height: '32px',
                               borderRadius: '50%',
-                              backgroundColor: isMe ? 'var(--color-primary)' : 'rgba(0,0,0,0.05)',
-                              color: isMe ? '#fff' : 'var(--color-text-secondary)',
+                              backgroundColor: isMe ? 'var(--color-primary-container)' : 'var(--color-surface-low)',
+                              color: isMe ? 'var(--color-on-primary)' : 'var(--color-text-secondary)',
                               display: 'flex',
                               alignItems: 'center',
                               justifyContent: 'center',

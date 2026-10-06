@@ -10,7 +10,12 @@
     "preview": "vite preview",
     "content:compile": "node scripts/compile-content.cjs",
     "content:check": "node scripts/compile-content.cjs --check",
-    "test:content": "node --test scripts/curriculum-validation.test.cjs scripts/competency-validation.test.cjs scripts/avalanche.test.cjs scripts/recommended-module.test.cjs"
+    "test:content": "node --test scripts/curriculum-validation.test.cjs scripts/competency-validation.test.cjs scripts/avalanche.test.cjs scripts/recommended-module.test.cjs",
+    "test": "vitest run",
+    "test:watch": "vitest",
+    "test:e2e": "playwright test",
+    "content:coverage": "node scripts/competency-coverage.cjs",
+    "lint:colors": "node scripts/check-hex-colors.cjs"
   },
   "dependencies": {
     "lucide-react": "^0.441.0",
@@ -23,9 +28,15 @@
     "zustand": "^4.5.5"
   },
   "devDependencies": {
+    "@axe-core/playwright": "^4.13.0",
     "@eslint/js": "^9.9.0",
+    "@playwright/test": "^1.63.0",
     "@tailwindcss/postcss": "^4.3.3",
     "@tailwindcss/vite": "^4.3.3",
+    "@testing-library/dom": "^10.4.2",
+    "@testing-library/jest-dom": "^6.9.1",
+    "@testing-library/react": "^16.3.3",
+    "@testing-library/user-event": "^14.6.7",
     "@types/node": "^22.5.4",
     "@types/react": "^18.3.3",
     "@types/react-dom": "^18.3.0",
@@ -35,10 +46,13 @@
     "eslint-plugin-react-hooks": "^5.1.0-rc.0",
     "eslint-plugin-react-refresh": "^0.4.9",
     "globals": "^15.9.0",
+    "jsdom": "^25.0.1",
+    "msw": "^2.15.0",
     "postcss": "^8.5.28",
     "tailwindcss": "^4.3.3",
     "typescript": "^5.5.3",
     "typescript-eslint": "^8.0.1",
-    "vite": "^5.4.1"
+    "vite": "^5.4.1",
+    "vitest": "^3.2.7"
   }
 }

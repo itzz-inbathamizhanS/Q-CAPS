@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import {
   Award,
   Lock,
-  Download,
   X,
   FileCheck2
 } from 'lucide-react';
@@ -73,11 +72,11 @@ export const BadgesAndCerts: React.FC = () => {
                 width: '38px',
                 height: '38px',
                 borderRadius: '10px',
-                backgroundColor: 'rgba(84, 39, 230, 0.1)',
+                backgroundColor: 'var(--color-primary-soft)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'var(--color-primary, #5427e6)'
+                color: 'var(--color-primary)'
               }}
             >
               <Award size={22} />
@@ -97,15 +96,15 @@ export const BadgesAndCerts: React.FC = () => {
             style={{
               padding: '12px 20px',
               borderRadius: '12px',
-              backgroundColor: 'var(--color-surface, #ffffff)',
-              border: '1px solid var(--color-border, #e2e8f0)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+              backgroundColor: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              boxShadow: 'var(--shadow-card)'
             }}
           >
             <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
               Badges Earned
             </div>
-            <div style={{ fontSize: '22px', fontWeight: 700, color: '#10b981', marginTop: '2px' }}>
+            <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-success)', marginTop: '2px' }}>
               {earnedBadgesCount} / {totalBadgesCount}
             </div>
           </div>
@@ -114,15 +113,15 @@ export const BadgesAndCerts: React.FC = () => {
             style={{
               padding: '12px 20px',
               borderRadius: '12px',
-              backgroundColor: 'var(--color-surface, #ffffff)',
-              border: '1px solid var(--color-border, #e2e8f0)',
-              boxShadow: '0 2px 8px rgba(0,0,0,0.03)'
+              backgroundColor: 'var(--color-surface)',
+              border: '1px solid var(--color-border)',
+              boxShadow: 'var(--shadow-card)'
             }}
           >
             <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', textTransform: 'uppercase' }}>
               Certificates
             </div>
-            <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-primary, #5427e6)', marginTop: '2px' }}>
+            <div style={{ fontSize: '22px', fontWeight: 700, color: 'var(--color-primary)', marginTop: '2px' }}>
               {earnedCertsCount} / {certificatesData.length}
             </div>
           </div>
@@ -156,9 +155,9 @@ export const BadgesAndCerts: React.FC = () => {
               style={{
                 padding: '8px 16px',
                 borderRadius: '8px',
-                border: `1px solid ${isActive ? 'var(--color-primary, #5427e6)' : 'var(--color-border, #e2e8f0)'}`,
-                backgroundColor: isActive ? 'var(--color-primary, #5427e6)' : 'var(--color-surface, #ffffff)',
-                color: isActive ? '#ffffff' : 'var(--color-text-secondary, #64748b)',
+                border: `1px solid ${isActive ? 'var(--color-primary)' : 'var(--color-border)'}`,
+                backgroundColor: isActive ? 'var(--color-primary-container)' : 'var(--color-surface)',
+                color: isActive ? 'var(--color-on-primary)' : 'var(--color-text-secondary)',
                 fontSize: '13px',
                 fontWeight: 600,
                 cursor: 'pointer',
@@ -189,16 +188,16 @@ export const BadgesAndCerts: React.FC = () => {
               key={badge.id}
               onClick={() => setActiveModalBadge(badge)}
               style={{
-                backgroundColor: 'var(--color-surface, #ffffff)',
-                border: `1px solid ${isUnlocked ? 'rgba(16, 185, 129, 0.4)' : 'var(--color-border, #e2e8f0)'}`,
+                backgroundColor: 'var(--color-surface)',
+                border: `1px solid ${isUnlocked ? 'var(--color-success-border)' : 'var(--color-border)'}`,
                 borderRadius: '14px',
                 padding: '20px 16px',
                 textAlign: 'center',
                 cursor: 'pointer',
                 transition: 'all 0.2s ease',
                 boxShadow: isUnlocked
-                  ? '0 4px 16px rgba(16, 185, 129, 0.12)'
-                  : '0 2px 6px rgba(0,0,0,0.02)',
+                  ? '0 4px 16px var(--color-success-bg)'
+                  : 'var(--shadow-card)',
                 position: 'relative'
               }}
             >
@@ -212,10 +211,10 @@ export const BadgesAndCerts: React.FC = () => {
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
-                  backgroundColor: isUnlocked ? 'rgba(16, 185, 129, 0.15)' : 'rgba(0,0,0,0.04)',
-                  color: isUnlocked ? '#10b981' : '#94a3b8',
-                  border: isUnlocked ? '2px solid #10b981' : '2px dashed #cbd5e1',
-                  boxShadow: isUnlocked ? '0 0 14px rgba(16, 185, 129, 0.3)' : 'none'
+                  backgroundColor: isUnlocked ? 'var(--color-success-bg)' : 'var(--color-surface-low)',
+                  color: isUnlocked ? 'var(--color-success)' : 'var(--color-text-secondary)',
+                  border: isUnlocked ? '2px solid var(--color-success)' : '2px dashed var(--color-text-on-surface-variant)',
+                  boxShadow: isUnlocked ? '0 0 14px var(--color-success-border)' : 'none'
                 }}
               >
                 <Award size={26} strokeWidth={isUnlocked ? 2.2 : 1.5} />
@@ -226,7 +225,7 @@ export const BadgesAndCerts: React.FC = () => {
                 style={{
                   fontSize: '14px',
                   fontWeight: 600,
-                  color: isUnlocked ? 'var(--color-text-primary)' : '#94a3b8',
+                  color: isUnlocked ? 'var(--color-text-primary)' : 'var(--color-text-secondary)',
                   lineHeight: 1.3
                 }}
               >
@@ -238,7 +237,7 @@ export const BadgesAndCerts: React.FC = () => {
                 style={{
                   fontSize: '11px',
                   fontFamily: 'var(--font-mono)',
-                  color: isUnlocked ? '#059669' : '#cbd5e1',
+                  color: isUnlocked ? 'var(--color-success)' : 'var(--color-text-on-surface-variant)',
                   marginTop: '6px'
                 }}
               >
@@ -268,8 +267,8 @@ export const BadgesAndCerts: React.FC = () => {
               <div
                 key={cert.id}
                 style={{
-                  backgroundColor: 'var(--color-surface, #ffffff)',
-                  border: `1px solid ${isEarned ? 'rgba(84, 39, 230, 0.4)' : 'var(--color-border, #e2e8f0)'}`,
+                  backgroundColor: 'var(--color-surface)',
+                  border: `1px solid ${isEarned ? 'var(--color-primary-border)' : 'var(--color-border)'}`,
                   borderRadius: '16px',
                   padding: '24px 28px',
                   display: 'flex',
@@ -278,8 +277,8 @@ export const BadgesAndCerts: React.FC = () => {
                   flexWrap: 'wrap',
                   gap: '20px',
                   boxShadow: isEarned
-                    ? '0 6px 24px rgba(84, 39, 230, 0.1)'
-                    : '0 2px 8px rgba(0,0,0,0.02)'
+                    ? '0 6px 24px var(--color-primary-soft)'
+                    : 'var(--shadow-card)'
                 }}
               >
                 <div style={{ display: 'flex', alignItems: 'center', gap: '18px', maxWidth: '650px' }}>
@@ -288,11 +287,11 @@ export const BadgesAndCerts: React.FC = () => {
                       width: '56px',
                       height: '56px',
                       borderRadius: '12px',
-                      backgroundColor: isEarned ? 'rgba(84, 39, 230, 0.15)' : 'rgba(0,0,0,0.04)',
+                      backgroundColor: isEarned ? 'var(--color-primary-soft)' : 'var(--color-surface-low)',
                       display: 'flex',
                       alignItems: 'center',
                       justifyContent: 'center',
-                      color: isEarned ? 'var(--color-primary, #5427e6)' : '#94a3b8'
+                      color: isEarned ? 'var(--color-primary)' : 'var(--color-text-secondary)'
                     }}
                   >
                     <FileCheck2 size={28} />
@@ -304,8 +303,8 @@ export const BadgesAndCerts: React.FC = () => {
                         style={{
                           padding: '3px 8px',
                           borderRadius: '6px',
-                          backgroundColor: isEarned ? 'rgba(84, 39, 230, 0.1)' : 'rgba(0,0,0,0.05)',
-                          color: isEarned ? 'var(--color-primary, #5427e6)' : '#64748b',
+                          backgroundColor: isEarned ? 'var(--color-primary-soft)' : 'var(--color-surface-low)',
+                          color: isEarned ? 'var(--color-primary)' : 'var(--color-text-secondary)',
                           fontFamily: 'var(--font-mono)',
                           fontSize: '12px',
                           fontWeight: 700
@@ -322,7 +321,7 @@ export const BadgesAndCerts: React.FC = () => {
                       {cert.description}
                     </p>
 
-                    <div style={{ fontSize: '12px', color: '#64748b', marginTop: '6px' }}>
+                    <div style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '6px' }}>
                       <strong>Requirements:</strong> {cert.requirement}
                     </div>
                   </div>
@@ -331,32 +330,25 @@ export const BadgesAndCerts: React.FC = () => {
                 {/* Certificate Action */}
                 <div>
                   {isEarned ? (
-                    <button
-                      onClick={() => alert('Certificate PDF generation is scheduled for automated release.')}
+                    // Earned, but there is no certificate document to download yet: say so instead of offering
+                    // a button that only shows an alert.
+                    <div
+                      role="status"
                       style={{
-                        padding: '10px 18px',
-                        borderRadius: '8px',
-                        backgroundColor: 'var(--color-primary, #5427e6)',
-                        color: '#ffffff',
-                        border: 'none',
-                        fontSize: '13px',
-                        fontWeight: 600,
-                        cursor: 'pointer',
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '8px'
+                        padding: '8px 14px', borderRadius: '8px', backgroundColor: 'var(--color-success-bg)',
+                        color: 'var(--color-success)', fontSize: '12px', fontWeight: 600, display: 'flex', alignItems: 'center', gap: '6px',
                       }}
                     >
-                      <Download size={16} />
-                      <span>Download Credential</span>
-                    </button>
+                      <Award size={14} />
+                      Earned · certificate document not available yet
+                    </div>
                   ) : (
                     <div
                       style={{
                         padding: '8px 14px',
                         borderRadius: '8px',
-                        backgroundColor: 'rgba(0,0,0,0.04)',
-                        color: '#94a3b8',
+                        backgroundColor: 'var(--color-surface-low)',
+                        color: 'var(--color-text-secondary)',
                         fontSize: '12px',
                         fontWeight: 600,
                         display: 'flex',
@@ -381,7 +373,7 @@ export const BadgesAndCerts: React.FC = () => {
           style={{
             position: 'fixed',
             inset: 0,
-            backgroundColor: 'rgba(0,0,0,0.5)',
+            backgroundColor: 'var(--color-overlay)',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
@@ -392,12 +384,12 @@ export const BadgesAndCerts: React.FC = () => {
         >
           <div
             style={{
-              backgroundColor: '#ffffff',
+              backgroundColor: 'var(--color-surface)',
               borderRadius: '16px',
               padding: '28px',
               maxWidth: '440px',
               width: '100%',
-              boxShadow: '0 20px 40px rgba(0,0,0,0.2)',
+              boxShadow: 'var(--shadow-raised)',
               position: 'relative'
             }}
             onClick={(e) => e.stopPropagation()}
@@ -411,7 +403,7 @@ export const BadgesAndCerts: React.FC = () => {
                 background: 'none',
                 border: 'none',
                 cursor: 'pointer',
-                color: '#64748b'
+                color: 'var(--color-text-secondary)'
               }}
             >
               <X size={20} />
@@ -428,18 +420,18 @@ export const BadgesAndCerts: React.FC = () => {
                   alignItems: 'center',
                   justifyContent: 'center',
                   backgroundColor: unlockedBadges.includes(activeModalBadge.name)
-                    ? 'rgba(16, 185, 129, 0.15)'
-                    : 'rgba(0,0,0,0.04)',
-                  color: unlockedBadges.includes(activeModalBadge.name) ? '#10b981' : '#94a3b8',
+                    ? 'var(--color-success-bg)'
+                    : 'var(--color-surface-low)',
+                  color: unlockedBadges.includes(activeModalBadge.name) ? 'var(--color-success)' : 'var(--color-text-secondary)',
                   border: unlockedBadges.includes(activeModalBadge.name)
-                    ? '2px solid #10b981'
-                    : '2px dashed #cbd5e1'
+                    ? '2px solid var(--color-success)'
+                    : '2px dashed var(--color-text-on-surface-variant)'
                 }}
               >
                 <Award size={32} />
               </div>
 
-              <h3 style={{ fontSize: '20px', fontWeight: 700, color: '#0f172a' }}>
+              <h3 style={{ fontSize: '20px', fontWeight: 700, color: 'var(--color-text-primary)' }}>
                 {activeModalBadge.name}
               </h3>
 
@@ -452,9 +444,9 @@ export const BadgesAndCerts: React.FC = () => {
                   fontSize: '11px',
                   fontWeight: 600,
                   backgroundColor: unlockedBadges.includes(activeModalBadge.name)
-                    ? 'rgba(16, 185, 129, 0.15)'
-                    : 'rgba(0,0,0,0.05)',
-                  color: unlockedBadges.includes(activeModalBadge.name) ? '#065f46' : '#64748b'
+                    ? 'var(--color-success-bg)'
+                    : 'var(--color-surface-low)',
+                  color: unlockedBadges.includes(activeModalBadge.name) ? 'var(--color-success)' : 'var(--color-text-secondary)'
                 }}
               >
                 {unlockedBadges.includes(activeModalBadge.name) ? '✓ Unlocked' : 'Locked'}
@@ -463,15 +455,15 @@ export const BadgesAndCerts: React.FC = () => {
 
             <div
               style={{
-                backgroundColor: 'rgba(0,0,0,0.02)',
+                backgroundColor: 'var(--color-surface-low)',
                 borderRadius: '10px',
                 padding: '16px',
                 fontSize: '13px',
-                color: '#334155',
+                color: 'var(--color-border)',
                 lineHeight: 1.5
               }}
             >
-              <div style={{ fontWeight: 600, color: '#0f172a', marginBottom: '4px' }}>
+              <div style={{ fontWeight: 600, color: 'var(--color-text-primary)', marginBottom: '4px' }}>
                 Unlock Requirement:
               </div>
               {activeModalBadge.unlockTrigger}
@@ -484,11 +476,11 @@ export const BadgesAndCerts: React.FC = () => {
                 justifyContent: 'space-between',
                 alignItems: 'center',
                 fontSize: '12px',
-                color: '#64748b'
+                color: 'var(--color-text-secondary)'
               }}
             >
               <span>Reward Value:</span>
-              <strong style={{ color: '#059669' }}>+{activeModalBadge.xpAward} XP</strong>
+              <strong style={{ color: 'var(--color-success)' }}>+{activeModalBadge.xpAward} XP</strong>
             </div>
           </div>
         </div>

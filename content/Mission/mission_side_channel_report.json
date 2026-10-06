@@ -1,5 +1,7 @@
 {
   "mission_id": "mission_side_channel_report",
+  "competencies": [{ "id": "PQC.5", "depth": "Analyse" }],
+  "tag_status": "proposed-unreviewed",
   "title": "The Side-Channel Report",
   "type": "decision_scenario",
   "linked_module_id": "track_c_c11_pqc_defense_engineering",

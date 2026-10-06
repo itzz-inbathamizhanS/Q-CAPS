@@ -34,5 +34,6 @@
   "track_d_e3_quantum_readiness_assessment": "pqc",
   "track_d_e4_crypto_agility": "practical_security",
   "track_d_e5_enterprise_pqc_migration": "pqc",
-  "track_d_e6_governance": "practical_security"
+  "track_d_e6_governance": "practical_security",
+  "DIAG-A": "diagnostic"
 }

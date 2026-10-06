@@ -74,15 +74,66 @@ class CryptoDelta(Base):
 
 # --- CANDIDATE A: CLOSURE LOOP MODELS ---
 
+class Organization(Base):
+    """A tenant. kind "lab" is the clearly labelled study environment whose assets are testbed endpoints."""
+    __tablename__ = "organizations"
+    __table_args__ = (CheckConstraint("kind IN ('organization', 'lab')", name="ck_organizations_kind"),)
+    id = Column(Integer, primary_key=True)
+    slug = Column(String(80), nullable=False, unique=True)
+    name = Column(String(200), nullable=False)
+    kind = Column(String(20), nullable=False, default="organization")
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+ORG_ROLES = ("org_admin", "member", "instructor", "researcher")
+
+
+class OrganizationMembership(Base):
+    """A user's role inside one organization (organizations/access.py decides what each role may do)."""
+    __tablename__ = "organization_memberships"
+    __table_args__ = (
+        UniqueConstraint("organization_id", "user_id", name="uq_org_membership"),
+        CheckConstraint("org_role IN ('org_admin', 'member', 'instructor', 'researcher')", name="ck_org_role"),
+    )
+    id = Column(Integer, primary_key=True)
+    organization_id = Column(Integer, ForeignKey("organizations.id"), nullable=False, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    org_role = Column(String(20), nullable=False)
+    created_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+
+class AuditEvent(Base):
+    """Append-only record of security-relevant actions (membership, roles, interventions, verifications, exports)."""
+    __tablename__ = "audit_events"
+    id = Column(Integer, primary_key=True)
+    at = Column(DateTime, default=lambda: datetime.now(timezone.utc), index=True)
+    actor_user_id = Column(Integer, ForeignKey("users.id"), nullable=True)
+    organization_id = Column(Integer, nullable=True, index=True)
+    action = Column(String(60), nullable=False)
+    target_type = Column(String(40), nullable=True)
+    target_id = Column(String(80), nullable=True)
+    details = Column(JSON, nullable=True)
+
+
 class Asset(Base):
     __tablename__ = "assets"
     id = Column(Integer, primary_key=True, index=True)
+    # The owning organization (organizations.id), or NULL for a personal or legacy shared asset.
     organization_id = Column(Integer, index=True)
     canonical_target = Column(String, nullable=False, index=True)
     asset_type = Column(String, nullable=False)
     criticality = Column(Float, default=1.0)
     confidentiality_lifetime = Column(Integer, default=0) # Days
     owner_role = Column(String, nullable=True)
+    # Asset context declared by whoever manages the asset (risk/score.py). NULL means not declared: the risk
+    # score is then Unknown, never computed from a default. criticality/confidentiality_lifetime above are legacy.
+    criticality_level = Column(String, nullable=True)  # low | medium | high | critical
+    data_sensitivity = Column(String, nullable=True)   # public | internal | confidential | restricted
+    confidentiality_years = Column(Float, nullable=True)
+    context_set_by = Column(Integer, ForeignKey("users.id"), nullable=True)
+    context_set_at = Column(DateTime, nullable=True)
     # Set for assets created from a verified scan; NULL for shared/admin-managed assets.
     owner_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
@@ -118,6 +169,33 @@ class Finding(Base):
     first_seen = Column(DateTime, default=lambda: datetime.now(timezone.utc))
     last_seen = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
+class FindingRequirement(Base):
+    """A requirement a finding creates and one competency it needs, derived from content/curriculum/requirement_map.json
+    (competency/requirements.py). Rows are kept per map version so a result can be traced to the map that produced it."""
+    __tablename__ = "finding_requirements"
+    __table_args__ = (
+        UniqueConstraint("finding_id", "requirement_id", "competency_code", "map_version", name="uq_finding_requirement"),
+    )
+    id = Column(Integer, primary_key=True)
+    finding_id = Column(String, ForeignKey("findings.id"), nullable=False, index=True)
+    requirement_id = Column(String, nullable=False)
+    competency_code = Column(String, nullable=False, index=True)  # Competency.code, e.g. "PQC.6"
+    required_level = Column(String, nullable=False)
+    map_version = Column(String, nullable=False)
+    created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
+class RiskScore(Base):
+    """A computed risk score with the exact inputs and model version that produced it (risk/score.py)."""
+    __tablename__ = "risk_scores"
+    id = Column(Integer, primary_key=True)
+    finding_id = Column(String, ForeignKey("findings.id"), nullable=False, index=True)
+    model_version = Column(String, nullable=False)
+    score = Column(Float, nullable=True)  # None: Unknown, see missing
+    factors = Column(JSON, nullable=False)
+    inputs = Column(JSON, nullable=False)
+    missing = Column(JSON, nullable=False)
+    computed_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
+
 class Competency(Base):
     __tablename__ = "competencies"
     id = Column(Integer, primary_key=True, index=True)
@@ -126,17 +204,25 @@ class Competency(Base):
     description = Column(String, nullable=True)
     prerequisites = Column(JSON, nullable=True)
     evidence_requirements = Column(JSON, nullable=True)
+    # Version of content/curriculum/competency_model.json that last wrote this row (competency/seed.py).
+    model_version = Column(String, nullable=True)
 
 class LearnerCapability(Base):
     __tablename__ = "learner_capabilities"
     id = Column(Integer, primary_key=True, index=True)
     user_id = Column(Integer, ForeignKey("users.id"), index=True)
     competency_id = Column(Integer, ForeignKey("competencies.id"))
-    knowledge_score = Column(Float, default=0.0)
-    procedural_score = Column(Float, default=0.0)
-    operational_score = Column(Float, default=0.0)
-    confidence = Column(Float, default=0.0)
-    freshness = Column(Float, default=1.0)
+    # Filled by competency/capability.py from stored evidence. None means "no evidence of this kind", not zero.
+    knowledge_score = Column(Float, nullable=True)
+    procedural_score = Column(Float, nullable=True)
+    operational_score = Column(Float, nullable=True)
+    confidence = Column(Float, nullable=True)
+    freshness = Column(Float, nullable=True)
+    knowledge_by_depth = Column(JSON, nullable=True)  # {"aware_explain": {"correct", "total"}, "apply": ..., "analyse": ..., "reviewed_items": n}
+    evidence_count = Column(Integer, nullable=True)
+    last_evidence_at = Column(DateTime, nullable=True)
+    level = Column(String, nullable=True)  # Unknown | Beginner | Developing | Proficient | Advanced
+    model_version = Column(String, nullable=True)
     updated_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), onupdate=lambda: datetime.now(timezone.utc))
 
 class Intervention(Base):
@@ -148,6 +234,8 @@ class Intervention(Base):
     module_id = Column(String, nullable=True)
     lab_template_id = Column(String, nullable=True)
     minimum_score = Column(Float, default=0.8)
+    # The learner responsible for an intervention on an organization asset (personal assets: the owner).
+    assigned_user_id = Column(Integer, ForeignKey("users.id"), nullable=True, index=True)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc))
 
 class Verification(Base):
@@ -326,6 +414,8 @@ class QuizModule(Base):
     topic = Column(String, nullable=False)
     # When False, a graded attempt reports only correct/incorrect, not the key or explanation.
     reveal_answers = Column(Boolean, nullable=False, default=True)
+    # None for module quizzes; "diagnostic" for the baseline/reassessment instruments (no XP, all items, no key shown).
+    kind = Column(String, nullable=True)
 
 
 class QuizItem(Base):
@@ -342,6 +432,10 @@ class QuizItem(Base):
     competency_id = Column(String, nullable=True)
     depth = Column(String, nullable=True)
     lesson_id = Column(String, nullable=True)
+    # proposed-unreviewed | reviewed | no-competency. Capability estimates report how many of their items were reviewed.
+    tag_status = Column(String, nullable=True)
+    # Reporting group of a diagnostic item (e.g. "PQC Fundamentals"); None for module quiz items.
+    domain = Column(String, nullable=True)
     active = Column(Boolean, nullable=False, default=True)
 
 
@@ -363,6 +457,8 @@ class QuizAttempt(Base):
     score_percent = Column(Float, nullable=True)
     passed = Column(Boolean, nullable=True)
     xp_awarded = Column(Integer, nullable=False, default=0)
+    # diagnostic_pre (the learner's first diagnostic) or diagnostic_post (any later one); None for module quizzes.
+    attempt_purpose = Column(String, nullable=True)
 
 
 class QuizResponse(Base):

@@ -15,9 +15,7 @@ export interface AssessmentQuestion {
   domain: AssessmentDomain;
   domainCode: string; // e.g. 'SEC-01', 'CRYPTO-02'
   question: string;
-  options: AssessmentOption[];
-  correctOptionId: string;
-  explanation: string;
+  options: AssessmentOption[]; // option ids are the positions shown; the answer key stays on the server
 }
 
 export interface DomainScore {

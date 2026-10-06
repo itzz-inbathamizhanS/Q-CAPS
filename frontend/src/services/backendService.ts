@@ -4,27 +4,46 @@
 
 import { useAuthStore } from '../features/auth/authStore';
 import { handleUnauthorized } from '../features/auth/session';
-import type { ScanAsset, ScanLogSummary, TrackedFinding } from '../features/scanner/types';
+import type { AssetContext, ScanAsset, ScanLogSummary, TrackedFinding } from '../features/scanner/types';
 
-export const BACKEND_BASE_URL =
-  import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+import { API_BASE_URL } from './apiConfig';
+
+/** Kept for existing importers; the value comes from apiConfig.ts. */
+export const BACKEND_BASE_URL = API_BASE_URL;
+
+/** A failed API request: the HTTP status (0 when the server was unreachable) and the server's message. */
+export class ApiError extends Error {
+  status: number;
+  constructor(status: number, message: string) {
+    super(message);
+    this.status = status;
+  }
+}
+
+async function send(url: string, init: RequestInit): Promise<Response> {
+  try {
+    return await fetch(`${BACKEND_BASE_URL}${url}`, init);
+  } catch {
+    throw new ApiError(0, 'The server could not be reached.');
+  }
+}
+
+async function failure(res: Response): Promise<ApiError> {
+  if (res.status === 401) handleUnauthorized();
+  return new ApiError(res.status, await errorMessage(res, `Request failed (HTTP ${res.status}).`));
+}
 
 export const api = {
   get: async (url: string) => {
     const { token } = useAuthStore.getState();
-    const res = await fetch(`${BACKEND_BASE_URL}${url}`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) {
-      if (res.status === 401) handleUnauthorized();
-      throw new Error(`HTTP ${res.status}`);
-    }
+    const res = await send(url, { headers: { 'Authorization': `Bearer ${token}` } });
+    if (!res.ok) throw await failure(res);
     const data = await res.json();
     return { data };
   },
   post: async (url: string, body: unknown) => {
     const { token } = useAuthStore.getState();
-    const res = await fetch(`${BACKEND_BASE_URL}${url}`, {
+    const res = await send(url, {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
@@ -32,10 +51,7 @@ export const api = {
       },
       body: JSON.stringify(body)
     });
-    if (!res.ok) {
-      if (res.status === 401) handleUnauthorized();
-      throw new Error(`HTTP ${res.status}`);
-    }
+    if (!res.ok) throw await failure(res);
     const data = await res.json();
     return { data };
   }
@@ -59,10 +75,34 @@ export interface GraphPath {
   finding_id: string;
   asset_id: string;
   competency_id: string;
+  finding_title?: string | null;
+  finding_type?: string | null;
+  minimum_score?: number;
+  actual_score?: number | null;
   risk_score: number;
   competency_deficit: number;
   time_cost_hours: number;
   proposed_intervention_type: 'LAB_REMEDIATION' | 'THEORY_MODULE';
+}
+
+/** One structured factor behind a recommendation (see docs/architecture/RECOMMENDATIONS.md for the types). */
+export interface RecommendationReason {
+  type: string;
+  [key: string]: unknown;
+}
+
+/** One ranked recommendation of the gap engine. */
+export interface RecommendationItem {
+  module_id: string | null;
+  title: string | null;
+  code: string | null;
+  action: 'assess' | 'learn' | 'practice' | 'none';
+  practical: { kind: string; id: string; title: string | null; depth: string; module_id: string | null } | null;
+  competencies: string[];
+  priority: string;
+  scanner_risk: string | null;
+  topic: string | null;
+  reasons: RecommendationReason[];
 }
 
 export interface UserRecommendation {
@@ -74,6 +114,10 @@ export interface UserRecommendation {
   quiz_score: number | null;
   scanner_risk: string | null;
   status: string;
+  engine?: 'gap' | 'score' | 'none' | null;
+  reasons?: RecommendationReason[];
+  recommendations?: RecommendationItem[];
+  /** @deprecated always empty since T1.7 (one recommendation engine) */
   graph_paths?: GraphPath[];
 }
 
@@ -88,6 +132,7 @@ export interface QuizAttemptQuestion {
   item_id: string;
   prompt: string;
   options: string[]; // already in the order shown; the server holds the answer key
+  domain?: string | null; // reporting group of a diagnostic item
 }
 
 export interface QuizAttempt {
@@ -99,6 +144,8 @@ export interface QuizAttempt {
   issued_at: string;
   expires_at: string;
   questions: QuizAttemptQuestion[];
+  kind?: string | null; // "diagnostic" for the baseline/reassessment instrument
+  attempt_purpose?: 'diagnostic_pre' | 'diagnostic_post' | null;
 }
 
 export interface QuizAnswerFeedback {
@@ -112,6 +159,7 @@ export interface QuizAnswerFeedback {
 export interface QuizAttemptResult {
   attempt_id: string;
   module_id: string;
+  total_questions: number;
   correct_answers: number;
   score_percent: number;
   passed: boolean;
@@ -236,12 +284,8 @@ export async function loginUser(name: string, password: string) {
  */
 export async function fetchLeaderboard(): Promise<LeaderboardEntry[]> {
   const token = useAuthStore.getState().token;
-  const response = await fetch(`${BACKEND_BASE_URL}/leaderboard`, {
-    headers: token ? { 'Authorization': `Bearer ${token}` } : {}
-  });
-  if (!response.ok) {
-    throw new Error('Failed to fetch leaderboard');
-  }
+  const response = await send('/leaderboard', { headers: token ? { 'Authorization': `Bearer ${token}` } : {} });
+  if (!response.ok) throw await failure(response);
   return response.json();
 }
 
@@ -274,39 +318,16 @@ export async function downloadScannerReport(logId: number): Promise<void> {
 export async function fetchUserProfile(userId?: number): Promise<UserProfile | null> {
   const { userId: stateId, token } = useAuthStore.getState();
   const idToUse = userId ?? stateId;
-  if (!idToUse || !token) return null;
-
-  try {
-    const res = await fetch(`${BACKEND_BASE_URL}/users/${idToUse}/profile`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (error) {
-    console.debug('Backend offline or unavailable, falling back to local data.', error);
-    return null;
-  }
+  if (!idToUse || !token) return null; // not signed in: there is no profile to load
+  return (await api.get(`/users/${idToUse}/profile`)).data as UserProfile; // throws on failure
 }
 
-/**
- * Fetch personalized recommendation generated by the recommendation algorithm
- */
-export async function fetchUserRecommendation(userId?: number): Promise<UserRecommendation | null> {
-  const { userId: stateId, token } = useAuthStore.getState();
-  const idToUse = userId ?? stateId;
-  if (!idToUse || !token) return null;
-
-  try {
-    const res = await fetch(`${BACKEND_BASE_URL}/users/${idToUse}/recommendation`, {
-      headers: { 'Authorization': `Bearer ${token}` }
-    });
-    if (!res.ok) return null;
-    return await res.json();
-  } catch (error) {
-    console.debug('Failed to fetch recommendation from backend:', error);
-    return null;
-  }
+/** The signed-in learner's recommendation. Throws on failure so callers can tell an error from "no recommendation". */
+export async function getMyRecommendation(): Promise<UserRecommendation> {
+  const { userId } = useAuthStore.getState();
+  return (await api.get(`/users/${userId}/recommendation`)).data as UserRecommendation;
 }
+
 
 
 async function quizRequest<T>(path: string, body: unknown = {}): Promise<T> {
@@ -344,6 +365,34 @@ export const answerQuizQuestion = (attemptId: string, itemId: string, selectedPo
 /** Finalise the attempt; the score is computed by the server. */
 export const finishQuizAttempt = (attemptId: string) =>
   quizRequest<QuizAttemptResult>(`/quizzes/attempts/${attemptId}/submit`, { answers: [] });
+
+/** Submit every answer at once (the diagnostic lets learners review before submitting); graded by the server. */
+export const submitQuizAnswers = (attemptId: string, answers: Array<{ item_id: string; selected_position: number }>) =>
+  quizRequest<QuizAttemptResult>(`/quizzes/attempts/${attemptId}/submit`, { answers });
+
+export interface DiagnosticDomainResult {
+  domain: string;
+  total_questions: number;
+  correct_count: number;
+  percentage: number;
+}
+
+/** Row of GET /diagnostic/results: one graded diagnostic attempt of the signed-in learner. */
+export interface DiagnosticResult {
+  attempt_id: string;
+  module_id: string;
+  attempt_purpose: 'diagnostic_pre' | 'diagnostic_post' | null;
+  graded_at: string;
+  total_questions: number;
+  correct_answers: number;
+  score_percent: number;
+  domains: DiagnosticDomainResult[];
+}
+
+/** The learner's graded diagnostics, newest first. Throws on failure so callers can tell an error from "none yet". */
+export async function fetchDiagnosticResults(): Promise<DiagnosticResult[]> {
+  return (await api.get('/diagnostic/results')).data as DiagnosticResult[];
+}
 
 /** Row returned by POST /scanner/log. */
 export interface ScannerLogRecord {
@@ -413,4 +462,16 @@ export async function fetchScanAssets(): Promise<ScanAsset[]> {
 export async function fetchAssetFindings(assetId: number): Promise<TrackedFinding[]> {
   const { data } = await api.get(`/scanner/assets/${assetId}/findings`);
   return data as TrackedFinding[];
+}
+
+/** Set an asset's context (criticality, data sensitivity, confidentiality lifetime); the server rescores its findings. */
+export async function setAssetContext(assetId: number, context: AssetContext): Promise<AssetContext & { rescored_findings: number }> {
+  const { token } = useAuthStore.getState();
+  const res = await send(`/assets/${assetId}/context`, {
+    method: 'PUT',
+    headers: { 'Content-Type': 'application/json', Authorization: `Bearer ${token}` },
+    body: JSON.stringify(context),
+  });
+  if (!res.ok) throw await failure(res);
+  return res.json();
 }

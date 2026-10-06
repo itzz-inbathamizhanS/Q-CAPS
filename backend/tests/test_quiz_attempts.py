@@ -76,7 +76,8 @@ def test_seed_loads_all_content(env):
     with Session() as db:
         files = list(seed_quizzes.QUIZ_DIR.glob("*/*.json"))
         in_files = sum(len(json.loads(f.read_text(encoding="utf-8"))["questions"]) for f in files)
-        assert db.query(models.QuizModule).count() == len(files) == 36
+        assert db.query(models.QuizModule).count() == len(files) == 37  # 36 course modules + the DIAG-A diagnostic
+        assert db.query(models.QuizModule).filter_by(kind="diagnostic").count() == 1
         assert db.query(models.QuizItem).count() == in_files
 
 
@@ -90,7 +91,8 @@ def test_form_contains_no_answer_key(env):
         assert forbidden not in raw
     body = r.json()
     assert body["total_questions"] == len(body["questions"]) == bank_size(Session)
-    assert all(set(q) == {"item_id", "prompt", "options"} for q in body["questions"])
+    # domain is a reporting label for diagnostic items (null for module quizzes), not part of the answer key.
+    assert all(set(q) == {"item_id", "prompt", "options", "domain"} for q in body["questions"])
 
 
 def test_requires_authentication(env):

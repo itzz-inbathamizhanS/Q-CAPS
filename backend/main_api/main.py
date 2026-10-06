@@ -2,7 +2,7 @@ from fastapi import FastAPI, Depends, HTTPException, WebSocket, WebSocketDisconn
 from fastapi.middleware.cors import CORSMiddleware
 from sqlalchemy import func
 from sqlalchemy.orm import Session
-from typing import List
+from typing import List, Optional
 
 import models
 import schemas
@@ -10,10 +10,13 @@ import quiz_service
 import scan_receipts
 import scan_report
 from database import engine, Base, get_db, ensure_schema
+from organizations import access as org_access
+from organizations.routes import create_organizations_router
 from recommendation import get_user_recommendation
 from leaderboard import get_leaderboard_data, get_user_rank
 import logging
 import os
+import asyncio
 import json
 from datetime import datetime, timedelta, timezone
 from passlib.context import CryptContext
@@ -22,7 +25,6 @@ from fastapi.security import OAuth2PasswordBearer
 
 # Candidate A Services
 from services import evidence_service
-from closure.engine import process_closure_verification
 from course_content.admin_routes import create_admin_router
 from course_content.public_routes import create_public_router
 from activities import create_activities_router
@@ -83,13 +85,17 @@ def require_admin(current_user: models.User = Depends(get_current_user)):
         raise HTTPException(status_code=403, detail="Admin access required")
     return current_user
 
+def require_intervention_author(current_user: models.User = Depends(get_current_user), db: Session = Depends(get_db)):
+    """Gate for assigning interventions: platform admins, or org admins of some organization (the handler then
+    checks the finding belongs to that organization). Refused before the request body is looked at."""
+    if current_user.role != "admin" and not org_access.orgs_with_role(db, current_user, org_access.MANAGE_ROLES):
+        raise HTTPException(status_code=403, detail="Admin access required")
+    return current_user
+
 def asset_visible(db: Session, user: models.User, asset_id) -> bool:
-    """Evidence, findings and interventions hang off assets. An asset created from a verified scan is
-    private to the user who scanned it (and admins); assets without an owner are shared, admin-managed records."""
-    if user.role == "admin" or asset_id is None:
-        return True
-    asset = db.query(models.Asset).filter(models.Asset.id == asset_id).first()
-    return asset is None or asset.owner_user_id is None or asset.owner_user_id == user.id
+    """Evidence, findings and interventions hang off assets; organizations/access.py decides who may see them
+    (personal: the owner; organization: its admins and members; legacy shared: everyone; platform admins: all)."""
+    return org_access.can_view_asset(db, user, asset_id)
 
 class ConnectionManager:
     def __init__(self):
@@ -134,14 +140,22 @@ app.add_middleware(
 app.include_router(create_public_router(get_current_user))
 app.include_router(create_activities_router(get_current_user))
 app.include_router(create_admin_router(require_admin))
+app.include_router(create_organizations_router(get_current_user))
 
 @app.on_event("startup")
 def seed_quiz_bank():
     """Populate the server-side item bank on first start (idempotent; CLI: python seed_quizzes.py)."""
     from database import SessionLocal
-    from seed_quizzes import seed_if_empty
+    from seed_quizzes import seed_if_empty, sync_tags
+    from competency.seed import seed_competencies
+    from competency.requirements import backfill
+    from risk.service import backfill as risk_backfill
     with SessionLocal() as session:
         seed_if_empty(session)
+        sync_tags(session)
+        seed_competencies(session)
+        backfill(session)
+        risk_backfill(session)
 
 @app.get("/")
 def root():
@@ -211,27 +225,33 @@ def read_me(current_user: models.User = Depends(get_current_user)):
     admin link; every admin endpoint enforces the role itself."""
     return {"id": current_user.id, "name": current_user.name, "role": current_user.role}
 
+WS_AUTH_TIMEOUT_SECONDS = 5
+WS_UNAUTHORIZED = 4401  # application close code: authentication missing, late or invalid
+
+
 @app.websocket("/api/ws/leaderboard")
-async def websocket_leaderboard(websocket: WebSocket, token: str = Query(None), db: Session = Depends(get_db)):
-    if not token:
-        await websocket.close(code=1008)
-        return
-        
+async def websocket_leaderboard(websocket: WebSocket, db: Session = Depends(get_db)):
+    """Live leaderboard. The token is sent as the first message, {"type": "auth", "token": "..."}, within
+    WS_AUTH_TIMEOUT_SECONDS, never in the URL, where it would end up in proxy and server logs."""
+    await websocket.accept()
     try:
-        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM])
+        first = await asyncio.wait_for(websocket.receive_text(), timeout=WS_AUTH_TIMEOUT_SECONDS)
+        message = json.loads(first)
+        token = message.get("token") if isinstance(message, dict) and message.get("type") == "auth" else None
+        payload = jwt.decode(token, SECRET_KEY, algorithms=[ALGORITHM]) if isinstance(token, str) else {}
         user_id = payload.get("sub")
-        if not user_id:
-            await websocket.close(code=1008)
-            return
-    except jwt.PyJWTError:
-        await websocket.close(code=1008)
+        if not user_id or db.query(models.User.id).filter(models.User.id == int(user_id)).first() is None:
+            raise ValueError("unknown user")
+    except (asyncio.TimeoutError, ValueError, TypeError, jwt.PyJWTError):
+        await websocket.close(code=WS_UNAUTHORIZED)
         return
-        
-    await manager.connect(websocket)
+    except WebSocketDisconnect:
+        return
+
+    manager.active_connections.append(websocket)
     try:
         while True:
-            # We just keep the connection open, clients don't send data here.
-            data = await websocket.receive_text()
+            await websocket.receive_text()  # clients send nothing after authenticating; this waits for disconnect
     except WebSocketDisconnect:
         manager.disconnect(websocket)
 
@@ -267,6 +287,11 @@ def start_quiz_attempt(module_id: str, db: Session = Depends(get_db), current_us
         return quiz_service.issue_attempt(db, current_user, module_id)
     except quiz_service.QuizError as e:
         raise HTTPException(status_code=e.status_code, detail=e.detail)
+
+@app.get("/api/diagnostic/results", response_model=List[schemas.DiagnosticResult])
+def get_diagnostic_results(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """The signed-in learner's graded diagnostic attempts (newest first) with per-domain results."""
+    return quiz_service.diagnostic_results(db, current_user)
 
 @app.post("/api/quizzes/attempts/{attempt_id}/answers", response_model=schemas.QuizAnswerResult)
 def answer_quiz_question(attempt_id: str, answer: schemas.QuizAnswerIn, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
@@ -341,6 +366,8 @@ def log_scanner_result(log_in: schemas.ScannerLogCreate, background_tasks: Backg
     user = db.query(models.User).filter(models.User.id == log_in.user_id).first()
     if not user:
         raise HTTPException(status_code=404, detail="User not found")
+    if log_in.organization_id is not None and org_access.org_role(db, user, log_in.organization_id) != "org_admin":
+        raise HTTPException(status_code=403, detail="Only an organization admin can record scans for the organization")
 
     # The result is relayed by the browser, so it is only accepted with the scanner's signed receipt,
     # and everything stored or awarded is derived from it rather than from client-supplied numbers.
@@ -377,7 +404,7 @@ def log_scanner_result(log_in: schemas.ScannerLogCreate, background_tasks: Backg
     # the verified scan log or its XP, so it runs in a savepoint and is logged rather than raised.
     try:
         with db.begin_nested():
-            evidence_service.ingest_scan(db, user, result)
+            evidence_service.ingest_scan(db, user, result, organization_id=log_in.organization_id)
     except Exception:
         logger.exception("Evidence ingestion failed for scan log %s", db_log.id)
 
@@ -437,23 +464,33 @@ def _finding_visible(db: Session, user: models.User, finding_id) -> bool:
 
 @app.get("/api/scanner/assets", response_model=List[schemas.ScannerAssetOut])
 def list_scanner_assets(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """Domains the user has scanned with verified ownership, with how many findings are open or resolved."""
-    assets = db.query(models.Asset).filter(models.Asset.owner_user_id == current_user.id) \
-        .order_by(models.Asset.created_at.desc(), models.Asset.id.desc()).all()
+    """Domains scanned with verified ownership by the user, or for an organization the user belongs to, with how
+    many findings are open or resolved."""
+    assets = (db.query(models.Asset).filter(org_access.visible_asset_filter(db, current_user, include_shared=False))
+              .order_by(models.Asset.created_at.desc(), models.Asset.id.desc()).all())
+    org_names = {o.id: o for o in db.query(models.Organization).filter(
+        models.Organization.id.in_({a.organization_id for a in assets if a.organization_id}))} if assets else {}
     out = []
     for asset in assets:
         statuses = [f.status for f in db.query(models.Finding).filter(models.Finding.asset_id == asset.id).all()]
         last = db.query(func.max(models.Evidence.observed_at)).filter(models.Evidence.asset_id == asset.id).scalar()
+        org = org_names.get(asset.organization_id)
         out.append(schemas.ScannerAssetOut(
             id=asset.id, target=asset.canonical_target, created_at=asset.created_at,
-            open_findings=statuses.count("OPEN"), resolved_findings=statuses.count("RESOLVED"), last_scanned=last))
+            open_findings=statuses.count("OPEN"), resolved_findings=statuses.count("RESOLVED"), last_scanned=last,
+            organization_id=org.id if org else None, organization_name=org.name if org else None,
+            organization_kind=org.kind if org else None, can_manage=org_access.can_manage_asset(db, current_user, asset),
+            criticality_level=asset.criticality_level, data_sensitivity=asset.data_sensitivity,
+            confidentiality_years=asset.confidentiality_years))
     return out
 
 
 @app.get("/api/scanner/assets/{asset_id}/findings", response_model=List[schemas.ScannerFindingOut])
 def list_asset_findings(asset_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    asset = db.query(models.Asset).filter(models.Asset.id == asset_id, models.Asset.owner_user_id == current_user.id).first()
-    if not asset:
+    asset = db.get(models.Asset, asset_id)
+    # Only the user's own and organization assets are listed here (not legacy shared records).
+    if not asset or (asset.owner_user_id is None and asset.organization_id is None) \
+            or not org_access.can_view_asset(db, current_user, asset):
         raise HTTPException(status_code=404, detail="Asset not found")
     rows = db.query(models.Finding).filter(models.Finding.asset_id == asset.id).all()
     rows.sort(key=lambda f: (f.status != "OPEN", -f.severity, -(f.last_seen.timestamp() if f.last_seen else 0)))
@@ -500,18 +537,93 @@ def get_finding_interventions(finding_id: str, db: Session = Depends(get_db), cu
         raise HTTPException(status_code=404, detail="Finding not found")
     return db.query(models.Intervention).filter(models.Intervention.finding_id == finding_id).order_by(models.Intervention.created_at.desc()).all()
 
+@app.put("/api/assets/{asset_id}/context", response_model=schemas.AssetContextOut)
+def set_asset_context(asset_id: int, body: schemas.AssetContextIn, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Declare criticality, data sensitivity and confidentiality lifetime (the owner, the organization's admin or a
+    platform admin). Every finding of the asset is rescored with the new inputs; the change is audited."""
+    asset = db.get(models.Asset, asset_id)
+    if asset is None or not org_access.can_view_asset(db, current_user, asset):
+        raise HTTPException(status_code=404, detail="Asset not found")
+    if not org_access.can_manage_asset(db, current_user, asset):
+        raise HTTPException(status_code=403, detail="Only the asset owner or an organization admin can set the context")
+    before = {"criticality_level": asset.criticality_level, "data_sensitivity": asset.data_sensitivity,
+              "confidentiality_years": asset.confidentiality_years}
+    asset.criticality_level, asset.data_sensitivity = body.criticality_level, body.data_sensitivity
+    asset.confidentiality_years = body.confidentiality_years
+    asset.context_set_by, asset.context_set_at = current_user.id, datetime.now(timezone.utc)
+    from risk import service as risk_service
+    n = risk_service.rescore_asset(db, asset)
+    org_access.audit(db, current_user, "asset.context", asset.organization_id, "asset", asset.id,
+                     {"before": before, "after": body.model_dump()})
+    db.commit()
+    return schemas.AssetContextOut(asset_id=asset.id, **body.model_dump(), context_set_by=asset.context_set_by,
+                                   context_set_at=asset.context_set_at, rescored_findings=n)
+
+@app.get("/api/findings/{finding_id}/risk", response_model=schemas.RiskScoreOut)
+def get_finding_risk(finding_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """The latest risk-v1 score of a finding with its inputs and factors (unvalidated model)."""
+    finding = db.get(models.Finding, finding_id)
+    if not finding or not asset_visible(db, current_user, finding.asset_id):
+        raise HTTPException(status_code=404, detail="Finding not found")
+    from risk import service as risk_service
+    row = risk_service.latest(db, finding_id)
+    if row is None:
+        raise HTTPException(status_code=404, detail="No risk score has been computed for this finding yet")
+    return schemas.RiskScoreOut(finding_id=finding_id, model_version=row.model_version, score=row.score, factors=row.factors,
+                                inputs=row.inputs, missing=row.missing, computed_at=row.computed_at)
+
+@app.get("/api/findings/{finding_id}/requirements", response_model=List[schemas.FindingRequirementOut])
+def get_finding_requirements(finding_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """The requirement this finding creates and the competencies (with required level) it needs, from the
+    risk-to-skill map. An empty list means no rule maps this finding type (see requirement_map.json)."""
+    finding = db.query(models.Finding).filter(models.Finding.id == finding_id).first()
+    if not finding or not asset_visible(db, current_user, finding.asset_id):
+        raise HTTPException(status_code=404, detail="Finding not found")
+    from competency import requirements
+    rows = (db.query(models.FindingRequirement).filter(models.FindingRequirement.finding_id == finding_id)
+            .order_by(models.FindingRequirement.map_version, models.FindingRequirement.requirement_id, models.FindingRequirement.competency_code).all())
+    names = {c.code: c.name for c in db.query(models.Competency).filter(
+        models.Competency.code.in_([r.competency_code for r in rows])).all()} if rows else {}
+    requirement_map = requirements.load_map()
+    return [{**requirements.describe(r, requirement_map), "competency_name": names.get(r.competency_code)} for r in rows]
+
+@app.get("/api/users/me/skill-matrix", response_model=schemas.SkillMatrixOut)
+def get_my_skill_matrix(db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Required vs demonstrated level per competency for the signed-in learner. Requirements come only from the
+    learner's own open findings (and shared ownerless records); Unknown is reported as unassessed, never as rank 0."""
+    from competency import skill_matrix
+    return skill_matrix.build(db, current_user)
+
 @app.get("/api/users/{user_id}/capabilities", response_model=List[schemas.LearnerCapabilityOut])
 def get_user_capabilities(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     if current_user.id != user_id and current_user.role != "admin":
         raise HTTPException(status_code=403, detail="Not authorized to view this user's capabilities")
-    capabilities = db.query(models.LearnerCapability).filter(models.LearnerCapability.user_id == user_id).all()
-    return capabilities
+    rows = (db.query(models.LearnerCapability, models.Competency)
+            .join(models.Competency, models.Competency.id == models.LearnerCapability.competency_id)
+            .filter(models.LearnerCapability.user_id == user_id).order_by(models.Competency.code).all())
+    return [schemas.LearnerCapabilityOut.model_validate(cap).model_copy(update={"competency_code": comp.code, "competency_name": comp.name})
+            for cap, comp in rows]
 
 @app.post("/api/interventions", response_model=schemas.InterventionOut)
-def create_intervention(intervention_in: schemas.InterventionCreate, db: Session = Depends(get_db), _admin: models.User = Depends(require_admin)):
+def create_intervention(intervention_in: schemas.InterventionCreate, db: Session = Depends(get_db), current_user: models.User = Depends(require_intervention_author)):
+    """Platform admins, or the org_admin of the finding's organization, assign interventions. An assigned learner
+    must be a member of that organization."""
     import uuid
+    finding = db.get(models.Finding, intervention_in.finding_id) if intervention_in.finding_id else None
+    asset = db.get(models.Asset, finding.asset_id) if finding else None
+    if not org_access.is_platform_admin(current_user):
+        if asset is None or asset.organization_id is None or not org_access.can_manage_asset(db, current_user, asset):
+            if finding is not None and org_access.can_view_asset(db, current_user, asset):
+                raise HTTPException(status_code=403, detail="Only an organization admin can assign interventions")
+            raise HTTPException(status_code=403, detail="Admin access required")
+    if intervention_in.assigned_user_id is not None:
+        if asset is None or asset.organization_id is None or \
+                org_access.org_role(db, db.get(models.User, intervention_in.assigned_user_id) or models.User(id=-1), asset.organization_id) not in ("org_admin", "member", "instructor"):
+            raise HTTPException(status_code=422, detail="assigned_user_id must be a member of the finding's organization")
     intervention = models.Intervention(**intervention_in.dict(), id=str(uuid.uuid4()))
     db.add(intervention)
+    org_access.audit(db, current_user, "intervention.create", asset.organization_id if asset else None, "intervention",
+                     intervention.id, {"finding_id": intervention_in.finding_id, "assigned_user_id": intervention_in.assigned_user_id})
     db.commit()
     db.refresh(intervention)
     return intervention
@@ -524,41 +636,43 @@ def get_intervention(id: str, db: Session = Depends(get_db), current_user: model
     return intervention
 
 @app.post("/api/interventions/{id}/verify")
-def verify_intervention(id: str, verification_data: dict, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
-    """
-    verification_data should contain:
-    - learner_result: dict
-    - before_evidence_id: str
-    - after_scan_raw: dict
-    """
+def verify_intervention(id: str, body: Optional[dict] = None, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
+    """Verify an intervention from evidence the server holds: the finding must have been resolved by a later verified
+    scan, and the asset owner's capability estimate must reach the required level. The result is stored and appended
+    to the finding's hash-chained closure events. Client-supplied results are not accepted."""
     intervention = db.query(models.Intervention).filter(models.Intervention.id == id).first()
     if not intervention or not _finding_visible(db, current_user, intervention.finding_id):
         raise HTTPException(status_code=404, detail="Intervention not found")
-
-    before_evidence = db.query(models.Evidence).filter(models.Evidence.id == verification_data.get("before_evidence_id")).first()
-    if not before_evidence or not asset_visible(db, current_user, before_evidence.asset_id):
-        raise HTTPException(status_code=404, detail="Before evidence not found")
-        
-    # Create after evidence
-    after_evidence = evidence_service.create_evidence(db, verification_data.get("after_scan_raw", {}))
-    
-    # Process closure
-    closure_result = process_closure_verification(
-        intervention.__dict__, 
-        verification_data.get("learner_result", {}), 
-        before_evidence.normalized_payload, 
-        after_evidence.normalized_payload
-    )
-    
-    # In a full implementation, we'd save Verification and ClosureEvent here
-    return closure_result
+    finding = db.get(models.Finding, intervention.finding_id)
+    asset = db.get(models.Asset, finding.asset_id) if finding else None
+    if finding is None or asset is None:
+        raise HTTPException(status_code=404, detail="Intervention not found")
+    # Only someone who manages the asset (owner, the organization's admin, or a platform admin) records a verification.
+    if not org_access.can_manage_asset(db, current_user, asset):
+        raise HTTPException(status_code=403, detail="Only the asset owner or an organization admin can verify this intervention")
+    forbidden = sorted(k for k in (body or {}) if k in ("learner_result", "after_scan_raw", "technical_result"))
+    if forbidden:
+        raise HTTPException(status_code=422, detail=f"{', '.join(forbidden)} is computed by the server and cannot be supplied")
+    from closure import service as closure_service
+    from competency import capability
+    learner_id = org_access.learner_for(db, intervention)
+    competency = db.get(models.Competency, intervention.competency_id) if intervention.competency_id is not None else None
+    if learner_id and competency:
+        capability.refresh(db, learner_id, {competency.code})  # current estimate before judging it
+    result = closure_service.verify(db, intervention)
+    org_access.audit(db, current_user, "intervention.verify", asset.organization_id, "intervention", intervention.id,
+                     {"status": result["status"], "verification_id": result["verification_id"]})
+    db.commit()
+    if learner_id and competency:
+        capability.refresh(db, learner_id, {competency.code})  # the stored verification is operational evidence
+    return result
 
 @app.get("/api/closures/{finding_id}")
 def get_closures(finding_id: str, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):
     if not _finding_visible(db, current_user, finding_id):
         return []  # indistinguishable from a finding that does not exist
-    closures = db.query(models.ClosureEvent).filter(models.ClosureEvent.finding_id == finding_id).all()
-    return closures
+    return (db.query(models.ClosureEvent).filter(models.ClosureEvent.finding_id == finding_id)
+            .order_by(models.ClosureEvent.created_at, models.ClosureEvent.id).all())
 
 @app.get("/api/users/{user_id}/profile", response_model=schemas.UserOut)
 def get_user_profile(user_id: int, db: Session = Depends(get_db), current_user: models.User = Depends(get_current_user)):

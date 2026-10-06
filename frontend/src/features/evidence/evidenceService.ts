@@ -2,13 +2,6 @@ import { api } from '@/services/backendService';
 import { Evidence } from './evidenceTypes';
 
 export const evidenceService = {
-  getEvidence: async (evidenceId: string): Promise<Evidence | null> => {
-    try {
-      const response = await api.get(`/evidence/${evidenceId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching evidence:', error);
-      return null;
-    }
-  }
+  /** Throws on failure (including 404 for evidence the user may not see). */
+  getEvidence: async (evidenceId: string): Promise<Evidence> => (await api.get(`/evidence/${evidenceId}`)).data,
 };

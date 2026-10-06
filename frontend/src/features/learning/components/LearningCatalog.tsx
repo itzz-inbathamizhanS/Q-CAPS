@@ -21,18 +21,18 @@ const filterTabs: Array<{ id: string; label: string; domain?: AssessmentDomain }
 
 // Track accent color map
 const trackAccentColors: Record<string, string> = {
-  'track-a': '#38bdf8',
-  'track-b': '#818cf8',
-  'track-c': '#c084fc',
-  'track-d': '#f59e0b',
+  'track-a': 'var(--color-info)',
+  'track-b': 'var(--track-b)',
+  'track-c': 'var(--track-c)',
+  'track-d': 'var(--color-warning)',
 };
 
 // Track badge styles
 const trackBadgeStyles: Record<string, React.CSSProperties> = {
-  'track-a': { background: 'rgba(56,189,248,0.12)', color: '#0284c7' },
-  'track-b': { background: 'rgba(129,140,248,0.12)', color: '#4f46e5' },
-  'track-c': { background: 'rgba(192,132,252,0.12)', color: '#9333ea' },
-  'track-d': { background: 'rgba(245,158,11,0.12)', color: '#b45309' },
+  'track-a': { background: 'var(--color-info-bg)', color: 'var(--color-info)' },
+  'track-b': { background: 'var(--track-b-bg)', color: 'var(--track-b)' },
+  'track-c': { background: 'var(--track-c-bg)', color: 'var(--track-c)' },
+  'track-d': { background: 'var(--color-warning-bg)', color: 'var(--color-warning)' },
 };
 
 export const LearningCatalog: React.FC<LearningCatalogProps> = ({ allModules }) => {

@@ -12,6 +12,7 @@ import { ScanForm } from './components/ScanForm';
 import { ScanHistory } from './components/ScanHistory';
 import { ScanProgress } from './components/ScanProgress';
 import { ScanSummary } from './components/ScanSummary';
+import { announce } from '@/features/a11y/announcer';
 
 type Phase = 'idle' | 'scanning' | 'result';
 
@@ -68,6 +69,7 @@ const ScannerTool: React.FC = () => {
     abortRef.current = controller;
     setScanning({ target: t, mode: m });
     setPhase('scanning');
+    announce(`Scanning ${t}. This can take up to a minute.`);
     setError('');
     setResult(null);
     setSaved(null);
@@ -85,6 +87,7 @@ const ScannerTool: React.FC = () => {
       setSaved(outcome);
       setLogId(outcome.ok ? outcome.logId : null);
       setPhase('result');
+      announce(`Scan of ${t} finished with ${scanResult.findings.length} finding${scanResult.findings.length === 1 ? '' : 's'}.`);
     } catch (e) {
       if (isAbort(e)) {
         setPhase('idle');
@@ -92,6 +95,7 @@ const ScannerTool: React.FC = () => {
       }
       if (e instanceof ScannerApiError && e.verification) setVerification({ forTarget: t, info: e.verification });
       setError(messageOf(e, 'The scan failed.'));
+      announce(`Scan of ${t} failed.`);
       setPhase('idle');
     }
   };

@@ -34,11 +34,15 @@ def _validate(module_id: str, quiz: dict, topics: dict) -> None:
         raise ValueError(f"{module_id}: every question is retired; a quiz needs at least one active question")
 
 
-def seed(db: Session, quiz_dir: Path = QUIZ_DIR) -> dict:
+def seed(db: Session, quiz_dir: Path = QUIZ_DIR, only_new_modules: bool = False) -> dict:
+    """Upsert every quiz file, or with only_new_modules just the modules the database does not have yet."""
     topics = json.loads(TOPICS_FILE.read_text(encoding="utf-8"))
     files = sorted(quiz_dir.glob("*/*.json"))
     if not files:
         raise FileNotFoundError(f"No quiz files under {quiz_dir}")
+    if only_new_modules:
+        known = {m for (m,) in db.query(models.QuizModule.module_id)}
+        files = [p for p in files if json.loads(p.read_text(encoding="utf-8"))["module_id"] not in known]
 
     modules = items = 0
     for path in files:
@@ -54,7 +58,10 @@ def seed(db: Session, quiz_dir: Path = QUIZ_DIR) -> dict:
         mod.difficulty = quiz.get("difficulty")
         mod.passing_score_percent = quiz.get("passing_score_percent", 70)
         mod.topic = topics[module_id]
-        if mod.reveal_answers is None:
+        mod.kind = quiz.get("kind")
+        if "reveal_answers" in quiz:
+            mod.reveal_answers = bool(quiz["reveal_answers"])
+        elif mod.reveal_answers is None:
             mod.reveal_answers = True
         modules += 1
 
@@ -68,21 +75,59 @@ def seed(db: Session, quiz_dir: Path = QUIZ_DIR) -> dict:
             row.options_json = json.dumps(q["options"])
             row.correct_index = q["correct_index"]
             row.explanation = q.get("explanation")
+            row.domain = q.get("domain")
             # A retired question stays in the table (past responses reference it) but is never issued.
             if "active" in q:
                 row.active = bool(q["active"])
-            # Never overwrite tags that curriculum tagging has already set.
-            for field in ("competency_id", "depth", "lesson_id"):
-                if q.get(field) is not None:
-                    setattr(row, field, q[field])
+            _apply_tags(row, q, quiz)
             items += 1
     db.commit()
     return {"modules": modules, "items": items}
 
 
+TAG_FIELDS = ("competency_id", "depth", "lesson_id", "tag_status")
+
+
+def _content_tags(q: dict, quiz: dict) -> dict:
+    """The curriculum tags of one content item. Track A files carry the review status at file level
+    (tagging_status); drafted items elsewhere carry it per item (tag_status)."""
+    tags = {f: q.get(f) for f in ("competency_id", "depth", "lesson_id")}
+    tags["tag_status"] = q.get("tag_status") or (quiz.get("tagging_status") if q.get("competency_id") else None)
+    return tags
+
+
+def _apply_tags(row: models.QuizItem, q: dict, quiz: dict) -> bool:
+    """Copy content tags onto the row. A field the content leaves empty never clears a value already set."""
+    changed = False
+    for field, value in _content_tags(q, quiz).items():
+        if value is not None and getattr(row, field) != value:
+            setattr(row, field, value)
+            changed = True
+    return changed
+
+
+def sync_tags(db: Session, quiz_dir: Path = QUIZ_DIR) -> dict:
+    """Bring competency tags of existing items in line with the content files, without touching prompts,
+    options or answer keys. Runs on every start so tags drafted after a database was seeded reach it."""
+    rows = {r.id: r for r in db.query(models.QuizItem).all()}
+    updated = missing = 0
+    for path in sorted(quiz_dir.glob("*/*.json")):
+        quiz = json.loads(path.read_text(encoding="utf-8"))
+        for q in quiz["questions"]:
+            row = rows.get(q["id"])
+            if row is None:
+                missing += 1  # new items arrive through seed(), which also validates them
+                continue
+            updated += _apply_tags(row, q, quiz)
+    db.commit()
+    return {"updated": updated, "not_in_database": missing}
+
+
 def seed_if_empty(db: Session) -> dict | None:
+    """Seed an empty bank; on an existing bank add only modules that are new in the content (e.g. DIAG-A)."""
     if db.query(models.QuizItem).first() is not None:
-        return None
+        added = seed(db, only_new_modules=True)
+        return added if added["modules"] else None
     return seed(db)
 
 

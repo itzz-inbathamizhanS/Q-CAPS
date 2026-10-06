@@ -2,9 +2,12 @@ import React, { useEffect, useState } from 'react';
 import { Outlet } from 'react-router-dom';
 import { Header } from './Header';
 import { MobileNavigation } from './MobileNavigation';
+import { Sidebar } from './Sidebar';
 import { fetchActivityProgress } from '@/services/activityApi';
 import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
 import { useAuthStore } from '@/features/auth/authStore';
+import { StateMessage } from '@/components/ui/StateMessage';
+import { useAnnouncer } from '@/features/a11y/announcer';
 
 interface AppShellProps {
   children?: React.ReactNode;
@@ -12,17 +15,52 @@ interface AppShellProps {
 
 export const AppShell: React.FC<AppShellProps> = ({ children }) => {
   const [isMobileNavOpen, setIsMobileNavOpen] = useState(false);
+  // Wide screens show a persistent rail (CSS hides it below 1024 px); its collapsed state is a per-browser preference.
+  const [railCollapsed, setRailCollapsed] = useState(() => {
+    try {
+      return localStorage.getItem('qcaps-rail-collapsed') === '1';
+    } catch {
+      return false;
+    }
+  });
+  const toggleRail = () => {
+    setRailCollapsed((c) => {
+      try {
+        localStorage.setItem('qcaps-rail-collapsed', c ? '0' : '1');
+      } catch {
+        /* storage unavailable: the choice lasts for this page view */
+      }
+      return !c;
+    });
+  };
   const userId = useAuthStore((s) => s.userId);
   const applyActivityProgress = useCurriculumStore((s) => s.applyActivityProgress);
+  const announcement = useAnnouncer((s) => s.message);
 
-  // The server records which practice labs and missions are complete; mirror that here.
+  const [syncError, setSyncError] = useState<string | null>(null);
+  const [syncAttempt, setSyncAttempt] = useState(0);
+
+  // The server records which practice labs and missions are complete; mirror that here. A failed sync is shown,
+  // because the progress on screen is then this browser's cached copy and may be out of date.
   useEffect(() => {
     if (!userId) return;
-    fetchActivityProgress().then(applyActivityProgress).catch(() => undefined);
-  }, [userId, applyActivityProgress]);
+    let live = true;
+    setSyncError(null);
+    fetchActivityProgress()
+      .then((progress) => live && applyActivityProgress(progress))
+      .catch((e: unknown) => live && setSyncError(e instanceof Error ? e.message : 'Request failed'));
+    return () => {
+      live = false;
+    };
+  }, [userId, applyActivityProgress, syncAttempt]);
 
   return (
-    <div className="app-shell">
+    <div className={`app-shell${railCollapsed ? ' rail-collapsed' : ''}`}>
+      <p className="sr-only" aria-live="polite" aria-atomic="true" data-testid="announcer">{announcement}</p>
+      <div className="app-rail">
+        <Sidebar variant="rail" collapsed={railCollapsed} onToggleCollapsed={toggleRail} />
+      </div>
+
       {/* Navigation drawer: hidden until the menu button in the header is used */}
       <MobileNavigation
         isOpen={isMobileNavOpen}
@@ -34,6 +72,16 @@ export const AppShell: React.FC<AppShellProps> = ({ children }) => {
         <Header onToggleMobileMenu={() => setIsMobileNavOpen((open) => !open)} menuOpen={isMobileNavOpen} />
 
         <main className="app-canvas">
+          {syncError && (
+            <div style={{ marginBottom: 16 }}>
+              <StateMessage
+                kind="error"
+                message="Your progress could not be synced with the server; what you see may be out of date."
+                detail={syncError}
+                onRetry={() => setSyncAttempt((n) => n + 1)}
+              />
+            </div>
+          )}
           {children || <Outlet />}
         </main>
       </div>

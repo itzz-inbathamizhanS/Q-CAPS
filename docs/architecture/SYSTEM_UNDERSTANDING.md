@@ -283,7 +283,7 @@ No readiness score uses scanner evidence, recency or coverage.
 
 **Frontend bundle.**
 - No code splitting. About 380 KB of data source is pulled in at startup, because `curriculumStore` imports `curriculumData` and the store is used in layout components.
-- `qcaps-logo.png` is 326 KB and duplicated in both `public/` and `assets/`.
+- `qcaps-logo.png` is 326 KB and duplicated in both `public/` and `assets/`. *(Resolved in T0.6: the header uses a 14 KB WebP / 28 KB PNG sized for 3x displays, the favicon is 2.8 KB, and the `public/` copy is gone.)*
 - `index.css` is 47 KB.
 - Seven unused dependencies are declared.
 

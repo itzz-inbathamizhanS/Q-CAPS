@@ -56,6 +56,41 @@ def ensure_schema():
             cols = {c["name"] for c in insp.get_columns("findings")}
             if "title" not in cols:
                 conn.execute(text("ALTER TABLE findings ADD COLUMN title VARCHAR"))
+        if "assets" in tables:
+            cols = {c["name"] for c in insp.get_columns("assets")}
+            for name, sql_type in (("criticality_level", "VARCHAR"), ("data_sensitivity", "VARCHAR"),
+                                   ("confidentiality_years", "FLOAT"), ("context_set_by", "INTEGER"),
+                                   ("context_set_at", "DATETIME")):
+                if name not in cols:
+                    conn.execute(text(f"ALTER TABLE assets ADD COLUMN {name} {sql_type}"))
+        if "interventions" in tables:
+            cols = {c["name"] for c in insp.get_columns("interventions")}
+            if "assigned_user_id" not in cols:
+                conn.execute(text("ALTER TABLE interventions ADD COLUMN assigned_user_id INTEGER"))
+        if "competencies" in tables:
+            cols = {c["name"] for c in insp.get_columns("competencies")}
+            if "model_version" not in cols:
+                conn.execute(text("ALTER TABLE competencies ADD COLUMN model_version VARCHAR"))
+        if "learner_capabilities" in tables:
+            cols = {c["name"] for c in insp.get_columns("learner_capabilities")}
+            for name, sql_type in (("knowledge_by_depth", "JSON"), ("evidence_count", "INTEGER"),
+                                   ("last_evidence_at", "DATETIME"), ("level", "VARCHAR"), ("model_version", "VARCHAR")):
+                if name not in cols:
+                    conn.execute(text(f"ALTER TABLE learner_capabilities ADD COLUMN {name} {sql_type}"))
+        if "quiz_items" in tables:
+            cols = {c["name"] for c in insp.get_columns("quiz_items")}
+            if "tag_status" not in cols:
+                conn.execute(text("ALTER TABLE quiz_items ADD COLUMN tag_status VARCHAR"))
+            if "domain" not in cols:
+                conn.execute(text("ALTER TABLE quiz_items ADD COLUMN domain VARCHAR"))
+        if "quiz_modules" in tables:
+            cols = {c["name"] for c in insp.get_columns("quiz_modules")}
+            if "kind" not in cols:
+                conn.execute(text("ALTER TABLE quiz_modules ADD COLUMN kind VARCHAR"))
+        if "quiz_attempts" in tables:
+            cols = {c["name"] for c in insp.get_columns("quiz_attempts")}
+            if "attempt_purpose" not in cols:
+                conn.execute(text("ALTER TABLE quiz_attempts ADD COLUMN attempt_purpose VARCHAR"))
         if "sections" in tables:
             cols = {c["name"] for c in insp.get_columns("sections")}
             if "summary" not in cols:

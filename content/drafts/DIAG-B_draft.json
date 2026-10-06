@@ -1,0 +1,80 @@
+{
+  "module_id": "DIAG-B",
+  "title": "Diagnostic assessment (form B) - DRAFT",
+  "kind": "diagnostic",
+  "status": "proposed-unreviewed",
+  "note": "Parallel form of DIAG-A for post-tests, drafted slot by slot (same domain, competency and depth as the DIAG-A item it mirrors). Not served: this folder is not read by the quiz seeder. Before use, a subject expert must review every item, the two forms must be checked for equal difficulty (pilot data), and the file must move to content/Quizzes/Diagnostic with a topic in module_topics.json. Until then reassessment reuses DIAG-A and the UI notes the retest effect.",
+  "limitations": "Ten items over seven competencies, like DIAG-A: below the three-items-per-competency threshold, so both forms give domain-level evidence only. A longer instrument (at least three items per required competency: NET.4, PQC.1, PQC.3, PQC.6, CRYPTO.3, CRYPTO.4) still needs authoring.",
+  "questions": [
+    {
+      "id": "diag-b-q1", "mirrors": "diag-a-q1", "domain": "Cybersecurity Fundamentals", "competency_id": "SEC.1", "depth": "Aware", "tag_status": "proposed-unreviewed",
+      "prompt": "Which security property ensures that data has not been altered by unauthorised parties?",
+      "options": ["Integrity", "Availability", "Confidentiality", "Anonymity"],
+      "correct_index": 0,
+      "explanation": "Integrity means data is protected against unauthorised modification; confidentiality concerns disclosure and availability concerns access."
+    },
+    {
+      "id": "diag-b-q2", "mirrors": "diag-a-q2", "domain": "Cybersecurity Fundamentals", "competency_id": "CRYPTO.2", "depth": "Aware", "tag_status": "proposed-unreviewed",
+      "prompt": "What does a message authentication code (MAC) provide that a plain hash does not?",
+      "options": ["Assurance that the message came from someone holding the shared secret key", "Encryption of the message contents", "Compression of the message", "Verification by anyone without a key"],
+      "correct_index": 0,
+      "explanation": "A MAC is keyed: only holders of the secret key can produce a valid tag, so it authenticates the sender as well as protecting integrity."
+    },
+    {
+      "id": "diag-b-q3", "mirrors": "diag-a-q3", "domain": "Cryptography Fundamentals", "competency_id": "CRYPTO.3", "depth": "Aware", "tag_status": "proposed-unreviewed",
+      "prompt": "Which key does a recipient use to verify an RSA digital signature?",
+      "options": ["The signer's private key", "The signer's public key", "A shared session key", "The recipient's private key"],
+      "correct_index": 1,
+      "explanation": "The signer signs with the private key; anyone can verify with the corresponding public key."
+    },
+    {
+      "id": "diag-b-q4", "mirrors": "diag-a-q4", "domain": "Cryptography Fundamentals", "competency_id": "CRYPTO.3", "depth": "Explain", "tag_status": "proposed-unreviewed",
+      "prompt": "Why does ephemeral Diffie-Hellman key exchange in TLS 1.3 provide forward secrecy?",
+      "options": ["Session keys come from per-connection key pairs that are discarded, so a later leak of the server's long-term key cannot decrypt recorded sessions", "The server's certificate is renewed after every connection", "The symmetric cipher is changed every few seconds", "Recorded traffic is deleted by the client after the session"],
+      "correct_index": 0,
+      "explanation": "With ephemeral (EC)DHE the long-term key only authenticates the handshake; the session secret depends on throwaway key pairs."
+    },
+    {
+      "id": "diag-b-q5", "mirrors": "diag-a-q5", "domain": "Cryptography Fundamentals", "competency_id": "CRYPTO.4", "depth": "Explain", "tag_status": "proposed-unreviewed",
+      "prompt": "What does a certificate authority's signature on a TLS certificate establish?",
+      "options": ["That the CA vouches for the binding between the domain name and the public key", "That the website's content is free of malware", "That the connection uses post-quantum algorithms", "That the server's private key is stored in a hardware security module"],
+      "correct_index": 0,
+      "explanation": "The CA signature binds an identity (the domain) to a public key; it says nothing about content or key storage."
+    },
+    {
+      "id": "diag-b-q6", "mirrors": "diag-a-q6", "domain": "PQC Fundamentals", "competency_id": "PQC.1", "depth": "Explain", "tag_status": "proposed-unreviewed",
+      "prompt": "Why is Grover's algorithm a smaller concern for AES-256 than Shor's algorithm is for RSA-2048?",
+      "options": ["Grover gives only a quadratic speed-up, leaving AES-256 with roughly 128-bit security, while Shor breaks RSA in polynomial time", "Grover only works on hash functions", "AES-256 is a post-quantum algorithm standardised in FIPS 203", "Shor's algorithm is slower than Grover's on every problem"],
+      "correct_index": 0,
+      "explanation": "Grover's quadratic speed-up halves the effective key length of a symmetric cipher; Shor's algorithm solves factoring and discrete logarithms efficiently."
+    },
+    {
+      "id": "diag-b-q7", "mirrors": "diag-a-q7", "domain": "PQC Fundamentals", "competency_id": "PQC.1", "depth": "Aware", "tag_status": "proposed-unreviewed",
+      "prompt": "Which data is most exposed to a harvest-now-decrypt-later attack?",
+      "options": ["Encrypted data that must stay confidential for many years", "Public web pages", "Data that is deleted within an hour", "Data protected only by a digital signature and not encrypted"],
+      "correct_index": 0,
+      "explanation": "An attacker records ciphertext today and decrypts it later; long-lived secrets are the ones still valuable when that becomes possible."
+    },
+    {
+      "id": "diag-b-q8", "mirrors": "diag-a-q8", "domain": "PQC Fundamentals", "competency_id": "PQC.2", "depth": "Aware", "tag_status": "proposed-unreviewed",
+      "prompt": "Which family of post-quantum cryptography does SLH-DSA (FIPS 205) belong to?",
+      "options": ["Hash-based signatures", "Lattice-based key encapsulation", "Code-based encryption", "Isogeny-based key exchange"],
+      "correct_index": 0,
+      "explanation": "SLH-DSA, derived from SPHINCS+, is a stateless hash-based signature scheme."
+    },
+    {
+      "id": "diag-b-q9", "mirrors": "diag-a-q9", "domain": "Applied PQC", "competency_id": "PQC.3", "depth": "Aware", "tag_status": "proposed-unreviewed",
+      "prompt": "Which NIST standard specifies ML-DSA, the module-lattice digital signature algorithm?",
+      "options": ["FIPS 203", "FIPS 204", "FIPS 205", "SP 800-208"],
+      "correct_index": 1,
+      "explanation": "FIPS 204 specifies ML-DSA; FIPS 203 is ML-KEM and FIPS 205 is SLH-DSA."
+    },
+    {
+      "id": "diag-b-q10", "mirrors": "diag-a-q10", "domain": "Applied PQC", "competency_id": "PQC.6", "depth": "Explain", "tag_status": "proposed-unreviewed",
+      "prompt": "Why do migrations use a hybrid key exchange such as X25519MLKEM768 instead of ML-KEM alone?",
+      "options": ["The connection stays secure if either the classical or the post-quantum component is broken", "ML-KEM cannot be used without X25519 in any protocol", "Hybrid exchange removes the need for certificates", "Hybrid exchange makes handshakes smaller than classical ones"],
+      "correct_index": 0,
+      "explanation": "A hybrid combiner keeps classical security as a fallback while post-quantum algorithms gain deployment confidence."
+    }
+  ]
+}

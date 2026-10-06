@@ -84,7 +84,8 @@ def create_demo_account(db: Session, name: str, password: str, reset: bool = Fal
     db.flush()
     now = datetime.now(timezone.utc)
     by_code = _module_by_code(db)
-    qmods = {q.module_id: q for q in db.query(models.QuizModule).all()}
+    # Course quizzes only: a demo account has no diagnostic attempts, so its pre/post data is never synthetic.
+    qmods = {q.module_id: q for q in db.query(models.QuizModule).all() if q.kind != "diagnostic"}
 
     if profile == "complete":
         passed_slugs = {q for q in qmods}
@@ -172,6 +173,9 @@ def create_demo_account(db: Session, name: str, password: str, reset: bool = Fal
 
     user.xp = xp
     db.commit()
+    # Capability estimates come from the stored evidence, as for any learner.
+    from competency.capability import recompute
+    recompute(db, user.id)
     return {"user_id": user.id, "name": name, "profile": profile, "modules_passed": len(passed_slugs), "sections": sections,
             "labs": lab_count, "missions": mission_count, "xp": xp}
 
@@ -181,7 +185,7 @@ def delete_account_data(db: Session, user: models.User, keep_user: bool = True) 
     uid = user.id
     run_ids = [r[0] for r in db.query(models.MissionRun.id).filter(models.MissionRun.user_id == uid)]
     for model in (models.QuizResponse, models.QuizScore, models.CheckpointPass, models.SectionCompletion, models.ActivityCompletion,
-                  models.ActivityAttempt, models.MissionRun, models.QuizAttempt, models.ScannerLog):
+                  models.ActivityAttempt, models.MissionRun, models.QuizAttempt, models.ScannerLog, models.LearnerCapability):
         db.query(model).filter(model.user_id == uid).delete(synchronize_session=False)
     if keep_user:
         user.xp = 0

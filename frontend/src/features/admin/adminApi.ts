@@ -14,7 +14,7 @@ import type {
   SectionUpdateBody,
 } from './adminTypes';
 
-const BASE_URL = import.meta.env.VITE_API_BASE_URL || 'http://localhost:8000/api';
+import { API_BASE_URL as BASE_URL } from '@/services/apiConfig';
 
 export interface FieldIssue {
   loc: (string | number)[];

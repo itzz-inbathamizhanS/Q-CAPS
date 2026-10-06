@@ -35,8 +35,8 @@ export const KpiSection: React.FC<KpiSectionProps> = ({ liveProfile }) => {
       value: `${streakDays} Days`,
       supportingText: 'Current learning streak',
       iconName: 'flame',
-      iconBgColor: 'rgba(239,68,68,0.15)',
-      iconColor: '#ef4444',
+      iconBgColor: 'var(--color-danger-bg)',
+      iconColor: 'var(--color-danger)',
     },
     {
       id: 'kpi-xp',
@@ -45,7 +45,7 @@ export const KpiSection: React.FC<KpiSectionProps> = ({ liveProfile }) => {
       supportingText: 'Total Experience',
       iconName: 'star',
       iconBgColor: 'rgba(245,158,11,0.15)',
-      iconColor: '#f59e0b',
+      iconColor: 'var(--color-warning)',
     },
     {
       id: 'kpi-rank',

@@ -1,4 +1,6 @@
+import { lazy, Suspense, type ComponentType } from 'react';
 import { createBrowserRouter, Navigate } from 'react-router-dom';
+import { StateMessage } from '@/components/ui/StateMessage';
 import { AppShell } from '@/components/layout/AppShell';
 import { ProtectedRoute } from '@/components/layout/ProtectedRoute';
 import { LoginPage } from '@/pages/LoginPage';
@@ -9,18 +11,32 @@ import { CurriculumMap } from '@/pages/CurriculumMap';
 import { Learning } from '@/pages/Learning';
 import { ModuleOverview } from '@/pages/ModuleOverview';
 import { SectionLesson } from '@/pages/SectionLesson';
-import { AdminRoute } from '@/features/admin/AdminRoute';
-import { AdminCourses } from '@/pages/AdminCourses';
-import { AdminSectionEditor } from '@/pages/AdminSectionEditor';
-import { AdminAudit } from '@/pages/AdminAudit';
-import { QuizPage } from '@/pages/QuizPage';
-import { BadgesAndCerts } from '@/pages/BadgesAndCerts';
-import { MissionPlay } from '@/pages/MissionPlay';
-import { ScannerPage } from '@/pages/ScannerPage';
 import { ErrorPage } from '@/pages/ErrorPage';
-import { ClosurePage } from '@/pages/ClosurePage';
 import { Organization } from '@/pages/Organization';
-import { Reassessment } from '@/pages/Reassessment';
+
+
+// Code-split routes (plan task T0.6): admin, scanner, missions, quizzes, reassessment, badges and closure load on first visit.
+function lazyNamed<K extends string>(load: () => Promise<Record<K, ComponentType>>, name: K) {
+  const Component = lazy(async () => ({ default: (await load())[name] as ComponentType }));
+  return function LazyRoute() {
+    return (
+      <Suspense fallback={<StateMessage kind="loading" message="Loading…" />}>
+        <Component />
+      </Suspense>
+    );
+  };
+}
+
+const AdminRoute = lazyNamed(() => import('@/features/admin/AdminRoute'), 'AdminRoute');
+const AdminCourses = lazyNamed(() => import('@/pages/AdminCourses'), 'AdminCourses');
+const AdminSectionEditor = lazyNamed(() => import('@/pages/AdminSectionEditor'), 'AdminSectionEditor');
+const AdminAudit = lazyNamed(() => import('@/pages/AdminAudit'), 'AdminAudit');
+const QuizPage = lazyNamed(() => import('@/pages/QuizPage'), 'QuizPage');
+const BadgesAndCerts = lazyNamed(() => import('@/pages/BadgesAndCerts'), 'BadgesAndCerts');
+const MissionPlay = lazyNamed(() => import('@/pages/MissionPlay'), 'MissionPlay');
+const ScannerPage = lazyNamed(() => import('@/pages/ScannerPage'), 'ScannerPage');
+const Reassessment = lazyNamed(() => import('@/pages/Reassessment'), 'Reassessment');
+const ClosurePage = lazyNamed(() => import('@/pages/ClosurePage'), 'ClosurePage');
 
 export const router = createBrowserRouter([
   {
@@ -106,8 +122,13 @@ export const router = createBrowserRouter([
             element: <Reassessment />,
           },
           {
-            path: 'organization',
+            path: 'leaderboard',
             element: <Organization />,
+          },
+          {
+            // The organization readiness page replaces this route in T2.4; until then it shows the leaderboard.
+            path: 'organization',
+            element: <Navigate to="/leaderboard" replace />,
           },
           {
             path: 'closure/:findingId',

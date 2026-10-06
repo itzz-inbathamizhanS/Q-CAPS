@@ -1,194 +1,91 @@
 import React, { useEffect } from 'react';
-import { NavLink, useNavigate } from 'react-router-dom';
-import {
-  BarChart3,
-  GraduationCap,
-  FileQuestion,
-  ShieldCheck,
-  TrendingUp,
-  Award,
-  Trophy,
-  LogOut,
-  Compass,
-  Settings2,
-  ScrollText
-} from 'lucide-react';
+import { NavLink } from 'react-router-dom';
+import { LogOut, ChevronsLeft, ChevronsRight } from 'lucide-react';
+import { NAV_GROUPS } from './navItems';
 import { useAuthStore } from '@/features/auth/authStore';
-import { useCurriculumStore } from '@/features/curriculum/curriculumStore';
+import { useSignOut } from '@/features/auth/useSignOut';
 import { useAdminStatus } from '@/features/admin/adminStatus';
 
 interface SidebarProps {
-  isMobile?: boolean;
-  onCloseMobile?: () => void;
+  /** drawer: the slide-over on small screens; rail: the persistent column on wide screens. */
+  variant?: 'drawer' | 'rail';
+  collapsed?: boolean;
+  onToggleCollapsed?: () => void;
+  onNavigate?: () => void;
 }
 
-export const Sidebar: React.FC<SidebarProps> = ({ isMobile = false, onCloseMobile }) => {
-  const navigate = useNavigate();
-  const { userName, userId, logout } = useAuthStore();
-  const { role, load: loadAdminStatus, reset: resetAdminStatus } = useAdminStatus();
+export const Sidebar: React.FC<SidebarProps> = ({ variant = 'drawer', collapsed = false, onToggleCollapsed, onNavigate }) => {
+  const { userName, userId } = useAuthStore();
+  const { role, load: loadAdminStatus } = useAdminStatus();
+  const signOut = useSignOut();
 
-  // Only decides whether to show the Admin link; the backend enforces the role itself.
+  // Only decides whether to show the Admin links; the backend enforces the role itself.
   useEffect(() => {
     void loadAdminStatus(userId);
   }, [userId, loadAdminStatus]);
-  const { clearLocalProgress } = useCurriculumStore();
 
-  const handleLinkClick = () => {
-    if (isMobile && onCloseMobile) {
-      onCloseMobile();
-    }
-  };
-
-  const handleLogout = () => {
-    logout();
-    resetAdminStatus();
-    clearLocalProgress();
-    navigate('/login');
-    if (isMobile && onCloseMobile) {
-      onCloseMobile();
-    }
-  };
+  const iconOnly = variant === 'rail' && collapsed;
 
   return (
     <aside
-      className={`app-sidebar ${isMobile ? 'mobile-sidebar' : ''}`}
-      style={isMobile ? { position: 'relative', width: '100%', height: '100%' } : {}}
+      className={`app-sidebar app-sidebar--${variant}${iconOnly ? ' app-sidebar--collapsed' : ''}`}
+      aria-label="Main navigation"
     >
-      {/* Brand Header */}
-      {/* The Q-CAPS logo lives in the header so it stays visible while this drawer is open or closed. */}
-
-      {/* Main Navigation */}
       <nav className="sidebar-nav">
-        <NavLink
-          to="/dashboard"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-          onClick={handleLinkClick}
-        >
-          <BarChart3 size={18} />
-          <span>Dashboard</span>
-        </NavLink>
-
-        <NavLink
-          to="/learning"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-          onClick={handleLinkClick}
-        >
-          <GraduationCap size={18} />
-          <span>My Learning</span>
-        </NavLink>
-
-        <NavLink
-          to="/curriculum"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-          onClick={handleLinkClick}
-        >
-          <Compass size={18} />
-          <span>Curriculum Map</span>
-        </NavLink>
-
-        <NavLink
-          to="/assessment"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-          onClick={handleLinkClick}
-        >
-          <FileQuestion size={18} />
-          <span>Assessments</span>
-        </NavLink>
-
-        <div className="nav-divider">Community</div>
-
-        <NavLink
-          to="/scanner"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-          onClick={handleLinkClick}
-        >
-          <ShieldCheck size={18} />
-          <span>Crypto Scanner</span>
-        </NavLink>
-
-
-
-
-        {/* Metrics Group */}
-        <div className="nav-divider">
-          Metrics
-        </div>
-
-        <NavLink
-          to="/reassessment"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-          onClick={handleLinkClick}
-        >
-          <TrendingUp size={18} />
-          <span>Progress</span>
-        </NavLink>
-
-        <NavLink
-          to="/skills"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-          onClick={handleLinkClick}
-        >
-          <TrendingUp size={18} />
-          <span>Skills Profile</span>
-        </NavLink>
-
-        <NavLink
-          to="/badges"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-          onClick={handleLinkClick}
-        >
-          <Award size={18} />
-          <span>Badges & Certs</span>
-        </NavLink>
-
-        <NavLink
-          to="/organization"
-          className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-          onClick={handleLinkClick}
-        >
-          <Trophy size={18} />
-          <span>Leaderboard</span>
-        </NavLink>
-
-        {role === 'admin' && (
-          <>
-            <div className="nav-divider">Admin</div>
-            <NavLink
-              to="/admin"
-              end
-              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-              onClick={handleLinkClick}
-            >
-              <Settings2 size={18} />
-              <span>Course management</span>
-            </NavLink>
-            <NavLink
-              to="/admin/audit"
-              className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
-              onClick={handleLinkClick}
-            >
-              <ScrollText size={18} />
-              <span>Audit log</span>
-            </NavLink>
-          </>
-        )}
+        {NAV_GROUPS.filter((g) => !g.adminOnly || role === 'admin').map((group) => (
+          <div key={group.title} role="group" aria-label={group.title}>
+            {!iconOnly && <div className="nav-divider">{group.title}</div>}
+            {group.items.map(({ to, label, icon: Icon, end }) => (
+              <NavLink
+                key={to}
+                to={to}
+                end={end}
+                className={({ isActive }) => `nav-link ${isActive ? 'active' : ''}`}
+                onClick={onNavigate}
+                title={iconOnly ? label : undefined}
+                aria-label={iconOnly ? label : undefined}
+              >
+                <Icon size={18} aria-hidden="true" />
+                {!iconOnly && <span>{label}</span>}
+              </NavLink>
+            ))}
+          </div>
+        ))}
       </nav>
 
-      {/* Footer Links */}
       <div className="sidebar-footer">
-        {userName && (
+        {userName && !iconOnly && (
           <div style={{ padding: '0 12px 12px', fontSize: '13px', color: 'var(--color-text-secondary)' }}>
             Logged in as <strong>{userName}</strong>
           </div>
         )}
-        <button 
-          className="nav-link" 
-          onClick={handleLogout}
+        <button
+          type="button"
+          className="nav-link"
+          onClick={() => {
+            signOut();
+            onNavigate?.();
+          }}
+          title={iconOnly ? 'Logout' : undefined}
+          aria-label={iconOnly ? 'Logout' : undefined}
           style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer' }}
         >
-          <LogOut size={18} />
-          <span>Logout</span>
+          <LogOut size={18} aria-hidden="true" />
+          {!iconOnly && <span>Logout</span>}
         </button>
+        {variant === 'rail' && onToggleCollapsed && (
+          <button
+            type="button"
+            className="nav-link"
+            onClick={onToggleCollapsed}
+            aria-label={collapsed ? 'Expand navigation' : 'Collapse navigation'}
+            aria-expanded={!collapsed}
+            style={{ width: '100%', border: 'none', background: 'transparent', textAlign: 'left', cursor: 'pointer' }}
+          >
+            {collapsed ? <ChevronsRight size={18} aria-hidden="true" /> : <ChevronsLeft size={18} aria-hidden="true" />}
+            {!collapsed && <span>Collapse</span>}
+          </button>
+        )}
       </div>
     </aside>
   );

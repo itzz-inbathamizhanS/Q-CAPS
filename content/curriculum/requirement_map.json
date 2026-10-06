@@ -1,0 +1,102 @@
+{
+  "version": "proposed-v1",
+  "status": "proposed-unreviewed",
+  "competency_model_version": "1",
+  "description": "Maps a scanner finding type to the migration or remediation requirement it creates and the competencies (with required capability level) a person needs to meet that requirement. Draft for expert review: every rule is a methodological claim and none has been validated.",
+  "matching": "A rule matches when match.finding_type equals the finding type, or when match.finding_type_prefix is a prefix of it. The first matching rule wins; rules are listed specific-first. A finding type that no rule matches must be listed in unmapped_by_design or positive_evidence, never silently ignored.",
+  "rules": [
+    {
+      "requirement_id": "REQ.KEX.HYBRID",
+      "match": { "finding_type": "pqc.kex.classical_only" },
+      "requirement": "Plan hybrid / post-quantum key establishment for TLS",
+      "pqc_relevant": true,
+      "competencies": [
+        { "id": "NET.4", "required_level": "Proficient" },
+        { "id": "PQC.6", "required_level": "Proficient" },
+        { "id": "PQC.3", "required_level": "Developing" },
+        { "id": "PQC.1", "required_level": "Developing" }
+      ],
+      "rationale": "Classical-only key exchange is exposed to harvest-now-decrypt-later. Enabling a hybrid group such as X25519MLKEM768 needs TLS configuration skill (NET.4), hybrid deployment and agility (PQC.6), algorithm selection (PQC.3) and an understanding of the threat (PQC.1).",
+      "sources": ["FIPS 203", "NIST SP 800-227"]
+    },
+    {
+      "requirement_id": "REQ.PKI.PQC_SIG",
+      "match": { "finding_type": "pqc.auth.classical_certificate" },
+      "requirement": "Plan migration of certificate signatures to post-quantum algorithms",
+      "pqc_relevant": true,
+      "competencies": [
+        { "id": "CRYPTO.4", "required_level": "Proficient" },
+        { "id": "PQC.3", "required_level": "Developing" },
+        { "id": "PQC.8", "required_level": "Developing" }
+      ],
+      "rationale": "A certificate signed with RSA or ECDSA must eventually move to ML-DSA or SLH-DSA. That needs PKI and certificate-lifecycle skill (CRYPTO.4), signature algorithm selection (PQC.3) and migration planning (PQC.8).",
+      "sources": ["FIPS 204", "FIPS 205"]
+    },
+    {
+      "requirement_id": "REQ.TLS.FS",
+      "match": { "finding_type": "tls.kex.no_forward_secrecy" },
+      "requirement": "Enable forward-secret key exchange",
+      "pqc_relevant": false,
+      "competencies": [
+        { "id": "NET.4", "required_level": "Proficient" },
+        { "id": "CRYPTO.3", "required_level": "Developing" }
+      ],
+      "rationale": "RSA key transport lets a later key compromise decrypt recorded traffic. Fixing it is a TLS configuration task (NET.4) that needs an understanding of ephemeral Diffie-Hellman (CRYPTO.3).",
+      "sources": ["RFC 8446"]
+    },
+    {
+      "requirement_id": "REQ.TLS.VERSION",
+      "match": { "finding_type": "tls.version.obsolete" },
+      "requirement": "Require TLS 1.2 or newer",
+      "pqc_relevant": false,
+      "competencies": [
+        { "id": "NET.4", "required_level": "Proficient" }
+      ],
+      "rationale": "Disabling obsolete protocol versions is a TLS configuration task.",
+      "sources": ["RFC 8996"]
+    },
+    {
+      "requirement_id": "REQ.TLS.VERSION",
+      "match": { "finding_type_prefix": "tls.legacy." },
+      "requirement": "Require TLS 1.2 or newer",
+      "pqc_relevant": false,
+      "competencies": [
+        { "id": "NET.4", "required_level": "Proficient" }
+      ],
+      "rationale": "The server still accepts TLS 1.0 or 1.1; disabling them is the same TLS configuration task as an obsolete negotiated version.",
+      "sources": ["RFC 8996"]
+    },
+    {
+      "requirement_id": "REQ.PKI.LIFECYCLE",
+      "match": { "finding_type_prefix": "cert." },
+      "requirement": "Maintain the certificate lifecycle (issuance, trust chain, renewal)",
+      "pqc_relevant": false,
+      "competencies": [
+        { "id": "CRYPTO.4", "required_level": "Developing" },
+        { "id": "CRYPTO.5", "required_level": "Developing" }
+      ],
+      "rationale": "Expired, expiring and untrusted certificates are lifecycle failures: PKI knowledge (CRYPTO.4) and key and certificate management (CRYPTO.5). Covers cert.expired, cert.expiring and cert.untrusted.",
+      "sources": ["CA/Browser Forum Baseline Requirements"]
+    },
+    {
+      "requirement_id": "REQ.NET.EXPOSURE",
+      "match": { "finding_type_prefix": "exposure.port." },
+      "requirement": "Reduce internet-exposed services",
+      "pqc_relevant": false,
+      "competencies": [
+        { "id": "NET.3", "required_level": "Developing" },
+        { "id": "SEC.2", "required_level": "Developing" }
+      ],
+      "rationale": "A risky service reachable from the internet calls for segmentation and filtering (NET.3) and an assessment of the threat it creates (SEC.2).",
+      "sources": []
+    }
+  ],
+  "positive_evidence": [
+    { "finding_type": "pqc.kex.hybrid", "note": "Hybrid post-quantum key exchange is in use. Evidence of readiness, not a requirement." },
+    { "finding_type": "pqc.kex.hybrid_available", "note": "Hybrid key exchange is supported but not preferred. Reported as evidence; the scanner does not track it as a finding." }
+  ],
+  "unmapped_by_design": [
+    { "finding_type_prefix": "http.", "reason": "HTTP security-header hygiene; low severity and not tracked as a finding. No competency requirement is claimed for now." },
+    { "finding_type_prefix": "dns.", "reason": "Mail and CA-authorisation DNS policy; low or info severity and not tracked as a finding. No competency requirement is claimed for now." }
+  ]
+}

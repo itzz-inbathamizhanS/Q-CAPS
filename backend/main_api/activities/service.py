@@ -9,6 +9,7 @@ from sqlalchemy.orm import Session
 
 import models
 from . import catalogue
+from competency import capability
 
 
 class ActivityError(Exception):
@@ -38,8 +39,11 @@ def progress(db: Session, user: models.User) -> dict:
     """Everything the server has verified about this learner: XP, graded quiz passes and best scores,
     completed labs and missions. The browser only mirrors it."""
     rows = db.query(models.ActivityCompletion).filter_by(user_id=user.id).all()
+    # Diagnostics are an assessment instrument, not course modules: they never count as passed modules.
+    diagnostic = [m for (m,) in db.query(models.QuizModule.module_id).filter(models.QuizModule.kind == "diagnostic")]
     attempts = db.query(models.QuizAttempt.module_id, models.QuizAttempt.score_percent, models.QuizAttempt.passed).filter(
-        models.QuizAttempt.user_id == user.id, models.QuizAttempt.status == "graded").all()
+        models.QuizAttempt.user_id == user.id, models.QuizAttempt.status == "graded",
+        models.QuizAttempt.module_id.notin_(diagnostic)).all()
     best: Dict[str, float] = {}
     for module_id, score, _ in attempts:
         best[module_id] = max(best.get(module_id, 0.0), float(score or 0))
@@ -79,6 +83,7 @@ def answer_lab(db: Session, user: models.User, scenario_id: str, choice_id: str)
         factor = max(0.25, 1 - 0.25 * wrong_before)
         xp = max(1, round(int(scenario["mission_xp_awarded"]) * factor))
         awarded = _award(db, user, "lab", scenario_id, xp, scenario.get("badge_awarded"))
+    capability.refresh(db, user.id, capability.codes_for_activity("lab", scenario_id))
     return {"correct": bool(choice["correct"]), "feedback": choice["feedback"], "awarded": awarded}
 
 
@@ -153,6 +158,7 @@ def choose(db: Session, user: models.User, run_id: str, choice_id: str) -> dict:
         db.commit()
         if band["id"] in ("success", "partial"):
             out["awarded"] = _award(db, user, "mission", mission["mission_id"], int(reward.get("mission_xp_awarded", 0)), reward.get("badge_awarded"))
+        capability.refresh(db, user.id, capability.codes_for_activity("mission", mission["mission_id"]))
         return out
     run.state = state
     db.commit()
@@ -205,9 +211,11 @@ def decide_bb84(db: Session, user: models.User, run_id: str, sample_size: int, d
     rate = round(100 * mismatches / len(sampled))
     correct = (decision == "abort" and rate > 10) or (decision == "accept" and rate <= 10)
     run.status = "finished"
+    run.band = "success" if correct else "failure"  # the run's outcome, used as practical evidence
     db.commit()
     reward = mission.get("rewards") or {}
     awarded = None
     if correct:
         awarded = _award(db, user, "mission", mission["mission_id"], int(reward.get("mission_xp_awarded", 0)), reward.get("badge_awarded"))
+    capability.refresh(db, user.id, capability.codes_for_activity("mission", mission["mission_id"]))
     return {"correct": correct, "error_rate": rate, "eve_present": st["eve"], "awarded": awarded}

@@ -1,34 +1,18 @@
 import { api } from '@/services/backendService';
-import { ClosureEvent, Finding, VerificationResult } from './closureTypes';
+import { ClosureEvent, Finding, FindingRequirement, RiskScore, VerificationResult } from './closureTypes';
 
+// These calls throw on failure so the closure page can tell "could not load" from "nothing recorded".
 export const closureService = {
-  getFinding: async (findingId: string): Promise<Finding | null> => {
-    try {
-      const response = await api.get(`/findings/${findingId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching finding:', error);
-      return null;
-    }
-  },
+  getFinding: async (findingId: string): Promise<Finding> => (await api.get(`/findings/${findingId}`)).data,
 
-  getClosuresForFinding: async (findingId: string): Promise<ClosureEvent[]> => {
-    try {
-      const response = await api.get(`/closures/${findingId}`);
-      return response.data;
-    } catch (error) {
-      console.error('Error fetching closures:', error);
-      return [];
-    }
-  },
+  getRequirements: async (findingId: string): Promise<FindingRequirement[]> =>
+    (await api.get(`/findings/${findingId}/requirements`)).data,
 
-  verifyIntervention: async (interventionId: string, verificationData: Record<string, unknown>): Promise<VerificationResult | null> => {
-    try {
-      const response = await api.post(`/interventions/${interventionId}/verify`, verificationData);
-      return response.data;
-    } catch (error) {
-      console.error('Error verifying intervention:', error);
-      return null;
-    }
-  }
+  getRisk: async (findingId: string): Promise<RiskScore> => (await api.get(`/findings/${findingId}/risk`)).data,
+
+  getClosuresForFinding: async (findingId: string): Promise<ClosureEvent[]> => (await api.get(`/closures/${findingId}`)).data,
+
+  /** The server computes both the technical and the learner result; nothing is sent but the request itself. */
+  verifyIntervention: async (interventionId: string): Promise<VerificationResult> =>
+    (await api.post(`/interventions/${interventionId}/verify`, {})).data,
 };

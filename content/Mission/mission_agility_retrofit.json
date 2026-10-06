@@ -1,5 +1,7 @@
 {
   "mission_id": "mission_agility_retrofit",
+  "competencies": [{ "id": "PQC.6", "depth": "Analyse" }],
+  "tag_status": "proposed-unreviewed",
   "title": "The Agility Retrofit",
   "type": "decision_scenario",
   "linked_module_id": "track_d_e4_crypto_agility",

@@ -97,7 +97,10 @@ def issue_attempt(db: Session, user: models.User, module_id: str) -> dict:
     if not items:
         raise QuizError(404, "Quiz has no active questions")
 
-    items = _rng.sample(items, min(len(items), MAX_FORM_ITEMS))  # also shuffles question order
+    diagnostic = module.kind == "diagnostic"
+    # A diagnostic is a fixed instrument: every learner answers every item (order still shuffled), so pre- and
+    # post-test scores are comparable. Module quizzes draw a random subset.
+    items = _rng.sample(items, len(items) if diagnostic else min(len(items), MAX_FORM_ITEMS))  # also shuffles order
 
     form, questions = [], []
     for item in items:
@@ -109,6 +112,7 @@ def issue_attempt(db: Session, user: models.User, module_id: str) -> dict:
             "item_id": item.id,
             "prompt": item.prompt,
             "options": [options[i] for i in order],
+            "domain": item.domain,
         })
 
     issued_at = _now()
@@ -121,6 +125,7 @@ def issue_attempt(db: Session, user: models.User, module_id: str) -> dict:
         passing_score_percent=module.passing_score_percent,
         issued_at=issued_at,
         total_questions=len(form),
+        attempt_purpose=_diagnostic_purpose(db, user) if diagnostic else None,
     )
     db.add(attempt)
     db.commit()
@@ -134,7 +139,23 @@ def issue_attempt(db: Session, user: models.User, module_id: str) -> dict:
         "issued_at": issued_at,
         "expires_at": issued_at + ATTEMPT_TTL,
         "questions": questions,
+        "kind": module.kind,
+        "attempt_purpose": attempt.attempt_purpose,
     }
+
+
+def _diagnostic_modules(db: Session) -> list:
+    return [m for (m,) in db.query(models.QuizModule.module_id).filter(models.QuizModule.kind == "diagnostic")]
+
+
+def _diagnostic_purpose(db: Session, user: models.User) -> str:
+    """The first graded diagnostic of a learner is the pre-test; every later one is a post-test. Decided by the
+    server from stored attempts, never by the client."""
+    earlier = (db.query(models.QuizAttempt.id)
+               .filter(models.QuizAttempt.user_id == user.id, models.QuizAttempt.status == "graded",
+                       models.QuizAttempt.module_id.in_(_diagnostic_modules(db)))
+               .first())
+    return "diagnostic_post" if earlier else "diagnostic_pre"
 
 
 def grade_attempt(db: Session, user: models.User, attempt_id: str, answers: list) -> dict:
@@ -215,10 +236,12 @@ def grade_attempt(db: Session, user: models.User, attempt_id: str, answers: list
     total = len(form)
     score = round(correct_count / total * 100, 2)
     passed = score >= attempt.passing_score_percent
-    xp = first_time_correct * XP_PER_FIRST_CORRECT
+    diagnostic = module.kind == "diagnostic"
+    # A diagnostic measures, it does not reward: no XP, so repeating it to farm points gains nothing.
+    xp = 0 if diagnostic else first_time_correct * XP_PER_FIRST_CORRECT
     # The module's completion XP is awarded on the first pass only, by the server (it used to be added in the browser).
     module_xp = 0
-    if passed:
+    if passed and not diagnostic:
         passed_before = (
             db.query(models.QuizAttempt.id)
             .filter(models.QuizAttempt.user_id == user.id, models.QuizAttempt.module_id == attempt.module_id,
@@ -238,12 +261,17 @@ def grade_attempt(db: Session, user: models.User, attempt_id: str, answers: list
     attempt.xp_awarded = xp
     user.xp = (user.xp or 0) + xp
 
-    # Keep the legacy score table populated so recommendations and readiness keep working.
-    db.add(models.QuizScore(
-        user_id=user.id, topic=module.topic, score=score,
-        correct_answers=correct_count, total_questions=total,
-    ))
+    # Keep the legacy score table populated so recommendations and readiness keep working. Diagnostics stay out:
+    # they are a separate instrument, reported through diagnostic_results().
+    if not diagnostic:
+        db.add(models.QuizScore(
+            user_id=user.id, topic=module.topic, score=score,
+            correct_answers=correct_count, total_questions=total,
+        ))
     db.commit()
+    # The graded responses are new evidence for the competencies these items are tagged with.
+    from competency import capability
+    capability.refresh(db, user.id, capability.codes_for_items(db, item_ids))
 
     return {
         "attempt_id": attempt.id,
@@ -258,3 +286,31 @@ def grade_attempt(db: Session, user: models.User, attempt_id: str, answers: list
         "graded_at": graded_at,
         "items": results,
     }
+
+
+def diagnostic_results(db: Session, user: models.User) -> list:
+    """The learner's graded diagnostic attempts, newest first, with per-domain counts computed from the stored
+    responses. Only the learner's own attempts are read."""
+    attempts = (db.query(models.QuizAttempt)
+                .filter(models.QuizAttempt.user_id == user.id, models.QuizAttempt.status == "graded",
+                        models.QuizAttempt.module_id.in_(_diagnostic_modules(db)))
+                .order_by(models.QuizAttempt.graded_at.desc(), models.QuizAttempt.id.desc()).all())
+    out = []
+    for a in attempts:
+        rows = (db.query(models.QuizResponse, models.QuizItem)
+                .join(models.QuizItem, models.QuizItem.id == models.QuizResponse.item_id)
+                .filter(models.QuizResponse.attempt_id == a.id).all())
+        domains = {}
+        for resp, item in rows:
+            name = item.domain or "Other"
+            d = domains.setdefault(name, {"domain": name, "total_questions": 0, "correct_count": 0})
+            d["total_questions"] += 1
+            d["correct_count"] += int(bool(resp.is_correct))
+        for d in domains.values():
+            d["percentage"] = round(100 * d["correct_count"] / d["total_questions"])
+        out.append({
+            "attempt_id": a.id, "module_id": a.module_id, "attempt_purpose": a.attempt_purpose,
+            "graded_at": a.graded_at, "total_questions": a.total_questions, "correct_answers": a.correct_answers,
+            "score_percent": a.score_percent, "domains": sorted(domains.values(), key=lambda d: d["domain"]),
+        })
+    return out

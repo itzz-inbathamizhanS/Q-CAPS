@@ -1,34 +1,23 @@
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { ClosureEvent } from './closureTypes';
-import { closureService } from './closureService';
 
-export const ClosureTimeline: React.FC<{ findingId: string }> = ({ findingId }) => {
-  const [closures, setClosures] = useState<ClosureEvent[]>([]);
-
-  useEffect(() => {
-    if (findingId) {
-      closureService.getClosuresForFinding(findingId).then(setClosures);
-    }
-  }, [findingId]);
-
-  if (closures.length === 0) {
-    return <div className="text-gray-400 p-4">No closure events recorded yet.</div>;
+/** Hash-chained closure events of one finding, oldest first. */
+export const ClosureTimeline: React.FC<{ events: ClosureEvent[] }> = ({ events }) => {
+  if (events.length === 0) {
+    return <p style={{ margin: 0, color: 'var(--color-text-secondary)' }}>No closure events recorded yet.</p>;
   }
-
   return (
-    <div className="space-y-4 p-4 border border-gray-800 rounded-lg bg-gray-900/50">
-      <h3 className="text-lg font-semibold text-blue-400">Verification & Closure Timeline</h3>
-      <div className="relative border-l border-gray-700 ml-3 space-y-6">
-        {closures.map((event, idx) => (
-          <div key={event.id || idx} className="pl-6 relative">
-            <div className="absolute w-3 h-3 bg-blue-500 rounded-full -left-[6.5px] top-1.5 ring-4 ring-gray-900"></div>
-            <p className="text-sm text-gray-400">{new Date(event.created_at).toLocaleString()}</p>
-            <p className="text-md font-medium text-white">{event.previous_state} → {event.new_state}</p>
-            <p className="text-sm text-gray-300 mt-1">{event.reason}</p>
-            <p className="text-xs text-gray-500 font-mono mt-1">Hash: {event.event_hash?.substring(0, 12)}...</p>
-          </div>
-        ))}
-      </div>
-    </div>
+    <ol style={{ listStyle: 'none', margin: 0, padding: 0, borderLeft: '2px solid var(--color-border)' }}>
+      {events.map((event) => (
+        <li key={event.id} style={{ padding: '0 0 16px 16px' }}>
+          <p style={{ margin: 0, fontSize: 12, color: 'var(--color-text-secondary)' }}>{new Date(event.created_at).toLocaleString()}</p>
+          <p style={{ margin: '2px 0', fontWeight: 600 }}>{event.previous_state} → {event.new_state}</p>
+          <p style={{ margin: 0, fontSize: 14 }}>{event.reason}</p>
+          <p style={{ margin: '2px 0 0', fontSize: 12, fontFamily: 'var(--font-mono)', color: 'var(--color-text-secondary)' }}>
+            Hash {event.event_hash.substring(0, 12)}…
+          </p>
+        </li>
+      ))}
+    </ol>
   );
 };

@@ -1,7 +1,7 @@
 import React from 'react';
 
 export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: 'primary' | 'secondary' | 'outline' | 'cyan' | 'ghost';
+  variant?: 'primary' | 'secondary' | 'outline' | 'cyan' | 'ghost' | 'danger' | 'success';
   size?: 'sm' | 'md' | 'lg';
   fullWidth?: boolean;
   leftIcon?: React.ReactNode;
@@ -30,7 +30,6 @@ export const Button: React.FC<ButtonProps> = ({
     cursor: 'pointer',
     transition: 'all 0.2s cubic-bezier(0.4, 0, 0.2, 1)',
     border: '1px solid transparent',
-    outline: 'none',
     width: fullWidth ? '100%' : 'max-content',
   };
 
@@ -43,7 +42,7 @@ export const Button: React.FC<ButtonProps> = ({
   const variantStyles: Record<string, React.CSSProperties> = {
     primary: {
       backgroundColor: 'var(--color-primary-container)',
-      color: '#FFFFFF',
+      color: 'var(--color-on-primary)',
       borderColor: 'transparent',
     },
     secondary: {
@@ -66,6 +65,19 @@ export const Button: React.FC<ButtonProps> = ({
       backgroundColor: 'transparent',
       color: 'var(--color-text-secondary)',
       borderColor: 'transparent',
+    },
+    // Tinted rather than solid, so the text keeps its contrast in both themes.
+    danger: {
+      backgroundColor: 'var(--color-danger-bg)',
+      color: 'var(--color-danger)',
+      borderColor: 'var(--color-danger-border)',
+      fontWeight: 600,
+    },
+    success: {
+      backgroundColor: 'var(--color-success-bg)',
+      color: 'var(--color-success)',
+      borderColor: 'var(--color-success-border)',
+      fontWeight: 600,
     },
   };
 

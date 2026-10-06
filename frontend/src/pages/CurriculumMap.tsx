@@ -35,9 +35,11 @@ export const CurriculumMap: React.FC = () => {
   const [profile, setProfile] = useState<UserProfile | null>(null);
   useEffect(() => {
     let cancelled = false;
-    fetchUserProfile().then((p) => {
-      if (!cancelled) setProfile(p);
-    });
+    fetchUserProfile()
+      .then((p) => {
+        if (!cancelled) setProfile(p);
+      })
+      .catch((e: unknown) => console.warn('Profile unavailable; showing locally cached progress:', e));
     return () => {
       cancelled = true;
     };
@@ -91,11 +93,11 @@ export const CurriculumMap: React.FC = () => {
                 width: '38px',
                 height: '38px',
                 borderRadius: '10px',
-                backgroundColor: 'rgba(84, 39, 230, 0.1)',
+                backgroundColor: 'var(--color-primary-soft)',
                 display: 'flex',
                 alignItems: 'center',
                 justifyContent: 'center',
-                color: 'var(--color-primary, #5427e6)'
+                color: 'var(--color-primary)'
               }}
             >
               <GraduationCap size={22} />
@@ -104,14 +106,14 @@ export const CurriculumMap: React.FC = () => {
               style={{
                 fontSize: '28px',
                 fontWeight: 700,
-                color: 'var(--color-text-primary, #0f172a)',
+                color: 'var(--color-text-primary)',
                 letterSpacing: '-0.5px'
               }}
             >
               Curriculum Map
             </h1>
           </div>
-          <p style={{ fontSize: '15px', color: 'var(--color-text-secondary, #64748b)' }}>
+          <p style={{ fontSize: '15px', color: 'var(--color-text-secondary)' }}>
             {totalModules} modules across 4 tracks — your linear progression toward <strong>PQCTP</strong> (Post-Quantum Cryptography Technical Professional) certification.
           </p>
         </div>
@@ -138,9 +140,9 @@ export const CurriculumMap: React.FC = () => {
             style={{
               padding: '8px 12px',
               borderRadius: '8px',
-              border: '1px solid var(--color-border, #e2e8f0)',
+              border: '1px solid var(--color-border)',
               backgroundColor: 'transparent',
-              color: 'var(--color-text-secondary, #64748b)',
+              color: 'var(--color-text-secondary)',
               cursor: 'pointer',
               display: 'flex',
               alignItems: 'center',
@@ -187,7 +189,7 @@ export const CurriculumMap: React.FC = () => {
               style={{
                 width: `${progressPercent}%`,
                 height: '100%',
-                backgroundColor: '#5427e6',
+                backgroundColor: 'var(--color-primary)',
                 borderRadius: '3px',
                 transition: 'width 0.4s ease'
               }}
@@ -198,9 +200,9 @@ export const CurriculumMap: React.FC = () => {
         <Card variant="glass" padding="normal">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>Quantum Readiness</span>
-            <Compass size={16} color="#38bdf8" />
+            <Compass size={16} color="var(--color-info)" />
           </div>
-          <div style={{ fontSize: '26px', fontWeight: 700, color: '#38bdf8', marginTop: '6px' }}>
+          <div style={{ fontSize: '26px', fontWeight: 700, color: 'var(--color-info)', marginTop: '6px' }}>
             {displayReadiness === null ? 'No data' : `${displayReadiness}%`}
           </div>
           <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '8px', display: 'block' }}>
@@ -211,9 +213,9 @@ export const CurriculumMap: React.FC = () => {
         <Card variant="glass" padding="normal">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>Total XP</span>
-            <Zap size={16} color="#f59e0b" />
+            <Zap size={16} color="var(--color-warning)" />
           </div>
-          <div style={{ fontSize: '26px', fontWeight: 700, color: '#f59e0b', marginTop: '6px' }}>
+          <div style={{ fontSize: '26px', fontWeight: 700, color: 'var(--color-warning)', marginTop: '6px' }}>
             {displayXp.toLocaleString()}
           </div>
           <span style={{ fontSize: '12px', color: 'var(--color-text-secondary)', marginTop: '8px', display: 'block' }}>
@@ -224,9 +226,9 @@ export const CurriculumMap: React.FC = () => {
         <Card variant="glass" padding="normal">
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
             <span style={{ fontSize: '13px', color: 'var(--color-text-secondary)' }}>Badges Unlocked</span>
-            <Award size={16} color="#10b981" />
+            <Award size={16} color="var(--color-success)" />
           </div>
-          <div style={{ fontSize: '26px', fontWeight: 700, color: '#10b981', marginTop: '6px' }}>
+          <div style={{ fontSize: '26px', fontWeight: 700, color: 'var(--color-success)', marginTop: '6px' }}>
             {unlockedBadges.length} / {badgesData.length}
           </div>
           <span

@@ -18,7 +18,7 @@ def test_demo_account_is_fully_completed_as_the_api_sees_it(client, seeded):
     summary = create_demo_account(db, "demo-complete", "a-demo-password-1")
     token = client.post("/api/auth/login", json={"name": "demo-complete", "password": "a-demo-password-1"}).json()["access_token"]
     me = client.get("/api/activities/me", headers={"Authorization": f"Bearer {token}"}).json()
-    quiz_modules = [m.module_id for m in db.query(models.QuizModule).all()]
+    quiz_modules = [m.module_id for m in db.query(models.QuizModule).all() if m.kind != "diagnostic"]
     assert sorted(me["passed_modules"]) == sorted(quiz_modules) and len(quiz_modules) == 36
     assert all(score == 100.0 for score in me["quiz_scores"].values())
     labs, missions = catalogue._load()["labs"], catalogue._load()["missions"]

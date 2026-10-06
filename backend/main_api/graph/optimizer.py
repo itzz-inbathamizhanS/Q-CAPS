@@ -46,6 +46,7 @@ def optimize_intervention_paths(graph: Graph, user_id: int, available_time_hours
         cap_edge = next((e for e in user_capability_edges if e.target_id == required_comp_id), None)
         
         actual_score = 0.0
+        capability_known = cap_edge is not None
         if cap_edge:
             actual_score = cap_edge.properties.get("knowledge_score", 0.0) # simplify to knowledge score for now
             
@@ -74,6 +75,11 @@ def optimize_intervention_paths(graph: Graph, user_id: int, available_time_hours
                 "finding_id": finding.id,
                 "asset_id": asset.id,
                 "competency_id": required_comp_id,
+                "finding_type": finding.properties.get("finding_type"),
+                "finding_title": finding.properties.get("title"),
+                "minimum_score": min_score,
+                "actual_score": actual_score if capability_known else None,  # None = never assessed
+                "rationale": requires_edges[0].properties.get("rationale"),
                 "risk_score": risk,
                 "competency_deficit": competency_deficit,
                 "time_cost_hours": time_cost,

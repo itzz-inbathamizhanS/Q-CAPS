@@ -1,5 +1,7 @@
 {
   "mission_id": "mission_discovery_sprint",
+  "competencies": [{ "id": "PQC.7", "depth": "Analyse" }, { "id": "SEC.5", "depth": "Apply" }],
+  "tag_status": "proposed-unreviewed",
   "title": "The Discovery Sprint",
   "type": "decision_scenario",
   "linked_module_id": "track_d_e2_cryptographic_discovery",

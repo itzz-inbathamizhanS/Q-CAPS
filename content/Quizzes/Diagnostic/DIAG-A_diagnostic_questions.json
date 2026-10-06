@@ -1,0 +1,172 @@
+{
+  "module_id": "DIAG-A",
+  "title": "Diagnostic assessment (form A)",
+  "kind": "diagnostic",
+  "difficulty": "mixed",
+  "passing_score_percent": 0,
+  "reveal_answers": false,
+  "tagging_status": "proposed-unreviewed",
+  "description": "Baseline and reassessment instrument. Moved from the browser (frontend/src/data/assessmentData.ts) to the server in T1.5 so it is scored server-side and the answer key never reaches the client. Ten items over four domains: below the three-items-per-competency threshold for every competency, so it gives domain-level evidence only.",
+  "questions": [
+    {
+      "id": "diag-a-q1",
+      "competency_id": "SEC.1",
+      "depth": "Aware",
+      "tag_status": "proposed-unreviewed",
+      "domain": "Cybersecurity Fundamentals",
+      "prompt": "What is the primary objective of data confidentiality in information security?",
+      "options": [
+        "Ensuring data cannot be modified by unauthorized users",
+        "Ensuring data is accessible only to authorized individuals",
+        "Ensuring systems remain continuously operational without interruption",
+        "Ensuring senders cannot deny transmitting a message"
+      ],
+      "correct_index": 1,
+      "explanation": "Confidentiality ensures that sensitive information is accessible only to authorized users and protected from unauthorized disclosure."
+    },
+    {
+      "id": "diag-a-q2",
+      "competency_id": "CRYPTO.2",
+      "depth": "Aware",
+      "tag_status": "proposed-unreviewed",
+      "domain": "Cybersecurity Fundamentals",
+      "prompt": "Which cryptographic mechanism provides a one-way mathematical transformation to verify data integrity?",
+      "options": [
+        "Cryptographic hash functions (e.g., SHA-256, SHA-3)",
+        "Base64 stream encoding",
+        "Symmetric block permutation",
+        "Data obfuscation and masking"
+      ],
+      "correct_index": 0,
+      "explanation": "Cryptographic hash functions produce a fixed-size digest from input data; any modification to the original data alters the digest."
+    },
+    {
+      "id": "diag-a-q3",
+      "competency_id": "CRYPTO.3",
+      "depth": "Aware",
+      "tag_status": "proposed-unreviewed",
+      "domain": "Cryptography Fundamentals",
+      "prompt": "Which cryptographic method uses a mathematically linked pair of public and private keys?",
+      "options": [
+        "Symmetric key encryption",
+        "Asymmetric (public-key) cryptography",
+        "One-Time Pad streaming",
+        "Caesar substitution cipher"
+      ],
+      "correct_index": 1,
+      "explanation": "Asymmetric cryptography uses a public key for encryption/verification and a mathematically paired private key for decryption/signing."
+    },
+    {
+      "id": "diag-a-q4",
+      "competency_id": "CRYPTO.3",
+      "depth": "Explain",
+      "tag_status": "proposed-unreviewed",
+      "domain": "Cryptography Fundamentals",
+      "prompt": "What is the primary role of the Diffie-Hellman protocol in secure communications?",
+      "options": [
+        "Compressing network payloads before transmission",
+        "Securely establishing a shared symmetric key over an untrusted channel",
+        "Scanning network packets for signature anomalies",
+        "Storing encrypted credentials in hardware security modules"
+      ],
+      "correct_index": 1,
+      "explanation": "Diffie-Hellman allows two parties to agree on a shared secret over an insecure channel without transmitting the secret itself."
+    },
+    {
+      "id": "diag-a-q5",
+      "competency_id": "CRYPTO.4",
+      "depth": "Explain",
+      "tag_status": "proposed-unreviewed",
+      "domain": "Cryptography Fundamentals",
+      "prompt": "What two critical security properties are established when an entity signs data with their private key?",
+      "options": [
+        "Authentication and Non-repudiation",
+        "Encryption speed and Compression ratio",
+        "Network bandwidth and Anonymity",
+        "Payload obfuscation and Token generation"
+      ],
+      "correct_index": 0,
+      "explanation": "Digital signatures verify the sender identity (authentication) and prove the origin of the message (non-repudiation)."
+    },
+    {
+      "id": "diag-a-q6",
+      "competency_id": "PQC.1",
+      "depth": "Explain",
+      "tag_status": "proposed-unreviewed",
+      "domain": "PQC Fundamentals",
+      "prompt": "Why does Shor's quantum algorithm pose a catastrophic threat to classical RSA and ECC algorithms?",
+      "options": [
+        "It brute-forces AES-256 keys in constant time",
+        "It efficiently solves integer factorization and discrete logarithms in polynomial time",
+        "It disables firewall routing rules across the internet",
+        "It intercepts optical fiber signals without physical access"
+      ],
+      "correct_index": 1,
+      "explanation": "Shor's algorithm solves prime factorization (underpinning RSA) and discrete log problems (underpinning ECC) exponentially faster than classical computers."
+    },
+    {
+      "id": "diag-a-q7",
+      "competency_id": "PQC.1",
+      "depth": "Aware",
+      "tag_status": "proposed-unreviewed",
+      "domain": "PQC Fundamentals",
+      "prompt": "What is the \"Harvest Now, Decrypt Later\" (HNDL) cybersecurity threat model?",
+      "options": [
+        "Malware extracting private keys from browser cache files",
+        "Adversaries intercepting and storing encrypted traffic today to decrypt with future quantum computers",
+        "Automated scraping of public GitHub repositories for hardcoded API keys",
+        "Ransomware encrypting local database partitions"
+      ],
+      "correct_index": 1,
+      "explanation": "In HNDL attacks, adversaries capture and archive encrypted communications today, anticipating future cryptanalytically relevant quantum computers (CRQCs) to decrypt them."
+    },
+    {
+      "id": "diag-a-q8",
+      "competency_id": "PQC.2",
+      "depth": "Aware",
+      "tag_status": "proposed-unreviewed",
+      "domain": "PQC Fundamentals",
+      "prompt": "Which mathematical framework serves as the primary foundation for modern NIST post-quantum standards (such as ML-KEM and ML-DSA)?",
+      "options": [
+        "Lattice-based cryptography (Learning With Errors)",
+        "Elliptic curve point multiplication",
+        "Linear feedback shift registers (LFSR)",
+        "Diffie-Hellman discrete exponentiation"
+      ],
+      "correct_index": 0,
+      "explanation": "Lattice-based cryptography, particularly the Learning With Errors (LWE / Module-LWE) problem, provides hardness against both classical and quantum attacks."
+    },
+    {
+      "id": "diag-a-q9",
+      "competency_id": "PQC.3",
+      "depth": "Aware",
+      "tag_status": "proposed-unreviewed",
+      "domain": "Applied PQC",
+      "prompt": "Which NIST Post-Quantum Cryptographic standard represents the standardized Module-Lattice Key Encapsulation Mechanism (formerly CRYSTALS-Kyber)?",
+      "options": [
+        "NIST FIPS 203 (ML-KEM)",
+        "NIST FIPS 204 (ML-DSA)",
+        "NIST FIPS 205 (SLH-DSA)",
+        "NIST SP 800-53"
+      ],
+      "correct_index": 0,
+      "explanation": "FIPS 203 defines ML-KEM (Module-Lattice-Based Key-Encapsulation Mechanism), the primary quantum-resistant standard for general encryption and key exchange."
+    },
+    {
+      "id": "diag-a-q10",
+      "competency_id": "PQC.6",
+      "depth": "Explain",
+      "tag_status": "proposed-unreviewed",
+      "domain": "Applied PQC",
+      "prompt": "What is the recommended transitional strategy for migrating enterprise TLS protocols to post-quantum security?",
+      "options": [
+        "Immediately deprecating all symmetric AES ciphers",
+        "Deploying hybrid key exchange combining classical algorithms (e.g., X25519) with PQC algorithms (e.g., ML-KEM-768)",
+        "Disabling TLS session resumption entirely",
+        "Switching all web traffic to plain unencrypted HTTP"
+      ],
+      "correct_index": 1,
+      "explanation": "Hybrid key exchange pairs classical algorithms with post-quantum algorithms, ensuring security is maintained even if one algorithm experiences an unforeseen weakness."
+    }
+  ]
+}

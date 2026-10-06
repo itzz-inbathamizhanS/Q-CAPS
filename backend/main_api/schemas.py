@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Optional, List, Dict, Any
+from typing import Optional, List, Dict, Any, Union, Literal
 import json
 import unicodedata
 
@@ -88,6 +88,8 @@ class ScannerLogCreate(BaseModel):
     details: str = Field(max_length=256 * 1024)
     # Signed by the scanner over `details` (see scan_receipts.py).
     receipt: Optional[str] = Field(default=None, max_length=2048)
+    # Record a verified full scan as an asset of this organization (the user must be its org_admin).
+    organization_id: Optional[int] = None
 
 class ScannerLogSummary(BaseModel):
     id: int
@@ -122,7 +124,10 @@ class RecommendationOut(BaseModel):
     quiz_score: Optional[float] = None
     scanner_risk: Optional[str] = None
     status: str = "recommendation"
-    graph_paths: List[Dict[str, Any]] = []
+    engine: Optional[str] = None  # gap | score | none (docs/architecture/RECOMMENDATIONS.md)
+    reasons: List[Dict[str, Any]] = []  # structured factors behind the top recommendation ("Why this?")
+    recommendations: List[Dict[str, Any]] = []  # ranked gap-tier recommendations, each with its own reasons
+    graph_paths: List[Dict[str, Any]] = []  # deprecated: always empty since T1.7, kept for older clients
 
 # --- V2 SCANNER SCHEMAS ---
 
@@ -231,6 +236,81 @@ class ScannerAssetOut(BaseModel):
     open_findings: int
     resolved_findings: int
     last_scanned: Optional[datetime] = None
+    organization_id: Optional[int] = None  # None: a personal asset
+    organization_name: Optional[str] = None
+    organization_kind: Optional[str] = None  # "lab" assets are the study testbed, labelled "Lab environment"
+    can_manage: bool = False  # whether this user may change the asset context
+    criticality_level: Optional[str] = None
+    data_sensitivity: Optional[str] = None
+    confidentiality_years: Optional[float] = None
+
+
+class AssetContextIn(BaseModel):
+    """Declared by whoever manages the asset. None clears a value (the risk score then becomes Unknown)."""
+    criticality_level: Optional[Literal["low", "medium", "high", "critical"]] = None
+    data_sensitivity: Optional[Literal["public", "internal", "confidential", "restricted"]] = None
+    confidentiality_years: Optional[float] = Field(default=None, ge=0, le=100)
+
+
+class AssetContextOut(AssetContextIn):
+    asset_id: int
+    context_set_by: Optional[int] = None
+    context_set_at: Optional[datetime] = None
+    rescored_findings: int = 0
+
+
+class RiskScoreOut(BaseModel):
+    finding_id: str
+    model_version: str
+    score: Optional[float] = None  # None: Unknown, see missing
+    factors: Dict[str, Optional[float]]
+    inputs: Dict[str, Any]
+    missing: List[str]
+    computed_at: datetime
+    validated: bool = False  # risk-v1 is an unvalidated model
+
+
+class DrivingFinding(BaseModel):
+    finding_id: str
+    finding_type: str
+    title: Optional[str] = None
+    severity: float
+    requirement_id: str
+    required_level: str
+
+
+class SkillMatrixRow(BaseModel):
+    competency_code: str
+    competency_name: Optional[str] = None
+    required_level: Optional[str] = None  # None: no current requirement from the learner's open findings
+    demonstrated_level: str  # Unknown when there is not enough evidence
+    gap: Optional[Union[int, str]] = None  # rank difference, "unassessed" when demonstrated is Unknown, None without a requirement
+    gap_class: Optional[str] = None  # critical | high | medium | none | unassessed (v1 rule, a hypothesis)
+    driving_findings: List[DrivingFinding]
+    evidence_count: int
+    last_evidence_at: Optional[datetime] = None
+    knowledge_score: Optional[float] = None
+    procedural_score: Optional[float] = None
+
+
+class SkillMatrixOut(BaseModel):
+    competency_model_version: str
+    levels_status: Optional[str] = None
+    requirement_map_version: str
+    requirement_map_status: str
+    rows: List[SkillMatrixRow]
+
+
+class FindingRequirementOut(BaseModel):
+    requirement_id: str
+    requirement: Optional[str] = None  # None when the row comes from an older map version than the one loaded
+    pqc_relevant: Optional[bool] = None
+    rationale: Optional[str] = None
+    competency_code: str
+    competency_name: Optional[str] = None
+    required_level: str
+    map_version: str
+    map_status: Optional[str] = None  # e.g. "proposed-unreviewed": the mapping is a draft until experts review it
 
 
 class ScannerFindingOut(BaseModel):
@@ -259,20 +339,23 @@ class CompetencyOut(CompetencyBase):
     class Config:
         from_attributes = True
 
-class LearnerCapabilityBase(BaseModel):
+class LearnerCapabilityOut(BaseModel):
+    """Estimated by competency/capability.py from stored evidence. None means no evidence of that kind."""
+    id: int
     user_id: int
     competency_id: int
-    knowledge_score: float = 0.0
-    procedural_score: float = 0.0
-    operational_score: float = 0.0
-    confidence: float = 0.0
-    freshness: float = 1.0
-
-class LearnerCapabilityCreate(LearnerCapabilityBase):
-    pass
-
-class LearnerCapabilityOut(LearnerCapabilityBase):
-    id: int
+    competency_code: Optional[str] = None
+    competency_name: Optional[str] = None
+    knowledge_score: Optional[float] = None
+    procedural_score: Optional[float] = None
+    operational_score: Optional[float] = None
+    confidence: Optional[float] = None
+    freshness: Optional[float] = None
+    knowledge_by_depth: Optional[dict] = None
+    evidence_count: Optional[int] = None
+    last_evidence_at: Optional[datetime] = None
+    level: Optional[str] = None
+    model_version: Optional[str] = None
     updated_at: datetime
     class Config:
         from_attributes = True
@@ -284,6 +367,7 @@ class InterventionBase(BaseModel):
     module_id: Optional[str] = None
     lab_template_id: Optional[str] = None
     minimum_score: float = 0.8
+    assigned_user_id: Optional[int] = None  # learner responsible for an intervention on an organization asset
 
 class InterventionCreate(InterventionBase):
     pass
@@ -334,6 +418,7 @@ class QuizAttemptQuestion(BaseModel):
     item_id: str
     prompt: str
     options: List[str]  # already in the order shown to the learner; no answer key
+    domain: Optional[str] = None  # reporting group of a diagnostic item
 
 
 class QuizAttemptOut(BaseModel):
@@ -345,6 +430,26 @@ class QuizAttemptOut(BaseModel):
     issued_at: datetime
     expires_at: datetime
     questions: List[QuizAttemptQuestion]
+    kind: Optional[str] = None  # "diagnostic" for the baseline/reassessment instrument
+    attempt_purpose: Optional[str] = None  # diagnostic_pre | diagnostic_post, decided by the server
+
+
+class DiagnosticDomainResult(BaseModel):
+    domain: str
+    total_questions: int
+    correct_count: int
+    percentage: int
+
+
+class DiagnosticResult(BaseModel):
+    attempt_id: str
+    module_id: str
+    attempt_purpose: Optional[str] = None
+    graded_at: datetime
+    total_questions: int
+    correct_answers: int
+    score_percent: float
+    domains: List[DiagnosticDomainResult]
 
 
 class QuizAnswerIn(BaseModel):

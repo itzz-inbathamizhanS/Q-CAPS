@@ -1,5 +1,7 @@
 {
   "mission_id": "mission_flat_network_breach",
+  "competencies": [{ "id": "NET.3", "depth": "Apply" }, { "id": "SEC.3", "depth": "Apply" }],
+  "tag_status": "proposed-unreviewed",
   "title": "Breach in the Flat Network",
   "type": "decision_scenario",
   "linked_module_id": "track_b_b6_network_security_engineering",

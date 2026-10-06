@@ -1,4 +1,3 @@
-@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500;600;700&display=swap');
 @import "tailwindcss";
 :root {
   /* Surface & Canvas Tokens */
@@ -32,7 +31,7 @@
   /* Border & Dividers */
   --color-border: #E5E5EE;
   --color-border-hover: #DADAED;
-  --color-outline: #797588;
+  --color-outline: #686478; /* 4.67:1 or better on every light surface (axe, TF.4) */
   --color-outline-variant: #C9C4D9;
 
   /* Text & Content */
@@ -43,8 +42,8 @@
   /* Feedback Colors */
   --color-error: #BA1A1A;
   --color-error-container: #FFDAD6;
-  --color-emerald: #10B981;
-  --color-amber: #F59E0B;
+  --color-emerald: #065F46; /* text-safe on light surfaces and green tints; was #10B981 (2.5:1) */
+  --color-amber: #B45309; /* text-safe on light surfaces; was #F59E0B (2.1:1) */
 
   /* Cyber Mode / Terminal Container */
   --cyber-bg: #080B14;
@@ -90,7 +89,7 @@
   --color-surface-variant: #283350;
 
   /* Primary Brand Violet Scale */
-  --color-primary: var(--cyber-primary-violet);
+  --color-primary: #B3A4FF; /* text-safe violet on dark surfaces (5.2:1 or better); fills that carry white text use --color-primary-container */
   --color-primary-container: #6243E5;
   --color-primary-hover: #8D73FF;
   --color-primary-fixed: #39219A;
@@ -353,7 +352,6 @@ button, input, select, textarea {
   font-size: 13px;
   font-family: var(--font-mono);
   color: var(--color-text-primary);
-  outline: none;
   transition: all 0.2s;
 }
 
@@ -401,6 +399,8 @@ button, input, select, textarea {
 }
 
 .header-avatar {
+  padding: 0;
+  font-family: inherit;
   width: 34px;
   height: 34px;
   border-radius: 9999px;
@@ -636,7 +636,7 @@ button, input, select, textarea {
   display: flex;
   align-items: center;
   gap: 8px;
-  color: var(--color-secondary);
+  color: var(--color-primary);
   font-family: var(--font-mono);
   font-size: 12px;
   font-weight: 600;
@@ -915,7 +915,7 @@ button, input, select, textarea {
 
 .catalog-search-icon { position: absolute; left: 11px; color: var(--color-outline); pointer-events: none; }
 
-.catalog-search-input { padding: 8px 14px 8px 34px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 13px; font-family: var(--font-sans); color: var(--color-text-primary); background: var(--color-surface); outline: none; transition: border-color 0.2s, box-shadow 0.2s; width: 200px; }
+.catalog-search-input { padding: 8px 14px 8px 34px; border: 1px solid var(--color-border); border-radius: 8px; font-size: 13px; font-family: var(--font-sans); color: var(--color-text-primary); background: var(--color-surface); transition: border-color 0.2s, box-shadow 0.2s; width: 200px; }
 
 .catalog-search-input:focus { border-color: var(--color-primary); box-shadow: 0 0 0 3px rgba(84,39,230,0.08); }
 
@@ -963,7 +963,7 @@ button, input, select, textarea {
 
 .module-card:hover:not(.module-card--locked) { border-color: var(--color-border-hover); box-shadow: var(--shadow-card-hover); transform: translateY(-1px); }
 
-.module-card--locked { opacity: 0.7; background: var(--color-surface-dim); }
+.module-card--locked { background: var(--color-surface-dim); } /* no opacity: it pushed the card text below 4.5:1; the lock icon and muted title carry the state */
 
 .module-card-accent-bar { height: 3px; width: 100%; flex-shrink: 0; }
 
@@ -980,7 +980,7 @@ button, input, select, textarea {
 .module-status-badge--completed { color: var(--color-emerald); background: rgba(16,185,129,0.08); }
 .module-status-badge--inprogress { color: var(--color-primary); background: var(--color-primary-fixed); }
 .module-status-badge--locked { color: var(--color-outline); background: var(--color-surface-container); }
-.module-status-badge--available { color: var(--color-technical-cyan); background: rgba(60,183,232,0.08); }
+.module-status-badge--available { color: var(--color-info); background: var(--color-info-bg); }
 
 .module-card-title { font-size: 15px; font-weight: 700; color: var(--color-text-primary); line-height: 1.3; margin-bottom: 5px; }
 .module-card--locked .module-card-title { color: var(--color-text-secondary); }
@@ -1228,7 +1228,7 @@ button, input, select, textarea {
    READER FOOTER NAV
    ========================================================== */
 
-.reader-footer { position: fixed; bottom: 0; left: var(--sidebar-width); right: 0; z-index: 40; background: rgba(255,255,255,0.96); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid var(--color-border); padding: 10px 32px; }
+.reader-footer { position: fixed; bottom: 0; left: var(--rail-offset, 0px); right: 0; z-index: 40; background: rgba(255,255,255,0.96); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border-top: 1px solid var(--color-border); padding: 10px 32px; }
 
 .reader-footer-inner { max-width: 1280px; margin: 0 auto; display: flex; align-items: center; justify-content: space-between; gap: 14px; }
 
@@ -1294,4 +1294,169 @@ button, input, select, textarea {
 /* On phones the header keeps the menu, logo and account buttons; the search box would only be a sliver. */
 @media (max-width: 560px) {
   .header-search-wrapper { display: none; }
+}
+
+/* StateMessage (components/ui/StateMessage.tsx) */
+@keyframes stateMessageSpin {
+  to { transform: rotate(360deg); }
+}
+.state-message-spin {
+  animation: stateMessageSpin 1s linear infinite;
+}
+@media (prefers-reduced-motion: reduce) {
+  .state-message-spin { animation: none; }
+}
+
+/* ==========================================================
+   SEMANTIC TOKENS (TF.2). Use these instead of hex literals in components; both themes define them.
+   Status colours are text/icon colours that meet contrast on --color-surface; *-bg are tinted backgrounds
+   for chips and banners (pair them with the matching text colour, never with white text).
+   ========================================================== */
+:root {
+  --color-success: #065f46;
+  --color-success-bg: rgba(16, 185, 129, 0.12);
+  --color-success-border: rgba(16, 185, 129, 0.45);
+  --color-warning: #b45309;
+  --color-warning-bg: rgba(245, 158, 11, 0.14);
+  --color-danger: #b91c1c;
+  --color-danger-bg: rgba(239, 68, 68, 0.10);
+  --color-danger-border: rgba(239, 68, 68, 0.40);
+  --color-info: #0369a1;
+  --color-info-bg: rgba(14, 165, 233, 0.12);
+  --color-primary-soft: rgba(84, 39, 230, 0.10);
+  --color-primary-border: rgba(84, 39, 230, 0.40);
+  --color-overlay: rgba(15, 23, 42, 0.60);
+  --shadow-card: 0 1px 3px rgba(15, 23, 42, 0.06);
+  --shadow-raised: 0 12px 32px rgba(15, 23, 42, 0.14);
+
+  /* Finding severity */
+  --sev-high: var(--color-danger);
+  --sev-medium: var(--color-warning);
+  --sev-low: var(--color-info);
+  --sev-info: var(--color-text-secondary);
+
+  /* Capability levels. Unknown is "no evidence", not a low level: it is grey AND drawn differently
+     (dashed outline, italic) via .lvl-unknown, so it never reads as a lighter Beginner. */
+  --lvl-unknown: var(--color-text-secondary);
+  --lvl-beginner: #b45309;
+  --lvl-developing: #0369a1;
+  --lvl-proficient: #065f46;
+  --lvl-advanced: #5427e6;
+
+  /* Curriculum track accents (text on surfaces and on their *-bg tint) */
+  --track-b: #4338ca;
+  --track-b-bg: rgba(129, 140, 248, 0.14);
+  --track-c: #7e22ce;
+  --track-c-bg: rgba(192, 132, 252, 0.14);
+}
+
+[data-theme="dark"] {
+  --color-success: #34d399;
+  --color-success-bg: rgba(16, 185, 129, 0.16);
+  --color-success-border: rgba(52, 211, 153, 0.45);
+  --color-warning: #fbbf24;
+  --color-warning-bg: rgba(245, 158, 11, 0.16);
+  --color-danger: #f87171;
+  --color-danger-bg: rgba(239, 68, 68, 0.16);
+  --color-danger-border: rgba(248, 113, 113, 0.45);
+  --color-info: #38bdf8;
+  --color-info-bg: rgba(56, 189, 248, 0.14);
+  --color-primary-soft: rgba(124, 92, 255, 0.18);
+  --color-primary-border: rgba(124, 92, 255, 0.45);
+  --color-overlay: rgba(0, 0, 0, 0.70);
+  --shadow-card: 0 1px 3px rgba(0, 0, 0, 0.45);
+  --shadow-raised: 0 12px 32px rgba(0, 0, 0, 0.55);
+  --lvl-beginner: #fbbf24;
+  --lvl-developing: #38bdf8;
+  --lvl-proficient: #34d399;
+  --lvl-advanced: #a78bfa;
+  --track-b: #a5b4fc;
+  --track-b-bg: rgba(129, 140, 248, 0.16);
+  --track-c: #d8b4fe;
+  --track-c-bg: rgba(192, 132, 252, 0.16);
+}
+
+.lvl-unknown {
+  color: var(--lvl-unknown);
+  font-style: italic;
+  border-bottom: 1px dashed var(--color-outline);
+}
+
+/* ==========================================================
+   NAVIGATION RAIL (TF.3): persistent on wide screens, drawer below 1024 px
+   ========================================================== */
+.app-shell {
+  --rail-offset: 0px; /* width taken by the rail; fixed footers such as .reader-footer start after it */
+}
+.app-rail {
+  display: none;
+}
+.app-sidebar--drawer {
+  position: relative;
+  width: 100%;
+  height: 100%;
+}
+.app-sidebar--rail {
+  position: sticky;
+  top: 0;
+  width: 100%;
+  height: 100vh;
+  padding: 16px 12px;
+}
+.app-sidebar--collapsed .nav-link {
+  justify-content: center;
+  padding: 10px;
+}
+.app-sidebar--collapsed .sidebar-nav > [role='group'] + [role='group'] {
+  margin-top: 12px;
+  padding-top: 12px;
+  border-top: 1px solid var(--color-border);
+}
+.sidebar-nav > [role='group'] > .nav-divider:first-child {
+  margin-top: 12px;
+}
+.nav-link:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+@media (min-width: 1024px) {
+  .app-shell { --rail-offset: 240px; }
+  .app-shell.rail-collapsed { --rail-offset: 64px; }
+  .app-rail {
+    display: block;
+    flex: 0 0 var(--rail-offset);
+    width: var(--rail-offset);
+    transition: width 0.2s ease, flex-basis 0.2s ease;
+  }
+  .mobile-menu-toggle { display: none; }
+}
+@media (prefers-reduced-motion: reduce) {
+  .app-rail { transition: none; }
+}
+
+/* ==========================================================
+   ACCESSIBILITY (TF.4)
+   ========================================================== */
+/* One visible keyboard focus ring for every interactive element (mouse clicks do not show it). */
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+}
+
+/* Respect the reduced-motion preference everywhere, including inline transitions and the animations defined in
+   admin.css, lesson.css, sandbox.css and scanner.css. */
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+}
+
+/* Text for screen readers only (live announcements, extra context). */
+.sr-only {
+  position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden;
+  clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0;
 }

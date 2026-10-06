@@ -37,10 +37,12 @@ def learner(make_user):
     return make_user("scan-learner")
 
 
-def post_log(client, user, headers, result):
-    return client.post("/api/scanner/log", headers=headers, json={
-        "user_id": user.id, "endpoint": "x", "status": "success", "details": json.dumps(result),
-        "receipt": scan_receipts.issue_receipt(main.SECRET_KEY, user.id, result)})
+def post_log(client, user, headers, result, organization_id=None):
+    body = {"user_id": user.id, "endpoint": "x", "status": "success", "details": json.dumps(result),
+            "receipt": scan_receipts.issue_receipt(main.SECRET_KEY, user.id, result)}
+    if organization_id is not None:
+        body["organization_id"] = organization_id
+    return client.post("/api/scanner/log", headers=headers, json=body)
 
 
 def test_only_medium_and_high_findings_count():

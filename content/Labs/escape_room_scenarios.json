@@ -4,6 +4,8 @@
   "scenarios": [
     {
       "id": "escape-1-hndl",
+      "competencies": [{ "id": "PQC.1", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Patient Records Leak",
       "module_id": "track_a_a8_pqc_mitigation",
       "section_id": "sec-3",
@@ -35,6 +37,8 @@
     },
     {
       "id": "escape-2-cert-chain",
+      "competencies": [{ "id": "PQC.6", "depth": "Apply" }, { "id": "CRYPTO.4", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Cracked Chain of Trust",
       "module_id": "track_a_a8_pqc_mitigation",
       "section_id": "sec-6",
@@ -66,6 +70,8 @@
     },
     {
       "id": "escape-3-symmetric",
+      "competencies": [{ "id": "PQC.1", "depth": "Apply" }, { "id": "CRYPTO.1", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Overlooked AES Key",
       "module_id": "track_a_a8_pqc_mitigation",
       "section_id": "sec-2",
@@ -97,6 +103,8 @@
     },
     {
       "id": "escape-4-superposition-panic",
+      "competencies": [{ "id": "QNT.1", "depth": "Explain" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Spinning Coin Interview",
       "module_id": "track_a_a6_quantum_foundations",
       "section_id": "sec-3",
@@ -128,6 +136,8 @@
     },
     {
       "id": "escape-5-grover-vs-shor-budget",
+      "competencies": [{ "id": "PQC.1", "depth": "Apply" }, { "id": "QNT.4", "depth": "Explain" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Migration Budget Meeting",
       "module_id": "track_b_b8_quantum_threats",
       "section_id": "sec-4",
@@ -159,6 +169,8 @@
     },
     {
       "id": "escape-6-hybrid-mode-flaw",
+      "competencies": [{ "id": "PQC.6", "depth": "Analyse" }, { "id": "PQC.5", "depth": "Analyse" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Combiner Bug Report",
       "module_id": "track_c_c10_pqc_attack_surface",
       "section_id": "sec-10",
@@ -190,6 +202,8 @@
     },
     {
       "id": "escape-7-executive-buyin",
+      "competencies": [{ "id": "SEC.4", "depth": "Apply" }, { "id": "PQC.1", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Boardroom Pitch",
       "module_id": "track_d_e1_quantum_risk_management",
       "section_id": "sec-1",
@@ -221,6 +235,8 @@
     },
     {
       "id": "escape-8-a1-slow-report",
+      "competencies": [{ "id": "PROG.2", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The 40-Minute Report",
       "module_id": "track_a_a1_computing_foundations",
       "section_id": "sec-3",
@@ -252,6 +268,8 @@
     },
     {
       "id": "escape-9-a2-bucket-skew",
+      "competencies": [{ "id": "MATH.4", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Lopsided Buckets",
       "module_id": "track_a_a2_mathematics_foundations",
       "section_id": "pk-modular",
@@ -283,6 +301,8 @@
     },
     {
       "id": "escape-10-a3-one-way-door",
+      "competencies": [{ "id": "NET.1", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The One-Way Door",
       "module_id": "track_a_a3_networking_foundations",
       "section_id": "sec-9",
@@ -314,6 +334,8 @@
     },
     {
       "id": "escape-11-a4-leaked-hashes",
+      "competencies": [{ "id": "CRYPTO.2", "depth": "Apply" }, { "id": "SEC.1", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Leaked Password Table",
       "module_id": "track_a_a4_cybersecurity_foundations",
       "section_id": "sec-2",
@@ -345,6 +367,8 @@
     },
     {
       "id": "escape-12-a5-reused-nonce",
+      "competencies": [{ "id": "CRYPTO.1", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Constant Nonce",
       "module_id": "track_a_a5_cryptography_foundations",
       "section_id": "pk-modes",
@@ -376,6 +400,8 @@
     },
     {
       "id": "escape-13-a7-missing-measure",
+      "competencies": [{ "id": "PROG.4", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Empty Histogram",
       "module_id": "track_a_a7_first_quantum_programming",
       "section_id": "sec-4",
@@ -407,6 +433,8 @@
     },
     {
       "id": "escape-14-b1-non-unitary",
+      "competencies": [{ "id": "MATH.3", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Almost-Gate",
       "module_id": "track_b_b1_advanced_math_for_quantum",
       "section_id": "sec-5",
@@ -438,6 +466,8 @@
     },
     {
       "id": "escape-15-b2-cloning-pitch",
+      "competencies": [{ "id": "QNT.3", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Backup Qubit",
       "module_id": "track_b_b2_quantum_information",
       "section_id": "sec-8",
@@ -469,6 +499,8 @@
     },
     {
       "id": "escape-16-b3-grover-claim",
+      "competencies": [{ "id": "QNT.4", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The One-Millisecond Search",
       "module_id": "track_b_b3_quantum_algorithms",
       "section_id": "sec-4",
@@ -500,6 +532,8 @@
     },
     {
       "id": "escape-17-b4-noisy-bell",
+      "competencies": [{ "id": "PROG.4", "depth": "Apply" }, { "id": "COMP.3", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Stray Counts",
       "module_id": "track_b_b4_quantum_programming",
       "section_id": "sec-5",
@@ -531,6 +565,8 @@
     },
     {
       "id": "escape-18-b5-platform-pick",
+      "competencies": [{ "id": "COMP.3", "depth": "Analyse" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Platform Pick",
       "module_id": "track_b_b5_quantum_hardware",
       "section_id": "sec-2",
@@ -562,6 +598,8 @@
     },
     {
       "id": "escape-19-b6-flat-network",
+      "competencies": [{ "id": "NET.3", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Flat Network",
       "module_id": "track_b_b6_network_security_engineering",
       "section_id": "sec-9",
@@ -593,6 +631,8 @@
     },
     {
       "id": "escape-20-b7-ecdsa-nonce",
+      "competencies": [{ "id": "CRYPTO.4", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Repeated k",
       "module_id": "track_b_b7_advanced_cryptography",
       "section_id": "sec-2",
@@ -624,6 +664,8 @@
     },
     {
       "id": "escape-21-b9-wrong-family",
+      "competencies": [{ "id": "PQC.2", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Wrong Family",
       "module_id": "track_b_b9_pqc_fundamentals",
       "section_id": "sec-3",
@@ -655,6 +697,8 @@
     },
     {
       "id": "escape-22-b10-standards-memo",
+      "competencies": [{ "id": "PQC.3", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Pre-Standard Claim",
       "module_id": "track_b_b10_pqc_standards",
       "section_id": "sec-6",
@@ -686,6 +730,8 @@
     },
     {
       "id": "escape-23-b11-silent-decaps",
+      "competencies": [{ "id": "PQC.4", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Silent Decapsulation",
       "module_id": "track_b_b11_intermediate_pqc_labs",
       "section_id": "sec-2",
@@ -717,6 +763,8 @@
     },
     {
       "id": "escape-24-c1-same-density",
+      "competencies": [{ "id": "QNT.3", "depth": "Analyse" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Indistinguishable Ensembles",
       "module_id": "track_c_c1_advanced_quantum_information",
       "section_id": "sec-2",
@@ -748,6 +796,8 @@
     },
     {
       "id": "escape-25-c2-shor-claim",
+      "competencies": [{ "id": "QNT.4", "depth": "Analyse" }, { "id": "QNT.5", "depth": "Analyse" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Hundred-Qubit Claim",
       "module_id": "track_c_c2_advanced_quantum_algorithms",
       "section_id": "sec-1",
@@ -779,6 +829,8 @@
     },
     {
       "id": "escape-26-c3-threshold",
+      "competencies": [{ "id": "COMP.4", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Distance Gamble",
       "module_id": "track_c_c3_quantum_error_correction",
       "section_id": "sec-9",
@@ -810,6 +862,8 @@
     },
     {
       "id": "escape-27-c4-swap-chain",
+      "competencies": [{ "id": "NET.5", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Twelve-Link Chain",
       "module_id": "track_c_c4_quantum_networking",
       "section_id": "sec-4",
@@ -841,6 +895,8 @@
     },
     {
       "id": "escape-28-c5-hashing-bound",
+      "competencies": [{ "id": "NET.5", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Distillation Choice",
       "module_id": "track_c_c5_quantum_communications",
       "section_id": "sec-4",
@@ -872,6 +928,8 @@
     },
     {
       "id": "escape-29-c6-qkd-pitch",
+      "competencies": [{ "id": "PQC.6", "depth": "Analyse" }, { "id": "NET.5", "depth": "Analyse" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The QKD Sales Pitch",
       "module_id": "track_c_c6_quantum_key_distribution",
       "section_id": "sec-11",
@@ -903,6 +961,8 @@
     },
     {
       "id": "escape-30-c7-length-extension",
+      "competencies": [{ "id": "CRYPTO.2", "depth": "Analyse" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Naive MAC",
       "module_id": "track_c_c7_advanced_cryptography",
       "section_id": "sec-5",
@@ -934,6 +994,8 @@
     },
     {
       "id": "escape-31-c8-parameter-shortcut",
+      "competencies": [{ "id": "MATH.5", "depth": "Analyse" }, { "id": "PQC.2", "depth": "Analyse" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Smaller Lattice",
       "module_id": "track_c_c8_pqc_mathematics",
       "section_id": "sec-10",
@@ -965,6 +1027,8 @@
     },
     {
       "id": "escape-32-c9-byte-order",
+      "competencies": [{ "id": "PQC.4", "depth": "Analyse" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Mismatched Encoding",
       "module_id": "track_c_c9_pqc_implementation_engineering",
       "section_id": "sec-11",
@@ -996,6 +1060,8 @@
     },
     {
       "id": "escape-33-c11-timing-leak",
+      "competencies": [{ "id": "PQC.5", "depth": "Analyse" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Early Exit",
       "module_id": "track_c_c11_pqc_defense_engineering",
       "section_id": "sec-2",
@@ -1027,6 +1093,8 @@
     },
     {
       "id": "escape-34-e2-shadow-service",
+      "competencies": [{ "id": "PQC.7", "depth": "Analyse" }, { "id": "SEC.5", "depth": "Apply" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Unlisted Endpoint",
       "module_id": "track_d_e2_cryptographic_discovery",
       "section_id": "sec-2",
@@ -1058,6 +1126,8 @@
     },
     {
       "id": "escape-35-e3-blank-score",
+      "competencies": [{ "id": "PQC.8", "depth": "Analyse" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Blank Score",
       "module_id": "track_d_e3_quantum_readiness_assessment",
       "section_id": "sec-3",
@@ -1089,6 +1159,8 @@
     },
     {
       "id": "escape-36-e4-hard-coded",
+      "competencies": [{ "id": "PQC.6", "depth": "Analyse" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Compiled-In Algorithm",
       "module_id": "track_d_e4_crypto_agility",
       "section_id": "sec-1",
@@ -1120,6 +1192,8 @@
     },
     {
       "id": "escape-37-e5-big-bang",
+      "competencies": [{ "id": "PQC.8", "depth": "Analyse" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Big-Bang Weekend",
       "module_id": "track_d_e5_enterprise_pqc_migration",
       "section_id": "sec-10",
@@ -1151,6 +1225,8 @@
     },
     {
       "id": "escape-38-e6-ownerless-risk",
+      "competencies": [{ "id": "SEC.6", "depth": "Analyse" }],
+      "tag_status": "proposed-unreviewed",
       "title": "The Ownerless Risk",
       "module_id": "track_d_e6_governance",
       "section_id": "sec-3",

@@ -70,3 +70,62 @@ test('quiz item pointing at an unknown lesson', () => {
   const f = fixture(); f.quizItems[0].lesson_id = 'A9.L9';
   has(validateCompetencyModel(f), 'unknown lesson A9.L9');
 });
+
+// --- drafted tags (T1.2) ---
+test('item of a module without a lesson design may be tagged without a lesson', () => {
+  const f = fixture();
+  f.quizItems.push({ id: 'b9-q1', module_id: 'track_b_b9', competency_id: 'NET.2', depth: 'Explain', tag_status: 'proposed-unreviewed' });
+  assert.deepStrictEqual(validateCompetencyModel(f), []);
+});
+test('item of a module with a lesson design needs a lesson', () => {
+  const f = fixture();
+  f.quizItems.push({ id: 'a3-q9', module_id: 'track_a_a3_x', competency_id: 'NET.1', depth: 'Aware' });
+  has(validateCompetencyModel(f), 'need a lesson_id');
+});
+test('lesson without competency and depth', () => {
+  const f = fixture(); f.quizItems[1].lesson_id = 'A3.L1';
+  has(validateCompetencyModel(f), 'lesson_id without competency_id and depth');
+});
+test('unknown tag status', () => {
+  const f = fixture(); f.quizItems[0].tag_status = 'approved-by-me';
+  has(validateCompetencyModel(f), 'unknown tag_status approved-by-me');
+});
+test('a no-competency item must not carry tags', () => {
+  const f = fixture(); f.quizItems[0].tag_status = 'no-competency';
+  has(validateCompetencyModel(f), 'must not carry tags');
+  f.quizItems[1].tag_status = 'no-competency';
+  assert.ok(!validateCompetencyModel(f).some((e) => e.startsWith('a3-q2')));
+});
+test('tag status on an untagged item', () => {
+  const f = fixture(); f.quizItems[1].tag_status = 'proposed-unreviewed';
+  has(validateCompetencyModel(f), 'on an untagged item');
+});
+test('practicals: tags are checked, untagged practicals are allowed', () => {
+  const f = fixture();
+  f.practicals = [
+    { kind: 'lab', id: 'lab-1', competencies: [{ id: 'NET.1', depth: 'Apply' }], tag_status: 'proposed-unreviewed' },
+    { kind: 'mission', id: 'm-1' },
+  ];
+  assert.deepStrictEqual(validateCompetencyModel(f), []);
+  f.practicals[0].competencies[0].id = 'NET.9';
+  has(validateCompetencyModel(f), 'lab lab-1: unknown competency NET.9');
+});
+test('practicals: duplicate ids', () => {
+  const f = fixture();
+  f.practicals = [{ kind: 'lab', id: 'x' }, { kind: 'lab', id: 'x' }];
+  has(validateCompetencyModel(f), 'duplicate lab x');
+});
+
+// --- structured level rules (T1.4) ---
+test('level rule must agree with its evidence text', () => {
+  const f = fixture();
+  f.model.capability_levels.min_items_for_known = 3;
+  f.model.capability_levels.levels[2] = { id: 'Developing', rank: 2, evidence: 'At least 60% on Aware/Explain items', rule: { requires: 'Beginner', depths: ['Aware', 'Explain'], min_share: 0.6 } };
+  f.model.capability_levels.levels[1] = { id: 'Beginner', rank: 1, evidence: 'At least 3 items', rule: { min_items: 3 } };
+  assert.deepStrictEqual(validateCompetencyModel(f), []);
+  f.model.capability_levels.levels[2].rule.min_share = 0.7;
+  has(validateCompetencyModel(f), 'does not match its evidence text');
+  f.model.capability_levels.levels[2].rule = { requires: 'Advanced', depths: ['Deep'], min_share: 0.6 };
+  has(validateCompetencyModel(f), 'which is not a lower level');
+  has(validateCompetencyModel(f), 'unknown depth Deep in rule');
+});
