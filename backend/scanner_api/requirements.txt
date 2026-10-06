@@ -6,3 +6,4 @@ dnspython
 requests
 cryptography
 urllib3
+gunicorn

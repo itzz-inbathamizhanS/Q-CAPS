@@ -77,6 +77,12 @@ def _verification_info(user_id, hostname, verified=None):
     return body
 
 
+@app.route('/api/health', methods=['GET'])
+def health():
+    """Liveness for the host. Reports whether scans can run, without revealing configuration."""
+    return jsonify({"status": "ok", "scanning_enabled": bool(JWT_SECRET)})
+
+
 @app.route('/api/domain-verification', methods=['POST'])
 def domain_verification():
     """Tell the user which DNS TXT record proves they control a domain, and whether it is published."""

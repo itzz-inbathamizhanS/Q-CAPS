@@ -100,6 +100,15 @@ and history list but are not displayed as results.
 `SCANNER_HOST`, `PORT`, `SCANNER_RATE_LIMIT`, `SCANNER_RATE_WINDOW_SECONDS`, `SCANNER_MAX_CONCURRENT`,
 `VITE_SCANNER_API_URL` (frontend). See `backend/.env.example`.
 
+## Hosted deployment
+
+`render.yaml` defines a `qcaps-scanner` web service (gunicorn, one worker) next to `qcaps-api`. After the blueprint is applied:
+1. On `qcaps-scanner`, set `QCAPS_CORS_ORIGINS` to the Vercel origin (for example `https://qcaps.vercel.app`, no trailing slash).
+   `QCAPS_JWT_SECRET` is copied from `qcaps-api`; if you set it by hand it must be identical on both services.
+2. On Vercel, set `VITE_SCANNER_API_URL` to the scanner's public URL (no trailing slash) for Production and redeploy,
+   because Vite inlines the value at build time. Without it the page reports "The scanner is not available in this deployment."
+3. `GET /api/health` on the scanner should return `{"status":"ok","scanning_enabled":true}`.
+
 ## Known limits
 
 - crt.sh and WHOIS are third-party services; when they are slow or down the check shows `failed` with the reason.
