@@ -42,7 +42,7 @@ The research method the platform is built around is: ASSESS → DISCOVER → MOD
 | Badges | 90 defined, plus 5 certificates (see `content/Badges/master_badges_and_certificates.md`) |
 | Authentication | Register / login with JWT, hashed passwords, rate limiting |
 | Admin | Course manager, section editor, audit log |
-| Scanner | Separate Flask service with SSRF protection, real hybrid-PQC detection, ownership-gated active checks (not deployed publicly) |
+| Scanner | Separate Flask service with SSRF protection, real hybrid-PQC detection, ownership-gated active checks (deployable on Render via `render.yaml`; see docs/architecture/SCANNER.md) |
 | Evidence loop | Evidence, findings, interventions, verification and closure tracking |
 | Deployment | Render (API, free) + Vercel (frontend, free) |
 | Tests | Backend pytest suite (213 passing at the last run) and 38 frontend content tests |

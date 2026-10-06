@@ -24,3 +24,23 @@ services:
         sync: false
       - key: QCAPS_DEMO_COMPLETE_PASSWORD
         sync: false
+
+  # Crypto scanner (Flask). The frontend reaches it through VITE_SCANNER_API_URL, set on Vercel to this service's URL.
+  # QCAPS_JWT_SECRET must equal the API's value: the scanner validates the API's tokens and signs scan receipts the API
+  # verifies. One worker keeps the per-user lock and rate limiter in a single process (see docs/architecture/SCANNER.md).
+  - type: web
+    name: qcaps-scanner
+    runtime: python
+    plan: free
+    rootDir: backend/scanner_api
+    buildCommand: pip install -r requirements.txt
+    startCommand: gunicorn api:app --bind 0.0.0.0:$PORT --workers 1 --threads 4 --timeout 60
+    healthCheckPath: /api/health
+    envVars:
+      - key: QCAPS_JWT_SECRET
+        fromService:
+          type: web
+          name: qcaps-api
+          envVarKey: QCAPS_JWT_SECRET
+      - key: QCAPS_CORS_ORIGINS
+        sync: false
