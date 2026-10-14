@@ -8,7 +8,8 @@ exposure-graph optimizer path were removed in T1.7.
 
 1. **Gap tier (`engine: "gap"`).** The tier uses rows of the skill matrix (`SKILL_MATRIX.md`) that have a gap
    (critical, high or medium) or are `unassessed`.
-   - **Order:** by gap class, then the severity of the most severe driving finding, then competency code. At most
+   - **Order:** by gap class, then the risk score R of the row's top driving finding (`RISK_MODEL.md`; Unknown
+     after every scored finding), then the severity of the most severe driving finding, then competency code. At most
      5 recommendations; two gaps that lead to the same module are merged into one recommendation.
    - **Action:**
      - `assess`: demonstrated is Unknown. The recommendation is the module with the most items tagged with the
@@ -50,7 +51,7 @@ Priority labels in the gap tier: critical → Critical, high → High, medium �
 
 | `type` | Fields | Meaning |
 |---|---|---|
-| `gap` | competency, competency_name, required, demonstrated, gap_class, finding_id, finding_title, finding_severity, requirement_id, other_findings | An open finding needs a level above the demonstrated one |
+| `gap` | competency, competency_name, required, demonstrated, gap_class, finding_id, finding_title, finding_severity, finding_risk_score, requirement_id, other_findings | An open finding needs a level above the demonstrated one |
 | `unassessed` | same as `gap` | The required competency has no estimate yet |
 | `teaches` | module_id, competency, items_at_depth, tagged_items, depths | Why this module was chosen |
 | `practical` | kind, id, title, depth, module_id, competency | The practical needed for Proficient |

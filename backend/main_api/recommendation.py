@@ -1,7 +1,8 @@
 """The recommendation engine (docs/architecture/RECOMMENDATIONS.md). One engine, three tiers, always explained.
 
 1. Gap tier: skill-matrix rows with a gap (critical, high, medium) or an unassessed requirement, ordered by gap class,
-   then the severity of the driving finding, then competency. Each is turned into a concrete next step (take a
+   then the risk score R of the driving finding (risk/score.py; Unknown after every scored finding), then its
+   severity, then competency. Each is turned into a concrete next step (take a
    module quiz to get assessed, study a module, or do a practical) on a module whose prerequisites the learner has.
 2. Score tier (recommendation_scores.py): when no finding creates a gap, quiz-topic scores and scanner context;
    unattempted topics are their own tier, never a stand-in score.
@@ -18,6 +19,7 @@ import models
 from activities import catalogue
 from competency import skill_matrix
 from models import QuizScore, ScannerLog
+from risk import service as risk_service
 
 # Evidence-driven fallback; also re-exported so existing imports keep working.
 from recommendation_scores import get_recommendation_from_scores, get_score_based_recommendation  # noqa: F401
@@ -87,7 +89,9 @@ def _practical_for(code: str) -> Optional[dict]:
 
 def _gap_recommendations(db: Session, user_id: int, matrix: dict) -> List[dict]:
     rows = [r for r in matrix["rows"] if r["gap_class"] in GAP_PRIORITY]
+    # driving_findings is already ordered by R, then severity, so the first one is the row's most urgent finding.
     rows.sort(key=lambda r: (list(GAP_PRIORITY).index(r["gap_class"]),
+                             risk_service.order_key(r["driving_findings"][0]["risk_score"] if r["driving_findings"] else None),
                              -max((f["severity"] for f in r["driving_findings"]), default=0), r["competency_code"]))
     if not rows:
         return []
@@ -106,7 +110,8 @@ def _gap_recommendations(db: Session, user_id: int, matrix: dict) -> List[dict]:
             "competency": code, "competency_name": row["competency_name"], "required": required,
             "demonstrated": demonstrated, "gap_class": row["gap_class"],
             "finding_id": top["finding_id"], "finding_title": top["title"] or top["finding_type"],
-            "finding_severity": top["severity"], "requirement_id": top["requirement_id"],
+            "finding_severity": top["severity"], "finding_risk_score": top["risk_score"],
+            "requirement_id": top["requirement_id"],
             "other_findings": len(row["driving_findings"]) - 1,
         }]
         action, practical = None, None

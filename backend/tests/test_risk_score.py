@@ -111,3 +111,38 @@ def test_backfill_scores_findings_recorded_before_the_model(client, db, scanned)
     db.commit()
     assert backfill(db) == 2
     assert backfill(db) == 0
+
+
+# ---------------------------------------------------------------- ordering by R
+
+def test_order_key_puts_unknown_after_every_scored_finding():
+    from risk.service import order_key
+    scores = [None, 0.0, 0.42, None, 0.1]
+    assert sorted(scores, key=order_key) == [0.42, 0.1, 0.0, None, None]  # Unknown is not ranked as 0
+
+
+def test_asset_findings_are_listed_by_risk_score_then_severity(client, db, scanned):
+    _, h, asset, _ = scanned
+    url = f"/api/scanner/assets/{asset.id}/findings"
+    before = client.get(url, headers=h).json()
+    assert [f["finding_type"] for f in before] == ["tls.version.obsolete", "pqc.kex.classical_only"]  # severity
+    assert all(f["risk_score"] is None and f["risk_model_version"] == "risk-v1" for f in before)
+
+    ctx = {"criticality_level": "critical", "data_sensitivity": "confidential", "confidentiality_years": 10}
+    assert client.put(f"/api/assets/{asset.id}/context", headers=h, json=ctx).status_code == 200
+    after = client.get(url, headers=h).json()
+    assert [f["finding_type"] for f in after] == ["pqc.kex.classical_only", "tls.version.obsolete"]
+    assert after[0]["risk_score"] > 0 and after[1]["risk_score"] == 0.0
+
+
+def test_skill_matrix_drivers_carry_the_risk_score(client, db, scanned):
+    user, h, asset, _ = scanned
+    rows = client.get("/api/users/me/skill-matrix", headers=h).json()["rows"]
+    net4 = next(r for r in rows if r["competency_code"] == "NET.4")
+    assert [d["finding_type"] for d in net4["driving_findings"]] == ["tls.version.obsolete", "pqc.kex.classical_only"]
+    assert all(d["risk_score"] is None for d in net4["driving_findings"])
+
+    ctx = {"criticality_level": "critical", "data_sensitivity": "confidential", "confidentiality_years": 10}
+    client.put(f"/api/assets/{asset.id}/context", headers=h, json=ctx)
+    net4 = next(r for r in client.get("/api/users/me/skill-matrix", headers=h).json()["rows"] if r["competency_code"] == "NET.4")
+    assert [d["finding_type"] for d in net4["driving_findings"]] == ["pqc.kex.classical_only", "tls.version.obsolete"]

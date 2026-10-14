@@ -275,6 +275,7 @@ class DrivingFinding(BaseModel):
     finding_type: str
     title: Optional[str] = None
     severity: float
+    risk_score: Optional[float] = None  # latest risk-v1 score; None is Unknown, never 0
     requirement_id: str
     required_level: str
 
@@ -322,6 +323,8 @@ class ScannerFindingOut(BaseModel):
     status: str
     first_seen: datetime
     last_seen: datetime
+    risk_score: Optional[float] = None  # latest risk-v1 score; None is Unknown (asset context missing), never 0
+    risk_model_version: Optional[str] = None
 
 
 class CompetencyBase(BaseModel):

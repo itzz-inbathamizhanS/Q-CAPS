@@ -38,6 +38,22 @@ risk = exposure × asset_criticality × pqc_dependency × migration_urgency     
     `asset.context`);
   - at start-up, for findings that have no score for the current model version.
 
+## Where the score orders findings
+
+The score only orders; it never filters, hides or changes a level. Scored findings come first, highest R first.
+A finding whose score is Unknown (missing asset context) comes after every scored one: it is never ranked as if
+R were 0. Ties fall back to severity. `risk/service.order_key` is the one sort key used everywhere:
+
+- **Tracked findings of an asset** (`GET /api/scanner/assets/{id}/findings`): open first, then R, then severity.
+  Each row carries `risk_score` and `risk_model_version`, and the scanner's asset panel shows the score as
+  unvalidated.
+- **Skill matrix** (`GET /api/users/me/skill-matrix`): each row's `driving_findings` are ordered by R, then
+  severity, and carry `risk_score`.
+- **Recommendations** (`recommendation.py`): within a gap class, by the R of the row's top driving finding, then
+  severity. The `gap` reason carries `finding_risk_score`.
+
+Without any declared asset context every score is Unknown, so the order is the same as ordering by severity.
+
 ## Who sets the context
 
 The owner of a personal asset, the `org_admin` of an organization asset, or a platform admin

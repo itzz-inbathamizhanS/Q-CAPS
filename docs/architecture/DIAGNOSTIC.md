@@ -41,7 +41,8 @@ counts computed from the stored responses.
 
 ## Limitations (reported, not fixed)
 
-- **Too few items per competency.** Ten items over seven competencies is below the 3-items-per-competency
+- **Too few items per competency.** Ten items over eight competencies (SEC.1, CRYPTO.2, CRYPTO.3, CRYPTO.4, PQC.1,
+  PQC.2, PQC.3, PQC.6) is below the 3-items-per-competency
   threshold, so the diagnostic gives domain-level evidence and cannot move any competency out of Unknown on its
   own.
 - **Retest effect.** Until DIAG-B is reviewed and calibrated against DIAG-A, a reassessment reuses DIAG-A. The

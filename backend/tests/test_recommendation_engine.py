@@ -8,8 +8,13 @@ import seed_quizzes
 from competency.seed import seed_competencies
 from course_content.import_curriculum import DEFAULT_SOURCE, import_curriculum
 from recommendation import get_user_recommendation
-from test_scan_assets import HSTS, KEX, full_result
+from test_scan_assets import HSTS, KEX, finding, full_result
 from test_scanner_v2_backend import post_log
+
+
+OLD_TLS = finding("tls.version.obsolete", "high", None, "Obsolete TLS version negotiated")
+CERT_EXPIRED = finding("cert.expired", "high", None, "Certificate has expired")
+OPEN_PORT = finding("exposure.port.telnet", "high", None, "Telnet is reachable")
 
 
 @pytest.fixture
@@ -126,3 +131,70 @@ def test_endpoint_returns_reasons_and_stays_private(client, db, content, make_us
     body = client.get(f"/api/users/{user.id}/recommendation", headers=h).json()
     assert body["engine"] == "gap" and body["reasons"] and body["recommendations"]
     assert client.get(f"/api/users/{other.id}/recommendation", headers=h).status_code == 403
+
+
+# ---------------------------------------------------------------- the paper's worked example and ordering rules
+
+def test_table_v_no_evidence_assesses_every_required_competency(client, db, content, learner):
+    """Paper, Table V row 1: a classical-only key exchange and no capability evidence."""
+    user, h = learner
+    post_log(client, user, h, full_result([KEX]))
+    pass_all_modules_except(db, user)
+
+    rec = get_user_recommendation(db, user.id)
+    assert (rec["engine"], rec["course_id"], rec["priority"]) == ("gap", "track_b_b6_network_security_engineering", "Unassessed")
+    recs = rec["recommendations"]
+    assert [r["competencies"] for r in recs] == [["NET.4"], ["PQC.1"], ["PQC.3"], ["PQC.6"]]  # every required competency
+    assert all(r["action"] == "assess" and r["priority"] == "Unassessed" for r in recs)
+    assert reason(rec, "unassessed")["required"] == "Proficient"
+
+
+def test_a_high_severity_finding_escalates_the_gap_class(client, db, content, learner):
+    user, h = learner
+    post_log(client, user, h, full_result([OLD_TLS]))  # high severity (0.9), needs NET.4 at Proficient
+    set_level(db, user, "NET.4", "Beginner")
+    pass_all_modules_except(db, user)
+
+    rec = get_user_recommendation(db, user.id)
+    assert rec["priority"] == "Critical"  # rank gap 2 is high, raised one class by the high-severity finding
+    assert reason(rec, "gap")["gap_class"] == "critical"
+
+
+def test_at_most_five_recommendations_are_returned(client, db, content, learner):
+    user, h = learner
+    post_log(client, user, h, full_result([KEX, CERT_EXPIRED, OPEN_PORT]))  # eight required competencies
+    pass_all_modules_except(db, user)
+
+    recs = get_user_recommendation(db, user.id)["recommendations"]
+    assert len(recs) == 5
+    assert len({r["module_id"] for r in recs}) == 5
+
+
+def _declare_context(client, db, h):
+    asset = db.query(models.Asset).one()
+    ctx = {"criticality_level": "high", "data_sensitivity": "confidential", "confidentiality_years": 10}
+    assert client.put(f"/api/assets/{asset.id}/context", headers=h, json=ctx).status_code == 200
+
+
+def test_within_a_gap_class_the_risk_score_orders_before_severity(client, db, content, learner):
+    """Two high-class gaps: PQC.6 from the classical key exchange (medium severity, quantum-vulnerable) and CRYPTO.4
+    from an expired certificate (high severity, not quantum-vulnerable, so R = 0)."""
+    user, h = learner
+    post_log(client, user, h, full_result([KEX, CERT_EXPIRED]))
+    for code in ("NET.4", "PQC.1", "PQC.3", "CRYPTO.5"):
+        set_level(db, user, code, "Advanced")
+    set_level(db, user, "PQC.6", "Beginner")    # Proficient - Beginner = 2: high
+    set_level(db, user, "CRYPTO.4", "Beginner")  # Developing - Beginner = 1: medium, escalated to high by severity
+    pass_all_modules_except(db, user)
+
+    # Without asset context every R is Unknown, so severity decides.
+    first = get_user_recommendation(db, user.id)["recommendations"]
+    assert [r["priority"] for r in first[:2]] == ["High", "High"]
+    assert first[0]["competencies"] == ["CRYPTO.4"]
+    assert reason(first[0], "gap")["finding_risk_score"] is None
+
+    _declare_context(client, db, h)
+    second = get_user_recommendation(db, user.id)["recommendations"]
+    assert second[0]["competencies"] == ["PQC.6"] and second[1]["competencies"] == ["CRYPTO.4"]
+    assert reason(second[0], "gap")["finding_risk_score"] > 0
+    assert reason(second[1], "gap")["finding_risk_score"] == 0.0

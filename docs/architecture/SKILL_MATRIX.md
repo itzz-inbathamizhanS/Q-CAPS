@@ -13,7 +13,7 @@ A row exists for every competency that is **required** (by an open finding) or *
 | `demonstrated_level` | `learner_capabilities.level` (`CAPABILITY_MODEL.md`), or `Unknown` without a row |
 | `gap` | `rank(required) - rank(demonstrated)`. It is **`"unassessed"` when demonstrated is Unknown**, because Unknown is never rank 0. It is `null` when there is no requirement. |
 | `gap_class` | Uses the v1 rule below; `unassessed` for Unknown; `null` without a requirement |
-| `driving_findings` | The open findings that create the requirement (id, type, title, severity, requirement), most severe first |
+| `driving_findings` | The open findings that create the requirement (id, type, title, severity, risk_score, requirement), highest risk score R first (Unknown after every scored finding), then most severe |
 | `evidence_count`, `last_evidence_at`, `knowledge_score`, `procedural_score` | From the capability row |
 
 Level ranks come from `competency_model.json`: Unknown 0, Beginner 1, Developing 2, Proficient 3, Advanced 4.
