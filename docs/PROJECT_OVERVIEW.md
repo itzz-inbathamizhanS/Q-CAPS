@@ -301,13 +301,15 @@ Local setup, import and test commands are in the root [`README.md`](../README.md
 frontend `npm run build`, `npm run lint`, `npm run test:content`, `npm run content:check`.
 
 **Hosted deployment (free tiers):**
-- Frontend: Vercel (`https://qcaps.vercel.app`), static Vite build with an SPA rewrite (`frontend/vercel.json`).
+- Frontend: Vercel (`https://qcaps.vercel.app`, also served at `https://q-caps-itzz-inbathamizhans.vercel.app`), static Vite build with an SPA rewrite (`frontend/vercel.json`).
 - API: Render free web service (`https://qcaps-api.onrender.com`), blueprint in `render.yaml`. The build runs
   `deploy_bootstrap.py`, which creates a fresh database in about nine seconds: curriculum, quiz banks, admin, all lesson
   packs and the demo accounts.
 - Limits to know: the free API sleeps when idle (first request after sleep can take about a minute); the SQLite file is
   **ephemeral**, so accounts registered after a deploy or restart are lost, while content and the three seeded accounts are
-  rebuilt; Render does not auto-deploy on push (deploy is triggered manually); the scanner is not deployed.
+  rebuilt; Render does not auto-deploy on push (deploy is triggered manually).
+- Scanner: Render free web service (`https://qcaps-scanner.onrender.com`), page at `https://qcaps.vercel.app/scanner`.
+- `QCAPS_CORS_ORIGINS` on both Render services: `https://qcaps.vercel.app,https://q-caps-itzz-inbathamizhans.vercel.app`.
 - For persistence, point `QCAPS_DATABASE_URL` at a hosted Postgres (not yet tested with this code).
 
 ---

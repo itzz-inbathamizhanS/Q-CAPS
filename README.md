@@ -4,8 +4,9 @@
 quantum-safe (post-quantum) cryptography, with server-graded quizzes, book-sourced lessons, scenario labs, decision
 missions, and a cryptographic reconnaissance scanner that detects hybrid post-quantum key exchange.
 
-**Live demo:** [qcaps.vercel.app](https://qcaps.vercel.app) (the API runs on a free tier and can take about a minute to wake
-after being idle; the hosted database is rebuilt on each restart, and the scanner is not deployed publicly).
+**Live demo:** [qcaps.vercel.app](https://qcaps.vercel.app) (scanner: [qcaps.vercel.app/scanner](https://qcaps.vercel.app/scanner)).
+The API and scanner run on a free tier and can take about a minute to wake after being idle, and the hosted database is
+rebuilt on each restart.
 
 ## Why
 
