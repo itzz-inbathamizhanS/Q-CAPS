@@ -102,10 +102,6 @@ and history list but are not displayed as results.
 
 ## Hosted deployment
 
-The public demo (qcaps.vercel.app) does not include the scanner: `frontend/vercel.json` sets no
-`VITE_SCANNER_API_URL`, so the page reports "The scanner is not available in this deployment." The steps below are for
-a deployment that does want the scanner.
-
 `render.yaml` defines a `qcaps-scanner` web service (gunicorn, one worker) next to `qcaps-api`. After the blueprint is applied:
 1. On `qcaps-scanner`, set `QCAPS_CORS_ORIGINS` to the Vercel origin (for example `https://qcaps.vercel.app`, no trailing slash).
    `QCAPS_JWT_SECRET` is copied from `qcaps-api`; if you set it by hand it must be identical on both services.

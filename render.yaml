@@ -25,8 +25,7 @@ services:
       - key: QCAPS_DEMO_COMPLETE_PASSWORD
         sync: false
 
-  # Crypto scanner (Flask), for self-hosted deployments. The public demo does not connect to it: frontend/vercel.json
-  # sets no VITE_SCANNER_API_URL. A deployment that wants the scanner sets that variable to this service's URL.
+  # Crypto scanner (Flask). The frontend reaches it through VITE_SCANNER_API_URL, set on Vercel to this service's URL.
   # QCAPS_JWT_SECRET must equal the API's value: the scanner validates the API's tokens and signs scan receipts the API
   # verifies. One worker keeps the per-user lock and rate limiter in a single process (see docs/architecture/SCANNER.md).
   - type: web

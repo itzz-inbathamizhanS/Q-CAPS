@@ -8,5 +8,10 @@
       "source": "/(.*)",
       "destination": "/index.html"
     }
-  ]
+  ],
+  "build": {
+    "env": {
+      "VITE_SCANNER_API_URL": "https://qcaps-scanner.onrender.com"
+    }
+  }
 }
