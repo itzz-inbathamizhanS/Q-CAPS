@@ -1,5 +1,5 @@
 """Compute and store risk scores (risk/score.py) whenever their inputs change."""
-from typing import Optional
+from typing import Dict, Iterable, Optional
 
 from sqlalchemy.orm import Session
 
@@ -32,6 +32,31 @@ def latest(db: Session, finding_id: str) -> Optional[models.RiskScore]:
     return (db.query(models.RiskScore).filter(models.RiskScore.finding_id == finding_id,
                                               models.RiskScore.model_version == risk_model.RISK_MODEL_VERSION)
             .order_by(models.RiskScore.computed_at.desc(), models.RiskScore.id.desc()).first())
+
+
+def latest_scores(db: Session, finding_ids: Iterable[str]) -> Dict[str, Optional[float]]:
+    """Latest current-version score per finding, in one query. A finding without a score row, or whose latest row is
+    Unknown (missing context), maps to None."""
+    ids = list(set(finding_ids))
+    if not ids:
+        return {}
+    latest_row: Dict[str, models.RiskScore] = {}
+    for row in db.query(models.RiskScore).filter(models.RiskScore.finding_id.in_(ids),
+                                                  models.RiskScore.model_version == risk_model.RISK_MODEL_VERSION):
+        held = latest_row.get(row.finding_id)
+        if held is None or _recency(row) > _recency(held):
+            latest_row[row.finding_id] = row
+    return {fid: (latest_row[fid].score if fid in latest_row else None) for fid in ids}
+
+
+def _recency(row: models.RiskScore) -> tuple:
+    return (row.computed_at is not None, row.computed_at, row.id)
+
+
+def order_key(score: Optional[float]) -> tuple:
+    """Sort key that puts scored findings first, highest risk first, and Unknown (None) after every scored one.
+    Unknown is never ranked as if it were 0: it has no position among the scored findings."""
+    return (0, -score) if score is not None else (1, 0.0)
 
 
 def backfill(db: Session) -> int:

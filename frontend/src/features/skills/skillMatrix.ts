@@ -8,6 +8,8 @@ export interface DrivingFinding {
   finding_type: string;
   title: string | null;
   severity: number;
+  /** Latest risk-v1 score R (unvalidated); null is Unknown because the asset context is missing, never 0. */
+  risk_score?: number | null;
   requirement_id: string;
   required_level: string;
 }

@@ -10,6 +10,7 @@ from sqlalchemy.orm import Session
 import models
 from competency import requirements
 from organizations import access
+from risk import service as risk_service
 from competency.seed import load_model
 
 # v1 gap classes (a hypothesis to calibrate, documented in SKILL_MATRIX.md): by rank difference, escalated one step
@@ -54,6 +55,7 @@ def build(db: Session, user: models.User) -> dict:
                 models.Intervention.finding_id.in_(org_finding_ids), models.Intervention.assigned_user_id.isnot(None)):
             assignees.setdefault(fid, set()).add(uid)
     rows = [(req, f) for req, f, org in rows if org is None or f.id not in assignees or user.id in assignees[f.id]]
+    risk = risk_service.latest_scores(db, [f.id for _, f in rows])
     required: Dict[str, dict] = {}
     for req, finding in rows:
         entry = required.setdefault(req.competency_code, {"level": None, "findings": {}})
@@ -61,7 +63,8 @@ def build(db: Session, user: models.User) -> dict:
             entry["level"] = req.required_level
         entry["findings"][finding.id] = {
             "finding_id": finding.id, "finding_type": finding.finding_type, "title": finding.title,
-            "severity": finding.severity, "requirement_id": req.requirement_id, "required_level": req.required_level,
+            "severity": finding.severity, "risk_score": risk.get(finding.id),
+            "requirement_id": req.requirement_id, "required_level": req.required_level,
         }
 
     competencies = {c.id: c for c in db.query(models.Competency).all()}
@@ -77,7 +80,9 @@ def build(db: Session, user: models.User) -> dict:
         demonstrated = (cap.level if cap and cap.level else "Unknown")
         req = required.get(code)
         required_level: Optional[str] = req["level"] if req else None
-        drivers = sorted(req["findings"].values(), key=lambda f: -f["severity"]) if req else []
+        # Highest risk score R first (Unknown after every scored finding), then severity (RISK_MODEL.md).
+        drivers = sorted(req["findings"].values(),
+                         key=lambda f: (risk_service.order_key(f["risk_score"]), -f["severity"])) if req else []
         if required_level is None:
             gap, klass = None, None  # no current requirement
         elif demonstrated == "Unknown":

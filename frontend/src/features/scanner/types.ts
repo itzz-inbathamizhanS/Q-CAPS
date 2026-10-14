@@ -203,4 +203,7 @@ export interface TrackedFinding {
   status: string;
   first_seen: string;
   last_seen: string;
+  /** Latest risk-v1 score R, an unvalidated model used only to order findings; null is Unknown, never 0. */
+  risk_score?: number | null;
+  risk_model_version?: string | null;
 }

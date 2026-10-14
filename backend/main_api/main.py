@@ -492,11 +492,17 @@ def list_asset_findings(asset_id: int, db: Session = Depends(get_db), current_us
     if not asset or (asset.owner_user_id is None and asset.organization_id is None) \
             or not org_access.can_view_asset(db, current_user, asset):
         raise HTTPException(status_code=404, detail="Asset not found")
+    from risk import service as risk_service
+    from risk.score import RISK_MODEL_VERSION
     rows = db.query(models.Finding).filter(models.Finding.asset_id == asset.id).all()
-    rows.sort(key=lambda f: (f.status != "OPEN", -f.severity, -(f.last_seen.timestamp() if f.last_seen else 0)))
+    risk = risk_service.latest_scores(db, [f.id for f in rows])
+    # Open findings first, then by the (unvalidated) risk score R, Unknown after every scored finding, then severity.
+    rows.sort(key=lambda f: (f.status != "OPEN", risk_service.order_key(risk.get(f.id)), -f.severity,
+                             -(f.last_seen.timestamp() if f.last_seen else 0)))
     return [schemas.ScannerFindingOut(
         id=f.id, finding_type=f.finding_type, title=f.title, severity=evidence_service.severity_label(f.severity),
-        algorithm=f.algorithm, status=f.status, first_seen=f.first_seen, last_seen=f.last_seen) for f in rows]
+        algorithm=f.algorithm, status=f.status, first_seen=f.first_seen, last_seen=f.last_seen,
+        risk_score=risk.get(f.id), risk_model_version=RISK_MODEL_VERSION) for f in rows]
 
 
 # --- CANDIDATE A: EVIDENCE-TO-COMPETENCY CLOSURE LOOP ROUTES ---

@@ -80,6 +80,9 @@ export const AssetsPanel: React.FC<Props> = ({ refreshKey }) => {
                   {findingsError && <div className="sc-banner sc-banner--error" role="alert">{findingsError}</div>}
                   {!findingsError && findings === null && <p className="sc-muted" style={{ margin: 0 }}>Loading...</p>}
                   {findings?.length === 0 && <p className="sc-muted" style={{ margin: 0 }}>No exposures have been tracked for this domain.</p>}
+                  {findings && findings.length > 0 && (
+                    <p className="sc-muted" style={{ margin: 0 }}>Open findings are ordered by risk score R (unvalidated model), then severity.</p>
+                  )}
                   {findings?.map((f) => (
                     <article key={f.id} className={`sc-finding sc-finding--${f.severity}`}>
                       <div className="sc-row">
@@ -91,6 +94,7 @@ export const AssetsPanel: React.FC<Props> = ({ refreshKey }) => {
                       </div>
                       <span className="sc-muted">
                         First seen {formatDateTime(f.first_seen)} · {f.status === 'RESOLVED' ? 'last seen / resolved' : 'last seen'} {formatDateTime(f.last_seen)}
+                        {' · '}{f.risk_score == null ? 'Risk: Unknown (asset context missing)' : `Risk R = ${f.risk_score.toFixed(2)} (unvalidated)`}
                       </span>
                     </article>
                   ))}
