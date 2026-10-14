@@ -305,9 +305,12 @@ frontend `npm run build`, `npm run lint`, `npm run test:content`, `npm run conte
 - API: Render free web service (`https://qcaps-api.onrender.com`), blueprint in `render.yaml`. The build runs
   `deploy_bootstrap.py`, which creates a fresh database in about nine seconds: curriculum, quiz banks, admin, all lesson
   packs and the demo accounts.
-- Limits to know: the free API sleeps when idle (first request after sleep can take about a minute); the SQLite file is
-  **ephemeral**, so accounts registered after a deploy or restart are lost, while content and the three seeded accounts are
-  rebuilt; both Render services redeploy on every push to `main`.
+- Database: free Supabase Postgres (`QCAPS_DATABASE_URL` on `qcaps-api`, session pooler URI), so registered accounts
+  survive deploys and restarts. Each build re-runs `deploy_bootstrap.py`, which tops up content and resets the two demo
+  accounts; the first build against an empty database took about 17 minutes because the database is in ap-south-1 and
+  the API in Oregon.
+- Limits to know: the free API sleeps when idle (first request after sleep can take about a minute); both Render
+  services redeploy on every push to `main`.
 - Scanner: Render free web service (`https://qcaps-scanner.onrender.com`), page at `https://q-caps.vercel.app/scanner`.
 - `QCAPS_CORS_ORIGINS` on both Render services: `https://q-caps.vercel.app,https://q-caps-itzz-inbathamizhans.vercel.app`.
 - For persistence, point `QCAPS_DATABASE_URL` at a hosted Postgres, for example a free Supabase project (use its
@@ -336,8 +339,7 @@ frontend `npm run build`, `npm run lint`, `npm run test:content`, `npm run conte
 - No capstone submission or review flow; A8 wrap-up, C11 capstone/certificates and E6 capstone are outline text.
 - Scanner is not deployed publicly. Lab brute-forcing is made costly (cooldown, reduced XP) but not impossible.
 - The browser's XP display cache is still fed by some older flows (documented in `SYSTEM_UNDERSTANDING.md`).
-- Hosted database is ephemeral; the Render free tier cold-starts.
-- `deploy_bootstrap` content and demo accounts must be rebuilt after each restart.
+- The Render free tier cold-starts, and a free Supabase project pauses after a week without traffic.
 
 ## 11. Repository map
 

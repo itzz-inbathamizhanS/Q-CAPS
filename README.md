@@ -5,10 +5,10 @@ quantum-safe (post-quantum) cryptography, with server-graded quizzes, book-sourc
 missions, and a cryptographic reconnaissance scanner that detects hybrid post-quantum key exchange.
 
 **Live demo:** [q-caps.vercel.app](https://q-caps.vercel.app) (scanner: [q-caps.vercel.app/scanner](https://q-caps.vercel.app/scanner)).
-The API and scanner run on a free tier and can take about a minute to wake after being idle, and the hosted database is
-rebuilt on each restart.
+The API and scanner run on a free tier and can take about a minute to wake after being idle. Accounts are stored in a
+free Supabase Postgres database, so registered users are kept across restarts.
 
-**Demo accounts** (shared logins for trying the hosted demo; progress resets when the API restarts):
+**Demo accounts** (shared logins for trying the hosted demo; their progress resets on every deploy):
 
 | Username | Password | State |
 |---|---|---|
