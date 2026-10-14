@@ -1,6 +1,6 @@
 # Render blueprint for the API (free plan). The frontend is deployed on Vercel from the frontend/ folder.
 # Set QCAPS_CORS_ORIGINS on both services to the Vercel origins and the three passwords in the Render dashboard (they are not in git).
-# QCAPS_CORS_ORIGINS=https://qcaps.vercel.app,https://q-caps-itzz-inbathamizhans.vercel.app
+# QCAPS_CORS_ORIGINS=https://q-caps.vercel.app,https://q-caps-itzz-inbathamizhans.vercel.app
 services:
   - type: web
     name: qcaps-api

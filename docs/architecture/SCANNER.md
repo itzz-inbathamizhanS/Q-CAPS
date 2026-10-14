@@ -104,7 +104,7 @@ and history list but are not displayed as results.
 
 `render.yaml` defines a `qcaps-scanner` web service (gunicorn, one worker) next to `qcaps-api`. After the blueprint is applied:
 1. On `qcaps-scanner`, set `QCAPS_CORS_ORIGINS` to the Vercel origins, comma-separated with no trailing slash:
-   `https://qcaps.vercel.app,https://q-caps-itzz-inbathamizhans.vercel.app` (the same value as on `qcaps-api`).
+   `https://q-caps.vercel.app,https://q-caps-itzz-inbathamizhans.vercel.app` (the same value as on `qcaps-api`).
    `QCAPS_JWT_SECRET` is copied from `qcaps-api`; if you set it by hand it must be identical on both services.
 2. On Vercel, set `VITE_SCANNER_API_URL` to the scanner's public URL (no trailing slash) for Production and redeploy,
    because Vite inlines the value at build time. Without it the page reports "The scanner is not available in this deployment."
