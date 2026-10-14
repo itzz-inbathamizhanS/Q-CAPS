@@ -64,6 +64,9 @@ def seed(db: Session, quiz_dir: Path = QUIZ_DIR, only_new_modules: bool = False)
         elif mod.reveal_answers is None:
             mod.reveal_answers = True
         modules += 1
+        # QuizItem has no relationship() to QuizModule, so the session does not order the inserts for us;
+        # write the module first so databases that enforce foreign keys (Postgres) accept its items.
+        db.flush()
 
         for q in quiz["questions"]:
             row = db.get(models.QuizItem, q["id"])

@@ -307,10 +307,13 @@ frontend `npm run build`, `npm run lint`, `npm run test:content`, `npm run conte
   packs and the demo accounts.
 - Limits to know: the free API sleeps when idle (first request after sleep can take about a minute); the SQLite file is
   **ephemeral**, so accounts registered after a deploy or restart are lost, while content and the three seeded accounts are
-  rebuilt; Render does not auto-deploy on push (deploy is triggered manually).
+  rebuilt; both Render services redeploy on every push to `main`.
 - Scanner: Render free web service (`https://qcaps-scanner.onrender.com`), page at `https://q-caps.vercel.app/scanner`.
 - `QCAPS_CORS_ORIGINS` on both Render services: `https://q-caps.vercel.app,https://q-caps-itzz-inbathamizhans.vercel.app`.
-- For persistence, point `QCAPS_DATABASE_URL` at a hosted Postgres (not yet tested with this code).
+- For persistence, point `QCAPS_DATABASE_URL` at a hosted Postgres, for example a free Supabase project (use its
+  session pooler URI; Render cannot reach Supabase's IPv6-only direct host). The full test suite runs against Postgres
+  with `QCAPS_TEST_DATABASE_URL=postgresql://... pytest`; three tests that build SQLite-only legacy states fail there.
+  A free Supabase project pauses after a week without traffic and has to be resumed from its dashboard.
 
 ---
 

@@ -5,10 +5,19 @@ from sqlalchemy.orm import declarative_base, sessionmaker
 
 DATABASE_URL = os.environ.get("QCAPS_DATABASE_URL", "sqlite:///./qcaps.db")
 
-_engine_kwargs = {"connect_args": {"check_same_thread": False}}
-if DATABASE_URL in ("sqlite://", "sqlite:///:memory:"):
-    # In-memory SQLite is per-connection; share one connection (used by tests).
-    _engine_kwargs["poolclass"] = StaticPool
+for _prefix in ("postgres://", "postgresql://"):
+    if DATABASE_URL.startswith(_prefix):
+        # Hosts hand out postgres:// or postgresql:// URLs; use the psycopg (v3) driver from requirements.txt.
+        DATABASE_URL = "postgresql+psycopg://" + DATABASE_URL[len(_prefix):]
+
+if DATABASE_URL.startswith("sqlite"):
+    _engine_kwargs = {"connect_args": {"check_same_thread": False}}
+    if DATABASE_URL in ("sqlite://", "sqlite:///:memory:"):
+        # In-memory SQLite is per-connection; share one connection (used by tests).
+        _engine_kwargs["poolclass"] = StaticPool
+else:
+    # Hosted Postgres closes idle connections; check each one before use.
+    _engine_kwargs = {"pool_pre_ping": True}
 
 engine = create_engine(DATABASE_URL, **_engine_kwargs)
 
@@ -60,7 +69,7 @@ def ensure_schema():
             cols = {c["name"] for c in insp.get_columns("assets")}
             for name, sql_type in (("criticality_level", "VARCHAR"), ("data_sensitivity", "VARCHAR"),
                                    ("confidentiality_years", "FLOAT"), ("context_set_by", "INTEGER"),
-                                   ("context_set_at", "DATETIME")):
+                                   ("context_set_at", "TIMESTAMP")):
                 if name not in cols:
                     conn.execute(text(f"ALTER TABLE assets ADD COLUMN {name} {sql_type}"))
         if "interventions" in tables:
@@ -74,7 +83,7 @@ def ensure_schema():
         if "learner_capabilities" in tables:
             cols = {c["name"] for c in insp.get_columns("learner_capabilities")}
             for name, sql_type in (("knowledge_by_depth", "JSON"), ("evidence_count", "INTEGER"),
-                                   ("last_evidence_at", "DATETIME"), ("level", "VARCHAR"), ("model_version", "VARCHAR")):
+                                   ("last_evidence_at", "TIMESTAMP"), ("level", "VARCHAR"), ("model_version", "VARCHAR")):
                 if name not in cols:
                     conn.execute(text(f"ALTER TABLE learner_capabilities ADD COLUMN {name} {sql_type}"))
         if "quiz_items" in tables:

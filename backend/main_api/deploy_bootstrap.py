@@ -11,9 +11,10 @@ What it does, in order (all idempotent):
        QCAPS_DEMO_LEARNER_PASSWORD  -> "demo-learner"  (mid-course progress)
        QCAPS_DEMO_COMPLETE_PASSWORD -> "demo-complete" (everything completed)
 
-Passwords come only from the environment. The database is whatever QCAPS_DATABASE_URL points to. On a free
-Render instance the file system is rebuilt on every deploy and restart, so users who register after the build
-do not survive a restart; the build re-creates the content and the three accounts above.
+Passwords come only from the environment. The database is whatever QCAPS_DATABASE_URL points to. With a hosted
+Postgres URL, registered users survive deploys and restarts and this script only tops up content and resets the
+demo accounts. With the SQLite default on a free Render instance the file system is rebuilt on every deploy and
+restart, so users who register after the build are lost; the build re-creates the content and the three accounts.
 """
 import json
 import os

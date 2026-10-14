@@ -285,7 +285,7 @@ class CourseTrack(Base):
     meta = Column(JSON, nullable=True)  # certificate / capstone / entry-profile fields
     status = Column(String(20), nullable=False, default="draft", server_default="draft", index=True)
     sort_order = Column(Integer, nullable=False, default=0)
-    imported_hash = Column(String(64), nullable=True)  # NULL = owned by an admin edit
+    imported_hash = Column(String(80), nullable=True)  # NULL = owned by an admin edit
     created_at = Column(DateTime, nullable=False, default=_utcnow)
     updated_at = Column(DateTime, nullable=False, default=_utcnow, onupdate=_utcnow)
 
@@ -319,7 +319,7 @@ class CourseModule(Base):
     wrap_up = Column(JSON, nullable=True)
     status = Column(String(20), nullable=False, default="draft", server_default="draft", index=True)
     sort_order = Column(Integer, nullable=False, default=0)
-    imported_hash = Column(String(64), nullable=True)
+    imported_hash = Column(String(80), nullable=True)
     created_at = Column(DateTime, nullable=False, default=_utcnow)
     updated_at = Column(DateTime, nullable=False, default=_utcnow, onupdate=_utcnow)
 
@@ -351,7 +351,7 @@ class CourseSection(Base):
     needs_verification = Column(JSON, nullable=True)
     status = Column(String(20), nullable=False, default="draft", server_default="draft", index=True)
     sort_order = Column(Integer, nullable=False, default=0)
-    imported_hash = Column(String(64), nullable=True)
+    imported_hash = Column(String(80), nullable=True)
     created_at = Column(DateTime, nullable=False, default=_utcnow)
     updated_at = Column(DateTime, nullable=False, default=_utcnow, onupdate=_utcnow)
 

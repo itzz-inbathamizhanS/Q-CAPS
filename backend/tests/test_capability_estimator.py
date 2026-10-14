@@ -78,6 +78,7 @@ def test_thresholds_come_from_the_model_file():
 def bank(db):
     seed_competencies(db)
     db.add(models.QuizModule(module_id="m1", title="M1", passing_score_percent=70, topic="pqc", reveal_answers=True))
+    db.flush()  # the items reference the module; Postgres checks that on insert
     for i, depth in enumerate(["Aware", "Aware", "Explain", "Apply"], start=1):
         db.add(models.QuizItem(id=f"m1-q{i}", module_id="m1", prompt="p", options_json='["a","b"]', correct_index=0,
                                competency_id="PQC.6", depth=depth, tag_status="proposed-unreviewed"))

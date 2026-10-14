@@ -13,8 +13,10 @@ services:
     envVars:
       - key: QCAPS_ENV
         value: production
+      # Postgres connection string (Supabase free tier, session pooler URI) so registered users survive restarts.
+      # Left unset, the API falls back to a SQLite file that Render wipes on every deploy and restart.
       - key: QCAPS_DATABASE_URL
-        value: sqlite:///./qcaps.db
+        sync: false
       - key: QCAPS_JWT_SECRET
         generateValue: true
       - key: QCAPS_CORS_ORIGINS

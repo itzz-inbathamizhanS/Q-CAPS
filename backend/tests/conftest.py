@@ -1,14 +1,15 @@
 """Shared fixtures: an isolated in-memory SQLite database, reset for every test.
 
 QCAPS_DATABASE_URL must be set before main/database are imported, so the real
-qcaps.db is never touched by the API tests.
+qcaps.db is never touched by the API tests. Set QCAPS_TEST_DATABASE_URL to run the same tests against another
+database, such as a throwaway Postgres.
 """
 import os
 import sys
 from datetime import timedelta
 from pathlib import Path
 
-os.environ["QCAPS_DATABASE_URL"] = "sqlite://"
+os.environ["QCAPS_DATABASE_URL"] = os.environ.get("QCAPS_TEST_DATABASE_URL", "sqlite://")
 os.environ.setdefault("QCAPS_JWT_SECRET", "test-secret-not-for-production-use-0123456789")
 
 MAIN_API = Path(__file__).resolve().parents[1] / "main_api"

@@ -5,3 +5,4 @@ pydantic
 passlib
 PyJWT
 reportlab
+psycopg[binary]
