@@ -8,6 +8,15 @@ missions, and a cryptographic reconnaissance scanner that detects hybrid post-qu
 The API and scanner run on a free tier and can take about a minute to wake after being idle, and the hosted database is
 rebuilt on each restart.
 
+**Demo accounts** (shared logins for trying the hosted demo; progress resets when the API restarts):
+
+| Username | Password | State |
+|---|---|---|
+| `demo-learner` | `Learner-558e3122` | Partway through the course |
+| `demo-complete` | `Complete-8b40b6bc` | Every module completed |
+
+These passwords come from `QCAPS_DEMO_LEARNER_PASSWORD` and `QCAPS_DEMO_COMPLETE_PASSWORD` on Render; change them there and here together.
+
 ## Why
 
 Quantum computers are expected to break RSA and elliptic-curve cryptography, and attackers can record encrypted traffic
