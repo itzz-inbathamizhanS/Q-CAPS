@@ -1,0 +1,72 @@
+# Research measurement for the TLS key-exchange probe paper (research/probe-eval/README.md).
+# Runs only on the probe-eval branch or by hand; it never runs for main.
+name: probe-eval
+
+on:
+  push:
+    branches: [probe-eval]
+    paths: ["research/probe-eval/**", ".github/workflows/probe-eval.yml"]
+  workflow_dispatch:
+    inputs:
+      hosts:
+        description: "Number of Tranco top domains to measure"
+        default: "1000"
+
+permissions:
+  contents: read
+
+jobs:
+  measure:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 150
+    env:
+      N_HOSTS: ${{ inputs.hosts || '1000' }}
+    defaults:
+      run:
+        working-directory: research/probe-eval
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+      - uses: actions/setup-go@v5
+        with:
+          go-version: "1.25.3"
+          cache: false
+
+      - name: Build reference client and lab server
+        run: |
+          go build -o refcheck-bin ./refcheck
+          go build -o labserver-bin ./labserver
+          go version | tee out-env.txt
+          python --version | tee -a out-env.txt
+          git rev-parse HEAD | tee -a out-env.txt
+
+      - name: Experiment 1 - lab configurations
+        run: python lab_eval.py --repo "$GITHUB_WORKSPACE" --labserver ./labserver-bin --out lab_results.csv | tee lab_summary.txt
+
+      - name: Fetch Tranco list
+        run: |
+          curl -sSfL -o tranco.zip https://tranco-list.eu/top-1m.csv.zip
+          (curl -sSfL https://tranco-list.eu/top-1m-id || echo "list ID unavailable") | tee tranco_id.txt
+          echo " retrieved $(date -u +%Y-%m-%dT%H:%MZ)" | tee -a tranco_id.txt
+          unzip -p tranco.zip | head -n "$N_HOSTS" | cut -d, -f2 > hosts.txt
+          head -n 20 hosts.txt > hosts_20.txt
+          rm tranco.zip
+
+      - name: Trial on 20 hosts
+        run: python probe_eval.py --repo "$GITHUB_WORKSPACE" --hosts hosts_20.txt --refcheck ./refcheck-bin --out trial.csv
+
+      - name: Experiments 2 and 3 - Tranco top hosts
+        run: |
+          python probe_eval.py --repo "$GITHUB_WORKSPACE" --hosts hosts.txt --refcheck ./refcheck-bin --out results.csv --delay 1 > run.log
+          python probe_eval.py --summarise results.csv | tee summary.txt
+
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: probe-eval-results
+          path: |
+            research/probe-eval/*.csv
+            research/probe-eval/*.txt
+            research/probe-eval/run.log
