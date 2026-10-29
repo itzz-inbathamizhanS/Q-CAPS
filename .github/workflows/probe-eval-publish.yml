@@ -1,0 +1,38 @@
+# Copies a finished probe-eval run's result files into research/probe-eval/results/ on this branch,
+# so the data behind the paper is versioned with the code that produced it.
+name: probe-eval-publish
+
+on:
+  push:
+    branches: [probe-eval]
+    paths: [".github/workflows/probe-eval-publish.yml"]
+  workflow_dispatch:
+    inputs:
+      run_id:
+        description: "probe-eval run ID"
+        required: true
+
+permissions:
+  contents: write
+  actions: read
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    env:
+      RUN_ID: ${{ inputs.run_id || '40827625585' }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/download-artifact@v4
+        with:
+          name: probe-eval-results
+          run-id: ${{ env.RUN_ID }}
+          github-token: ${{ github.token }}
+          path: research/probe-eval/results/run-${{ env.RUN_ID }}
+      - name: Commit results
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898283+github-actions[bot]@users.noreply.github.com"
+          git add research/probe-eval/results
+          git commit -m "Add probe-eval results from run $RUN_ID"
+          git push
