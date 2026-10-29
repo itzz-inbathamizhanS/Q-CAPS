@@ -1,0 +1,7 @@
+hosts: 1000  reachable: 716
+probe verdicts: Counter({'True': 425, 'False': 217, '': 74})
+preferred groups: [('X25519MLKEM768', 420), ('x25519', 151), ('', 115), ('secp256r1', 11), ('secp521r1', 7), ('secp384r1', 7), ('SecP256r1MLKEM768', 3), ('X25519Kyber768Draft00', 2)]
+vs reference (n=642): TP=422 FP=3 FN=0 TN=217 accuracy=0.995
+probe undecided: 74
+probe_ms: median=35.2
+ref_ms: median=73.2

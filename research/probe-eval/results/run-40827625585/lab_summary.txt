@@ -1,0 +1,7 @@
+config           expected   agree group seen       hellos median ms
+hybrid_only      True      20/20  X25519MLKEM768   1           0.12
+hybrid_first     True      20/20  X25519MLKEM768   1           0.12
+classical_first  True      20/20  X25519MLKEM768   1           0.11
+classical_only   False     20/20  x25519           2           0.22
+p256_only        False     20/20  secp256r1        2           0.20
+tls12_only       False     20/20  None             1           0.10
