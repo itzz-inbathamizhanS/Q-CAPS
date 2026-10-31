@@ -1,0 +1,18 @@
+{
+  "endpoint": "GET /api/auth/me",
+  "note": "Identity comes from the token, never from the client.",
+  "request": {
+    "headers": {
+      "Authorization": "***MASKED***"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": 1,
+      "name": "sample-learner",
+      "role": "learner"
+    }
+  }
+}

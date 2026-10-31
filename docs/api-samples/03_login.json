@@ -1,0 +1,20 @@
+{
+  "endpoint": "POST /api/auth/login",
+  "note": "Returns a signed JWT (masked here).",
+  "request": {
+    "headers": {},
+    "body": {
+      "name": "sample-learner",
+      "password": "***MASKED***"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "access_token": "***MASKED***",
+      "token_type": "bearer",
+      "user_id": 1,
+      "user_name": "sample-learner"
+    }
+  }
+}

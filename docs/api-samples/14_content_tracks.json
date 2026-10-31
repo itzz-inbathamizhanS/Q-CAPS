@@ -1,0 +1,177 @@
+{
+  "endpoint": "GET /api/content/tracks",
+  "note": "Curriculum tracks and modules.",
+  "request": {
+    "headers": {
+      "Authorization": "***MASKED***"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "tracks": [
+        {
+          "id": 1,
+          "slug": "track-a",
+          "code": "Track A",
+          "title": "Foundations",
+          "subtitle": "Computing, Networking, Cryptography & Quantum Basics",
+          "description": "Foundational on-ramp for cybersecurity and quantum computing, with zero prerequisites required.",
+          "accent_color": "#38bdf8",
+          "meta": {
+            "entry_profile": "Little or no prior exposure to quantum computing, cybersecurity, networking, cryptography, or advanced mathematics.",
+            "certificate_name": "Certificate in Quantum Foundations",
+            "certificate_code": "CQF",
+            "capstone_title": "Beginner Capstone",
+            "capstone_description": "Build a secure small network plus a basic cryptographic application and an introductory quantum circuit."
+          },
+          "status": "published",
+          "sort_order": 0,
+          "created_at": "2026-10-31T15:53:21.091356",
+          "updated_at": "2026-10-31T15:53:21.091362",
+          "modules": [
+            {
+              "slug": "track_a_a1_computing_foundations",
+              "code": "A1",
+              "title": "Computing Foundations",
+              "subtitle": null,
+              "level": "Beginner",
+              "estimated_minutes": 120,
+              "xp": 120,
+              "section_count": 8
+            },
+            {
+              "slug": "track_a_a2_mathematics_foundations",
+              "code": "A2",
+              "title": "Mathematics Foundations",
+              "subtitle": null,
+              "level": "Beginner",
+              "estimated_minutes": 150,
+              "xp": 120,
+              "section_count": 8
+            },
+            {
+              "slug": "track_a_a3_networking_foundations",
+              "code": "A3",
+              "title": "Networking Foundations",
+              "subtitle": null,
+              "level": "Beginner",
+              "estimated_minutes": 130,
+              "xp": 120,
+              "section_count": 10
+            },
+            "... 5 more items trimmed in this sample"
+          ]
+        },
+        {
+          "id": 2,
+          "slug": "track-b",
+          "code": "Track B",
+          "title": "Intermediate / Engineering",
+          "subtitle": "Quantum Algorithms, Circuits, Advanced Cryptography & PQC Fundamentals",
+          "description": "Deep dive into quantum information, algorithm mechanics, hardware realities, and lattice-based PQC standards.",
+          "accent_color": "#818cf8",
+          "meta": {
+            "entry_profile": "Completed Track A or possesses university-level STEM background in linear algebra, basic cryptography, and Python.",
+            "certificate_name": "Certificate in Quantum Security Engineering",
+            "certificate_code": "CQSE",
+            "capstone_title": "Intermediate Capstone",
+            "capstone_description": "Design and simulate an enterprise cryptographic migration plan with hybrid key exchange."
+          },
+          "status": "published",
+          "sort_order": 1,
+          "created_at": "2026-10-31T15:53:21.092430",
+          "updated_at": "2026-10-31T15:53:21.092433",
+          "modules": [
+            {
+              "slug": "track_b_b1_advanced_math_for_quantum",
+              "code": "B1",
+              "title": "Advanced Mathematics for Quantum",
+              "subtitle": null,
+              "level": "Intermediate",
+              "estimated_minutes": 160,
+              "xp": 160,
+              "section_count": 9
+            },
+            {
+              "slug": "track_b_b2_quantum_information",
+              "code": "B2",
+              "title": "Quantum Information",
+              "subtitle": null,
+              "level": "Intermediate",
+              "estimated_minutes": 150,
+              "xp": 160,
+              "section_count": 9
+            },
+            {
+              "slug": "track_b_b3_quantum_algorithms",
+              "code": "B3",
+              "title": "Quantum Algorithms",
+              "subtitle": null,
+              "level": "Intermediate",
+              "estimated_minutes": 180,
+              "xp": 160,
+              "section_count": 11
+            },
+            "... 8 more items trimmed in this sample"
+          ]
+        },
+        {
+          "id": 3,
+          "slug": "track-c",
+          "code": "Track C",
+          "title": "Advanced / Specialist",
+          "subtitle": "Quantum Error Correction, QKD, Implementation Attacks & Defense Engineering",
+          "description": "Specialist engineering in quantum key distribution, fault tolerance, side-channel attacks, and constant-time PQC defense.",
+          "accent_color": "#c084fc",
+          "meta": {
+            "entry_profile": "Completed Track B or holds substantial hands-on cryptography or quantum physics engineering experience.",
+            "certificate_name": "Quantum & PQC Specialist Certification",
+            "certificate_code": "QCE / PQC-E / QNE",
+            "capstone_title": "Advanced Specialist Capstone",
+            "capstone_description": "Select from Implementation Security, Quantum Network Architecture, or Secure Communications capstone."
+          },
+          "status": "published",
+          "sort_order": 2,
+          "created_at": "2026-10-31T15:53:21.093061",
+          "updated_at": "2026-10-31T15:53:21.093062",
+          "modules": [
+            {
+              "slug": "track_c_c1_advanced_quantum_information",
+              "code": "C1",
+              "title": "Advanced Quantum Information",
+              "subtitle": null,
+              "level": "Advanced",
+              "estimated_minutes": 170,
+              "xp": 200,
+              "section_count": 8
+            },
+            {
+              "slug": "track_c_c2_advanced_quantum_algorithms",
+              "code": "C2",
+              "title": "Advanced Quantum Algorithms",
+              "subtitle": null,
+              "level": "Advanced",
+              "estimated_minutes": 190,
+              "xp": 200,
+              "section_count": 11
+            },
+            {
+              "slug": "track_c_c3_quantum_error_correction",
+              "code": "C3",
+              "title": "Quantum Error Correction",
+              "subtitle": null,
+              "level": "Advanced",
+              "estimated_minutes": 180,
+              "xp": 200,
+              "section_count": 10
+            },
+            "... 8 more items trimmed in this sample"
+          ]
+        },
+        "... 1 more items trimmed in this sample"
+      ]
+    }
+  }
+}

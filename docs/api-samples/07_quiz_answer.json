@@ -1,0 +1,23 @@
+{
+  "endpoint": "POST /api/quizzes/attempts/316b2e68277d4b069791122585020a6e/answers",
+  "note": "Records and locks one answer; feedback is returned after locking.",
+  "request": {
+    "headers": {
+      "Authorization": "***MASKED***"
+    },
+    "body": {
+      "item_id": "a1-q3",
+      "selected_position": 0
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "item_id": "a1-q3",
+      "recorded": true,
+      "correct": false,
+      "correct_position": 3,
+      "explanation": "'while' loops repeat as long as a specified condition remains true."
+    }
+  }
+}

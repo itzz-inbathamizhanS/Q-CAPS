@@ -1,0 +1,16 @@
+{
+  "endpoint": "GET /api/admin/content/tracks",
+  "note": "A learner token cannot reach admin routes.",
+  "request": {
+    "headers": {
+      "Authorization": "***MASKED***"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 403,
+    "body": {
+      "detail": "Admin access required"
+    }
+  }
+}

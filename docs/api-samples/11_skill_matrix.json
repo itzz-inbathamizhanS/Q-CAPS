@@ -1,0 +1,20 @@
+{
+  "endpoint": "GET /api/users/me/skill-matrix",
+  "note": "Unassessed skills are reported as unknown, not as 0% or 50%.",
+  "request": {
+    "headers": {
+      "Authorization": "***MASKED***"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "competency_model_version": "1",
+      "levels_status": "pilot-hypothesis",
+      "requirement_map_version": "proposed-v1",
+      "requirement_map_status": "proposed-unreviewed",
+      "rows": []
+    }
+  }
+}

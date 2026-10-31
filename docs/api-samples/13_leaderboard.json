@@ -1,0 +1,21 @@
+{
+  "endpoint": "GET /api/leaderboard",
+  "note": "",
+  "request": {
+    "headers": {
+      "Authorization": "***MASKED***"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": [
+      {
+        "id": 1,
+        "name": "sample-learner",
+        "xp": 0,
+        "rank": 1
+      }
+    ]
+  }
+}

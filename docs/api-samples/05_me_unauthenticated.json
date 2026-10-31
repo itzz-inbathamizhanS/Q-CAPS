@@ -1,0 +1,14 @@
+{
+  "endpoint": "GET /api/auth/me",
+  "note": "Without a token the API refuses the request.",
+  "request": {
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 401,
+    "body": {
+      "detail": "Not authenticated"
+    }
+  }
+}

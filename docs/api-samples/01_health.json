@@ -1,0 +1,14 @@
+{
+  "endpoint": "GET /api/health",
+  "note": "Liveness check used by Render.",
+  "request": {
+    "headers": {},
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "status": "healthy"
+    }
+  }
+}

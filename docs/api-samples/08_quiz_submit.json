@@ -1,0 +1,60 @@
+{
+  "endpoint": "POST /api/quizzes/attempts/316b2e68277d4b069791122585020a6e/submit",
+  "note": "Score, percentage and XP are computed on the server from the stored attempt (the answer locked above counts; unanswered questions count as wrong).",
+  "request": {
+    "headers": {
+      "Authorization": "***MASKED***"
+    },
+    "body": {
+      "answers": [
+        {
+          "item_id": "a1-q1",
+          "selected_position": 0
+        },
+        {
+          "item_id": "a1-n09",
+          "selected_position": 0
+        }
+      ]
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "attempt_id": "316b2e68277d4b069791122585020a6e",
+      "module_id": "track_a_a1_computing_foundations",
+      "total_questions": 14,
+      "correct_answers": 0,
+      "score_percent": 0.0,
+      "passed": false,
+      "passing_score_percent": 70,
+      "xp_awarded": 0,
+      "module_xp_awarded": 0,
+      "graded_at": "2026-10-31T15:53:21.473673",
+      "items": [
+        {
+          "item_id": "a1-q3",
+          "selected_position": 0,
+          "correct": false,
+          "correct_position": 3,
+          "explanation": "'while' loops repeat as long as a specified condition remains true."
+        },
+        {
+          "item_id": "a1-q1",
+          "selected_position": 0,
+          "correct": false,
+          "correct_position": 2,
+          "explanation": "The operating system runs each program as a process with its own isolated memory space."
+        },
+        {
+          "item_id": "a1-n09",
+          "selected_position": 0,
+          "correct": false,
+          "correct_position": 1,
+          "explanation": "Git keeps history, so a committed secret must be treated as exposed and replaced."
+        },
+        "... 11 more items trimmed in this sample"
+      ]
+    }
+  }
+}

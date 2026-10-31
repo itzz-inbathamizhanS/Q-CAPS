@@ -1,0 +1,23 @@
+{
+  "endpoint": "GET /api/activities/me",
+  "note": "",
+  "request": {
+    "headers": {
+      "Authorization": "***MASKED***"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "completed_labs": [],
+      "completed_missions": [],
+      "badges": [],
+      "passed_modules": [],
+      "quiz_scores": {
+        "track_a_a1_computing_foundations": 0.0
+      },
+      "xp": 0
+    }
+  }
+}
