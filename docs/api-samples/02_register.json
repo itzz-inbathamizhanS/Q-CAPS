@@ -1,0 +1,22 @@
+{
+  "endpoint": "POST /api/auth/register",
+  "note": "Creates a learner account; the password is hashed on the server.",
+  "request": {
+    "headers": {},
+    "body": {
+      "name": "sample-learner",
+      "password": "***MASKED***"
+    }
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "id": 1,
+      "name": "sample-learner",
+      "xp": 0,
+      "readiness_score": null,
+      "global_rank": 1,
+      "progress_data": "{}"
+    }
+  }
+}

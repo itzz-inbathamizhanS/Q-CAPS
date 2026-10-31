@@ -1,0 +1,34 @@
+{
+  "endpoint": "GET /api/users/1/recommendation",
+  "note": "Explainable recommendation for the signed-in learner.",
+  "request": {
+    "headers": {
+      "Authorization": "***MASKED***"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "course_id": "track_d_e4_crypto_agility",
+      "title": "Cryptographic Agility",
+      "topic": "practical_security",
+      "priority": "Critical",
+      "reason": "Your quiz score in 'Cryptographic Agility' is 0% (Critical). This course requires immediate attention to address serious knowledge or infrastructure gaps.",
+      "quiz_score": 0.0,
+      "scanner_risk": null,
+      "status": "recommendation",
+      "engine": "score",
+      "reasons": [
+        {
+          "type": "quiz_score",
+          "topic": "practical_security",
+          "score": 0.0,
+          "band": "Critical"
+        }
+      ],
+      "recommendations": [],
+      "graph_paths": []
+    }
+  }
+}

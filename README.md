@@ -32,7 +32,8 @@ Q-CAPS teaches those skills, measures them on the server, and lets learners obse
 | Practice | 38 scenario labs and 11 decision missions, shown inside the lesson section they belong to |
 | Gamification | XP, 90 badges, 5 certificates, leaderboard (all computed by the server) |
 | Scanner | DNS, WHOIS, TLS, certificate, headers, TLS 1.3 key-exchange probe; SSRF-protected; ownership-gated active checks |
-| Stack | React, TypeScript, Vite, Zustand · FastAPI, SQLAlchemy, SQLite · Flask scanner |
+| Stack | React, TypeScript, Vite, Zustand · FastAPI, SQLAlchemy (SQLite locally, Supabase Postgres hosted) · Flask scanner |
+| Hosting | Frontend on Vercel · API and scanner on Render · database on Supabase |
 
 Track A Foundations (8 modules) · Track B Intermediate (11) · Track C Advanced (11) · Track D Enterprise (6).
 
@@ -40,6 +41,8 @@ Track A Foundations (8 modules) · Track B Intermediate (11) · Track C Advanced
 
 - **[Full project overview](docs/PROJECT_OVERVIEW.md)**: everything about the project in one place
 - [System understanding](docs/architecture/SYSTEM_UNDERSTANDING.md): how it actually works, findings, open items
+- **[API reference and integrations](docs/API_REFERENCE.md)**: every endpoint, auth rules, external services, and
+  [masked request/response samples](docs/api-samples/INDEX.md)
 - [Scanner](docs/architecture/SCANNER.md) · [Frontend structure](docs/architecture/FRONTEND_STRUCTURE.md)
 - [Book to course map](docs/content-authoring/BOOK_COURSE_MAP.md): sources and lesson status per module
 
@@ -53,7 +56,7 @@ backend/
   main_api/        FastAPI app: auth, quizzes, course content API, progress, recommendations
   scanner_api/     Flask scanner service (TLS, certificates, PQC detection)
   tests/           pytest suite for the main API (in-memory database)
-  scripts/         standalone checks: smoke_api.py, check_recommendation.py
+  scripts/         standalone checks: smoke_api.py, check_recommendation.py, capture_api_samples.py
   run_dev.py       starts a service with backend/.env loaded
   .env.example     all environment variables, documented
 frontend/          React + TypeScript + Vite + Zustand single-page app
@@ -86,8 +89,10 @@ python backend/run_dev.py main                        # API on http://localhost:
 python backend/run_dev.py scanner                     # scanner on http://localhost:5000 (optional)
 
 # Frontend
-cd frontend && npm install && npm run dev             # http://localhost:5173
+cd frontend && cp .env.example .env.local && npm install && npm run dev   # http://localhost:5173
 ```
+
+Interactive API docs (Swagger UI) are at `http://localhost:8000/docs` once the API is running.
 
 Load course content into a fresh database, then create the first admin (run from `backend/main_api`):
 
@@ -109,6 +114,7 @@ python -m course_content.import_pack ../../content/packs/pack_A5_cryptography.js
 cd backend && pytest                                  # API tests, isolated in-memory database
 python backend/scripts/smoke_api.py                   # end-to-end API checks (in-memory database)
 python backend/scripts/check_recommendation.py        # recommendation engine checks
+python backend/scripts/capture_api_samples.py         # regenerate docs/api-samples (masked)
 
 cd frontend
 npm run build                                         # typecheck + production build
@@ -125,8 +131,3 @@ npm run content:check                                 # compiled curriculum data
 - The scanner is for authorised assessment only. See `docs/architecture/SCANNER.md` for what it checks, how targets are
   validated (every connection is pinned to addresses validated once), and the domain-ownership gate for active checks.
 - Do not report simulated data as findings. Anything simulated must be labelled `SIMULATION` or `DEMO DATA`.
-
-## Documentation
-
-Start with `docs/architecture/SYSTEM_UNDERSTANDING.md` (how the system actually works and what is still open)
-and `docs/content-authoring/BOOK_COURSE_MAP.md` (sources, lesson packs and status).

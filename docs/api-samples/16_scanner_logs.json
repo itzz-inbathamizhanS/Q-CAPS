@@ -1,0 +1,14 @@
+{
+  "endpoint": "GET /api/scanner/logs",
+  "note": "",
+  "request": {
+    "headers": {
+      "Authorization": "***MASKED***"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": []
+  }
+}

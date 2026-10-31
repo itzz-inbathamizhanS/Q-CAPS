@@ -1,0 +1,21 @@
+{
+  "endpoint": "POST /api/quizzes/submit",
+  "note": "The old endpoint that trusted client scores is disabled (410).",
+  "request": {
+    "headers": {
+      "Authorization": "***MASKED***"
+    },
+    "body": {
+      "user_id": 1,
+      "topic": "pqc",
+      "correct_answers": 10,
+      "total_questions": 10
+    }
+  },
+  "response": {
+    "status": 410,
+    "body": {
+      "detail": "Client-reported quiz scores are no longer accepted; use /api/quizzes/{module_id}/attempts"
+    }
+  }
+}

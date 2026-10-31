@@ -1,0 +1,59 @@
+{
+  "endpoint": "POST /api/quizzes/track_a_a1_computing_foundations/attempts",
+  "note": "Server builds a shuffled form. No answer keys are included.",
+  "request": {
+    "headers": {
+      "Authorization": "***MASKED***"
+    },
+    "body": null
+  },
+  "response": {
+    "status": 200,
+    "body": {
+      "attempt_id": "316b2e68277d4b069791122585020a6e",
+      "module_id": "track_a_a1_computing_foundations",
+      "title": "A1 Quiz: Computing Foundations",
+      "passing_score_percent": 70,
+      "total_questions": 14,
+      "issued_at": "2026-10-31T15:53:21.442281",
+      "expires_at": "2026-10-31T17:53:21.442281",
+      "questions": [
+        {
+          "item_id": "a1-q3",
+          "prompt": "In Python, which keyword starts a loop that repeats while a condition is true?",
+          "options": [
+            "def",
+            "for",
+            "import",
+            "... 1 more items trimmed in this sample"
+          ],
+          "domain": null
+        },
+        {
+          "item_id": "a1-q1",
+          "prompt": "What isolates one running program from another on a system?",
+          "options": [
+            "The hard drive",
+            "The CPU clock speed",
+            "Process isolation managed by the OS",
+            "... 1 more items trimmed in this sample"
+          ],
+          "domain": null
+        },
+        {
+          "item_id": "a1-n09",
+          "prompt": "You committed an API key, then deleted the file in a later commit. What should you do?",
+          "options": [
+            "Nothing: the file is gone.",
+            "Rotate the key, because it is still in the repository history.",
+            "Make the repository private and keep using the key."
+          ],
+          "domain": null
+        },
+        "... 11 more items trimmed in this sample"
+      ],
+      "kind": null,
+      "attempt_purpose": null
+    }
+  }
+}
